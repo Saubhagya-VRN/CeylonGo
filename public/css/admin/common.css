@@ -1,0 +1,144 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f8f0;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+.sidebar {
+  width: 220px;
+  background: #2c5530;
+  color: #fff;
+  min-height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding: 20px 0;
+}
+
+.sidebar-brand {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.sidebar-brand img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+}
+
+.sidebar-brand h2 {
+  margin-top: 10px;
+  font-size: 20px;
+}
+
+.sidebar-menu {
+  list-style: none;
+}
+
+.sidebar-menu li {
+  margin: 15px 0;
+}
+
+.sidebar-menu li a {
+  text-decoration: none;
+  color: #fff;
+  display: block;
+  padding: 5px 20px;
+  transition: 0.3s;
+}
+
+.sidebar-menu li a:hover {
+  background: #1abc9c;
+  border-radius: 4px;
+}
+
+.sidebar-menu li a.active {
+  background: #16a085; 
+  color: #fff;    
+  font-weight: bold; 
+}
+
+.main-content {
+  margin-left: 220px;
+  padding: 20px;
+  flex: 1;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.footer-btn {
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  background: white;
+}
+
+.footer-btn.black {
+  background: #000;
+  color: #fff;
+  font-weight: bold;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.search-section {
+  display: flex;
+  gap: 5px;
+}
+
+.search-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.search-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filter-btn.active {
+  background: #007bff;
+  color: white;
+}

@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Set base path (public folder)
+    RewriteBase /Ceylon_Go/public/
+
+    # If file or directory exists, don't rewrite
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Otherwise send everything to index.php
+    RewriteRule ^ index.php [L]
+</IfModule>

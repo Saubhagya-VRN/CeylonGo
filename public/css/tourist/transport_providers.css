@@ -1,0 +1,59 @@
+/* Transport Providers Form Styles */
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f0f8f0;
+  color:#333;
+}
+
+.hero{
+  background: linear-gradient(135deg,#2c5530,#4a7c59);
+  color:#fff;
+  text-align:center;
+  padding:60px 20px;
+}
+
+.hero h1{margin:0 0 10px 0;font-size:32px}
+.hero p{margin:0;opacity:.9}
+
+.form-section{max-width:1000px;margin:30px auto;padding:0 16px}
+
+.form-card{
+  background:#fff;
+  border:1px solid #e0e8e0;
+  border-radius:12px;
+  padding:24px;
+  box-shadow:0 8px 25px rgba(74,124,89,.1);
+}
+
+.form-row{display:flex;gap:16px;flex-wrap:wrap}
+.form-group{flex:1 1 300px;display:flex;flex-direction:column}
+.form-group label{font-weight:600;color:#2c5530;margin-bottom:6px}
+.form-group input,.form-group select{
+  padding:12px 14px;
+  border:2px solid #e0e8e0;
+  border-radius:8px;
+  font-size:14px;
+}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:#4a7c59}
+
+.actions{display:flex;gap:12px;justify-content:center;margin-top:20px}
+.btn-primary{
+  background:#2c5530;color:#fff;text-decoration:none;border:none;
+  padding:12px 22px;border-radius:8px;font-weight:700;cursor:pointer;
+}
+.btn-primary:hover{background:#4a7c59}
+.btn-outline{
+  background:#fff;color:#2c5530;border:2px solid #2c5530;
+  padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:700;
+}
+.btn-outline:hover{background:#2c5530;color:#fff}
+
+@media(max-width:768px){
+  .form-card{padding:16px}
+  .form-row{flex-direction:column}
+}
+
+.footer-spacer{height:40px}
+
+

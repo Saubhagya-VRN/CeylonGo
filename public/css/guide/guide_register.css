@@ -1,0 +1,140 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background-color: #f4f9f4;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Intro Section */
+.intro {
+  text-align: center;
+  padding: 40px 20px;
+  background: #e6f2e6;
+  border-bottom: 1px solid #ccc;
+}
+
+.intro h1 {
+  font-size: 32px;
+  color: #2d572c;
+  margin-bottom: 10px;
+}
+
+.intro p {
+  font-size: 16px;
+  color: #555;
+}
+
+/* Registration Section */
+.customize-trip {
+  max-width: 700px;
+  margin: 30px auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+}
+
+.customize-trip h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2d572c;
+}
+
+/* Form Styles */
+.registration-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.registration-form label {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 5px;
+  text-align: left;
+}
+
+.registration-form input,
+.registration-form select,
+.registration-form textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.registration-form input:focus,
+.registration-form select:focus,
+.registration-form textarea:focus {
+  border-color: #2d572c;
+  outline: none;
+  box-shadow: 0 0 5px rgba(45, 87, 44, 0.3);
+}
+
+/* Button */
+.btn {
+  padding: 12px;
+  background: #2d572c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn:hover {
+  background: #244622;
+}
+
+/* Login Link */
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.login-link a {
+  color: #2d572c;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+footer {
+  margin-top: auto;
+  padding: 15px;
+  background: #2d572c;
+  color: white;
+  text-align: center;
+}
+
+footer ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+footer a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}

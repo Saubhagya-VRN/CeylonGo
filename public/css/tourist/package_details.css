@@ -1,0 +1,270 @@
+/* Package Details Page Styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f0f8f0;
+  color: #333;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(135deg, #2c5530, #4a7c59);
+  color: white;
+  padding: 80px 0;
+  display: flex;
+  align-items: center;
+  min-height: 400px;
+}
+
+.hero-content {
+  flex: 1;
+  padding: 0 40px;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin: 0 0 20px 0;
+  font-weight: bold;
+}
+
+.hero-duration {
+  font-size: 1.2rem;
+  margin: 10px 0;
+  opacity: 0.9;
+}
+
+.hero-price {
+  font-size: 1.5rem;
+  margin: 10px 0;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.hero-image {
+  flex: 1;
+  padding: 0 40px;
+}
+
+.hero-image img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* Package Details Section */
+.package-details {
+  padding: 60px 0;
+  background: white;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.detail-section {
+  background: #f9f9f9;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.detail-section h2 {
+  color: #2c5530;
+  font-size: 1.8rem;
+  margin: 0 0 20px 0;
+  border-bottom: 3px solid #4a7c59;
+  padding-bottom: 10px;
+}
+
+.detail-section p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* Lists */
+.highlights-list,
+.includes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.highlights-list li,
+.includes-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e8e0;
+  position: relative;
+  padding-left: 30px;
+}
+
+.highlights-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #4a7c59;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.includes-list li:before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #4a7c59;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.highlights-list li:last-child,
+.includes-list li:last-child {
+  border-bottom: none;
+}
+
+/* Itinerary */
+.itinerary {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.itinerary-day {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #4a7c59;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-weight: 500;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.btn-primary {
+  background: #2c5530;
+  color: white;
+  padding: 15px 30px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+  min-width: 150px;
+}
+
+.btn-primary:hover {
+  background: #4a7c59;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(44, 85, 48, 0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  color: #2c5530;
+  border: 2px solid #2c5530;
+  padding: 15px 30px;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+  min-width: 150px;
+}
+
+.btn-outline:hover {
+  background: #2c5530;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(44, 85, 48, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 60px 0;
+  }
+  
+  .hero-content {
+    padding: 0 20px;
+    margin-bottom: 30px;
+  }
+  
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero-image {
+    padding: 0 20px;
+  }
+  
+  .hero-image img {
+    height: 250px;
+  }
+  
+  .details-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .detail-section {
+    padding: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .btn-primary,
+  .btn-outline {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .hero-duration,
+  .hero-price {
+    font-size: 1rem;
+  }
+  
+  .detail-section h2 {
+    font-size: 1.5rem;
+  }
+  
+  .detail-section p {
+    font-size: 1rem;
+  }
+  
+  .itinerary-day {
+    padding: 15px;
+    font-size: 0.9rem;
+  }
+}

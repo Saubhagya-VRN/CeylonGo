@@ -1,0 +1,71 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f8f0; /* Light greenish background */
+    color: #2c5530; /* Dark green text */
+  }
+  
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #4a7c59, #5a8c69); /* Green gradient navbar */
+    padding: 15px 30px;
+    box-shadow: 0 4px 12px rgba(74, 124, 89, 0.2);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
+.branding {
+    display: flex;
+    align-items: center;
+  }
+  
+.logo-img {
+    height: 40px;
+    margin-right: 10px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+.logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  
+.navbar .nav-links a,
+.navbar button {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-weight: 500; /* optional, matches your links */
+    margin-left: 20px;
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+
+.navbar .nav-links a:hover,
+.navbar button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+/* Only affects Register and Login buttons */
+.btn-login {
+    background-color: #000000; /* Black background */
+    color: #ffffff;            /* White text */
+    border: 2px solid #000000;
+    border-radius: 20px;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+

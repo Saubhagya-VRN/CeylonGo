@@ -1,0 +1,243 @@
+/* Choose Hotel Page Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f8f0;
+  color: #2c5530;
+  line-height: 1.6;
+}
+
+/* Hero Section - Clean without overlay */
+.hero {
+  background: linear-gradient(135deg, #4a7c59, #5a8c69);
+  color: white;
+  text-align: center;
+  padding: 80px 20px;
+  position: relative;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.hero input {
+  padding: 12px 20px;
+  width: 300px;
+  border: none;
+  border-radius: 25px;
+  margin-right: 10px;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hero button {
+  padding: 12px 24px;
+  background: #2c5530;
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero button:hover {
+  background: #1e3a21;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Hotels Section */
+.hotels-section {
+  padding: 60px 20px;
+  background-color: #f0f8f0;
+}
+
+.hotels-section h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  color: #2c5530;
+  font-weight: bold;
+}
+
+.hotels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.hotel-card {
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(74, 124, 89, 0.15);
+  border: 1px solid rgba(74, 124, 89, 0.1);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.hotel-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 30px rgba(74, 124, 89, 0.25);
+}
+
+.hotel-card .tag {
+  background: #4a7c59;
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  margin: 15px 15px 0 15px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.hotel-card .image {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  margin: 0;
+}
+
+/* Hotel images */
+.hotels-grid .hotel-card:nth-child(1) .image {
+  background-image: url("../../images/5star.jpg");
+}
+
+.hotels-grid .hotel-card:nth-child(2) .image {
+  background-image: url("../../images/resort.jpg");
+}
+
+.hotels-grid .hotel-card:nth-child(3) .image {
+  background-image: url("../../images/beach_hotel.jpg");
+}
+
+.hotels-grid .hotel-card:nth-child(4) .image {
+  background-image: url("../../images/factory.jpg");
+}
+
+.hotels-grid .hotel-card:nth-child(5) .image {
+  background-image: url("../../images/cultural.jpeg");
+}
+
+.hotels-grid .hotel-card:nth-child(6) .image {
+  background-image: url("../../images/adventure.jpg");
+}
+
+.hotel-card h3 {
+  font-size: 1.4rem;
+  margin: 20px 15px 10px 15px;
+  color: #2c5530;
+  font-weight: bold;
+}
+
+.hotel-card p {
+  font-size: 1rem;
+  margin: 0 15px 20px 15px;
+  color: #666;
+}
+
+.hotel-card .buttons {
+  display: flex;
+  gap: 12px;
+  margin: 0 15px 20px 15px;
+  margin-top: auto;
+}
+
+.hotel-card button {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.hotel-card .details {
+  background: #fff;
+  color: #2c5530;
+  border: 2px solid #2c5530;
+}
+
+.hotel-card .details:hover {
+  background: #2c5530;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.hotel-card .book {
+  background: #2c5530;
+  color: #fff;
+  border: 2px solid #2c5530;
+}
+
+.hotel-card .book:hover {
+  background: #4a7c59;
+  border-color: #4a7c59;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(44, 85, 48, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+  
+  .hero input {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 15px;
+  }
+  
+  .hotels-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .hotel-card .buttons {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 60px 15px;
+  }
+  
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  
+  .hotels-section {
+    padding: 40px 15px;
+  }
+  
+  .hotels-section h2 {
+    font-size: 2rem;
+  }
+}

@@ -1,0 +1,61 @@
+@import url("common.css");
+
+.filter-buttons {
+  margin-bottom: 10px;
+}
+
+.sub-text {
+  font-size: 14px;
+  color: gray;
+  margin-bottom: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.metric-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.metric-change {
+  font-size: 14px;
+}
+
+.metric-change.positive {
+  color: green;
+}
+
+.metric-change.negative {
+  color: red;
+}
+
+.chart-section {
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.chart-section canvas {
+  max-width: 600px;   
+  max-height: 300px;  
+  width: 100%;        
+  height: auto;
+  margin: 0 auto; 
+  display: block;
+}

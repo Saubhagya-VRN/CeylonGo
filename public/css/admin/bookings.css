@@ -1,0 +1,89 @@
+@import url("common.css");
+
+.date-filter .date-input {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.booking-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.booking-table th, .booking-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.booking-table th {
+  background: #f1f1f1;
+}
+
+.status {
+  font-weight: bold;
+}
+
+.status.active {
+  color: green;
+}
+
+.status.completed {
+  color: blue;
+}
+
+.status.cancelled {
+  color: red;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.icon-btn.danger {
+  color: red;
+}
+
+/* Stats Section */
+.stats-section {
+  margin-top: 30px;
+}
+.subheading {
+  color: #777;
+  margin-bottom: 10px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+.stat-box {
+  border: 1px solid #ccc;
+  padding: 15px;
+  text-align: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.stat-box strong {
+  font-size: 13px;
+  color: #555;
+}
+.stat-box span {
+  font-size: 18px;
+  font-weight: bold;
+  color: #000;
+}

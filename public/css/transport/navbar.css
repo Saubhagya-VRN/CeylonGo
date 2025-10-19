@@ -1,0 +1,52 @@
+/* ===== NAVBAR ===== */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #2c5530;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  flex-wrap: wrap;
+}
+  
+.branding {
+  display: flex;
+  align-items: center;
+}
+  
+.logo-img {
+  height: 40px;
+  margin-right: 10px;
+  border-radius: 100%;
+}
+  
+.logo-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fbfbfb;
+}
+  
+.navbar .nav-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.navbar .nav-links a {
+  margin-left: 15px;
+  text-decoration: none;
+  color: #fbfbfb;
+  font-weight: 500;
+}
+
+.profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-left: 15px;
+  object-fit: cover;
+  background: #ccc;
+}

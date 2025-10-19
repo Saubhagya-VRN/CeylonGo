@@ -1,0 +1,61 @@
+@import url("common.css");
+
+.page-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.form-section {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.form-group textarea, .form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 5px;
+  color: #777;
+  font-size: 12px;
+}
+
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.filter-btn {
+  padding: 8px 15px;
+  border: 1px solid #ddd;
+  background: #f4f4f4;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.filter-btn:hover {
+  background: #00c3ff;
+  color: #fff;
+  border-color: #00c3ff;
+}
+

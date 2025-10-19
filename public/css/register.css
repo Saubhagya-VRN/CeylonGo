@@ -1,0 +1,87 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  background-color: #f0f8f0; /* Light greenish background */
+  margin: 0;
+  color: #2c5530; /* Dark green text */
+}
+
+/* Register Page Styles */
+.register-container {
+  text-align: center;
+  margin: 50px auto;
+  max-width: 500px;
+}
+
+.register-container h1 {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.small-text {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Dropdown Section */
+.option-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.option-header span {
+  font-weight: bold;
+}
+
+.option-header select {
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Option Boxes */
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option-box {
+  display: block;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-decoration: none;
+  color: #000;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+.option-box:hover {
+  background: #000;
+  color: #fff;
+}
+
+/* Back Button */
+.btn-register {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 30px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 30px;
+  text-decoration: none;
+}
+
+

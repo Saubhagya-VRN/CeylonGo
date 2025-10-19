@@ -1,0 +1,68 @@
+@import url("common.css");
+
+.stats-section {
+  margin-bottom: 20px;
+}
+
+.stats-section h4 {
+  margin-bottom: 10px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+.stat-box {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.inquiry-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.inquiry-table th, .inquiry-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.inquiry-table th {
+  background: #f1f1f1;
+}
+
+.status.pending { 
+  color: orange; 
+  font-weight: bold; 
+}
+
+.status.resolved { 
+  color: green; 
+  font-weight: bold; 
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.icon-btn.danger {
+  color: red;
+}
