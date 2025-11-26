@@ -6,37 +6,37 @@
   <title>Ceylon Go - Transport Provider Registration</title>
 
   <!-- CSS Files -->
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/base.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/navbar.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/sidebar.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/footer.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
 
   <!-- Components -->
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/cards.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/buttons.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/forms.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/cards.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
 
   <!-- Page-specific -->
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/timeline.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/tables.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/profile.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/reviews.css">
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/charts.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/timeline.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/tables.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/profile.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/reviews.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/charts.css">
 
   <!-- Responsive -->
-  <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/responsive.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">
 </head>
 <body>
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
-      <img src="/Ceylon_Go/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
-    <nav class="nav-links">
-      <a href="#">Home</a>
-      <button class="login-btn">Login</button>
-    </nav>
+<nav class="nav-links">
+  <a href="#">Home</a>
+  <a href="/CeylonGo/views/login.php" class="login-btn">Login</a>
+</nav>
   </header>
 
   <!-- Welcome Section -->
@@ -48,7 +48,7 @@
 
   <!-- Registration Form -->
   <main class="form-container">
-    <form method="POST" action="/Ceylon_Go/public/registerProvider" enctype="multipart/form-data">
+    <form method="POST" action="/CeylonGo/public/registerProvider" enctype="multipart/form-data">
       
       <label>Full Name</label>
       <input type="text" name="full_name" placeholder="Enter your full name" required>

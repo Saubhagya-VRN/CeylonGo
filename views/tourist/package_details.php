@@ -8,8 +8,8 @@ $packages = array(
     'cultural' => array(
         'title' => 'Cultural Experience in Sri Lanka',
         'duration' => '5 days, 4 nights',
-        'price' => 'Rs. 8990',
-        'image' => 'cultural.jpeg',
+        'price' => 'Rs. 40,590',
+        'image' => '../public/images/cultural.jpg',
         'description' => 'Immerse yourself in the rich cultural heritage of Sri Lanka with this comprehensive tour that takes you through ancient cities, temples, and traditional villages.',
         'highlights' => array(
             'Visit the ancient city of Anuradhapura',
@@ -37,8 +37,8 @@ $packages = array(
     'beach' => array(
         'title' => 'Tropical Beach Retreat',
         'duration' => '5 days, 4 nights',
-        'price' => 'Rs. 7990',
-        'image' => 'beach.jpg',
+        'price' => 'Rs. 79,390',
+        'image' => '../public/images/beach.jpg',
         'description' => 'Relax and unwind on Sri Lanka\'s pristine beaches with this tropical retreat that combines luxury accommodation with stunning coastal scenery.',
         'highlights' => array(
             'Stay at luxury beachfront resorts',
@@ -66,8 +66,8 @@ $packages = array(
     'adventure' => array(
         'title' => 'Adventure in the Hills',
         'duration' => '5 days, 4 nights',
-        'price' => 'Rs. 9990',
-        'image' => 'adventure.jpg',
+        'price' => 'Rs. 45,990',
+        'image' => '../public/images/adventure.jpg',
         'description' => 'Get your adrenaline pumping with this action-packed adventure tour through Sri Lanka\'s hill country, featuring hiking, wildlife, and breathtaking landscapes.',
         'highlights' => array(
             'Hiking in Horton Plains National Park',

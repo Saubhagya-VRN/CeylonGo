@@ -1,0 +1,255 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #fff;
+  color: #333;
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 15px 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+  
+.branding {
+  display: flex;
+  align-items: center;
+}
+  
+.logo-img {
+  height: 40px;
+  margin-right: 10px;
+  border-radius: 100%;
+}
+  
+.logo-text {
+  font-size: 20px;
+  font-weight: bold;
+}
+  
+.navbar .nav-links a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+}
+
+
+
+.login-btn {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Welcome section - match guide */
+.welcome-section {
+  text-align: center;
+  padding: 40px 20px;
+  background: #e6f2e6;
+  border-bottom: 1px solid #ccc;
+}
+
+.welcome-section h1 {
+  font-size: 32px;
+  color: #2d572c;
+  margin: 0 0 10px 0;
+}
+
+.welcome-section p {
+  font-size: 16px;
+  color: #555;
+}
+
+/* Form */
+.form-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  flex: 1;
+}
+
+form label {
+  display: block;
+  margin-top: 20px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #2c5530;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form input[type="file"],
+form input[type="number"],
+form input[type="tel"] {
+  width: 100%;
+  padding: 12px;
+  margin-top: 5px;
+  border: 2px solid #e0e8e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+form input[type="text"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus,
+form input[type="number"]:focus {
+  outline: none;
+  border-color: #4a7c59;
+  box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.1);
+}
+
+.vehicle-type {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.vehicle-type label {
+  font-weight: normal;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 30px;
+  gap: 15px;
+}
+
+.back-btn {
+  background: #fff;
+  border: 2px solid #2c5530;
+  color: #2c5530;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.back-btn:hover {
+  background: #2c5530;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 85, 48, 0.3);
+}
+
+.register-btn {
+  background: #2c5530;
+  color: #fff;
+  border: 2px solid #2c5530;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.register-btn:hover {
+  background: #4a7c59;
+  border-color: #4a7c59;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 85, 48, 0.3);
+}
+
+/* Footer */
+footer {
+  background-color: #333;
+  color: white;
+  padding: 20px 0;
+  text-align: center;
+  margin-top: auto;
+}
+
+footer ul {
+  list-style: none;
+}
+
+footer ul li {
+  display: inline;
+  margin: 0 15px;
+}
+
+footer ul li a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+/* 📱 Responsive Styles */
+@media (max-width: 768px) {
+  .sidebar {
+    position: relative;
+    width: 30%;
+    top: 0;
+    min-height: auto;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .summary {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-links {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .summary {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .summary-card {
+    width: 100%;
+    max-width: 90%;
+  }
+
+  .profile-box {
+    width: 100%;
+  }
+
+  .chart-container {
+    width: 100%;
+    max-width: 90%;
+  }
+}

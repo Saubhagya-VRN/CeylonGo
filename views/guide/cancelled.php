@@ -1,5 +1,15 @@
 <?php
-// views/guide/cancelled.php
+require_once '../../config/db.php';
+
+$guide_id = 1; // Replace with actual logged in guide ID
+$sql = "SELECT gb.*, gp.place_name 
+        FROM guide_bookings gb 
+        LEFT JOIN guide_places gp ON gb.place_id = gp.id 
+        WHERE gb.guide_id = ? AND gb.status = 'cancelled'";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $guide_id);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -7,16 +17,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ceylon Go - Tour Guide Cancelled Tours</title>
-    <link rel="stylesheet" href="../../public/css/transport/upcoming.css">
-    <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
-    <link rel="stylesheet" href="../../public/css/tourist/footer.css">
+    <!-- Base styles -->
+    <link rel="stylesheet" href="../../public/css/guide/base.css">
+    <link rel="stylesheet" href="../../public/css/guide/navbar.css">
+    <link rel="stylesheet" href="../../public/css/guide/sidebar.css">
+    <link rel="stylesheet" href="../../public/css/guide/footer.css">
+    
+    <!-- Component styles -->
+    <link rel="stylesheet" href="../../public/css/guide/cards.css">
+    <link rel="stylesheet" href="../../public/css/guide/buttons.css">
+    <link rel="stylesheet" href="../../public/css/guide/forms.css">
+    
+    <!-- Page-specific styles -->
+    <link rel="stylesheet" href="../../public/css/guide/tables.css">
+    <link rel="stylesheet" href="../../public/css/guide/profile.css">
+    <link rel="stylesheet" href="../../public/css/guide/reviews.css">
+    <link rel="stylesheet" href="../../public/css/guide/charts.css">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-      body {
-        background-color: #f0f8f0; /* Light greenish background from tourist_dashboard */
-      }
-    </style>
 </head>
 <body> 
 
@@ -28,7 +47,7 @@
         </div>
         <nav class="nav-links">
             <a href="guide_dashboard.php">Home</a>
-            <a href="#">Logout</a>
+            <a href="../tourist/tourist_dashboard.php">Logout</a>
             <img src="../../public/images/user.png" alt="User" class="profile-pic">
         </nav>
     </header>
@@ -59,28 +78,23 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Tour No</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Reason</th>
+                            <th>Booking ID</th>
+                            <th>Customer Name</th>
+                            <th>Place</th>
+                            <th>Booking Date</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <?php while($row = $result->fetch_assoc()): ?>
                         <tr>
-                            <td>#TG004</td>
-                            <td>2025-03-10</td>
-                            <td>09:00 AM</td>
-                            <td>Customer Cancelled</td>
-                            <td><a href="#">See More</a></td>
+                            <td>#GB<?php echo str_pad($row['id'], 4, '0', STR_PAD_LEFT); ?></td>
+                            <td><?php echo htmlspecialchars($row['customer_name']); ?></td>
+                            <td><?php echo htmlspecialchars($row['place_name']); ?></td>
+                            <td><?php echo date('Y-m-d H:i', strtotime($row['booking_date'])); ?></td>
+                            <td><a href="view_booking.php?id=<?php echo $row['id']; ?>">View Details</a></td>
                         </tr>
-                        <tr>
-                            <td>#TG005</td>
-                            <td>2025-08-15</td>
-                            <td>02:30 PM</td>
-                            <td>Weather Conditions</td>
-                            <td><a href="#">See More</a></td>
-                        </tr>
+                        <?php endwhile; ?>
                     </tbody>
                 </table>
             </div>
@@ -88,6 +102,11 @@
     </div>
 
     <!-- Footer Links -->
-    <?php include '../tourist/footer.php'; ?>
+    <footer>
+        <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Contact Us</a></li>
+        </ul>
+    </footer>
 </body>
 </html>

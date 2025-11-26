@@ -2,7 +2,7 @@
     RewriteEngine On
 
     # Set base path (public folder)
-    RewriteBase /Ceylon_Go/public/
+    RewriteBase /CeylonGo/public/
 
     # If file or directory exists, don't rewrite
     RewriteCond %{REQUEST_FILENAME} !-f

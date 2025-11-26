@@ -129,7 +129,7 @@
   <?php include 'header.php'; ?>
 
   <!-- Payment Section -->
-  <section class="pay">
+  <section class="pay" style="background-image: url('../../public/images/pay.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; color: #fff; padding: 80px 20px; text-align: center;">
     <h1>Complete Your Payment</h1>
     <p>Secure payment gateway for your Sri Lankan adventure</p>
   </section>
@@ -214,7 +214,10 @@
           </div>
         </div>
 
-        <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Pay Rs. 50,000</button>
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+          <button type="submit" class="btn" style="flex: 1;">Pay Rs. 50,000</button>
+          <a href="javascript:history.back()" class="btn" style="flex: 1; background: #000; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center;">Back</a>
+        </div>
       </div>
     </div>
   </section>

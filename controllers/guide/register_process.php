@@ -36,6 +36,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Passwords do not match.";
     }
 
+    // Password strength validation (8+ chars, uppercase, lowercase, number, special char)
+    $hasUpperCase = preg_match('/[A-Z]/', $password);
+    $hasLowerCase = preg_match('/[a-z]/', $password);
+    $hasNumber = preg_match('/\d/', $password);
+    $hasSpecialChar = preg_match('/[@$!%*?&]/', $password);
+    $hasMinLength = strlen($password) >= 8;
+    
+    if (!$hasMinLength || !$hasUpperCase || !$hasLowerCase || !$hasNumber || !$hasSpecialChar) {
+        $errors[] = "You have to use 8 characters, uppercase, lowercase, number, and special character";
+    }
+
     // NIC validation (Sri Lankan format)
     if (!preg_match('/^(\d{9}[VvXx]|\d{12})$/', $nic)) {
         $errors[] = "Invalid NIC number format.";
@@ -101,59 +112,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     );
 
     if ($stmt->execute()) {
-        // --- Styled success page ---
-        ?>
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Registration Successful</title>
-            <link rel="stylesheet" href="../../public/css/transport/register.css">
-            <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
-            <link rel="stylesheet" href="../../public/css/tourist/footer.css">
-            <style>
-                body { background-color: #f0f8f0; }
-                .success-container { 
-                    max-width: 600px; 
-                    margin: 50px auto; 
-                    background: #fff; 
-                    padding: 30px; 
-                    border-radius: 10px; 
-                    box-shadow: 0 0 10px rgba(0,0,0,0.1); 
-                    text-align: center; 
-                }
-                .success-container h2 { color: #4CAF50; margin-bottom: 15px; }
-                .success-container p { font-size: 18px; }
-                .success-container a { 
-                    display: inline-block; 
-                    margin-top: 20px; 
-                    padding: 10px 20px; 
-                    background: #4CAF50; 
-                    color: white; 
-                    text-decoration: none; 
-                    border-radius: 5px; 
-                }
-                .success-container a:hover { background: #45a049; }
-            </style>
-        </head>
-        <body>
-            <?php include '../tourist/navbar.php'; ?>
-            <main class="success-container">
-                <h2>Registration Successful!</h2>
-                <p>Thank you, <?php echo htmlspecialchars($first_name); ?>, you are now registered as a tour guide.</p>
-                <a href="guide_register.php">Register Another Guide</a>
-            </main>
-            <?php include '../tourist/footer.php'; ?>
-        </body>
-        </html>
-        <?php
+    // Insert into shared users table
+    $sql2 = "INSERT INTO users (email, password, role) VALUES (?, ?, ?)";
+    $stmt2 = $conn->prepare($sql2);
+    
+    if (!$stmt2) {
+        die("Error preparing users insert: " . $conn->error);
+    }
+    
+    $stmt2->bind_param("sss", $email, $password_hashed, $user_type);
+    
+    if ($stmt2->execute()) {
+        // Redirect to login after successful registration
+        header("Location: ../../views/guide/guide_dashboard.php");
+        exit;
     } else {
-        echo "<h2>Registration failed:</h2>";
-        echo "<p>" . $stmt->error . "</p>";
+        die("Error inserting into users table: " . $stmt2->error);
     }
 
-    $stmt->close();
-    $conn->close();
+    $stmt2->close();
+} else {
+    echo "<h2>Registration failed:</h2>";
+    echo "<p>" . $stmt->error . "</p>";
+}
 }
 ?>

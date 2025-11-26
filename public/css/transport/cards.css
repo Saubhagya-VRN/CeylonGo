@@ -126,19 +126,16 @@
 }
 
 /* ===== VEHICLE CARDS ===== */
-.vehicle-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px; 
-    margin-bottom: 20px;
-    background: #fff;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+.vehicle-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Centers cards horizontally */
+  gap: 20px; /* Space between cards */
+  margin-top: 20px;
 }
 
 .vehicle-card {
-  flex: 1;
-  min-width: 200px;
-  max-width: 250px;
+  flex: 0 1 calc(33.333% - 20px); /* 3 cards per row */
   background: #ffffff;
   border: 1px solid #ddd;
   border-radius: 12px;
@@ -163,10 +160,10 @@
   padding: 15px;
 }
 
-.vehicle-card .vehicle-info h3 {
-  font-size: 20px;
-  color: #48351b;
-  margin-bottom: 8px;
+.vehicle-card .vehicle-info p {
+  font-size: 14px;
+  color: #333;
+  margin: 4px 0;
 }
 
 .vehicle-card .vehicle-info p {
@@ -198,4 +195,17 @@
 
 .no-vehicles a:hover {
   text-decoration: underline;
+}
+
+/* ===== RESPONSIVE FIX ===== */
+@media (max-width: 992px) {
+  .vehicle-card {
+    flex: 0 1 calc(50% - 20px); /* 2 per row */
+  }
+}
+
+@media (max-width: 600px) {
+  .vehicle-card {
+    flex: 0 1 100%; /* 1 per row on small screens */
+  }
 }

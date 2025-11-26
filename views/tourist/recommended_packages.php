@@ -47,7 +47,7 @@
         <p>Dates: 5 days, 4 nights</p>
         <div class="card-buttons">
           <a href="package_details.php?package=cultural" class="btn-outline">View Details</a>
-          <a href="booking_form.php?package=cultural" class="btn-black">Book Now</a>
+          <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>
 
@@ -57,7 +57,7 @@
         <p>Dates: 5 days, 4 nights</p>
         <div class="card-buttons">
           <a href="package_details.php?package=beach" class="btn-outline">View Details</a>
-          <a href="booking_form.php?package=beach" class="btn-black">Book Now</a>
+          <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>
 
@@ -67,14 +67,14 @@
         <p>Dates: 5 days, 4 nights</p>
         <div class="card-buttons">
           <a href="package_details.php?package=adventure" class="btn-outline">View Details</a>
-          <a href="booking_form.php?package=adventure" class="btn-black">Book Now</a>
+          <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Booking Form -->
-  <section class="section booking-section">
+  <section id="booking" class="section booking-section">
     <h2>Book Your Package</h2>
     <p class="section-subtitle">Fill in the details to confirm your travel plans!</p>
     <form class="booking-form" method="POST" action="">

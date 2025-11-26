@@ -13,17 +13,17 @@
             <h2>Ceylon Go</h2>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="admin_dashboard.php">Home</a></li>
-                <li><a href="admin_user.php">Users</a></li>
-                <li><a href="admin_bookings.php">Bookings</a></li>
-                <li><a href="admin_service.php" class="active">Service Providers</a></li>
-                <li><a href="admin_payments.php">Payments</a></li>
-                <li><a href="admin_reports.php">Reports</a></li>
-                <li><a href="admin_reviews.php">Reviews</a></li>
-                <li><a href="admin_inquiries.php">Inquiries</a></li>
-                <li><a href="admin_settings.php">System Settings</a></li>
-                <li><a href="admin_promotions.php">Promotions</a></li>
-                <li><a href="../../controllers/admin/logout.php">Logout</a></li>
+                <li><a href="/CeylonGo/public/admin/dashboard">Home</a></li>
+                <li><a href="/CeylonGo/public/admin/users">Users</a></li>
+                <li><a href="/CeylonGo/public/admin/bookings">Bookings</a></li>
+                <li><a href="/CeylonGo/public/admin/service" class="active">Service Providers</a></li>
+                <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+                <li><a href="/CeylonGo/public/admin/reports">Reports</a></li>
+                <li><a href="/CeylonGo/public/admin/reviews">Reviews</a></li>
+                <li><a href="/CeylonGo/public/admin/inquiries">Inquiries</a></li>
+                <li><a href="/CeylonGo/public/admin/settings">System Settings</a></li>
+                <li><a href="/CeylonGo/public/admin/promotions">Promotions</a></li>
+                <li><a href="/CeylonGo/public/logout">Logout</a></li>
             </ul>
         </aside>
 

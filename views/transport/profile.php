@@ -6,10 +6,15 @@ require_once "../models/User.php";
 require_once "../models/License.php";
 require_once "../models/Vehicle.php";
 
-// Get the user ID
-$user_id = "U68f28688787";
-$message = "";
-$error = "";
+/*$message = null;
+$error = null;
+
+if(isset($_SESSION['transporter_id'])){
+  $user_id = $_SESSION['transporter_id'];
+}
+else{
+  header('Location: http://localhost/CeylonGo/views/register.php');
+}*/
 
 // Handle edit and delete operations
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
@@ -26,21 +31,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             
             // Handle file upload
             $image = '';
-            if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-                $uploadDir = '../../uploads/';
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                
-                $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
-                $extension = $fileInfo['extension'];
-                $newFileName = uniqid('img_', true) . '.' . $extension;
-                $targetPath = $uploadDir . $newFileName;
-                
-                if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
-                    $image = $newFileName;
-                }
-            }
+if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
+$uploadDir = dirname(__DIR__, 2) . "/uploads/";
+
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
+    $extension = $fileInfo['extension'];
+    $newFileName = uniqid('img_', true) . '.' . $extension;
+    $targetPath = $uploadDir . $newFileName;
+
+    if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
+        $image = $newFileName;
+    } else {
+        echo "<script>alert('Failed to move uploaded file');</script>";
+    }
+}
+
             
             // Update vehicle
             $vehicleModel->vehicle_no = $new_vehicle_no;
@@ -99,167 +108,44 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Transport Provider Dashboard</title>
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/base.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/navbar.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/sidebar.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/footer.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
     
     <!-- Component styles -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/cards.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/buttons.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/forms.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/cards.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
     
     <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/timeline.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/charts.css">
-        <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/vehicle.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/timeline.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/tables.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/profile.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/reviews.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/charts.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/vehicle.css">
 
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/responsive.css">   
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">   
     
  
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
-    <!-- <style>
-        /* Vehicle Actions */
-        .vehicle-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: center;
-        }
-        
-        .edit-btn, .delete-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .edit-btn {
-            background: #007bff;
-            color: white;
-        }
-        
-        .edit-btn:hover {
-            background: #0056b3;
-        }
-        
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-        }
-        
-        .delete-btn:hover {
-            background: #c82333;
-        }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 0;
-            border: none;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #dee2e6;
-            background: #f8f9fa;
-            border-radius: 8px 8px 0 0;
-        }
-        
-        .modal-header h3 {
-            margin: 0;
-            color: #333;
-        }
-        
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .close:hover {
-            color: #000;
-        }
-        
-        #editVehicleForm {
-            padding: 20px;
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        
-        .cancel-btn, .save-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .cancel-btn {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .save-btn {
-            background: #28a745;
-            color: white;
-        }
-        
-        .cancel-btn:hover {
-            background: #5a6268;
-        }
-        
-        .save-btn:hover {
-            background: #218838;
-        }
-    </style> -->
 </head>
 <body>
 
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
-      <img src="/Ceylon_Go/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
       <a href="#">Home</a>
       <a href="#">Logout</a>
-      <img src="/Ceylon_Go/public/images/profile.jpeg" alt="User" class="profile-pic">
+      <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic">
     </nav>
   </header>
 
@@ -267,13 +153,13 @@ try {
     <!-- Sidebar -->
     <div class="sidebar">
       <ul>
-        <li><a href="dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li><a href="upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
-        <li><a href="pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
-        <li><a href="cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
-        <li><a href="review"><i class="fa-regular fa-star"></i> Reviews</a></li>
-        <li class="active"><a href="profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+        <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+        <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
+        <li class="active"><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
+        <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </div>
   
@@ -296,7 +182,7 @@ try {
 
         <!-- Profile Header -->
         <div class="profile-header">
-          <img src="/Ceylon_Go/public/images/profile.jpeg" alt="Profile Picture" class="profile-pic">
+          <img src="/CeylonGo/public/images/profile.jpg" alt="Profile Picture" class="profile-pic">
           <div>
             <h2><?= $user['full_name'] ?? 'N/A' ?></h2>
             <p>Driver ID: <?= $user['user_id'] ?? 'N/A' ?></p>
@@ -345,14 +231,14 @@ try {
             <label>Expiry Date</label>
             <input type="date" value="<?= $license['license_exp_date'] ?? '' ?>">
           </div>
-          <div class="form-group full-width upload-box">
+          <!-- <div class="form-group full-width upload-box">
             <?php if(isset($license['image']) && !empty($license['image'])): ?>
-              <p>Current License: <a href="../../uploads/<?= $license['image'] ?>" target="_blank">View License</a></p>
+              <p>Current License: <a href="/CeylonGo/uploads/<?= $license['image'] ?>" target="_blank">View License</a></p>
             <?php else: ?>
               <p>Click to upload or drag and drop<br>PNG, JPG or PDF (max 5MB)</p>
             <?php endif; ?>
           </div>
-        </div>
+        </div> -->
 
         <!-- Vehicle Information -->
         <div class="section">
@@ -374,13 +260,19 @@ try {
                 <div class="vehicle-card">
                   <div class="vehicle-image">
                     <?php if(isset($v['image']) && !empty($v['image'])): ?>
-                      <img src="../../uploads/<?= $v['image'] ?>" alt="<?= $v['vehicle_no'] ?>">
+                      <img src="/CeylonGo/uploads/<?= $v['image'] ?>" alt="<?= $v['vehicle_no'] ?>">
                     <?php else: ?>
-                      <img src="/Ceylon_Go/public/images/logo.png" alt="No Image">
+                      <img src="/CeylonGo/public/images/logo.png" alt="No Image">
                     <?php endif; ?>
                   </div>
                   <div class="vehicle-info">
-                    <h3><?= $v['vehicle_type'] == '1' ? 'TUK' : ($v['vehicle_type'] == '2' ? 'VAN' : $v['vehicle_type']) ?></h3>
+                    <h3>
+                      <?= 
+                          $v['vehicle_type'] == '1' ? 'TUK' :
+                          ($v['vehicle_type'] == '2' ? 'VAN' :
+                          ($v['vehicle_type'] == '3' ? 'CAR' :
+                          ($v['vehicle_type'] == '4' ? 'BUS' : $v['vehicle_type'])))
+                        ?>                    </h3>
                     <p><strong>License Plate:</strong> <?= $v['vehicle_no'] ?? 'N/A' ?></p>
                     <p><strong>Passenger Capacity:</strong> <?= $v['psg_capacity'] ?? 'N/A' ?></p>
                   </div>
@@ -432,6 +324,8 @@ try {
           <select id="edit_vehicle_type" name="vehicle_type" required>
             <option value="1">TUK</option>
             <option value="2">VAN</option>
+            <option value="3">CAR</option>
+            <option value="4">BUS</option>
           </select>
         </div>
         
@@ -465,7 +359,7 @@ try {
       // Show current image if exists
       const preview = document.getElementById('current_image_preview');
       if (currentImage) {
-        preview.innerHTML = `<p>Current Image: <img src="../../uploads/${currentImage}" style="max-width: 100px; max-height: 100px;"></p>`;
+        preview.innerHTML = `<p>Current Image: <img src="/CeylonGo/uploads/${currentImage}" style="max-width: 100px; max-height: 100px;"></p>`;
       } else {
         preview.innerHTML = '<p>No current image</p>';
       }

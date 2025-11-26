@@ -28,6 +28,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($email)) $errors[] = "Email is required.";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match.";
 
+    // Password strength validation (8+ chars, uppercase, lowercase, number, special char)
+    $hasUpperCase = preg_match('/[A-Z]/', $password);
+    $hasLowerCase = preg_match('/[a-z]/', $password);
+    $hasNumber = preg_match('/\d/', $password);
+    $hasSpecialChar = preg_match('/[@$!%*?&]/', $password);
+    $hasMinLength = strlen($password) >= 8;
+    
+    if (!$hasMinLength || !$hasUpperCase || !$hasLowerCase || !$hasNumber || !$hasSpecialChar) {
+        $errors[] = "You have to use 8 characters, uppercase, lowercase, number, and special character";
+    }
+
     if (!empty($errors)) {
         echo "<h2>Errors:</h2><ul>";
         foreach ($errors as $err) echo "<li>$err</li>";

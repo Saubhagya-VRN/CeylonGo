@@ -33,10 +33,10 @@
       </div>
 
       <div class="option-list">
-        <a href="tourist/tourist_register.php" class="option-box">Tourist</a>
-        <a href="hotel/hotel_register.php" class="option-box">Hotel</a>
-        <a href="guide/guide_register.php" class="option-box">Tour Guide</a>
-        <a href="transport/transport_register.php" class="option-box">Transport Provider</a>
+        <a href="/CeylonGo/public/tourist/register" class="option-box">Tourist</a>
+        <a href="/CeylonGo/public/hotel/register" class="option-box">Hotel</a>
+        <a href="/CeylonGo/public/guide/register" class="option-box">Tour Guide</a>
+        <a href="/CeylonGo/public/transporter/register" class="option-box">Transport Provider</a>
       </div>
     </div>
 

@@ -1,0 +1,50 @@
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 250px;
+  background: hsl(0, 20%, 99%);
+  min-height: 100vh;
+  padding: 20px 0;
+  position: fixed;
+  top: 70px;
+  left: 0;
+  border-right: 1px solid #ddd;
+  overflow-x: auto;
+  z-index: 900; 
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar ul li {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.sidebar ul li i {
+  margin-right: 12px;
+  font-size: 18px;
+  color: #333;
+}
+
+.sidebar ul li a {
+  text-decoration: none;
+  color: #333;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.sidebar ul li.active,
+.sidebar ul li:hover {
+  background: #f5f5f5;
+  font-weight: bold;
+}

@@ -34,7 +34,7 @@
 
   <!-- Registration Form -->
   <main class="form-container">
-    <form action="../../controllers/hotel/register_process.php" method="POST" enctype="multipart/form-data">
+    <form action="/CeylonGo/public/hotel/register" method="POST" enctype="multipart/form-data">
 
       <label>Hotel Name</label>
       <input type="text" id="hname" name="hname" required placeholder="Enter the hotel name">
@@ -55,7 +55,11 @@
       <input type="email" id="email" name="email" required placeholder="Enter your Email Address">
 
       <label>Password</label>
-      <input type="password" id="password" name="password" required minlength="6" placeholder="Create Password">
+      <input type="password" id="password" name="password" required 
+             pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+             placeholder="8+ chars, uppercase, lowercase, number, special char"
+             title="Password must contain at least 8 characters, including uppercase, lowercase, number, and special character">
+      <small id="password-error" style="color: red; display: none;"></small>
 
       <label>Confirm Password</label>
       <input type="password" id="confirm-password" name="confirm_password" required placeholder="Enter your password again">
@@ -71,5 +75,28 @@
   <!-- Footer -->
   <?php include '../tourist/footer.php'; ?>
 
+  <script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+      const password = document.getElementById('password').value;
+      const passwordError = document.getElementById('password-error');
+      
+      // Password strength validation
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecialChar = /[@$!%*?&]/.test(password);
+      const hasMinLength = password.length >= 8;
+      
+      if (!hasMinLength || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+        e.preventDefault();
+        passwordError.textContent = 'You have to use 8 characters, uppercase, lowercase, number, and special character';
+        passwordError.style.display = 'block';
+        passwordError.style.color = 'red';
+        return false;
+      } else {
+        passwordError.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>

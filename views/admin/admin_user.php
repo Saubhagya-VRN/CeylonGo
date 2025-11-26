@@ -1,11 +1,15 @@
 <?php 
-    session_start();
-    include("../../config/database.php");
+    // Session is already started in public/index.php
+    require_once(__DIR__ . '/../../config/config.php');
+    require_once(__DIR__ . '/../../core/Database.php');
 
-    if (!isset($_SESSION['admin_username'])) {
-        header("Location: admin_login.php");
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+        header("Location: /CeylonGo/public/login");
         exit();
     }
+
+    // Get database connection
+    $conn = Database::getMysqliConnection();
 
     // Delete user
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
@@ -19,7 +23,7 @@
             echo json_encode(["success" => false, "message" => "DB error"]);
         }
         $stmt->close();
-        $conn->close();
+        // Don't close connection - it's a singleton
         exit();
     }
 
@@ -43,7 +47,7 @@
             }
 
             if ($stmt->execute()) {
-                echo "<script>alert('✅ User saved successfully!'); window.location.href='admin_user.php';</script>";
+                echo "<script>alert('✅ User saved successfully!'); window.location.href='/CeylonGo/public/admin/users';</script>";
                 exit();
             } else {
                 echo "<script>alert('❌ Database error. Try again.');</script>";
@@ -62,7 +66,7 @@
             $users[] = $row;
         }
     }
-    $conn->close();
+    // Don't close connection - it's a singleton
 ?>
 
 <!DOCTYPE html>
@@ -81,17 +85,17 @@
                 <h2>Ceylon Go</h2>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="admin_dashboard.php">Home</a></li>
-                <li><a href="admin_user.php" class="active">Users</a></li>
-                <li><a href="admin_bookings.php">Bookings</a></li>
-                <li><a href="admin_service.php">Service Providers</a></li>
-                <li><a href="admin_payments.php">Payments</a></li>
-                <li><a href="admin_reports.php">Reports</a></li>
-                <li><a href="admin_reviews.php">Reviews</a></li>
-                <li><a href="admin_inquiries.php">Inquiries</a></li>
-                <li><a href="admin_settings.php">System Settings</a></li>
-                <li><a href="admin_promotions.php">Promotions</a></li>
-                <li><a href="../../controllers/admin/logout.php">Logout</a></li>
+                <li><a href="/CeylonGo/public/admin/dashboard">Home</a></li>
+                <li><a href="/CeylonGo/public/admin/users" class="active">Users</a></li>
+                <li><a href="/CeylonGo/public/admin/bookings">Bookings</a></li>
+                <li><a href="/CeylonGo/public/admin/service">Service Providers</a></li>
+                <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+                <li><a href="/CeylonGo/public/admin/reports">Reports</a></li>
+                <li><a href="/CeylonGo/public/admin/reviews">Reviews</a></li>
+                <li><a href="/CeylonGo/public/admin/inquiries">Inquiries</a></li>
+                <li><a href="/CeylonGo/public/admin/settings">System Settings</a></li>
+                <li><a href="/CeylonGo/public/admin/promotions">Promotions</a></li>
+                <li><a href="/CeylonGo/public/logout">Logout</a></li>
             </ul>
         </aside>
 
@@ -150,12 +154,21 @@
         <div class="modal" id="userModal">
             <div class="modal-content">
                 <h3 id="modalTitle">Add New User</h3>
-                <form method="POST" action="admin_user.php" id="userForm">
+                <form method="POST" action="/CeylonGo/public/admin/users" id="userForm">
                     <input type="hidden" name="user_id" id="user_id">
+
                     <input type="text" name="first_name" id="first_name" placeholder="Enter first name" required><br>
                     <input type="text" name="last_name" id="last_name" placeholder="Enter last name" required><br>
-                    <input type="text" name="contact" id="contact" placeholder="Enter contact number" required><br>
-                    <input type="email" name="email" id="email" placeholder="Enter email address" required><br>
+
+                    <!-- Phone number validation: exactly 10 digits -->
+                    <input type="text" name="contact" id="contact" placeholder="Enter contact number" required
+                        pattern="\d{10}" title="Phone number must be exactly 10 digits"><br>
+
+                    <!-- Email validation: format name@gmail.com -->
+                    <input type="email" name="email" id="email" placeholder="Enter email address" required
+                        pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                        title="Please enter a valid email, e.g., name@gmail.com"><br>
+
                     <input type="password" name="password" id="password" placeholder="Enter password"><br>
                     <button type="submit" name="add_user" id="submitBtn" class="submit-btn">Add User</button>
                     <button type="button" class="cancel-btn" id="closeModalBtn">Cancel</button>
@@ -172,6 +185,7 @@
                 modal.style.display = "flex";
                 modalTitle.innerText = "Add New User";
                 submitBtn.name = "add_user";
+                submitBtn.innerText = "Add User";
                 document.getElementById("userForm").reset();
                 document.getElementById("password").style.display = "block";
             });
@@ -192,6 +206,7 @@
                     modal.style.display="flex";
                     modalTitle.innerText = "Edit User";
                     submitBtn.name = "edit_user";
+                    submitBtn.innerText = "Edit User";
                     document.getElementById("password").style.display = "none";
 
                     document.getElementById("user_id").value = id;
@@ -209,7 +224,7 @@
                     const userId = row.dataset.id;
                     if(!confirm("Are you sure you want to delete this user?")) return;
 
-                    fetch("admin_user.php", {
+                    fetch("/CeylonGo/public/admin/users", {
                         method: "POST",
                         headers: { "Content-Type": "application/x-www-form-urlencoded" },
                         body: "delete_id=" + encodeURIComponent(userId)
