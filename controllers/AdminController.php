@@ -87,6 +87,30 @@ class AdminController {
         exit();
     }
 
+    public function toggleUserStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $userId = intval($_POST['user_id'] ?? 0);
+        $status = intval($_POST['status'] ?? 1);
+
+        $tourist = new Tourist($this->db);
+
+        if ($tourist->updateStatus($userId, $status)) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+        exit();
+    }
+
     public function users() {
         view('admin/admin_user');
     }

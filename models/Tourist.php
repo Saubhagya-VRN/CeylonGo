@@ -9,6 +9,7 @@ class Tourist {
     public $contact_number;
     public $email;
     public $password;
+    public $is_active;   // NEW
 
     public function __construct($db) {
         $this->conn = $db;
@@ -46,6 +47,35 @@ class Tourist {
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$email]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /* =========================
+       Admin Functions (NEW)
+    ========================== */
+
+    // Get all tourists for admin panel
+    public function getAllTourists() {
+        $query = "SELECT id, first_name, last_name, contact_number, email, is_active
+                  FROM " . $this->table . "
+                  ORDER BY id ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Activate / Deactivate tourist (SOFT DELETE)
+    public function updateStatus($touristId, $status) {
+        // Update tourist_users table
+        $stmt1 = $this->conn->prepare(
+            "UPDATE tourist_users SET is_active = ? WHERE id = ?"
+        );
+        $stmt1->execute([$status, $touristId]);
+
+        // Update users auth table
+        $stmt2 = $this->conn->prepare(
+            "UPDATE users SET is_active = ? WHERE ref_id = ? AND role = 'tourist'"
+        );
+        return $stmt2->execute([$status, $touristId]);
     }
 }
 ?>

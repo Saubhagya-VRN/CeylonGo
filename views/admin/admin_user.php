@@ -11,20 +11,29 @@
     // Get database connection
     $conn = Database::getMysqliConnection();
 
-    // Delete user
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
-        $user_id = intval($_POST['delete_id']);
-        $stmt = $conn->prepare("DELETE FROM tourist_users WHERE id = ?");
-        $stmt->bind_param("i", $user_id);
+    // ===== STATUS FLAG HANDLER (MUST BE FIRST) =====
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status_id'])) {
 
-        if ($stmt->execute()) {
-            echo json_encode(["success" => true]);
-        } else {
-            echo json_encode(["success" => false, "message" => "DB error"]);
-        }
-        $stmt->close();
-        // Don't close connection - it's a singleton
-        exit();
+        $user_id = intval($_POST['status_id']);
+        $status  = intval($_POST['status']); // 0 or 1
+
+        $stmt1 = $conn->prepare(
+            "UPDATE tourist_users SET is_active = ? WHERE id = ?"
+        );
+        $stmt1->bind_param("ii", $status, $user_id);
+        $ok1 = $stmt1->execute();
+        $stmt1->close();
+
+        $stmt2 = $conn->prepare(
+            "UPDATE users SET is_active = ? WHERE ref_id = ? AND role = 'tourist'"
+        );
+        $stmt2->bind_param("ii", $status, $user_id);
+        $ok2 = $stmt2->execute();
+        $stmt2->close();
+
+        header('Content-Type: application/json');
+        echo json_encode(["success" => ($ok1 && $ok2)]);
+        exit(); // 🔴 THIS IS CRITICAL
     }
 
     // Add / Edit user
@@ -59,7 +68,10 @@
     }
 
     // Retrieve data
-    $result = $conn->query("SELECT id, first_name, last_name, contact_number, email FROM tourist_users ORDER BY id ASC");
+    $result = $conn->query(
+        "SELECT id, first_name, last_name, contact_number, email, is_active 
+        FROM tourist_users ORDER BY id ASC"
+    );
     $users = [];
     if ($result && $result->num_rows > 0) {
         while($row = $result->fetch_assoc()) {
@@ -119,6 +131,7 @@
                                 <th>Last Name</th>
                                 <th>Contact Number</th>
                                 <th>Email</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -130,9 +143,19 @@
                                     <td><?= htmlspecialchars($user['last_name']) ?></td>
                                     <td><?= htmlspecialchars($user['contact_number']) ?></td>
                                     <td><?= htmlspecialchars($user['email']) ?></td>
+                                    <td>
+                                        <?= $user['is_active']
+                                            ? "<span style='color:green;font-weight:bold'>Active</span>"
+                                            : "<span style='color:red;font-weight:bold'>Inactive</span>" ?>
+                                    </td>
                                     <td class="actions">
                                         <button class="icon-btn edit-btn">✏️</button>
-                                        <button class="icon-btn danger delete-btn">❌</button>
+
+                                        <?php if ($user['is_active']): ?>
+                                            <button class="icon-btn danger deactivate-btn">🚩</button>
+                                        <?php else: ?>
+                                            <button class="icon-btn activate-btn">✅</button>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -217,29 +240,35 @@
                 });
             });
 
-            // Delete user
-            document.getElementById("userTableBody").addEventListener("click", function(e){
-                if(e.target && e.target.classList.contains("delete-btn")){
-                    const row = e.target.closest("tr");
-                    const userId = row.dataset.id;
-                    if(!confirm("Are you sure you want to delete this user?")) return;
+            // Activate / Deactivate user
+            document.getElementById("userTableBody").addEventListener("click", function(e) {
 
-                    fetch("/CeylonGo/public/admin/users", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: "delete_id=" + encodeURIComponent(userId)
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if(data.success){
-                            alert("User deleted successfully!");
-                            row.remove(); 
-                        } else {
-                            alert("Error: " + (data.message || "Could not delete user"));
-                        }
-                    })
-                    .catch(err => console.error(err));
-                }
+                const button = e.target.closest("button");
+                if (!button) return;
+
+                if (!button.classList.contains("deactivate-btn") &&
+                    !button.classList.contains("activate-btn")) return;
+
+                const row = button.closest("tr");
+                const userId = row.dataset.id;
+                const status = button.classList.contains("deactivate-btn") ? 0 : 1;
+
+                if (!confirm("Are you sure?")) return;
+
+                fetch("/CeylonGo/public/admin/user/status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `user_id=${userId}&status=${status}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert("Failed to update user status");
+                    }
+                })
+                .catch(() => alert("Server error"));
             });
 
             // Search
