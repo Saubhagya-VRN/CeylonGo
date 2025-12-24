@@ -99,6 +99,7 @@ $router->get('admin/service', 'AdminController@service');
 $router->get('admin/settings', 'AdminController@settings');
 $router->get('admin/forgot-password', 'AdminController@forgotPassword');
 $router->post('admin/user/status', 'AdminController@toggleUserStatus');
+$router->post('admin/users', 'AdminController@users');
 
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

@@ -37,7 +37,7 @@
     }
 
     // Add / Edit user
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && (isset($_POST['add_user']) || isset($_POST['edit_user']))) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_user'])) {
         $first_name = trim($_POST['first_name']);
         $last_name  = trim($_POST['last_name']);
         $email      = trim($_POST['email']);
@@ -45,15 +45,9 @@
         $password   = isset($_POST['password']) ? trim($_POST['password']) : null;
 
         if (!empty($first_name) && !empty($last_name) && !empty($email) && !empty($contact)) {
-            if (isset($_POST['add_user'])) {
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO tourist_users (first_name, last_name, contact_number, email, password) VALUES (?, ?, ?, ?, ?)");
-                $stmt->bind_param("sssss", $first_name, $last_name, $contact, $email, $hashed_password);
-            } else if (isset($_POST['edit_user'])) {
-                $user_id = intval($_POST['user_id']);
-                $stmt = $conn->prepare("UPDATE tourist_users SET first_name = ?, last_name = ?, contact_number = ?, email = ? WHERE id = ?");
-                $stmt->bind_param("ssssi", $first_name, $last_name, $contact, $email, $user_id);
-            }
+            $user_id = intval($_POST['user_id']);
+            $stmt = $conn->prepare("UPDATE tourist_users SET first_name = ?, last_name = ?, contact_number = ?, email = ? WHERE id = ?");
+            $stmt->bind_param("ssssi", $first_name, $last_name, $contact, $email, $user_id);
 
             if ($stmt->execute()) {
                 echo "<script>alert('✅ User saved successfully!'); window.location.href='/CeylonGo/public/admin/users';</script>";
@@ -168,7 +162,6 @@
 
                 <div class="footer-buttons">
                     <button class="footer-btn" id="exportBtn">Export Users</button>
-                    <button class="footer-btn black" id="openModalBtn">+ Add New User</button>
                 </div>
             </div>
         </div>
@@ -176,7 +169,7 @@
         <!-- Add/Edit Modal -->
         <div class="modal" id="userModal">
             <div class="modal-content">
-                <h3 id="modalTitle">Add New User</h3>
+                <h3 id="modalTitle">Edit User</h3>
                 <form method="POST" action="/CeylonGo/public/admin/users" id="userForm">
                     <input type="hidden" name="user_id" id="user_id">
 
@@ -192,8 +185,7 @@
                         pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
                         title="Please enter a valid email, e.g., name@gmail.com"><br>
 
-                    <input type="password" name="password" id="password" placeholder="Enter password"><br>
-                    <button type="submit" name="add_user" id="submitBtn" class="submit-btn">Add User</button>
+                    <button type="submit" name="edit_user" id="submitBtn" class="submit-btn">Save Changes</button>
                     <button type="button" class="cancel-btn" id="closeModalBtn">Cancel</button>
                 </form>
             </div>
@@ -204,15 +196,6 @@
             const modalTitle = document.getElementById("modalTitle");
             const submitBtn = document.getElementById("submitBtn");
 
-            document.getElementById("openModalBtn").addEventListener("click", () => {
-                modal.style.display = "flex";
-                modalTitle.innerText = "Add New User";
-                submitBtn.name = "add_user";
-                submitBtn.innerText = "Add User";
-                document.getElementById("userForm").reset();
-                document.getElementById("password").style.display = "block";
-            });
-
             document.getElementById("closeModalBtn").addEventListener("click", () => modal.style.display="none");
             window.onclick = (e) => { if(e.target === modal) modal.style.display="none"; };
 
@@ -220,6 +203,7 @@
             document.querySelectorAll(".edit-btn").forEach(btn => {
                 btn.addEventListener("click", function(){
                     const row = this.closest("tr");
+
                     const id = row.dataset.id;
                     const first_name = row.cells[0].innerText;
                     const last_name = row.cells[1].innerText;
@@ -229,8 +213,7 @@
                     modal.style.display="flex";
                     modalTitle.innerText = "Edit User";
                     submitBtn.name = "edit_user";
-                    submitBtn.innerText = "Edit User";
-                    document.getElementById("password").style.display = "none";
+                    submitBtn.innerText = "Save Changes";
 
                     document.getElementById("user_id").value = id;
                     document.getElementById("first_name").value = first_name;
@@ -279,6 +262,17 @@
                     row.style.display = text.includes(searchTerm) ? "" : "none";
                 });
             }
+
+            //enter key search
+            document.getElementById("searchInput").addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault(); // prevent accidental form submit
+                    applySearch();
+                }
+            });
+
+            //auto search
+            document.getElementById("searchInput").addEventListener("input", applySearch);
 
             // Export Users
             document.getElementById("exportBtn").addEventListener("click", () => {
