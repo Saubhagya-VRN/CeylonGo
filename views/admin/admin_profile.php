@@ -1,27 +1,13 @@
 <?php 
-// Session is already started in public/index.php
-require_once(__DIR__ . '/../../config/config.php');
-require_once(__DIR__ . '/../../core/Database.php');
+  // Session is already started in public/index.php
+  require_once(__DIR__ . '/../../config/config.php');
+  require_once(__DIR__ . '/../../core/Database.php');
 
-// Only allow logged-in admins
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    header("Location: /CeylonGo/public/login");
-    exit();
-}
-
-// Get database connection
-$conn = Database::getMysqliConnection();
-
-$admin_ref_id = $_SESSION['user_ref_id']; // reference to admin.id
-$message = "";
-
-// Fetch the latest admin data
-$sql = "SELECT * FROM admin WHERE id=?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $admin_ref_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$admin = $result->fetch_assoc();
+  // Only allow logged-in admins
+  if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+      header("Location: /CeylonGo/public/login");
+      exit();
+  }
 ?>
 
 <!DOCTYPE html>
@@ -39,14 +25,21 @@ $admin = $result->fetch_assoc();
       <h2>Admin Profile</h2>
     </div>
 
-    <?php if(isset($_SESSION['success'])): ?>
-        <p class="success-msg"><?= $_SESSION['success']; unset($_SESSION['success']); ?></p>
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="success-msg">
+            <?= $_SESSION['success']; ?>
+        </div>
+        <?php unset($_SESSION['success']); ?>
     <?php endif; ?>
     <?php if(isset($_SESSION['error'])): ?>
-        <p class="error-msg"><?= $_SESSION['error']; unset($_SESSION['error']); ?></p>
+        <div class="error-msg">
+          <?= $_SESSION['error']; ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
     <div class="profile-info">
+      <br>
       <h3>Profile Details</h3>
       <p><strong>Username:</strong> <?= htmlspecialchars($admin['username']) ?></p>
       <p><strong>Email:</strong> <?= htmlspecialchars($admin['email']) ?></p>

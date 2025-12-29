@@ -36,6 +36,14 @@
       $totalUsers = $row['total'];
   }
 
+  // Total number of pending bookings
+  $totalPendingBookings = 0;
+  $sqlPending = "SELECT COUNT(*) AS total FROM trip_bookings WHERE status = 'pending'";
+  $resultPending = $conn->query($sqlPending);
+  if ($resultPending && $row = $resultPending->fetch_assoc()) {
+      $totalPendingBookings = $row['total'];
+  }
+
   // Don't close connection - it's a singleton
 ?>
 
@@ -74,7 +82,7 @@
       <header class="navbar">
         <div class="profile-info">
           <div>
-            <h2><?= htmlspecialchars($admin_name) ?></h2>
+            <h2><?= htmlspecialchars($admin_name) ?></h2><br>
             <span class="role"><?= htmlspecialchars($admin_role) ?></span>
           </div>
         </div>
@@ -87,10 +95,10 @@
         <h3>Summary Overview</h3>
         <div class="stats">
           <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
-          <div class="stat"><h4>Active Providers</h4><p>58</p></div>
-          <div class="stat"><h4>New Bookings</h4><p>150</p></div>
-          <div class="stat"><h4>Total Payments</h4><p>LKR 10,250</p></div>
-          <div class="stat"><h4>Refund Requests</h4><p>5</p></div>
+          <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Providers</h4></a><p>58</p></div>
+          <div class="stat"><a href="/CeylonGo/public/admin/bookings" class="stat-link"><h4>Pending Bookings</h4></a><p><?= $totalPendingBookings ?></p></div>
+          <div class="stat"><a href="/CeylonGo/public/admin/payments" class="stat-link"><h4>Total Payments</h4></a><p>LKR 10,250</p></div>
+          <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Refund Requests</h4><p>5</p></div>
           <div class="stat"><h4>Pending Validations</h4><p>12</p></div>
         </div>
       </section>

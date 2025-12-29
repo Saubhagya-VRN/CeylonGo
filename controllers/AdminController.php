@@ -116,7 +116,21 @@ class AdminController {
     }
 
     public function bookings() {
-        view('admin/admin_bookings');
+        $status = $_GET['status'] ?? null;      // from filter button
+        $searchId = $_GET['search'] ?? null;    // from search input
+        $date = $_GET['date'] ?? null;
+
+        $bookingModel = new Booking($this->db);
+        $bookings = $bookingModel->getAllBookingsWithUsers($status, $searchId, $date);
+        $stats = $bookingModel->getBookingStats(); // statistics
+
+        view('admin/admin_bookings', [
+            'bookings' => $bookings, 
+            'selectedStatus' => $status, 
+            'searchId' => $searchId,
+            'date' => $date,
+            'stats' => $stats
+        ]);
     }
 
     public function payments() {

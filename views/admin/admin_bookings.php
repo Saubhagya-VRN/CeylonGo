@@ -33,89 +33,83 @@
                 <h2 class="page-title">Booking Management</h2>
                 <br><br>
 
-                <div class="toolbar">
-                    <div class="search-section">
-                    <input type="text" placeholder="Search by booking ID" class="search-input">
-                    <button class="search-btn">🔍</button>
+                <form method="GET" action="/CeylonGo/public/admin/bookings">
+                    <div class="toolbar">
+                        <div class="search-section">
+                            <input type="text" name="search" placeholder="Search by booking ID" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
+                            <button type="submit" class="search-btn">🔍</button>
+                        </div>
+                        <div class="filter-buttons">
+                            <button type="submit" name="status" value="pending" class="filter-btn <?= ($selectedStatus=='pending')?'active':'' ?>">Pending</button>
+                            <button type="submit" name="status" value="completed" class="filter-btn <?= ($selectedStatus=='completed')?'active':'' ?>">Completed</button>
+                            <button type="submit" name="status" value="cancelled" class="filter-btn <?= ($selectedStatus=='cancelled')?'active':'' ?>">Cancelled</button>
+                            <button type="submit" name="status" value="all" class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
+                        </div>
+                        <div class="date-filter">
+                            <input type="date" name="date" class="date-input" value="<?= htmlspecialchars($date ?? '') ?>" onchange="this.form.submit()">
+                        </div>
                     </div>
-                    <div class="filter-buttons">
-                        <button class="filter-btn active">Active</button>
-                        <button class="filter-btn">Completed</button>
-                        <button class="filter-btn">Cancelled</button>
-                        <button class="filter-btn">All</button>
-                    </div>
-                    <div class="date-filter">
-                        <input type="date" class="date-input">
-                    </div>
-                </div>
+                </form>
 
                 <div class="stats-section">
                     <h4>Booking Statistics</h4><br>
                     <p class="subheading">Overview of current bookings</p>
                     <div class="stats-grid">
-                    <div class="stat-box">
-                        <strong>Total</strong><br>
-                        <span>50</span>
-                    </div>
-                    <div class="stat-box">
-                        <strong>Active</strong><br>
-                        <span>30</span>
-                    </div>
-                    <div class="stat-box">
-                        <strong>Cancelled</strong><br>
-                        <span>10</span>
-                    </div>
-                    <div class="stat-box">
-                        <strong>Completed</strong><br>
-                        <span>10</span>
-                    </div>
+                        <div class="stat-box">
+                            <strong>Total</strong><br>
+                            <span><?= $stats['total'] ?? 0 ?></span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>Pending</strong><br>
+                            <span><?= $stats['pending'] ?? 0 ?></span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>Completed</strong><br>
+                            <span><?= $stats['completed'] ?? 0 ?></span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>Cancelled</strong><br>
+                            <span><?= $stats['cancelled'] ?? 0 ?></span>
+                        </div>
                     </div>
                 </div>
                 <br>
 
                 <div class="bookings-section">
                     <table class="booking-table">
-                    <thead>
-                        <tr>
-                        <th>Booking ID</th>
-                        <th>User</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                        <td>1234</td>
-                        <td>John Doe</td>
-                        <td><span class="status active">Active</span></td>
-                        <td>2023-10-12</td>
-                        <td class="actions">
-                            <button class="icon-btn">👁️</button>
-                            <button class="icon-btn danger">❌</button>
-                        </td>
-                        </tr>
-                        <tr>
-                        <td>5678</td>
-                        <td>Jane Smith</td>
-                        <td><span class="status completed">Completed</span></td>
-                        <td>2023-10-10</td>
-                        <td class="actions">
-                            <button class="icon-btn">👁️</button>
-                            <button class="icon-btn danger">❌</button>
-                        </td>
-                        </tr>
-                        <tr>
-                        <td>91011</td>
-                        <td>Emily Johnson</td>
-                        <td><span class="status cancelled">Cancelled</span></td>
-                        <td>2023-10-01</td>
-                        <td class="actions">
-                            <button class="icon-btn">👁️</button>
-                            <button class="icon-btn danger">❌</button>
-                        </td>
-                        </tr>
-                    </tbody>
+                        <thead>
+                            <tr>
+                            <th>Booking ID</th>
+                            <th>User</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($bookings as $booking): ?>
+                                <tr>
+                                    <td><?= $booking['booking_id'] ?></td>
+                                    <td><?= htmlspecialchars($booking['user_name']) ?></td>
+                                    <td>
+                                        <?php 
+                                            $statusClass = '';
+                                            switch(strtolower($booking['status'])) {
+                                                case 'pending': $statusClass = 'active'; break;
+                                                case 'completed': $statusClass = 'completed'; break;
+                                                case 'cancelled': $statusClass = 'cancelled'; break;
+                                            }
+                                        ?>
+                                        <span class="status <?= $statusClass ?>"><?= ucfirst($booking['status']) ?></span>
+                                    </td>
+                                    <td><?= date('Y-m-d', strtotime($booking['created_at'])) ?></td>
+                                    <td class="actions">
+                                        <button class="icon-btn">👁️</button>
+                                        <button class="icon-btn danger">❌</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
                     </table>
                 </div>
 
