@@ -60,5 +60,30 @@ class Booking {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    // Fetch single booking by ID
+    public function getBookingById($bookingId) {
+        $stmt = $this->db->prepare("
+            SELECT tb.id AS booking_id, 
+                CONCAT(tu.first_name,' ',tu.last_name) AS user_name, 
+                tb.status, tb.created_at
+            FROM trip_bookings tb
+            JOIN tourist_users tu ON tb.user_id = tu.id
+            WHERE tb.id = :id
+        ");
+        $stmt->execute([':id' => $bookingId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Fetch destinations for a booking
+    public function getBookingDestinations($bookingId) {
+        $stmt = $this->db->prepare("
+            SELECT destination, people_count, days, hotel, transport 
+            FROM trip_destinations 
+            WHERE booking_id = :id
+        ");
+        $stmt->execute([':id' => $bookingId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

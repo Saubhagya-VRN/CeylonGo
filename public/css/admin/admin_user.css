@@ -1,37 +1,4 @@
-@import url("common.css");
-
-.page-title {
-  font-size: 22px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.search-section {
-  display: flex;
-  gap: 5px;
-}
-
-.search-input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.search-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 0 15px;
-  border-radius: 6px;
-  cursor: pointer;
-}
+@import url("admin_common.css");
 
 .user-table {
   width: 100%;
@@ -66,26 +33,6 @@
 
 .icon-btn.danger {
   color: red;
-}
-
-.footer-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.footer-btn {
-  padding: 10px 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  cursor: pointer;
-  background: white;
-}
-
-.footer-btn.black {
-  background: #000;
-  color: #fff;
-  font-weight: bold;
 }
 
 .modal {
@@ -142,5 +89,36 @@
 
 .modal .cancel-btn {
   background: #ccc;
+  color: #000;
+}
+
+/* Stats Section */
+.stats-section {
+  margin-top: 30px;
+}
+.subheading {
+  color: #777;
+  margin-bottom: 10px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+.stat-box {
+  border: 1px solid #ccc;
+  padding: 15px;
+  text-align: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.stat-box strong {
+  font-size: 13px;
+  color: #555;
+}
+.stat-box span {
+  font-size: 18px;
+  font-weight: bold;
   color: #000;
 }

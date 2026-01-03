@@ -1,5 +1,12 @@
+<?php
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Make sure $bookings, $stats, $selectedStatus, $searchId, $date are passed from AdminController
+?>
 <!DOCTYPE html>
-<html lang="en">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +16,8 @@
     <body>
         <aside class="sidebar">
             <div class="sidebar-brand">
-            <img src="../../public/images/logo.png" alt="Ceylon Go Logo" class="logo-img">
-            <h2>Ceylon Go</h2>
+                <img src="../../public/images/logo.png" alt="Ceylon Go Logo" class="logo-img">
+                <h2>Ceylon Go</h2>
             </div>
             <ul class="sidebar-menu">
                 <li><a href="/CeylonGo/public/admin/dashboard">Home</a></li>
@@ -29,10 +36,10 @@
 
         <div class="main-content">
             <div class="booking-management">
-                
                 <h2 class="page-title">Booking Management</h2>
                 <br><br>
 
+                <!-- Search & Filter Form -->
                 <form method="GET" action="/CeylonGo/public/admin/bookings">
                     <div class="toolbar">
                         <div class="search-section">
@@ -40,10 +47,13 @@
                             <button type="submit" class="search-btn">🔍</button>
                         </div>
                         <div class="filter-buttons">
-                            <button type="submit" name="status" value="pending" class="filter-btn <?= ($selectedStatus=='pending')?'active':'' ?>">Pending</button>
-                            <button type="submit" name="status" value="completed" class="filter-btn <?= ($selectedStatus=='completed')?'active':'' ?>">Completed</button>
-                            <button type="submit" name="status" value="cancelled" class="filter-btn <?= ($selectedStatus=='cancelled')?'active':'' ?>">Cancelled</button>
-                            <button type="submit" name="status" value="all" class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
+                            <?php
+                                $statuses = ['all','pending','completed','cancelled'];
+                                foreach($statuses as $s):
+                                    $active = ($selectedStatus ?? 'all') === $s ? 'active' : '';
+                                    echo "<button type='submit' name='status' value='{$s}' class='filter-btn {$active}'>" . ucfirst($s) . "</button>";
+                                endforeach;
+                            ?>
                         </div>
                         <div class="date-filter">
                             <input type="date" name="date" class="date-input" value="<?= htmlspecialchars($date ?? '') ?>" onchange="this.form.submit()">
@@ -51,72 +61,153 @@
                     </div>
                 </form>
 
+                <!-- Booking Stats -->
                 <div class="stats-section">
                     <h4>Booking Statistics</h4><br>
-                    <p class="subheading">Overview of current bookings</p>
                     <div class="stats-grid">
-                        <div class="stat-box">
-                            <strong>Total</strong><br>
-                            <span><?= $stats['total'] ?? 0 ?></span>
-                        </div>
-                        <div class="stat-box">
-                            <strong>Pending</strong><br>
-                            <span><?= $stats['pending'] ?? 0 ?></span>
-                        </div>
-                        <div class="stat-box">
-                            <strong>Completed</strong><br>
-                            <span><?= $stats['completed'] ?? 0 ?></span>
-                        </div>
-                        <div class="stat-box">
-                            <strong>Cancelled</strong><br>
-                            <span><?= $stats['cancelled'] ?? 0 ?></span>
-                        </div>
+                        <?php
+                            $keys = ['total','pending','completed','cancelled'];
+                            foreach($keys as $k):
+                                $val = $stats[$k] ?? 0;
+                                echo "<div class='stat-box'><strong>" . ucfirst($k) . "</strong><br><span>{$val}</span></div>";
+                            endforeach;
+                        ?>
                     </div>
                 </div>
                 <br>
 
+                <!-- Bookings Table -->
                 <div class="bookings-section">
                     <table class="booking-table">
                         <thead>
                             <tr>
-                            <th>Booking ID</th>
-                            <th>User</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
+                                <th>Booking ID</th>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach($bookings as $booking): ?>
-                                <tr>
-                                    <td><?= $booking['booking_id'] ?></td>
-                                    <td><?= htmlspecialchars($booking['user_name']) ?></td>
-                                    <td>
-                                        <?php 
-                                            $statusClass = '';
-                                            switch(strtolower($booking['status'])) {
-                                                case 'pending': $statusClass = 'active'; break;
-                                                case 'completed': $statusClass = 'completed'; break;
-                                                case 'cancelled': $statusClass = 'cancelled'; break;
-                                            }
-                                        ?>
-                                        <span class="status <?= $statusClass ?>"><?= ucfirst($booking['status']) ?></span>
-                                    </td>
-                                    <td><?= date('Y-m-d', strtotime($booking['created_at'])) ?></td>
-                                    <td class="actions">
-                                        <button class="icon-btn">👁️</button>
-                                        <button class="icon-btn danger">❌</button>
-                                    </td>
-                                </tr>
+                        <tbody id="bookingsTableBody">
+                            <?php foreach($bookings as $b): 
+                                switch (strtolower($b['status'])) {
+                                    case 'pending':
+                                        $statusClass = 'pending'; // orange
+                                        break;
+                                    case 'completed':
+                                        $statusClass = 'completed'; // green
+                                        break;
+                                    case 'cancelled':
+                                        $statusClass = 'cancelled'; // red
+                                        break;
+                                    default:
+                                        $statusClass = '';
+                                }
+                            ?>
+                            <tr>
+                                <td><?= $b['booking_id'] ?></td>
+                                <td><?= htmlspecialchars($b['user_name']) ?></td>
+                                <td><span class="status <?= $statusClass ?>"><?= ucfirst($b['status']) ?></span></td>
+                                <td><?= date('Y-m-d', strtotime($b['created_at'])) ?></td>
+                                <td>
+                                    <button class="icon-btn view-btn" data-booking-id="<?= $b['booking_id'] ?>">👁️</button>
+                                    <button class="icon-btn danger">❌</button>
+                                </td>
+                            </tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
 
                 <div class="footer-buttons">
-                    <button class="footer-btn black">+ New Booking</button>
+                    <button class="footer-btn black" id="exportBtn">Export Users</button>
                 </div>
             </div>
         </div>
+
+        <!-- Modal -->
+        <div id="bookingModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h3>Booking Details</h3>
+                <div id="bookingDetailsContent">Loading...</div>
+            </div>
+        </div>
+
+        <script>
+            const modal = document.getElementById("bookingModal");
+            const modalContent = document.getElementById("bookingDetailsContent");
+            const spanClose = modal.querySelector(".close");
+
+            // Open modal
+            document.querySelectorAll(".view-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const bookingId = btn.dataset.bookingId;
+                    if(!bookingId) return alert("Invalid booking ID");
+
+                    modalContent.innerHTML = "Loading...";
+                    modal.style.display = "block";
+
+                    fetch('/CeylonGo/public/admin/booking-details?booking_id=' + bookingId)
+                    .then(res => res.json())
+                    .then(data => {
+                        if(!data.success){
+                            modalContent.innerHTML = `<p style="color:red">${data.message}</p>`;
+                            return;
+                        }
+
+                        const b = data.booking;
+                        let html = `<p><strong>Booking ID:</strong> ${b.booking_id}</p>`;
+                        html += `<p><strong>User:</strong> ${b.user_name}</p>`;
+                        html += `<p><strong>Status:</strong> ${b.status}</p>`;
+                        html += `<p><strong>Date:</strong> ${b.created_at}</p>`;
+                        html += `<h4>Destinations</h4><table>
+                                    <tr>
+                                        <th>Destination</th>
+                                        <th>People</th>
+                                        <th>Days</th>
+                                        <th>Hotel</th>
+                                        <th>Transport</th>
+                                    </tr>`;
+                        data.destinations.forEach(d => {
+                            html += `<tr>
+                                        <td>${d.destination}</td>
+                                        <td>${d.people_count}</td>
+                                        <td>${d.days}</td>
+                                        <td>${d.hotel}</td>
+                                        <td>${d.transport}</td>
+                                    </tr>`;
+                        });
+                        html += "</table>";
+                        modalContent.innerHTML = html;
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        modalContent.innerHTML = "<p style='color:red'>Error loading booking details.</p>";
+                    });
+                });
+            });
+
+            // Close modal
+            spanClose.onclick = () => modal.style.display = "none";
+            window.onclick = e => { if(e.target == modal) modal.style.display = "none"; };
+
+            // Export table
+            document.getElementById("exportBtn").addEventListener("click", () => {
+                const rows = document.querySelectorAll("#bookingsTableBody tr");
+                if(rows.length === 0) return alert("No users to export!");
+                let txt = "Booking ID\tUser\tStatus\tDate\n";
+                rows.forEach(r => {
+                    if(r.style.display !== "none"){
+                        txt += [...r.cells].slice(0,4).map(c => c.innerText).join("\t") + "\n";
+                    }
+                });
+                const blob = new Blob([txt], {type:"text/plain"});
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "bookings.txt";
+                link.click();
+            });
+        </script>
     </body>
 </html>

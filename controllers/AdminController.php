@@ -101,22 +101,50 @@ class AdminController {
         $userId = intval($_POST['user_id'] ?? 0);
         $status = intval($_POST['status'] ?? 1);
 
-        $tourist = new Tourist($this->db);
+        $userModel = new User($this->db); // ✅ Use User class
+        $success = $userModel->updateStatus($userId, $status);
 
-        if ($tourist->updateStatus($userId, $status)) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false]);
-        }
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
         exit();
     }
 
     public function users() {
-        view('admin/admin_user');
+        $userModel = new User($this->db); 
+
+        // ✅ Handle POST for editing user
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_user'])) {
+            $userId = intval($_POST['user_id']);
+            $firstName = trim($_POST['first_name']);
+            $lastName = trim($_POST['last_name']);
+            $contact = trim($_POST['contact']);
+            $email = trim($_POST['email']);
+
+            $success = $userModel->updateUser($userId, $firstName, $lastName, $contact, $email);
+
+            if ($success) {
+                $_SESSION['success'] = "User updated successfully!";
+            } else {
+                $_SESSION['error'] = "Failed to update user.";
+            }
+
+            header("Location: /CeylonGo/public/admin/users");
+            exit();
+        }
+        // GET / display users
+        $status = $_GET['status'] ?? 'all';
+        $users = $userModel->getAllUsers($status);
+        $stats = $userModel->getUserStats();
+
+        view('admin/admin_user', [
+            'users' => $users,
+            'selectedStatus' => $status,
+            'stats' => $stats
+        ]);
     }
 
     public function bookings() {
-        $status = $_GET['status'] ?? null;      // from filter button
+        $status = $_GET['status'] ?? 'all';      // from filter button
         $searchId = $_GET['search'] ?? null;    // from search input
         $date = $_GET['date'] ?? null;
 
@@ -131,6 +159,37 @@ class AdminController {
             'date' => $date,
             'stats' => $stats
         ]);
+    }
+
+    public function getBookingDetails() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_GET['booking_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking ID missing']);
+            exit;
+        }
+
+        $bookingId = intval($_GET['booking_id']);
+        $bookingModel = new Booking($this->db);
+
+        // Fetch booking info
+        $booking = $bookingModel->getBookingById($bookingId);
+
+        if (!$booking) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking not found']);
+            exit;
+        }
+
+        // Fetch destinations
+        $destinations = $bookingModel->getBookingDestinations($bookingId);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'booking' => $booking,
+            'destinations' => $destinations
+        ]);
+        exit;
     }
 
     public function payments() {

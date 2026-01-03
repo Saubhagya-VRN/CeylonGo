@@ -1,78 +1,11 @@
 <?php 
     // Session is already started in public/index.php
     require_once(__DIR__ . '/../../config/config.php');
-    require_once(__DIR__ . '/../../core/Database.php');
 
     if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
         header("Location: /CeylonGo/public/login");
         exit();
     }
-
-    // Get database connection
-    $conn = Database::getMysqliConnection();
-
-    // ===== STATUS FLAG HANDLER (MUST BE FIRST) =====
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status_id'])) {
-
-        $user_id = intval($_POST['status_id']);
-        $status  = intval($_POST['status']); // 0 or 1
-
-        $stmt1 = $conn->prepare(
-            "UPDATE tourist_users SET is_active = ? WHERE id = ?"
-        );
-        $stmt1->bind_param("ii", $status, $user_id);
-        $ok1 = $stmt1->execute();
-        $stmt1->close();
-
-        $stmt2 = $conn->prepare(
-            "UPDATE users SET is_active = ? WHERE ref_id = ? AND role = 'tourist'"
-        );
-        $stmt2->bind_param("ii", $status, $user_id);
-        $ok2 = $stmt2->execute();
-        $stmt2->close();
-
-        header('Content-Type: application/json');
-        echo json_encode(["success" => ($ok1 && $ok2)]);
-        exit(); // 🔴 THIS IS CRITICAL
-    }
-
-    // Add / Edit user
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_user'])) {
-        $first_name = trim($_POST['first_name']);
-        $last_name  = trim($_POST['last_name']);
-        $email      = trim($_POST['email']);
-        $contact    = trim($_POST['contact']);
-        $password   = isset($_POST['password']) ? trim($_POST['password']) : null;
-
-        if (!empty($first_name) && !empty($last_name) && !empty($email) && !empty($contact)) {
-            $user_id = intval($_POST['user_id']);
-            $stmt = $conn->prepare("UPDATE tourist_users SET first_name = ?, last_name = ?, contact_number = ?, email = ? WHERE id = ?");
-            $stmt->bind_param("ssssi", $first_name, $last_name, $contact, $email, $user_id);
-
-            if ($stmt->execute()) {
-                echo "<script>alert('✅ User saved successfully!'); window.location.href='/CeylonGo/public/admin/users';</script>";
-                exit();
-            } else {
-                echo "<script>alert('❌ Database error. Try again.');</script>";
-            }
-            $stmt->close();
-        } else {
-            echo "<script>alert('⚠️ Please fill all fields.');</script>";
-        }
-    }
-
-    // Retrieve data
-    $result = $conn->query(
-        "SELECT id, first_name, last_name, contact_number, email, is_active 
-        FROM tourist_users ORDER BY id ASC"
-    );
-    $users = [];
-    if ($result && $result->num_rows > 0) {
-        while($row = $result->fetch_assoc()) {
-            $users[] = $row;
-        }
-    }
-    // Don't close connection - it's a singleton
 ?>
 
 <!DOCTYPE html>
@@ -110,12 +43,39 @@
                 <h2 class="page-title">User Management</h2>
                 <br><br>
 
-                <div class="toolbar">
-                    <div class="search-section">
-                        <input type="text" placeholder="Search by name or email" id="searchInput" class="search-input">
-                        <button class="search-btn" onclick="applySearch()">🔍</button>
+                <form method="GET" action="/CeylonGo/public/admin/users">
+                    <div class="toolbar">
+                        <div class="search-section">
+                            <input type="text" placeholder="Search by name or email" id="searchInput" class="search-input">
+                            <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
+                        </div>
+                        <div class="filter-buttons">
+                                <button type="submit" name="status" value="all" class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
+                                <button type="submit" name="status" value="active" class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active</button>
+                                <button type="submit" name="status" value="inactive" class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="stats-section">
+                    <h4>User Statistics</h4><br>
+                    <p class="subheading">Overview of registered users</p>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <strong>Total</strong><br>
+                            <span><?= $stats['total'] ?? 0 ?></span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>Active</strong><br>
+                            <span><?= $stats['active'] ?? 0 ?></span>
+                        </div>
+                        <div class="stat-box">
+                            <strong>Inactive</strong><br>
+                            <span><?= $stats['inactive'] ?? 0 ?></span>
+                        </div>
                     </div>
                 </div>
+                <br>
 
                 <div class="users-section">
                     <table class="user-table">
@@ -161,7 +121,7 @@
                 </div>
 
                 <div class="footer-buttons">
-                    <button class="footer-btn" id="exportBtn">Export Users</button>
+                    <button class="footer-btn black" id="exportBtn">Export Users</button>
                 </div>
             </div>
         </div>

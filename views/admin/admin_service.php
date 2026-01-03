@@ -108,8 +108,7 @@
                 </div>
                 
                 <div class="footer-buttons">
-                    <button class="footer-btn">Export Providers</button>
-                    <button class="footer-btn black">+ Add New Provider</button>
+                    <button class="footer-btn black" id="exportBtn">Export Users</button>
                 </div>
             </div>
         </div>
