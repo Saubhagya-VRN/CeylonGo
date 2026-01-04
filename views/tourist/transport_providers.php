@@ -74,8 +74,8 @@ $current_time = date('H:i');
 
       <div class="actions">
         <button type="submit" class="btn-primary">Submit Request</button>
-        <a href="transport_report.php" class="btn-primary">View Requests</a>
-        <a href="tourist_dashboard.php" class="btn-outline">Cancel</a>
+        <a href="transport_report" class="btn-primary">View Requests</a>
+        <a href="tourist_dashboard" class="btn-outline">Cancel</a>
       </div>
     </form>
   </section>

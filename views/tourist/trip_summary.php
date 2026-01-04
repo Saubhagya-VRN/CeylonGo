@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'tourist') {
-    header('Location: ../login.php');
+    header('Location: ../login');
     exit;
 }
 
@@ -14,7 +14,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'tourist') {
 $booking_id = isset($_GET['booking_id']) ? intval($_GET['booking_id']) : 0;
 
 if ($booking_id === 0) {
-    header('Location: tourist_dashboard.php');
+    header('Location: tourist_dashboard');
     exit;
 }
 
@@ -43,7 +43,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    header('Location: tourist_dashboard.php');
+    header('Location: tourist_dashboard');
     exit;
 }
 
@@ -208,10 +208,10 @@ foreach ($destinations as $dest) {
       <button onclick="window.print()" class="btn-outline">
         <span>📄</span> Print Summary
       </button>
-      <a href="tourist_dashboard.php" class="btn-primary">
+      <a href="tourist_dashboard" class="btn-primary">
         <span>🏠</span> Back to Dashboard
       </a>
-      <a href="tourist_dashboard.php#customize" class="btn-outline">
+      <a href="tourist_dashboard#customize" class="btn-outline">
         <span>➕</span> Plan Another Trip
       </a>
     </div>

@@ -98,6 +98,84 @@ nav ul li {
 }
 
 /* ==============================
+   UPCOMING TRIP NOTIFICATION
+   ============================== */
+.upcoming-trip-notification {
+  position: fixed;
+  top: 80px;
+  left: 40px;
+  z-index: 100;
+  animation: slideInLeft 0.5s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.notification-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+}
+
+.notification-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.notification-text {
+  flex: 1;
+  text-align: left;
+  color: var(--color-primary);
+}
+
+.notification-text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.notification-text p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-light-text);
+  text-shadow: none;
+}
+
+.notification-btn {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.notification-btn:hover {
+  background: var(--color-primary-600);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(44, 85, 48, 0.3);
+}
+
+/* ==============================
    BUTTONS
    ============================== */
 .btn, .btn-black, .btn-white, .btn-review {
@@ -176,8 +254,14 @@ nav ul li {
 }
 
 .recommended-packages h2, .client-reviews h2 {
-  font-size: 32px;
+  font-size: 36px;
   margin-bottom: 30px;
+  font-weight: 700;
+}
+
+.recommended-packages .btn-black {
+  margin-bottom: 30px;
+  display: inline-block;
 }
 
 .packages, .reviews {
@@ -201,6 +285,19 @@ nav ul li {
 .package:hover, .contact-item:hover, .highlight-item:hover, .amenity-item:hover, .review:hover, .destination:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 30px var(--shadow-dark);
+}
+
+.package h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 10px;
+}
+
+.package p {
+  font-size: 15px;
+  color: var(--color-light-text);
+  margin: 0;
 }
 
 .package-image {

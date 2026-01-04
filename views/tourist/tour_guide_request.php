@@ -57,7 +57,7 @@
 
       <div class="actions">
         <button type="submit" class="btn-primary">Submit Request</button>
-        <a href="tourist_dashboard.php" class="btn-outline">Cancel</a>
+        <a href="tourist_dashboard" class="btn-outline">Cancel</a>
       </div>
     </form>
   </section>

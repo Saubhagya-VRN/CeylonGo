@@ -46,7 +46,7 @@
         <h3>Cultural Experience in Sri Lanka</h3>
         <p>Dates: 5 days, 4 nights</p>
         <div class="card-buttons">
-          <a href="package_details.php?package=cultural" class="btn-outline">View Details</a>
+          <a href="package_details?package=cultural" class="btn-outline">View Details</a>
           <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>
@@ -56,7 +56,7 @@
         <h3>Tropical Beach Retreat</h3>
         <p>Dates: 5 days, 4 nights</p>
         <div class="card-buttons">
-          <a href="package_details.php?package=beach" class="btn-outline">View Details</a>
+          <a href="package_details?package=beach" class="btn-outline">View Details</a>
           <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>
@@ -66,7 +66,7 @@
         <h3>Adventure in the Hills</h3>
         <p>Dates: 5 days, 4 nights</p>
         <div class="card-buttons">
-          <a href="package_details.php?package=adventure" class="btn-outline">View Details</a>
+          <a href="package_details?package=adventure" class="btn-outline">View Details</a>
           <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>
@@ -103,13 +103,13 @@
       <div class="form-group">
         <label>Add Tour Guide</label>
         <div class="btn-group">
-          <a href="tour_guides.php" class="btn-outline">Yes</a>
+          <a href="tour_guides" class="btn-outline">Yes</a>
           <button type="button" class="btn-outline">No</button>
         </div>
       </div>
 
       <div class="form-group full-width">
-        <a href="payment.php" class="btn-black" style="display: inline-block; padding: 10px 20px; text-decoration: none; color: white; background: #000; border: none; cursor: pointer;">Proceed to Payment</a>
+        <a href="payment" class="btn-black" style="display: inline-block; padding: 10px 20px; text-decoration: none; color: white; background: #000; border: none; cursor: pointer;">Proceed to Payment</a>
       </div>
     </form>
   </section>

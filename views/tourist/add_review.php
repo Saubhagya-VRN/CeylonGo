@@ -63,7 +63,7 @@ if ($is_logged_in && $_SERVER["REQUEST_METHOD"] != "POST") {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Check if user is logged in
     if (!$is_logged_in) {
-        $error_message = "Please login to submit a review. <a href='../login.php' style='color: #2c5530; font-weight: bold; text-decoration: underline;'>Login here</a>";
+        $error_message = "Please login to submit a review. <a href='../login' style='color: #2c5530; font-weight: bold; text-decoration: underline;'>Login here</a>";
     }
     // Verify CSRF token
     elseif (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
@@ -143,9 +143,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (!$is_logged_in): ?>
       <div class="alert alert-info">
         <strong>👋 Welcome Guest!</strong> Please 
-        <a href="../login.php" style="color: #2c5530; font-weight: bold; text-decoration: underline;">login</a> 
+        <a href="../login" style="color: #2c5530; font-weight: bold; text-decoration: underline;">login</a> 
         or 
-        <a href="../register.php" style="color: #2c5530; font-weight: bold; text-decoration: underline;">register</a> 
+        <a href="../register" style="color: #2c5530; font-weight: bold; text-decoration: underline;">register</a> 
         to submit a review.
       </div>
     <?php endif; ?>
@@ -213,11 +213,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
 
       <div class="form-actions">
-        <a href="tourist_dashboard.php" class="btn-secondary">Cancel</a>
+        <a href="tourist_dashboard" class="btn-secondary">Cancel</a>
         <?php if ($is_logged_in): ?>
           <button type="submit" class="btn-primary">Submit Review</button>
         <?php else: ?>
-          <a href="../login.php" class="btn-primary">Login to Submit</a>
+          <a href="../login" class="btn-primary">Login to Submit</a>
         <?php endif; ?>
       </div>
     </form>

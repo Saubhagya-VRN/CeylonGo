@@ -76,13 +76,13 @@ $package = isset($packages[$package_id]) ? $packages[$package_id] : $packages['c
 
       <label>Add Tour Guide</label>
       <div class="btn-group">
-        <a href="tour_guides.php" class="btn btn-black">Yes</a>
+        <a href="tour_guides" class="btn btn-black">Yes</a>
         <button type="button" class="btn btn-black" name="tour-guide" value="no">No</button>
       </div>
 
       <label>Add Transport</label>
       <div class="btn-group">
-        <a href="transport_services.php" class="btn btn-black">Yes</a>
+        <a href="transport_services" class="btn btn-black">Yes</a>
         <button type="button" class="btn btn-black" name="transport" value="no">No</button>
       </div>
 

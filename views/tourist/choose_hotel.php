@@ -585,7 +585,7 @@
     // Book hotel
     function bookHotel(hotelName) {
       if (confirm(`🏨 Ready to book ${hotelName}?\n\nThis will redirect you to the booking form where you can:\n• Select dates\n• Choose room type\n• Add special requests\n• Complete payment\n\nContinue to booking?`)) {
-        window.location.href = `booking_form.php?hotel=${encodeURIComponent(hotelName)}`;
+        window.location.href = `booking_form?hotel=${encodeURIComponent(hotelName)}`;
       }
     }
 

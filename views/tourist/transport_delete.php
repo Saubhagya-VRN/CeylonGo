@@ -6,6 +6,6 @@ $id = $_GET['id'];
 $conn->query("DELETE FROM tourist_transport_requests WHERE id=$id");
 
 // Redirect back to report page
-header("Location: transport_report.php");
+header("Location: transport_report");
 exit();
 ?>

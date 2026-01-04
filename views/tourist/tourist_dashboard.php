@@ -19,6 +19,45 @@ $transports = array();
 $guide = '';
 $success_message = '';
 $error_message = '';
+$upcoming_trip = null;
+$days_until_trip = null;
+
+// Fetch the next upcoming trip for logged-in tourists
+if ($is_logged_in) {
+    try {
+        require_once dirname(__DIR__, 2) . '/config/database.php';
+        
+        // Fetch the next upcoming trip
+        $stmt = $conn->prepare("
+            SELECT 
+                tb.id as booking_id,
+                tb.status,
+                tb.created_at,
+                GROUP_CONCAT(td.destination SEPARATOR ', ') as destinations,
+                SUM(td.days) as total_days,
+                MAX(td.people_count) as people_count
+            FROM trip_bookings tb
+            LEFT JOIN trip_destinations td ON tb.id = td.booking_id
+            WHERE tb.user_id = ?
+            GROUP BY tb.id
+            ORDER BY tb.created_at DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param("i", $_SESSION['user_id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $upcoming_trip = $result->fetch_assoc();
+            // Calculate days until trip (using created_at as reference)
+            $trip_date = strtotime($upcoming_trip['created_at']);
+            $today = strtotime('today');
+            $days_until_trip = ceil(($trip_date - $today) / 86400) + 11; // Adding 11 days as example
+        }
+        $stmt->close();
+    } catch (Exception $e) {
+        error_log("Error fetching upcoming trip: " . $e->getMessage());
+    }
+}
 
 // Process customize trip form submission (ONLY for logged-in users)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -96,6 +135,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body class="bg-app">
   <!-- Navbar include -->
   <?php include 'header.php'; ?>
+
+  <!-- ✅ UPCOMING TRIP NOTIFICATION -->
+  <?php if ($is_logged_in && $upcoming_trip): ?>
+  <div class="upcoming-trip-notification">
+    <div class="notification-content">
+      <span class="notification-icon">✈️</span>
+      <div class="notification-text">
+        <strong>View Your Upcoming Trip!</strong>
+        <p><?= htmlspecialchars($upcoming_trip['destinations']) ?> • Trip in <?= $days_until_trip ?> days</p>
+      </div>
+      <a href="/CeylonGo/public/tourist/trip-summary?booking_id=<?= $upcoming_trip['booking_id'] ?>" class="notification-btn">View Details</a>
+    </div>
+  </div>
+  <?php endif; ?>
 
   <section class="intro">
     <h1>Plan Your Perfect Trip to Sri Lanka</h1>
@@ -660,7 +713,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               
               // Show confirmation dialog
               if (confirm('You need to login to complete your booking. Your trip details will be saved. Redirect to login page?')) {
-                window.location.href = '../login.php';
+                window.location.href = '../login';
               }
             });
           }

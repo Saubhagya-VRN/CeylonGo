@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         notes='$notes'
         WHERE id=$id");
 
-    header("Location: transport_report.php");
+    header("Location: transport_report");
     exit();
 }
 
@@ -99,7 +99,7 @@ $row = $conn->query("SELECT * FROM tourist_transport_requests WHERE id=$id")->fe
 
       <div class="actions" style="display:flex; gap:12px;">
         <button type="submit" class="btn btn-black">Update Request</button>
-        <a href="transport_report.php" class="btn">Cancel</a>
+        <a href="transport_report" class="btn">Cancel</a>
       </div>
     </form>
   </section>

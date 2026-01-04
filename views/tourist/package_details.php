@@ -165,8 +165,8 @@ $currentPackage = isset($packages[$package]) ? $packages[$package] : $packages['
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <a href="booking_form.php?package=<?= $package ?>" class="btn-primary">Book Now</a>
-        <a href="recommended_packages.php" class="btn-outline">Back to Packages</a>
+        <a href="booking_form?package=<?= $package ?>" class="btn-primary">Book Now</a>
+        <a href="recommended_packages" class="btn-outline">Back to Packages</a>
       </div>
     </div>
   </section>

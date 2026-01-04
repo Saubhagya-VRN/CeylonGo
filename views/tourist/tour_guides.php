@@ -168,7 +168,7 @@ $guides = array(
       <h2>Guide Selected Successfully!</h2>
       <p>Your selected guide will be added to your booking. You can proceed to complete your booking.</p>
       <div class="modal-actions">
-        <a href="recommended_packages.php" class="btn-primary">Continue Booking</a>
+        <a href="recommended_packages" class="btn-primary">Continue Booking</a>
         <button class="btn-outline" onclick="closeModal()">Close</button>
       </div>
     </div>
