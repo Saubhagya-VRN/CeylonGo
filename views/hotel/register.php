@@ -17,17 +17,17 @@
       <div class="brand-text">Ceylon Go | Hotel Portal</div>
     </div>
     <nav class="app-nav">
-      <a href="login.php">Login</a>
-      <a href="register.php" class="active">Register</a>
-      <a href="dashboard.php">Dashboard</a>
-      <a href="profile.php">Profile</a>
-      <a href="availability.php">Availability</a>
-      <a href="bookings.php">Bookings</a>
-      <a href="payments.php">Payments</a>
-      <a href="reviews.php">Reviews</a>
-      <a href="inquiries.php">Inquiries</a>
-      <a href="report_issue.php">Report Issue</a>
-      <a href="notifications.php">Notifications</a>
+      <a href="/CeylonGo/public/hotel/login">Login</a>
+      <a href="/CeylonGo/public/hotel/register" class="active">Register</a>
+      <a href="/CeylonGo/public/hotel/dashboard">Dashboard</a>
+      <a href="/CeylonGo/public/hotel/profile">Profile</a>
+      <a href="/CeylonGo/public/hotel/availability">Availability</a>
+      <a href="/CeylonGo/public/hotel/bookings">Bookings</a>
+      <a href="/CeylonGo/public/hotel/payments">Payments</a>
+      <a href="/CeylonGo/public/hotel/reviews">Reviews</a>
+      <a href="/CeylonGo/public/hotel/inquiries">Inquiries</a>
+      <a href="/CeylonGo/public/hotel/report-issue">Report Issue</a>
+      <a href="/CeylonGo/public/hotel/notifications">Notifications</a>
     </nav>
   </header>
 
@@ -116,7 +116,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary w-100">Create Account</button>
-        <p class="muted mt-12">Already have an account? <a href="login.php">Login</a></p>
+        <p class="muted mt-12">Already have an account? <a href="/CeylonGo/public/hotel/login">Login</a></p>
         <div id="registerSuccess" class="success-banner" style="display:none;">Registration successful! Redirecting to login...</div>
       </form>
     </section>

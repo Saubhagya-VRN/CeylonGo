@@ -19,9 +19,9 @@
           <div class="logo-text">Ceylon Go</div>
       </div>
       <nav class="nav-links">
-          <a href="../tourist/tourist_dashboard.php">Home</a>
-          <a href="../contact.php">Contact Us</a>
-          <a href="../login.php" class="login-btn">Login</a>
+          <a href="/CeylonGo/public/tourist/dashboard">Home</a>
+          <a href="/CeylonGo/public/contact">Contact Us</a>
+          <a href="/CeylonGo/public/login" class="login-btn">Login</a>
       </nav>
   </header>
 

@@ -57,6 +57,70 @@ class TransportProviderController {
         view('transport/payment');
     }
 
+    // API endpoint to get bookings for calendar (JSON)
+    public function getBookingsCalendar() {
+        header('Content-Type: application/json');
+        
+        $transportRequestModel = new TransportRequest($this->db);
+        
+        // Get all requests (we'll show all future dates, not just today+)
+        $allRequests = $transportRequestModel->getAllRequests();
+        
+        $bookings = [];
+        
+        foreach ($allRequests as $request) {
+            if (isset($request['date']) && !empty($request['date'])) {
+                // Format time properly
+                $time = isset($request['pickupTime']) && !empty($request['pickupTime']) 
+                    ? $request['pickupTime'] 
+                    : '09:00:00';
+                
+                // Ensure time format is correct
+                if (strlen($time) == 5) {
+                    $time = $time . ':00';
+                }
+                
+                $bookings[] = [
+                    'id' => $request['id'] ?? 0,
+                    'start' => $request['date'] . 'T' . $time,
+                    'location' => $request['pickupLocation'] ?? '',
+                    'time' => $time,
+                    'customerName' => $request['customerName'] ?? 'Customer'
+                ];
+            }
+        }
+        
+        // Add sample bookings if no bookings exist (for testing)
+        if (empty($bookings)) {
+            $bookings = [
+                [
+                    'id' => 1,
+                    'start' => date('Y-m-d', strtotime('+2 days')) . 'T09:00:00',
+                    'location' => 'Colombo Airport',
+                    'time' => '09:00:00',
+                    'customerName' => 'John Smith'
+                ],
+                [
+                    'id' => 2,
+                    'start' => date('Y-m-d', strtotime('+5 days')) . 'T14:30:00',
+                    'location' => 'Kandy City',
+                    'time' => '14:30:00',
+                    'customerName' => 'Sarah Johnson'
+                ],
+                [
+                    'id' => 3,
+                    'start' => date('Y-m-d', strtotime('+10 days')) . 'T08:00:00',
+                    'location' => 'Galle Fort',
+                    'time' => '08:00:00',
+                    'customerName' => 'Mike Williams'
+                ]
+            ];
+        }
+        
+        echo json_encode($bookings);
+        exit;
+    }
+
     // Helper function to generate unique filenames
     private function generateFileName($originalName) {
         $ext = pathinfo($originalName, PATHINFO_EXTENSION);

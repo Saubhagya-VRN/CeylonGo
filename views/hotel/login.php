@@ -16,17 +16,17 @@
       <div class="brand-text">Ceylon Go | Hotel Portal</div>
     </div>
     <nav class="app-nav">
-      <a href="login.php" class="active">Login</a>
-      <a href="register.php">Register</a>
-      <a href="dashboard.php">Dashboard</a>
-      <a href="profile.php">Profile</a>
-      <a href="availability.php">Availability</a>
-      <a href="bookings.php">Bookings</a>
-      <a href="payments.php">Payments</a>
-      <a href="reviews.php">Reviews</a>
-      <a href="inquiries.php">Inquiries</a>
-      <a href="report_issue.php">Report Issue</a>
-      <a href="notifications.php">Notifications</a>
+      <a href="/CeylonGo/public/hotel/login" class="active">Login</a>
+      <a href="/CeylonGo/public/hotel/register">Register</a>
+      <a href="/CeylonGo/public/hotel/dashboard">Dashboard</a>
+      <a href="/CeylonGo/public/hotel/profile">Profile</a>
+      <a href="/CeylonGo/public/hotel/availability">Availability</a>
+      <a href="/CeylonGo/public/hotel/bookings">Bookings</a>
+      <a href="/CeylonGo/public/hotel/payments">Payments</a>
+      <a href="/CeylonGo/public/hotel/reviews">Reviews</a>
+      <a href="/CeylonGo/public/hotel/inquiries">Inquiries</a>
+      <a href="/CeylonGo/public/hotel/report-issue">Report Issue</a>
+      <a href="/CeylonGo/public/hotel/notifications">Notifications</a>
     </nav>
   </header>
 

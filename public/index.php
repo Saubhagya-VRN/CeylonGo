@@ -37,6 +37,21 @@ $router->get('tourist/add-review', 'TouristController@addReview');
 $router->get('tourist/transport-providers', 'TouristController@transportProviders');
 $router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
 $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
+$router->get('tourist/profile', 'TouristController@profile');
+$router->post('tourist/profile', 'TouristController@updateProfile');
+$router->get('tourist/my-diary', 'TouristController@myDiary');
+$router->get('tourist/add-diary-entry', 'TouristController@addDiaryEntry');
+$router->post('tourist/add-diary-entry', 'TouristController@addDiaryEntry');
+$router->get('tourist/edit-diary-entry/{id}', 'TouristController@editDiaryEntry');
+$router->post('tourist/edit-diary-entry/{id}', 'TouristController@editDiaryEntry');
+$router->get('tourist/view-diary-entry/{id}', 'TouristController@viewDiaryEntry');
+$router->get('tourist/delete-diary-entry/{id}', 'TouristController@deleteDiaryEntry');
+$router->get('tourist/public-diaries', 'TouristController@publicDiaries');
+$router->get('tourist/view-trip/{tourist_id}', 'TouristController@viewTrip');
+$router->post('tourist/add-comment', 'TouristController@addComment');
+$router->get('tourist/get-comments/{entry_id}', 'TouristController@getComments');
+$router->get('tourist/delete-comment/{id}', 'TouristController@deleteComment');
+$router->get('tourist/tour-guide-request', 'TouristController@tourGuideRequest');
 
 // ========== HOTEL ROUTES ==========
 $router->get('hotel/register', 'HotelController@registerView');
@@ -55,6 +70,7 @@ $router->get('hotel/notifications', 'HotelController@notifications');
 $router->get('hotel/payments', 'HotelController@payments');
 $router->get('hotel/reviews', 'HotelController@reviews');
 $router->get('hotel/report-issue', 'HotelController@reportIssue');
+$router->get('hotel/bookings-calendar', 'HotelController@getBookingsCalendar');
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
@@ -66,6 +82,7 @@ $router->get('guide/cancelled', 'GuideController@cancelled');
 $router->get('guide/review', 'GuideController@review');
 $router->get('guide/profile', 'GuideController@profile');
 $router->get('guide/places', 'GuideController@places');
+$router->get('guide/bookings-calendar', 'GuideController@getBookingsCalendar');
 
 // ========== TRANSPORT PROVIDER ROUTES ==========
 $router->get('transporter/register', 'TransportProviderController@loginView');
@@ -82,6 +99,7 @@ $router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
 $router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
 $router->get('transporter/payment', 'TransportProviderController@payment');
 $router->post('registerProvider', 'TransportProviderController@registerProvider');
+$router->get('transporter/bookings-calendar', 'TransportProviderController@getBookingsCalendar');
 
 // ========== ADMIN ROUTES ==========
 $router->get('admin/dashboard', 'AdminController@dashboard');
