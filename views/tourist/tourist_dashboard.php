@@ -157,108 +157,120 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
       <?php endif; ?>
       
-      <div id="trip-group-container">
-        <div class="trip-group" data-index="0">
-          <div class="row row-1">
-            <div class="box">
-              <div class="box-title">Number of People</div>
-              <div class="number-control">
-                <button type="button" class="decrease-btn" onclick="decreasePeople(this)">−</button>
-                <input
-                    type="number"
-                    name="people[]"
-                    min="1"
-                    max="50"
-                    value="1"
+      <div class="customize-trip-box">
+        <div id="trip-group-container">
+          <div class="trip-group" data-index="0">
+            <div class="row row-1">
+              <div class="box box-people">
+                <div style="display: flex; align-items: center; gap: 16px; justify-content: space-between;">
+                  <div class="box-title">Number of People</div>
+                  <div class="number-control">
+                    <button type="button" class="decrease-btn" onclick="decreasePeople(this)">−</button>
+                    <input
+                        type="number"
+                        name="people[]"
+                        min="1"
+                        max="50"
+                        value="1"
+                        required
+                        oninput="if(this.value > 50) this.value = 50; if(this.value < 1) this.value = 1;"
+                      >
+                    <button type="button" class="increase-btn" onclick="increasePeople(this)">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row row-2 three">
+              <div class="box">
+                <div class="box-title">Where are You Going?</div>
+                <div class="input-with-icon autocomplete-wrapper">
+                  <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input 
+                    type="text" 
+                    name="destination[]" 
+                    class="destination-input"
+                    placeholder="Type a place..."
                     required
-                    oninput="if(this.value > 50) this.value = 50; if(this.value < 1) this.value = 1;"
+                    autocomplete="off"
                   >
-                <button type="button" class="increase-btn" onclick="increasePeople(this)">+</button>
+                  <ul class="autocomplete-list">
+                    <li data-value="Kandy">Kandy</li>
+                    <li data-value="Colombo">Colombo</li>
+                    <li data-value="Galle">Galle</li>
+                    <li data-value="Nuwara Eliya">Nuwara Eliya</li>
+                    <li data-value="Sigiriya">Sigiriya</li>
+                    <li data-value="Unawatuna">Unawatuna</li>
+                    <li data-value="Ella">Ella</li>
+                  </ul>
+                </div>
               </div>
-            </div>
-          </div>
-
-          <div class="row row-2 three">
-            <div class="box">
-              <div class="box-title">Where are You Going?</div>
-              <div class="input-with-icon">
-                <span class="icon">📍</span>
-                <select name="destination[]" required>
-                  <option value="">Select Destination</option>
-                  <option value="Kandy">Kandy</option>
-                  <option value="Colombo">Colombo</option>
-                  <option value="Galle">Galle</option>
-                  <option value="Nuwara Eliya">Nuwara Eliya</option>
-                  <option value="Sigiriya">Sigiriya</option>
-                  <option value="Unawatuna">Unawatuna</option>
-                  <option value="Ella">Ella</option>
-                </select>
+              <div class="box">
+                <div class="box-title">How Many Days Do You Plan To Stay?</div>
+                <div class="input-with-icon">
+                  <span class="icon"></span>
+                  <input type="number" name="days[]" min="1" max="10" placeholder="Days" required oninput="if(this.value > 10) this.value = 10; if(this.value < 1) this.value = 1;">
+                  <span class="nights-text">Nights</span>
+                </div>
               </div>
-            </div>
-            <div class="box">
-              <div class="box-title">How Many Days Do You Plan To Stay?</div>
-              <div class="input-with-icon">
-                <span class="icon"></span>
-                <input type="number" name="days[]" min="1" placeholder="Days" required>
-                <span class="nights-text">Nights</span>
-              </div>
-            </div>
-            <div class="box">
-              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                <input type="hidden" name="hotel[]" class="hotel-value" value="">
-                <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-black choose-hotel-btn" style="text-decoration: none; display: inline-flex;">
-                  <span class="btn-icon"></span>
-                  <span>Choose Hotel</span>
-                </a>
-                <span class="selected-hotel"></span>
-              </div>
-            </div>
-          </div>
-
-          <div class="row row-3">
-            <div class="box">
-              <div class="inline-control">
-                <div class="box-title">Do You Want Transport?</div>
-                <div class="btn-group">
-                  <input type="hidden" name="transport[]" class="transport-value" value="No">
-                  <a href="/CeylonGo/public/tourist/transport-providers" class="btn-white transport-yes-btn" style="text-decoration: none;">
-                    <span class="btn-icon">✓</span>
-                    <span>Yes</span>
+              <div class="box box-hotel-btn">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                  <input type="hidden" name="hotel[]" class="hotel-value" value="">
+                  <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-black choose-hotel-btn" style="text-decoration: none; display: inline-flex;">
+                    <span class="btn-icon"></span>
+                    <span>Choose Hotel</span>
                   </a>
-                  <button type="button" class="btn-black transport-no-btn active">
-                    <span>No</span>
-                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="row row-3">
+              <div class="box">
+                <div class="inline-control">
+                  <div class="box-title">Do You Want Transport?</div>
+                  <div class="btn-group">
+                    <input type="hidden" name="transport[]" class="transport-value" value="No">
+                    <a href="/CeylonGo/public/tourist/transport-providers" class="btn-white transport-yes-btn" style="text-decoration: none;">
+                      <span class="btn-icon">✓</span>
+                      <span>Yes</span>
+                    </a>
+                    <button type="button" class="btn-black transport-no-btn active">
+                      <span>No</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
-      </div>
 
-      <div class="row row-5">
-        <div class="box">
-          <div class="inline-control">
-            <div class="box-title">Add a Tour Guide?</div>
-            <div class="btn-group">
-              <input type="hidden" name="guide" id="guideChoice" value="No">
-              <a href="/CeylonGo/public/tourist/tour-guide-request" class="btn-white guide-yes-btn" style="text-decoration: none;">
-                <span class="btn-icon">✓</span>
-                <span>Yes</span>
-              </a>
-              <button type="button" class="btn-black guide-no-btn active">
-                <span>No</span>
-              </button>
+        <div class="row row-5">
+          <div class="box">
+            <div class="inline-control">
+              <div class="box-title">Add a Tour Guide?</div>
+              <div class="btn-group">
+                <input type="hidden" name="guide" id="guideChoice" value="No">
+                <a href="/CeylonGo/public/tourist/tour-guide-request" class="btn-white guide-yes-btn" style="text-decoration: none;">
+                  <span class="btn-icon">✓</span>
+                  <span>Yes</span>
+                </a>
+                <button type="button" class="btn-black guide-no-btn active">
+                  <span>No</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="row row-4 actions-right">
-        <button type="button" id="addMore" class="btn-white">
-          <span class="btn-icon">+</span>
-          <span>Add More +</span>
-        </button>
+        <div class="row row-4 actions-right">
+          <button type="button" id="addMore" class="btn-white">
+            <span class="btn-icon">+</span>
+            <span>Add More +</span>
+          </button>
+        </div>
       </div>
 
       <div class="center">
@@ -274,6 +286,73 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </form>
 
     <script>
+    // Autocomplete functionality
+    function initializeAutocomplete(wrapper) {
+      var input = wrapper.querySelector('.destination-input');
+      var list = wrapper.querySelector('.autocomplete-list');
+      var items = list.querySelectorAll('li');
+
+      if (!input || !list) return;
+
+      // Show suggestions on focus
+      input.addEventListener('focus', function() {
+        filterSuggestions();
+      });
+
+      // Filter suggestions on input
+      input.addEventListener('input', function() {
+        filterSuggestions();
+      });
+
+      function filterSuggestions() {
+        var searchValue = input.value.toLowerCase();
+        var visibleItems = 0;
+
+        items.forEach(function(item) {
+          var text = item.textContent.toLowerCase();
+          var matches = !searchValue || text.includes(searchValue);
+          
+          if (matches) {
+            item.style.display = 'block';
+            visibleItems++;
+          } else {
+            item.style.display = 'none';
+          }
+          item.classList.remove('active');
+        });
+
+        list.classList.toggle('show', visibleItems > 0);
+      }
+
+      // Handle item selection
+      items.forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          input.value = this.getAttribute('data-value');
+          list.classList.remove('show');
+          input.dispatchEvent(new Event('change'));
+        });
+
+        item.addEventListener('mouseover', function() {
+          items.forEach(function(i) { i.classList.remove('active'); });
+          this.classList.add('active');
+        });
+      });
+
+      // Close list when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) {
+          list.classList.remove('show');
+        }
+      });
+    }
+
+    // Initialize autocomplete for first group
+    var firstWrapper = document.querySelector('.autocomplete-wrapper');
+    if (firstWrapper) {
+      initializeAutocomplete(firstWrapper);
+    }
+
     function increasePeople(btn) {
       var input = btn.previousElementSibling;
       var value = parseInt(input.value) || 1;
@@ -396,13 +475,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           var groups = document.querySelectorAll('.trip-group');
           groups.forEach(function(group) {
             var peopleInput = group.querySelector('input[name="people[]"]');
-            var destinationSelect = group.querySelector('select[name="destination[]"]');
+            var destinationInput = group.querySelector('.destination-input');
             var daysInput = group.querySelector('input[name="days[]"]');
             var hotelValue = group.querySelector('.hotel-value');
             var transportValue = group.querySelector('.transport-value');
             
             if (peopleInput) formData.people.push(peopleInput.value);
-            if (destinationSelect) formData.destinations.push(destinationSelect.value);
+            if (destinationInput) formData.destinations.push(destinationInput.value);
             if (daysInput) formData.days.push(daysInput.value);
             if (hotelValue) formData.hotels.push(hotelValue.value);
             if (transportValue) formData.transports.push(transportValue.value);
@@ -442,13 +521,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 var group = groups[i];
                 if (group) {
                   var peopleInput = group.querySelector('input[name="people[]"]');
-                  var destinationSelect = group.querySelector('select[name="destination[]"]');
+                  var destinationInput = group.querySelector('.destination-input');
                   var daysInput = group.querySelector('input[name="days[]"]');
                   var hotelValue = group.querySelector('.hotel-value');
                   var transportValue = group.querySelector('.transport-value');
                   
                   if (peopleInput) peopleInput.value = formData.people[i] || '';
-                  if (destinationSelect) destinationSelect.value = formData.destinations[i] || '';
+                  if (destinationInput) destinationInput.value = formData.destinations[i] || '';
                   if (daysInput) daysInput.value = formData.days[i] || '';
                   if (hotelValue) hotelValue.value = formData.hotels[i] || '';
                   if (transportValue) transportValue.value = formData.transports[i] || '';
@@ -472,6 +551,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         // Function to attach event listeners to a group
         function attachGroupEventListeners(group) {
+          // Initialize autocomplete for this group
+          var wrapper = group.querySelector('.autocomplete-wrapper');
+          if (wrapper) {
+            initializeAutocomplete(wrapper);
+          }
+
           // Hotel selection button
           var hotelBtn = group.querySelector('.choose-hotel-btn');
           if (hotelBtn) {
