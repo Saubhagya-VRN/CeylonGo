@@ -33,9 +33,19 @@ class Router {
 
         // Normalize
         $requestedUri = trim($requestedUri, '/');
+        
+        // Handle empty route (root)
+        if (empty($requestedUri)) {
+            $requestedUri = '';
+        }
 
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) continue;
+
+            // Handle empty route
+            if (empty($route['uri']) && empty($requestedUri)) {
+                return $this->runAction($route['action'], []);
+            }
 
             // Convert route patterns like /post/{id}
             $pattern = preg_replace('/\{[a-zA-Z0-9_]+\}/', '([a-zA-Z0-9_-]+)', $route['uri']);
@@ -48,7 +58,7 @@ class Router {
         }
 
         http_response_code(404);
-        echo "404 Not Found - No route matched.";
+        echo "404 Not Found - No route matched for: " . htmlspecialchars($requestedUri);
     }
 
     private function runAction($action, $params = []) {

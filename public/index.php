@@ -29,7 +29,24 @@ $router->get('transporter/vehicle', 'TransportProviderController@vehicle');
 $router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
 $router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
 $router->get('transporter/payment', 'TransportProviderController@payment');
-$router->post('/registerProvider', 'TransportProviderController@registerProvider');
+$router->post('registerProvider', 'TransportProviderController@registerProvider');
+
+// ========== ADMIN ROUTES ==========
+$router->get('admin/dashboard', 'AdminController@dashboard');
+$router->get('admin/profile', 'AdminController@profile');
+$router->post('admin/profile', 'AdminController@updateProfile');
+$router->post('admin/delete-profile', 'AdminController@deleteProfile');
+$router->get('admin/users', 'AdminController@users');
+$router->get('admin/bookings', 'AdminController@bookings');
+$router->get('admin/payments', 'AdminController@payments');
+$router->get('admin/reviews', 'AdminController@reviews');
+$router->get('admin/inquiries', 'AdminController@inquiries');
+$router->get('admin/promotions', 'AdminController@promotions');
+$router->get('admin/reports', 'AdminController@reports');
+$router->get('admin/service', 'AdminController@service');
+$router->get('admin/settings', 'AdminController@settings');
+$router->get('admin/forgot-password', 'AdminController@forgotPassword');
 
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+?>

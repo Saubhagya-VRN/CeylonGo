@@ -39,8 +39,8 @@
     </div>
     <nav class="nav-links">
       <a href="#">Home</a>
-      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
-     <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
+      <a href="/CeylonGo/views/tourist/tourist_dashboard.php">Logout</a>
+     <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
     </nav>
   </header>
   

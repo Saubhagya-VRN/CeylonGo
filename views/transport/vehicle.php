@@ -6,6 +6,7 @@ require_once "../models/VehicleType.php";
 require_once "session_init.php";
 
 $user_id = $_SESSION['transporter_id'];
+$user_id = $_SESSION['transporter_id'];
 $message = "";
 $error = "";
 

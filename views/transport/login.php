@@ -229,6 +229,7 @@
   <header class="navbar">
     <div class="branding">
       <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
