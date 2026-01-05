@@ -9,15 +9,8 @@
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
     
     <!-- Component styles -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/cards.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/buttons.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/forms.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/cards.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/buttons.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/forms.css">
@@ -28,14 +21,8 @@
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/profile.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/timeline.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
 
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">  
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">  
 
    <link rel="stylesheet" 
@@ -64,7 +51,6 @@
     <header class="navbar">
         <div class="branding">
             <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Logo">
-            <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Logo">
             <div class="logo-text">Ceylon Go</div>
         </div>
         <nav class="nav-links">
@@ -79,14 +65,6 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <ul>
-        <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
-        <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
-        <li class="active"><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
-        <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
-        <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
-      </ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
         <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
@@ -123,8 +101,7 @@
                             <td>2025-03-15</td>
                             <td>09:00 AM</td>
                             <td>Customer Cancelled</td>
-                            <td><a href="/CeylonGO/public/transpoter/info">See More</a></td>
-                            <td><a href="/CeylonGO/public/transpoter/info">See More</a></td>
+                            <td><a href="/CeylonGO/public/transporter/info">See More</a></td>
                         </tr>
 
                         <tr>
@@ -132,8 +109,7 @@
                             <td>2025-08-19</td>
                             <td>02:30 PM</td>
                             <td>Vehicle Unavailable</td>
-                            <td><a href="/CeylonGO/public/transpoter/info">See More</a></td>
-                            <td><a href="/CeylonGO/public/transpoter/info">See More</a></td>
+                            <td><a href="/CeylonGO/public/transporter/info">See More</a></td>
                         </tr>
                     </tbody>
                 </table>
