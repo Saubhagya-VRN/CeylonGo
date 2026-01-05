@@ -39,7 +39,7 @@
 
   <!-- Registration Form -->
   <main class="form-container">
-<form action="../../controllers/guide/register_process.php" method="POST" enctype="multipart/form-data">
+<form action="/CeylonGo/public/guide/register" method="POST" enctype="multipart/form-data">
   <input type="hidden" name="user_type" value="guide">
 
   <label>First Name</label>
@@ -81,10 +81,14 @@
   <input type="email" name="email" placeholder="Enter your Email Address" required>
 
   <label>Password</label>
-  <input type="password" name="password" placeholder="Create Password" required>
+  <input type="password" id="password" name="password" required 
+         pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+         placeholder="8+ chars, uppercase, lowercase, number, special char"
+         title="Password must contain at least 8 characters, including uppercase, lowercase, number, and special character">
+  <small id="password-error" style="color: red; display: none;"></small>
 
   <label>Confirm Password</label>
-  <input type="password" name="confirm_password" placeholder="Enter your password again" required>
+  <input type="password" id="confirm-password" name="confirm_password" required placeholder="Enter your password again">
 
   <div class="buttons">
     <button type="button" class="back-btn" onclick="history.back()">Back</button>
@@ -98,6 +102,29 @@
   event.preventDefault(); // stops the default form submission
   window.location.href = "guide_dashboard.php"; // go to dashboard
 }
+
+    // Password strength validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+      const password = document.getElementById('password').value;
+      const passwordError = document.getElementById('password-error');
+      
+      // Password strength validation
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasNumber = /\d/.test(password);
+      const hasSpecialChar = /[@$!%*?&]/.test(password);
+      const hasMinLength = password.length >= 8;
+      
+      if (!hasMinLength || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
+        e.preventDefault();
+        passwordError.textContent = 'You have to use 8 characters, uppercase, lowercase, number, and special character';
+        passwordError.style.display = 'block';
+        passwordError.style.color = 'red';
+        return false;
+      } else {
+        passwordError.style.display = 'none';
+      }
+    });
 
 </script>
   </main>

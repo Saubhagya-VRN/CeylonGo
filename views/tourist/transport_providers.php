@@ -1,5 +1,7 @@
-<php
-
+<?php
+// Get current date and time for validation
+$current_date = date('Y-m-d');
+$current_time = date('H:i');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +20,7 @@
   </section>
 
   <section class="form-section">
-    <form class="form-card" action="../../controllers/tourist/transport_request_process.php" method="post">
+    <form class="form-card" action="/CeylonGo/public/tourist/transport-request" method="post">
       <div class="form-row">
         <div class="form-group">
           <label for="customerName">Customer Name</label>
@@ -40,7 +42,7 @@
       <div class="form-row">
         <div class="form-group">
           <label for="date">Date</label>
-          <input type="date" id="date" name="date" required>
+          <input type="date" id="date" name="date" min="<?php echo $current_date; ?>" required>
         </div>
         <div class="form-group">
           <label for="pickupTime">Pickup Time</label>
@@ -79,6 +81,48 @@
   </section>
 
   <footer class="footer-spacer"></footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const dateInput = document.getElementById('date');
+      const timeInput = document.getElementById('pickupTime');
+      const currentDate = '<?php echo $current_date; ?>';
+      const currentTime = '<?php echo $current_time; ?>';
+
+      // Function to validate time when date changes
+      function validateDateTime() {
+        const selectedDate = dateInput.value;
+        const selectedTime = timeInput.value;
+
+        if (selectedDate === currentDate && selectedTime) {
+          if (selectedTime <= currentTime) {
+            timeInput.setCustomValidity('Please select a time in the future for today');
+            timeInput.reportValidity();
+          } else {
+            timeInput.setCustomValidity('');
+          }
+        } else {
+          timeInput.setCustomValidity('');
+        }
+      }
+
+      // Add event listeners
+      dateInput.addEventListener('change', validateDateTime);
+      timeInput.addEventListener('change', validateDateTime);
+
+      // Set minimum time for today
+      dateInput.addEventListener('change', function() {
+        if (this.value === currentDate) {
+          timeInput.min = currentTime;
+        } else {
+          timeInput.min = '';
+        }
+      });
+
+      // Initial validation
+      validateDateTime();
+    });
+  </script>
 </body>
 </html>
 

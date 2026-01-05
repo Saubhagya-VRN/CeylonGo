@@ -312,9 +312,9 @@
             <label>Price Range</label>
             <select id="priceFilter">
               <option value="">All Prices</option>
-              <option value="budget">Under $50</option>
-              <option value="mid">$50 - $150</option>
-              <option value="luxury">$150+</option>
+              <option value="budget">Under Rs.50</option>
+              <option value="mid">Rs.50 - Rs.150</option>
+              <option value="luxury">Rs.150+</option>
             </select>
           </div>
           <div class="filter-group">
@@ -362,7 +362,7 @@
             </div>
             <div class="hotel-price">
               <div>
-                <span class="price">$180</span>
+                <span class="price">Rs.10,000</span>
                 <span class="price-period">/night</span>
               </div>
             </div>
@@ -393,7 +393,7 @@
             </div>
             <div class="hotel-price">
               <div>
-                <span class="price">$95</span>
+                <span class="price">Rs.9500</span>
                 <span class="price-period">/night</span>
               </div>
             </div>
@@ -423,7 +423,7 @@
             </div>
             <div class="hotel-price">
               <div>
-                <span class="price">$25</span>
+                <span class="price">Rs.17,000</span>
                 <span class="price-period">/night</span>
               </div>
             </div>
@@ -454,7 +454,7 @@
             </div>
             <div class="hotel-price">
               <div>
-                <span class="price">$220</span>
+                <span class="price">Rs.35,000</span>
                 <span class="price-period">/night</span>
               </div>
             </div>
@@ -485,7 +485,7 @@
             </div>
             <div class="hotel-price">
               <div>
-                <span class="price">$85</span>
+                <span class="price">Rs.25,000</span>
                 <span class="price-period">/night</span>
               </div>
             </div>
@@ -515,7 +515,7 @@
             </div>
             <div class="hotel-price">
               <div>
-                <span class="price">$18</span>
+                <span class="price">Rs.14,000</span>
                 <span class="price-period">/night</span>
               </div>
             </div>

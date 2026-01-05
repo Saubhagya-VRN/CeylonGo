@@ -143,7 +143,7 @@ nav ul li {
   justify-content: center;
   gap: 30px;
   flex-wrap: wrap;
-  padding-top: S20px;
+  padding-top: 20px;
 }
 
 .package, .contact-item, .highlight-item, .amenity-item {
@@ -358,6 +358,101 @@ nav ul li {
 }
 .btn-danger:hover { background: #c33; border-color: #c33; }
 
+/* Alert messages */
+.alert {
+  padding: 15px 20px;
+  margin: 20px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.alert a {
+  color: inherit;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.alert a:hover {
+  opacity: 0.8;
+}
+
+/* Active button state */
+.btn-group button.active,
+.btn-group a.active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-group button,
+.btn-group a {
+  transition: all 0.3s ease;
+}
+
+/* Selected items display */
+.selected-hotel,
+.selected-transport {
+  display: inline-block;
+  margin-left: 10px;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Summary styling */
+.summary {
+  margin-top: 30px;
+  padding: 25px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  border: 2px solid var(--color-accent);
+}
+
+.summary h3 {
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.summary-item {
+  margin-bottom: 20px;
+}
+
+.summary-item h4 {
+  color: var(--color-accent);
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.summary p {
+  margin: 8px 0;
+  font-size: 16px;
+}
+
+.summary hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 20px 0;
+}
+
 /* White button variant used in dashboard */
 .btn-white {
   background: #ffffff;
@@ -459,6 +554,37 @@ nav ul li {
 .stars {
   margin-bottom: 8px;
   color: #f1b400;
+}
+
+/* Review Action Button */
+.review-action {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.btn-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 35px;
+  background: var(--color-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px var(--shadow-dark);
+  transition: all 0.3s ease;
+}
+
+.btn-review:hover {
+  background: var(--color-primary-600);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px var(--shadow-dark);
+}
+
+.btn-review span {
+  font-size: 20px;
 }
 
 html {

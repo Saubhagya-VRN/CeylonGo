@@ -6,12 +6,24 @@ require_once "../models/User.php";
 require_once "../models/License.php";
 require_once "../models/Vehicle.php";
 
-// Get the user ID
-$user_id = "U68f28688787";
-$message = "";
-$error = "";
+$message = null;
+$error = null;
 
-// Handle edit and delete operations
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if user is logged in
+if(isset($_SESSION['transporter_id'])){
+  $user_id = $_SESSION['transporter_id'];
+}
+else{
+  header('Location: /CeylonGo/views/transport/login.php');
+  exit();
+}
+
+// Handle all POST operations
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     try {
         $db = Database::getConnection();
@@ -24,44 +36,83 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $vehicle_type = $_POST['vehicle_type'];
             $psg_capacity = $_POST['psg_capacity'];
             
-            // Handle file upload
-            $image = '';
-            if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-                $uploadDir = '../../uploads/';
-                if (!file_exists($uploadDir)) {
-                    mkdir($uploadDir, 0777, true);
-                }
-                
-                $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
-                $extension = $fileInfo['extension'];
-                $newFileName = uniqid('img_', true) . '.' . $extension;
-                $targetPath = $uploadDir . $newFileName;
-                
-                if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
-                    $image = $newFileName;
-                }
-            }
-            
-            // Update vehicle
-            $vehicleModel->vehicle_no = $new_vehicle_no;
-            $vehicleModel->user_id = $user_id;
-            $vehicleModel->vehicle_type = $vehicle_type;
-            $vehicleModel->psg_capacity = $psg_capacity;
-            if ($image) {
-                $vehicleModel->image = $image;
-            }
-            
-            if ($vehicleModel->updateVehicle($old_vehicle_no)) {
-                $message = "Vehicle updated successfully!";
+            // Validate passenger capacity
+            if ($psg_capacity < 1) {
+                $error = "Passenger capacity must be at least 1.";
             } else {
-                $error = "Failed to update vehicle.";
+                // Handle file upload
+                $image = '';
+if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
+$uploadDir = dirname(__DIR__, 2) . "/uploads/";
+
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+
+    $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
+    $extension = $fileInfo['extension'];
+    $newFileName = uniqid('img_', true) . '.' . $extension;
+    $targetPath = $uploadDir . $newFileName;
+
+    if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
+        $image = $newFileName;
+    } else {
+        echo "<script>alert('Failed to move uploaded file');</script>";
+    }
+}
+
+                
+                // Update vehicle
+                $vehicleModel->vehicle_no = $new_vehicle_no;
+                $vehicleModel->user_id = trim($user_id);
+                $vehicleModel->vehicle_type = $vehicle_type;
+                $vehicleModel->psg_capacity = $psg_capacity;
+                if ($image) {
+                    $vehicleModel->image = $image;
+                }
+                
+                if ($vehicleModel->updateVehicle($old_vehicle_no)) {
+                    $message = "Vehicle updated successfully!";
+                } else {
+                    $error = "Failed to update vehicle.";
+                }
+            }
+            
+        } elseif ($_POST['action'] == 'update_profile') {
+            // Handle profile update
+            $userModel = new User($db);
+            $userModel->user_id = $user_id;
+            $userModel->full_name = $_POST['full_name'];
+            $userModel->dob = $_POST['dob'];
+            $userModel->address = $_POST['address'];
+            $userModel->contact_no = $_POST['contact_no'];
+            $userModel->email = $_POST['email'];
+            
+            if ($userModel->updateUser()) {
+                $message = "Profile updated successfully!";
+            } else {
+                $error = "Failed to update profile.";
+            }
+            
+        } elseif ($_POST['action'] == 'update_license') {
+            // Handle license update
+            $licenseModel = new License($db);
+            $licenseModel->driver_id = $user_id;
+            $licenseModel->license_no = $_POST['license_no'];
+            $licenseModel->license_exp_date = $_POST['license_exp_date'];
+            $licenseModel->image = ''; // Empty image for now
+            
+            if ($licenseModel->updateLicense()) {
+                $message = "License information updated successfully!";
+            } else {
+                $error = "Failed to update license information.";
             }
             
         } elseif ($_POST['action'] == 'delete_vehicle') {
             // Handle vehicle delete
             $vehicle_no = $_POST['vehicle_no'];
             
-            if ($vehicleModel->deleteVehicle($vehicle_no, $user_id)) {
+            if ($vehicleModel->deleteVehicle($vehicle_no, trim($user_id))) {
                 $message = "Vehicle deleted successfully!";
             } else {
                 $error = "Failed to delete vehicle.";
@@ -77,17 +128,35 @@ try {
     // Get database connection
     $db = Database::getConnection();
     
+    // Debug: Uncomment to see what user_id we're working with
+    // echo "<pre>Session user_id: [" . $user_id . "]</pre>";
+    // echo "<pre>Session data: " . print_r($_SESSION, true) . "</pre>";
+    
+    // Trim user_id to remove any leading/trailing spaces
+    $user_id = trim($user_id);
+    
     // Fetch user data
     $userModel = new User($db);
     $user = $userModel->getUserById($user_id);
+    
+    // Debug: Uncomment to see fetched data
+    // echo "<pre>User data: " . print_r($user, true) . "</pre>";
     
     // Fetch license data
     $licenseModel = new License($db);
     $license = $licenseModel->getLicenseByDriverId($user_id);
     
-    // Fetch vehicles data
+    // Debug: Uncomment to see license data
+    // echo "<pre>License data: " . print_r($license, true) . "</pre>";
+    
+    // // Fetch vehicles data
     $vehicleModel = new Vehicle($db);
     $vehicles = $vehicleModel->getVehiclesByUser($user_id);
+    // // var_dump($vehicles);
+    
+    // Debug: Uncomment to see vehicles data
+    // echo "<pre>Vehicles data: " . print_r($vehicles, true) . "</pre>";
+    // die(); // Stop execution to see debug output
     
 } catch (Exception $e) {
     die("Database error: " . $e->getMessage());
@@ -99,167 +168,70 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Transport Provider Dashboard</title>
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/base.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/navbar.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/sidebar.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/footer.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
     
     <!-- Component styles -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/cards.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/buttons.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/forms.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/cards.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
     
     <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/timeline.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/charts.css">
-        <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/vehicle.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/timeline.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/tables.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/profile.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/reviews.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/charts.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/vehicle.css">
 
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/responsive.css">   
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">   
     
  
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
-    <!-- <style>
-        /* Vehicle Actions */
-        .vehicle-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: center;
+    <!-- Inline responsive fix for vehicle cards -->
+    <style>
+      @media (max-width: 600px) {
+        .vehicle-cards {
+          padding: 0 10px !important;
         }
-        
-        .edit-btn, .delete-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .vehicle-card {
+          flex: 0 1 100% !important;
+          max-width: 340px !important;
+          margin: 0 auto 20px auto !important;
         }
-        
-        .edit-btn {
-            background: #007bff;
-            color: white;
+        .vehicle-card .vehicle-image img {
+          height: 180px !important;
         }
-        
-        .edit-btn:hover {
-            background: #0056b3;
+        .vehicle-card .vehicle-info {
+          padding: 12px !important;
         }
-        
-        .delete-btn {
-            background: #dc3545;
-            color: white;
+        .vehicle-card .vehicle-info h3 {
+          font-size: 18px !important;
         }
-        
-        .delete-btn:hover {
-            background: #c82333;
+        .vehicle-card .vehicle-info p {
+          font-size: 13px !important;
         }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 0;
-            border: none;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid #dee2e6;
-            background: #f8f9fa;
-            border-radius: 8px 8px 0 0;
-        }
-        
-        .modal-header h3 {
-            margin: 0;
-            color: #333;
-        }
-        
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .close:hover {
-            color: #000;
-        }
-        
-        #editVehicleForm {
-            padding: 20px;
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        
-        .cancel-btn, .save-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .cancel-btn {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .save-btn {
-            background: #28a745;
-            color: white;
-        }
-        
-        .cancel-btn:hover {
-            background: #5a6268;
-        }
-        
-        .save-btn:hover {
-            background: #218838;
-        }
-    </style> -->
+      }
+    </style>
+    
 </head>
 <body>
 
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
-      <img src="/Ceylon_Go/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
       <a href="#">Home</a>
-      <a href="#">Logout</a>
-      <img src="/Ceylon_Go/public/images/profile.jpeg" alt="User" class="profile-pic">
+      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
+      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
@@ -267,13 +239,13 @@ try {
     <!-- Sidebar -->
     <div class="sidebar">
       <ul>
-        <li><a href="dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li><a href="upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
-        <li><a href="pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
-        <li><a href="cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
-        <li><a href="review"><i class="fa-regular fa-star"></i> Reviews</a></li>
-        <li class="active"><a href="profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+        <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+        <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
+        <li class="active"><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
+        <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </div>
   
@@ -296,7 +268,7 @@ try {
 
         <!-- Profile Header -->
         <div class="profile-header">
-          <img src="/Ceylon_Go/public/images/profile.jpeg" alt="Profile Picture" class="profile-pic">
+          <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="Profile Picture" class="profile-pic">
           <div>
             <h2><?= $user['full_name'] ?? 'N/A' ?></h2>
             <p>Driver ID: <?= $user['user_id'] ?? 'N/A' ?></p>
@@ -307,52 +279,83 @@ try {
         <!-- Personal Information -->
         <div class="section">
           <h3>Personal Information</h3>
-          <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" value="<?= $user['full_name'] ?? '' ?>">
-          </div>
-          <div class="form-group">
-            <label>Date of Birth</label>
-            <input type="date" value="<?= $user['dob'] ?? '' ?>">
-          </div>
-          <div class="form-group full-width">
-            <label>Home Address</label>
-            <input type="text" value="<?= $user['address'] ?? '' ?>">
-          </div>
+          <form method="POST" action="">
+            <input type="hidden" name="action" value="update_profile">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" name="full_name" value="<?= $user['full_name'] ?? '' ?>" required>
+            </div>
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <input type="date" name="dob" value="<?= $user['dob'] ?? '' ?>" required>
+            </div>
+            <div class="form-group full-width">
+              <label>Home Address</label>
+              <input type="text" name="address" value="<?= $user['address'] ?? '' ?>" required>
+            </div>
+            <div class="form-group">
+              <label>Contact Number</label>
+              <input type="text" name="contact_no" value="<?= $user['contact_no'] ?? '' ?>" required>
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" name="email" value="<?= $user['email'] ?? '' ?>" required>
+            </div>
+            <div class="actions">
+              <button type="submit" class="save">Save Changes</button>
+            </div>
+          </form>
         </div>
 
-        <!-- Contact Details -->
-        <div class="section">
-          <h3>Contact Details</h3>
-          <div class="form-group">
-            <label>Contact Number</label>
-            <input type="text" value="<?= $user['contact_no'] ?? '' ?>">
-          </div>
-          <div class="form-group">
-            <label>Email Address</label>
-            <input type="email" value="<?= $user['email'] ?? '' ?>">
-          </div>
-        </div>
+
 
         <!-- Driving License -->
         <div class="section">
           <h3>Driving License</h3>
-          <div class="form-group">
-            <label>License Number</label>
-            <input type="text" value="<?= $license['license_no'] ?? '' ?>">
+          
+          <!-- Current License Details Display -->
+          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Current License Information</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+              <div>
+                <strong style="color: #666; font-size: 13px;">License Number:</strong>
+                <p style="margin: 5px 0 0 0; font-size: 15px; color: #333;">
+                  <?= !empty($license['license_no']) ? $license['license_no'] : '<em style="color: #999;">Not set</em>' ?>
+                </p>
+              </div>
+              <div>
+                <strong style="color: #666; font-size: 13px;">Expiry Date:</strong>
+                <p style="margin: 5px 0 0 0; font-size: 15px; color: #333;">
+                  <?= !empty($license['license_exp_date']) ? date('F d, Y', strtotime($license['license_exp_date'])) : '<em style="color: #999;">Not set</em>' ?>
+                </p>
+              </div>
+            </div>
           </div>
-          <div class="form-group">
-            <label>Expiry Date</label>
-            <input type="date" value="<?= $license['license_exp_date'] ?? '' ?>">
-          </div>
-          <div class="form-group full-width upload-box">
+
+          <!-- Update License Form -->
+          <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Update License Information</h4>
+          <form method="POST" action="">
+            <input type="hidden" name="action" value="update_license">
+            <div class="form-group">
+              <label>License Number</label>
+              <input type="text" name="license_no" value="<?= $license['license_no'] ?? '' ?>" required>
+            </div>
+            <div class="form-group">
+              <label>Expiry Date</label>
+              <input type="date" name="license_exp_date" value="<?= $license['license_exp_date'] ?? '' ?>" required>
+            </div>
+            <div class="actions">
+              <button type="submit" class="save">Update License</button>
+            </div>
+          </form>
+          <!-- <div class="form-group full-width upload-box">
             <?php if(isset($license['image']) && !empty($license['image'])): ?>
-              <p>Current License: <a href="../../uploads/<?= $license['image'] ?>" target="_blank">View License</a></p>
+              <p>Current License: <a href="/CeylonGo/uploads/<?= $license['image'] ?>" target="_blank">View License</a></p>
             <?php else: ?>
               <p>Click to upload or drag and drop<br>PNG, JPG or PDF (max 5MB)</p>
             <?php endif; ?>
           </div>
-        </div>
+        </div> -->
 
         <!-- Vehicle Information -->
         <div class="section">
@@ -374,13 +377,19 @@ try {
                 <div class="vehicle-card">
                   <div class="vehicle-image">
                     <?php if(isset($v['image']) && !empty($v['image'])): ?>
-                      <img src="../../uploads/<?= $v['image'] ?>" alt="<?= $v['vehicle_no'] ?>">
+                      <img src="/CeylonGo/uploads/<?= $v['image'] ?>" alt="<?= $v['vehicle_no'] ?>">
                     <?php else: ?>
-                      <img src="/Ceylon_Go/public/images/logo.png" alt="No Image">
+                      <img src="/CeylonGo/public/images/logo.png" alt="No Image">
                     <?php endif; ?>
                   </div>
                   <div class="vehicle-info">
-                    <h3><?= $v['vehicle_type'] == '1' ? 'TUK' : ($v['vehicle_type'] == '2' ? 'VAN' : $v['vehicle_type']) ?></h3>
+                    <h3>
+                      <?= 
+                          $v['vehicle_type'] == '1' ? 'TUK' :
+                          ($v['vehicle_type'] == '2' ? 'VAN' :
+                          ($v['vehicle_type'] == '3' ? 'CAR' :
+                          ($v['vehicle_type'] == '4' ? 'BUS' : $v['vehicle_type'])))
+                        ?>                    </h3>
                     <p><strong>License Plate:</strong> <?= $v['vehicle_no'] ?? 'N/A' ?></p>
                     <p><strong>Passenger Capacity:</strong> <?= $v['psg_capacity'] ?? 'N/A' ?></p>
                   </div>
@@ -402,11 +411,7 @@ try {
           </div>
         </div>
 
-        <!-- Buttons -->
-        <div class="actions">
-          <button class="cancel">Cancel</button>
-          <button class="save">Save Changes</button>
-        </div>
+
       </div>
     </div>
   </div>
@@ -432,12 +437,14 @@ try {
           <select id="edit_vehicle_type" name="vehicle_type" required>
             <option value="1">TUK</option>
             <option value="2">VAN</option>
+            <option value="3">CAR</option>
+            <option value="4">BUS</option>
           </select>
         </div>
         
         <div class="form-group">
           <label>Passenger Capacity</label>
-          <input type="number" id="edit_psg_capacity" name="psg_capacity" required>
+          <input type="number" id="edit_psg_capacity" name="psg_capacity" min="1" value="1" required>
         </div>
         
         <div class="form-group">
@@ -465,7 +472,7 @@ try {
       // Show current image if exists
       const preview = document.getElementById('current_image_preview');
       if (currentImage) {
-        preview.innerHTML = `<p>Current Image: <img src="../../uploads/${currentImage}" style="max-width: 100px; max-height: 100px;"></p>`;
+        preview.innerHTML = `<p>Current Image: <img src="/CeylonGo/uploads/${currentImage}" style="max-width: 100px; max-height: 100px;"></p>`;
       } else {
         preview.innerHTML = '<p>No current image</p>';
       }

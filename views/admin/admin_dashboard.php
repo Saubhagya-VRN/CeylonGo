@@ -1,14 +1,20 @@
 <?php
-  session_start();
-  include("../../config/database.php");
+  // Session is already started in public/index.php
+  // Use Database class instead of direct include
+  require_once(__DIR__ . '/../../config/config.php');
+  require_once(__DIR__ . '/../../core/Database.php');
 
-  // If not logged in - redirect to login
-  if (!isset($_SESSION['admin_id'])) {
-      header("Location: admin_login.php");
+  // ✅ Make sure only logged-in admins can view this
+  if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+      header("Location: /CeylonGo/public/login");
       exit();
   }
 
-  $admin_id = $_SESSION['admin_id'];
+  // Get database connection
+  $conn = Database::getMysqliConnection();
+
+  // ✅ Get the corresponding admin ref_id
+  $admin_id = $_SESSION['user_ref_id']; // from users.ref_id
 
   $sql = "SELECT username, role FROM admin WHERE id = ?";
   $stmt = $conn->prepare($sql);
@@ -24,13 +30,13 @@
 
   // Total number of users
   $totalUsers = 0;
-  $sqlUsers = "SELECT COUNT(*) AS total FROM admin_user";
+  $sqlUsers = "SELECT COUNT(*) AS total FROM tourist_users";
   $resultUsers = $conn->query($sqlUsers);
   if ($resultUsers && $row = $resultUsers->fetch_assoc()) {
       $totalUsers = $row['total'];
   }
 
-  $conn->close();
+  // Don't close connection - it's a singleton
 ?>
 
 <!DOCTYPE html>
@@ -49,17 +55,17 @@
         <h2>Ceylon Go</h2>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="admin_dashboard.php" class="active">Home</a></li>
-        <li><a href="admin_user.php">Users</a></li>
-        <li><a href="admin_bookings.php">Bookings</a></li>
-        <li><a href="admin_service.php">Service Providers</a></li>
-        <li><a href="admin_payments.php">Payments</a></li>
-        <li><a href="admin_reports.php">Reports</a></li>
-        <li><a href="admin_reviews.php">Reviews</a></li>
-        <li><a href="admin_inquiries.php">Inquiries</a></li>
-        <li><a href="admin_settings.php">System Settings</a></li>
-        <li><a href="admin_promotions.php">Promotions</a></li>
-        <li><a href="../../controllers/admin/logout.php">Logout</a></li>
+        <li><a href="/CeylonGo/public/admin/dashboard" class="active">Home</a></li>
+        <li><a href="/CeylonGo/public/admin/users">Users</a></li>
+        <li><a href="/CeylonGo/public/admin/bookings">Bookings</a></li>
+        <li><a href="/CeylonGo/public/admin/service">Service Providers</a></li>
+        <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+        <li><a href="/CeylonGo/public/admin/reports">Reports</a></li>
+        <li><a href="/CeylonGo/public/admin/reviews">Reviews</a></li>
+        <li><a href="/CeylonGo/public/admin/inquiries">Inquiries</a></li>
+        <li><a href="/CeylonGo/public/admin/settings">System Settings</a></li>
+        <li><a href="/CeylonGo/public/admin/promotions">Promotions</a></li>
+        <li><a href="/CeylonGo/public/logout">Logout</a></li>
       </ul>
     </aside>
  
@@ -73,14 +79,14 @@
           </div>
         </div>
         <div class="profile-buttons">
-          <button class="btn-black"><a href="admin_profile.php">View/ Edit/ Delete Profile</a></button>
+          <button class="btn-black"><a href="/CeylonGo/public/admin/profile" class="profile-link">View/ Edit/ Delete Profile</a></button>
         </div>
       </header>
 
       <section class="summary-overview">
         <h3>Summary Overview</h3>
         <div class="stats">
-          <div class="stat"><li><a href="admin_user.php"><h4>Total Users</h4></a></li><p><?= $totalUsers ?></p></div>
+          <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
           <div class="stat"><h4>Active Providers</h4><p>58</p></div>
           <div class="stat"><h4>New Bookings</h4><p>150</p></div>
           <div class="stat"><h4>Total Payments</h4><p>LKR 10,250</p></div>
@@ -92,9 +98,9 @@
       <section class="recent">
         <h3>Recent Inquiries</h3>
         <div class="list">
-          <div class="item">Inquiry #123 - Fathima Zara <span>Pending</span></div>
-          <div class="item">Inquiry #124 - Jane Roe <span>Resolved</span></div>
-          <div class="item">Inquiry #125 - Mark Smith <span>Pending</span></div>
+          <div class="item">Inquiry 123 - Fathima Zara <span>Pending</span></div>
+          <div class="item">Inquiry 124 - Jane Roe <span>Resolved</span></div>
+          <div class="item">Inquiry 125 - Mark Smith <span>Pending</span></div>
         </div>
       </section>
 
@@ -107,10 +113,10 @@
       
       <footer>
         <ul>
-          <li><a href="bookings.html">View All Bookings</a></li>
-          <li><a href="admin_settings.html">Update Settings</a></li>
-          <li><a href="admin_reports.html">Generate Report</a></li>
-          <li><a href="admin_payments.html">Payments</a></li>
+          <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
+          <li><a href="/CeylonGo/public/admin/settings">Update Settings</a></li>
+          <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
+          <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
         </ul>
       </footer>
     </div>

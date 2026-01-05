@@ -69,6 +69,50 @@
   border-bottom: 1px solid #ddd;
 }
 
+/* Remove underline and purple link color */
+.stat-link {
+  text-decoration: none;
+  color: black;
+}
+
+.stat-link:hover {
+  color: #39663e; /* Optional hover color (same green as header) */
+}
+
+/* Also fix the purple link in the button */
+.btn-black a {
+  text-decoration: none;
+  color: white;
+}
+
+.btn-black a:hover {
+  color: #dcdcdc; /* slight gray hover effect */
+}
+
+/* --- Remove underline and purple color from dashboard links --- */
+.stat-link,
+.stat-link:visited,
+.stat-link:active {
+  text-decoration: none !important;
+  color: black !important;
+}
+
+.stat-link:hover {
+  color: #39663e !important; /* dark green hover effect */
+}
+
+/* --- Fix button link color --- */
+.profile-link,
+.profile-link:visited,
+.profile-link:active {
+  color: white !important;
+  text-decoration: none !important;
+}
+
+.profile-link:hover {
+  color: #e0e0e0 !important;
+}
+
 footer {
   margin-top: 20px;
   background: #333;

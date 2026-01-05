@@ -24,7 +24,7 @@ class Router {
         $requestedUri = '/' . trim($requestedUri, '/');
 
         // Adjust your project folder here
-        $basePath = '/Ceylon_Go/public';
+        $basePath = '/CeylonGo/public';
 
         // Remove base path
         if (str_starts_with($requestedUri, $basePath)) {

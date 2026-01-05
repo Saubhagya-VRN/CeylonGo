@@ -1,72 +1,73 @@
 <?php
-// Vehicle registration page with database connection
 require_once "../config/config.php";
 require_once "../core/Database.php";
 require_once "../models/Vehicle.php";
 require_once "../models/VehicleType.php";
+require_once "session_init.php";
 
-$user_id = "U68f28688787"; // Current user ID
+$user_id = $_SESSION['transporter_id'];
 $message = "";
 $error = "";
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         $db = Database::getConnection();
-        
-        // Get form data
+
         $vehicle_no = $_POST['vehicle_no'] ?? '';
         $vehicle_type = $_POST['vehicle_type'] ?? '';
-        $psg_capacity = $_POST['psg_capacity'] ?? '';
-        
-        // Handle file upload
-        $image = '';
-        if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-            $uploadDir = '../../uploads/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            
-            $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
-            $extension = $fileInfo['extension'];
-            $newFileName = uniqid('img_', true) . '.' . $extension;
-            $targetPath = $uploadDir . $newFileName;
-            
-            if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
-                $image = $newFileName;
-            }
-        }
-        
-        // Create vehicle object and save
-        $vehicle = new Vehicle($db);
-        $vehicle->vehicle_no = $vehicle_no;
-        $vehicle->user_id = $user_id;
-        $vehicle->vehicle_type = $vehicle_type;
-        $vehicle->psg_capacity = $psg_capacity;
-        $vehicle->image = $image;
-        
-        if ($vehicle->addVehicle()) {
-            $message = "Vehicle added successfully!";
-            // Redirect to profile page after 2 seconds
-            header("refresh:2;url=profile.php");
+        $psg_capacity = $_POST['psg_capacity'] ?? 0;
+
+        // Validate passenger capacity
+        if ($psg_capacity < 1) {
+            $error = "Passenger capacity must be at least 1.";
         } else {
-            $error = "Failed to add vehicle. Please try again.";
+            // Handle file upload
+            $image = '';
+            if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
+                $uploadDir = __DIR__ . '/CeylonGo/uploads/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
+                $extension = $fileInfo['extension'];
+                $newFileName = uniqid('img_', true) . '.' . $extension;
+                $targetPath = $uploadDir . $newFileName;
+
+                if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
+                    $image = $newFileName;
+                }
+            }
+
+            // Save vehicle
+            $vehicle = new Vehicle($db);
+            $vehicle->vehicle_no = $vehicle_no;
+            $vehicle->user_id = trim($user_id);
+            $vehicle->vehicle_type = $vehicle_type;
+            $vehicle->psg_capacity = $psg_capacity;
+            $vehicle->image = $image;
+
+            if ($vehicle->addVehicle()) {
+                header("Location: profile");
+                exit;
+            } else {
+                $error = "Failed to add vehicle. Please try again.";
+            }
         }
-        
-      } catch (Exception $e) {
-          $error = "Error: " . $e->getMessage();
-      }
+
+    } catch (Exception $e) {
+        $error = "Error: " . $e->getMessage();
+    }
 }
 
-      // Get vehicle types for dropdown
-      try {
-          $db = Database::getConnection();
-          $vehicleTypeModel = new VehicleType($db);
-          $vehicleTypes = $vehicleTypeModel->getAllTypes()->fetchAll(PDO::FETCH_ASSOC);
-      } catch (Exception $e) {
-          $vehicleTypes = [];
-      }
-      ?>
+try {
+    $db = Database::getConnection();
+    $vehicleTypeModel = new VehicleType($db);
+    $vehicleTypes = $vehicleTypeModel->getAllTypes()->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $vehicleTypes = [];
+}
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -74,26 +75,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Add Vehicle</title>
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/base.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/navbar.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/sidebar.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/footer.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
     
     <!-- Component styles -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/cards.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/buttons.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/forms.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/cards.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/buttons.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/forms.css">
     
     <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/timeline.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/charts.css">
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/vehicle.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/timeline.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/tables.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/profile.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/vehicle.css">
 
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/Ceylon_Go/public/css/transport/responsive.css">   
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">   
     
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -102,13 +103,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
-      <img src="/Ceylon_Go/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
       <a href="#">Home</a>
-      <a href="#">Logout</a>
-      <img src="/Ceylon_Go/public/images/profile.jpeg" alt="User" class="profile-pic">
+      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
+      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
@@ -116,13 +117,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <!-- Sidebar -->
     <div class="sidebar">
       <ul>
-        <li><a href="dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li><a href="upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
-        <li><a href="pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
-        <li><a href="cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
-        <li><a href="review"><i class="fa-regular fa-star"></i> Reviews</a></li>
-        <li><a href="profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+        <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+        <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
+        <li class="active"><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
+        <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </div>
 
@@ -145,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
   <!-- Registration Form -->
   <main class="form-container">
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" action="vehicle">
 
       <label>Vehicle Type</label>
       <select name="vehicle_type" required>
@@ -171,7 +172,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       <input type="file" name="vehicle_image" accept="image/*">
 
       <label>Passenger Capacity</label>
-      <input type="number" name="psg_capacity" placeholder="Enter your Vehicle's Passenger Capacity" required>
+      <input type="number" name="psg_capacity" min="1" value="1" placeholder="Enter your Vehicle's Passenger Capacity" required>
+
+      <input type="hidden" name="user_id" value="<?=$user_id?>">
 
       <div class="buttons">
         <button type="submit" class="register-btn">Add Vehicle</button>

@@ -1,0 +1,79 @@
+/* ===== FORM STYLES ===== */
+.form-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+form label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.tour-type {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.tour-type label {
+  font-weight: normal;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.form-group {
+  display: inline-block;
+  width: 48%;
+  margin-bottom: 15px;
+}
+
+.form-group.full-width {
+  width: 100%;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: #555;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.upload-box {
+  border: 2px dashed #bbb;
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

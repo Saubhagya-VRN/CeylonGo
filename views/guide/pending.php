@@ -7,16 +7,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Tour Guide Pending Requests</title>
-  <link rel="stylesheet" href="../../public/css/transport/pending.css">
-  <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
-  <link rel="stylesheet" href="../../public/css/tourist/footer.css">
+  <!-- Base styles -->
+  <link rel="stylesheet" href="../../public/css/guide/base.css">
+  <link rel="stylesheet" href="../../public/css/guide/navbar.css">
+  <link rel="stylesheet" href="../../public/css/guide/sidebar.css">
+  <link rel="stylesheet" href="../../public/css/guide/footer.css">
+  
+  <!-- Component styles -->
+  <link rel="stylesheet" href="../../public/css/guide/cards.css">
+  <link rel="stylesheet" href="../../public/css/guide/buttons.css">
+  <link rel="stylesheet" href="../../public/css/guide/forms.css">
+  
+  <!-- Page-specific styles -->
+  <link rel="stylesheet" href="../../public/css/guide/tables.css">
+  <link rel="stylesheet" href="../../public/css/guide/profile.css">
+  <link rel="stylesheet" href="../../public/css/guide/reviews.css">
+  <link rel="stylesheet" href="../../public/css/guide/charts.css">
+
   <!-- Font Awesome for sidebar icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body {
-      background-color: #f0f8f0; /* Light greenish background from tourist_dashboard */
-    }
-  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -28,7 +37,7 @@
     
     <nav class="nav-links">
       <a href="guide_dashboard.php">Home</a>
-      <a href="#">Logout</a>
+      <a href="../tourist/tourist_dashboard.php">Logout</a>
       <img src="../../public/images/user.png" alt="User" class="profile-pic">
     </nav>
   </header>
@@ -115,6 +124,11 @@
   </div>
 
   <!-- Footer -->
-  <?php include '../tourist/footer.php'; ?>
+  <footer>
+    <ul>
+      <li><a href="#">About Us</a></li>
+      <li><a href="#">Contact Us</a></li>
+    </ul>
+  </footer>
 </body>
 </html>

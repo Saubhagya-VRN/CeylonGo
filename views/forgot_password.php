@@ -1,5 +1,50 @@
 <?php
 // forgot_password.php
+include('../config/database.php');
+session_start();
+
+$error = '';
+$success = '';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = trim($_POST['email']);
+    $new_password = trim($_POST['new_password']);
+    $confirm_password = trim($_POST['confirm_password']);
+    
+    if (!empty($email) && !empty($new_password) && !empty($confirm_password)) {
+        // Validate password confirmation
+        if ($new_password !== $confirm_password) {
+            $error = "Passwords do not match.";
+        } elseif (strlen($new_password) < 6) {
+            $error = "Password must be at least 6 characters long.";
+        } else {
+            // Check if user exists
+            $sql = "SELECT * FROM users WHERE email = ?";
+            $stmt = mysqli_prepare($conn, $sql);
+            mysqli_stmt_bind_param($stmt, "s", $email);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            
+            if ($row = mysqli_fetch_assoc($result)) {
+                // Update password
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $update_sql = "UPDATE users SET password = ? WHERE email = ?";
+                $update_stmt = mysqli_prepare($conn, $update_sql);
+                mysqli_stmt_bind_param($update_stmt, "ss", $hashed_password, $email);
+                
+                if (mysqli_stmt_execute($update_stmt)) {
+                    $success = "Password updated successfully! You can now login with your new password.";
+                } else {
+                    $error = "Failed to update password. Please try again.";
+                }
+            } else {
+                $error = "No account found with that email address.";
+            }
+        }
+    } else {
+        $error = "Please fill in all fields.";
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -129,8 +174,8 @@
 
   <!-- Forgot Password Section -->
   <section class="intro" style="padding: 60px 20px;">
-    <h1>Forgot Password</h1>
-    <p>Enter your email address and we'll send you instructions to reset your password.</p>
+    <h1>Reset Password</h1>
+    <p>Enter your email address and new password to reset your account password.</p>
   </section>
 
   <section style="padding: 0 20px 60px;">
@@ -138,29 +183,39 @@
       <div class="forgot-card">
         <h2 style="text-align: center; margin-bottom: 30px; color: var(--color-primary);">Reset Your Password</h2>
         
+        <?php if (isset($error) && !empty($error)) { ?>
+          <div style="color: red; text-align: center; margin-bottom: 15px; padding: 10px; background: #ffe6e6; border: 1px solid #ffcccc; border-radius: 5px;">
+            <?php echo htmlspecialchars($error); ?>
+          </div>
+        <?php } ?>
+        
+        <?php if (isset($success) && !empty($success)) { ?>
+          <div style="color: green; text-align: center; margin-bottom: 15px; padding: 10px; background: #e6ffe6; border: 1px solid #ccffcc; border-radius: 5px;">
+            <?php echo htmlspecialchars($success); ?>
+          </div>
+        <?php } ?>
+        
         <div class="info-text">
-          <strong>How it works:</strong> Enter your email address and user type below. We'll send you a secure link to reset your password. The link will expire in 24 hours for security.
+          <strong>Instructions:</strong> Enter your registered email address and create a new password. Make sure to confirm your new password correctly.
         </div>
         
         <form class="forgot-form" method="POST" action="">
-          <div class="form-group">
-            <label for="user-type">Account Type</label>
-            <select id="user-type" name="user-type" required>
-              <option value="">Select account type</option>
-              <option value="tourist">Tourist</option>
-              <option value="hotel">Hotel</option>
-              <option value="guide">Tour Guide</option>
-              <option value="transport">Transport Provider</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
           <div class="form-group">
             <label for="email">Email Address</label>
             <input type="email" id="email" name="email" placeholder="Enter your registered email address" required>
           </div>
 
-          <button type="submit" class="submit-btn">Send Reset Instructions</button>
+          <div class="form-group">
+            <label for="new_password">New Password</label>
+            <input type="password" id="new_password" name="new_password" placeholder="Enter your new password" required>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm_password">Confirm New Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm your new password" required>
+          </div>
+
+          <button type="submit" class="submit-btn">Reset Password</button>
         </form>
 
         <div class="back-link">
