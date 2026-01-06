@@ -1,12 +1,12 @@
 /* ===== PROFILE MANAGEMENT ===== */
 .container {
-  margin-left: 100px;
   background: #fff;
+  width: 100%;
   max-width: 1000px;
-  padding: 20px;
+  padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  flex: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 auto;
 }
 
 .profile-header {
@@ -14,6 +14,7 @@
   align-items: center;
   gap: 15px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .profile-header h2 {
@@ -58,4 +59,21 @@
 
 .section-header h3 {
   margin: 0;
+}
+
+/* Responsive Profile */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+    border-radius: 8px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .section h3 {
+    font-size: 16px;
+  }
 }

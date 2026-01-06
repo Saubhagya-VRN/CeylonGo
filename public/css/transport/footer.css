@@ -1,29 +1,54 @@
 /* ===== FOOTER ===== */
 footer {
-  background-color: #b8bdb8;
+  background: linear-gradient(135deg, #2c5530 0%, #1e3d22 100%);
   color: white;
-  padding: 15px 0;
+  padding: 20px 0;
   text-align: center;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   width: 100%;
-  z-index: 999;
+  margin-top: auto;
 }
 
 footer ul {
   list-style: none;
   padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
 }
 
 footer ul li {
   display: inline;
-  margin: 0 10px;
 }
 
 footer ul li a {
-  color: rgb(110, 151, 80);
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+
+footer ul li a:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+  footer {
+    padding: 15px 10px;
+  }
+
+  footer ul {
+    gap: 15px;
+  }
+
+  footer ul li a {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
 }

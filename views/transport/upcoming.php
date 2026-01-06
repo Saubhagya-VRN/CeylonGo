@@ -16,52 +16,39 @@
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/forms.css">
     
     <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/timeline.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
 
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
     
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    
-    <!-- Inline responsive fix -->
-    <style>
-      @media (max-width: 768px) {
-        .navbar {
-          width: 100% !important;
-          left: 0 !important;
-          right: 0 !important;
-        }
-        .table-container {
-          overflow-x: auto !important;
-        }
-        table {
-          min-width: 600px !important;
-        }
-      }
-    </style>
 </head>
 <body>
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
-      <a href="#">Home</a>
-      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
+      <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+      <a href="/CeylonGo/public/logout">Logout</a>
       <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="page-wrapper">
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
         <li class="active"><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
@@ -75,10 +62,9 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        <h2>Upcoming Bookings</h2>
-    
+      <h2 class="page-title"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</h2>
 
-      <!-- Bookings Table -->
+      <!-- Desktop Table View -->
       <div class="table-container">
         <table>
           <thead>
@@ -90,26 +76,80 @@
               <th></th>
             </tr>
           </thead>
-
           <tbody>
             <tr>
               <td>#12345</td>
               <td>2025-03-15</td>
               <td>09:00 AM</td>
               <td>123, Park Road, Dehiwala</td>
-              <td><a href="/CeylonGo/public/transporter/info">See More</a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
-
             <tr>
               <td>#77889</td>
               <td>2025-08-19</td>
               <td>02:30 PM</td>
               <td>202 Cedar Road, Colombo</td>
-              <td><a href="/CeylonGo/public/transporter/info">See More</a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
-
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="booking-cards">
+        <div class="booking-card-item">
+          <div class="card-header">
+            <span class="booking-no">#12345</span>
+            <span class="status-badge upcoming">Upcoming</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2025-03-15</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>09:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>123, Park Road, Dehiwala</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <div class="booking-card-item">
+          <div class="card-header">
+            <span class="booking-no">#77889</span>
+            <span class="status-badge upcoming">Upcoming</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2025-08-19</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>02:30 PM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>202 Cedar Road, Colombo</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -121,5 +161,52 @@
       <li><a href="#">Contact Us</a></li>
     </ul>
   </footer>
+
+  <!-- Hamburger Menu Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar() {
+        hamburgerBtn.classList.toggle('active');
+        sidebar.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+      
+      function closeSidebar() {
+        hamburgerBtn.classList.remove('active');
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+      }
+      
+      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+      
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 </body>
 </html>
+

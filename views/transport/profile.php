@@ -225,19 +225,27 @@ try {
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
-      <a href="#">Home</a>
-      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
-      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
+      <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+      <a href="/CeylonGo/public/logout">Logout</a>
+      <img src="<?php echo htmlspecialchars($profile_picture ?? '/CeylonGo/public/images/profile.jpg'); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="page-wrapper">
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
         <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
@@ -459,7 +467,7 @@ try {
         </div>
       </form>
     </div>
-    
+  </div>
   
   <script>
     // Open edit modal
@@ -508,7 +516,6 @@ try {
       }
     }
   </script>
-  </div>
 
     <!-- Footer -->
   <footer>
@@ -517,6 +524,52 @@ try {
       <li><a href="#">Contact Us</a></li>
     </ul>
   </footer>
+
+  <!-- Hamburger Menu Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar() {
+        hamburgerBtn.classList.toggle('active');
+        sidebar.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+      
+      function closeSidebar() {
+        hamburgerBtn.classList.remove('active');
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+      }
+      
+      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+      
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

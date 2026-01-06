@@ -313,79 +313,108 @@
             font-size: 14px;
         }
 
-        /* Decision Action Buttons */
+        /* Floating Decision Panel */
         .decision-section {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-            margin-bottom: 30px;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 1000;
+            max-width: 400px;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .decision-section h3 {
-            margin: 0 0 20px 0;
-            font-size: 18px;
+            margin: 0 0 18px 0;
+            font-size: 16px;
             color: #1a1a2e;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: 700;
         }
 
         .decision-section h3 i {
             color: #ffc107;
+            font-size: 18px;
         }
 
         .decision-buttons {
             display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 12px;
+            flex-wrap: nowrap;
         }
 
         .decision-btn {
             flex: 1;
-            min-width: 200px;
-            padding: 20px 30px;
+            padding: 14px 20px;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            transition: all 0.3s ease;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .decision-btn.accept {
-            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: #fff;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.35);
         }
 
         .decision-btn.accept:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.45);
+        }
+
+        .decision-btn.accept:active {
+            transform: translateY(0) scale(0.98);
         }
 
         .decision-btn.accept i {
-            font-size: 22px;
+            font-size: 16px;
         }
 
         .decision-btn.reject {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            background: linear-gradient(135deg, #dc3545 0%, #e74c5e 100%);
             color: #fff;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.35);
         }
 
         .decision-btn.reject:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.45);
+        }
+
+        .decision-btn.reject:active {
+            transform: translateY(0) scale(0.98);
         }
 
         .decision-btn.reject i {
-            font-size: 22px;
+            font-size: 16px;
         }
 
         /* Other Action Buttons */
@@ -538,12 +567,25 @@
                 grid-template-columns: 1fr;
             }
 
+            .decision-section {
+                left: 15px;
+                right: 15px;
+                bottom: 15px;
+                max-width: none;
+            }
+
             .decision-buttons {
-                flex-direction: column;
+                flex-direction: row;
+            }
+
+            .decision-btn {
+                padding: 12px 16px;
+                font-size: 13px;
             }
 
             .action-buttons {
                 flex-direction: column;
+                padding-bottom: 120px;
             }
 
             .action-btn {
@@ -557,19 +599,27 @@
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
-      <a href="#">Home</a>
-      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
+      <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+      <a href="/CeylonGo/public/logout">Logout</a>
       <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="page-wrapper">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
         <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
@@ -609,10 +659,6 @@
         <i class="fa-solid fa-bell"></i>
         <h3>New Booking Request!</h3>
         <p>A customer is waiting for your response. Please review the details below and make your decision.</p>
-        <div class="timer">
-          <i class="fa-solid fa-clock"></i>
-          <span>Requested 2 hours ago</span>
-        </div>
       </div>
 
       <!-- Customer Information -->
@@ -773,7 +819,51 @@
     </ul>
   </footer>
 
+  <!-- Hamburger Menu Toggle Script -->
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar() {
+        hamburgerBtn.classList.toggle('active');
+        sidebar.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+      
+      function closeSidebar() {
+        hamburgerBtn.classList.remove('active');
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+      }
+      
+      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+      
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeSidebar();
+        }
+      });
+    });
+
     function acceptBooking() {
       if (confirm('Are you sure you want to ACCEPT this booking request?')) {
         alert('✅ Booking accepted successfully! The customer will be notified.');
