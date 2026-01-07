@@ -84,7 +84,7 @@
               <td>10:30 AM</td>
               <td>45 Beach Road, Negombo</td>
               <td>Customer cancelled</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#98765</td>
@@ -92,7 +92,31 @@
               <td>08:00 AM</td>
               <td>Colombo Fort Station</td>
               <td>Weather conditions</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN201</td>
+              <td>2026-01-12</td>
+              <td>09:00 AM</td>
+              <td>Galle Face Hotel</td>
+              <td>Schedule conflict</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN202</td>
+              <td>2026-01-20</td>
+              <td>11:00 AM</td>
+              <td>Colombo Airport</td>
+              <td>Flight cancelled</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN203</td>
+              <td>2026-01-28</td>
+              <td>06:30 AM</td>
+              <td>Mount Lavinia</td>
+              <td>Group size changed</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
           </tbody>
         </table>
@@ -128,7 +152,7 @@
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
 
@@ -160,7 +184,121 @@
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Cancelled Booking 1 -->
+        <div class="booking-card-item" style="border-left-color: #9c27b0;">
+          <div class="card-header">
+            <span class="booking-no">#VN201</span>
+            <span class="status-badge cancelled" style="background: #f3e5f5; color: #7b1fa2;">Van - Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-12</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>09:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Galle Face Hotel</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>8</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Schedule conflict</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Cancelled Booking 2 -->
+        <div class="booking-card-item" style="border-left-color: #9c27b0;">
+          <div class="card-header">
+            <span class="booking-no">#VN202</span>
+            <span class="status-badge cancelled" style="background: #f3e5f5; color: #7b1fa2;">Van - Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-20</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>11:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Colombo Airport</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>6</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Flight cancelled</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Cancelled Booking 3 -->
+        <div class="booking-card-item" style="border-left-color: #9c27b0;">
+          <div class="card-header">
+            <span class="booking-no">#VN203</span>
+            <span class="status-badge cancelled" style="background: #f3e5f5; color: #7b1fa2;">Van - Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-28</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>06:30 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Mount Lavinia</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>10</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Group size changed</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
       </div>

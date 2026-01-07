@@ -91,6 +91,42 @@
               </td>
               <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
+            <tr>
+              <td>#VN101</td>
+              <td>2026-01-20</td>
+              <td>07:30 AM</td>
+              <td>Galle Face Hotel</td>
+              <td>5</td>
+              <td>
+                <button class="accept-btn">Accept</button>
+                <button class="reject-btn">Reject</button>
+              </td>
+              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN102</td>
+              <td>2026-01-25</td>
+              <td>08:00 AM</td>
+              <td>Colombo Hilton</td>
+              <td>3</td>
+              <td>
+                <button class="accept-btn">Accept</button>
+                <button class="reject-btn">Reject</button>
+              </td>
+              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN103</td>
+              <td>2026-02-05</td>
+              <td>09:30 AM</td>
+              <td>Negombo Beach Resort</td>
+              <td>7</td>
+              <td>
+                <button class="accept-btn">Accept</button>
+                <button class="reject-btn">Reject</button>
+              </td>
+              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -122,6 +158,132 @@
               <i class="fa-solid fa-calendar-days"></i>
               <span class="label">Duration:</span>
               <span>4 Days</span>
+            </div>
+          </div>
+          <div class="card-actions" style="flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 10px;">
+              <button class="accept-btn" style="flex: 1;">Accept</button>
+              <button class="reject-btn" style="flex: 1;">Reject</button>
+            </div>
+            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Pending Booking 1 -->
+        <div class="booking-card-item" style="border-left-color: #2196F3;">
+          <div class="card-header">
+            <span class="booking-no">#VN101</span>
+            <span class="status-badge pending" style="background: #e3f2fd; color: #1565c0;">Van - Pending</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-20</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>07:30 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Galle Face Hotel</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-calendar-days"></i>
+              <span class="label">Duration:</span>
+              <span>5 Days</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>8</span>
+            </div>
+          </div>
+          <div class="card-actions" style="flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 10px;">
+              <button class="accept-btn" style="flex: 1;">Accept</button>
+              <button class="reject-btn" style="flex: 1;">Reject</button>
+            </div>
+            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Pending Booking 2 -->
+        <div class="booking-card-item" style="border-left-color: #2196F3;">
+          <div class="card-header">
+            <span class="booking-no">#VN102</span>
+            <span class="status-badge pending" style="background: #e3f2fd; color: #1565c0;">Van - Pending</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-25</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>08:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Colombo Hilton</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-calendar-days"></i>
+              <span class="label">Duration:</span>
+              <span>3 Days</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>10</span>
+            </div>
+          </div>
+          <div class="card-actions" style="flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 10px;">
+              <button class="accept-btn" style="flex: 1;">Accept</button>
+              <button class="reject-btn" style="flex: 1;">Reject</button>
+            </div>
+            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Pending Booking 3 -->
+        <div class="booking-card-item" style="border-left-color: #2196F3;">
+          <div class="card-header">
+            <span class="booking-no">#VN103</span>
+            <span class="status-badge pending" style="background: #e3f2fd; color: #1565c0;">Van - Pending</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-02-05</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>09:30 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Negombo Beach Resort</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-calendar-days"></i>
+              <span class="label">Duration:</span>
+              <span>7 Days</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>12</span>
             </div>
           </div>
           <div class="card-actions" style="flex-direction: column; gap: 12px;">

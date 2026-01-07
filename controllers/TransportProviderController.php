@@ -61,6 +61,10 @@ class TransportProviderController {
         view('transport/pending_info');
     }
 
+    public function cancelledInfo() {
+        view('transport/cancelled_info');
+    }
+
         // Helper function to generate unique filenames
         function generateFileName($originalName) {
             $ext = pathinfo($originalName, PATHINFO_EXTENSION);

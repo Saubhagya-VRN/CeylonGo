@@ -210,6 +210,72 @@
             dropoffLocation: "Airport",
             numPeople: 6,
             notes: "Customer cancelled"
+          },
+          {
+            date: "2026-01-15",
+            status: "upcoming",
+            customerName: "Amara Jayawardena",
+            vehicleType: "Van",
+            pickupTime: "08:30 AM",
+            pickupLocation: "Colombo Fort",
+            dropoffLocation: "Ella",
+            numPeople: 10,
+            notes: "Group tour - 3 days trip"
+          },
+          {
+            date: "2026-01-18",
+            status: "upcoming",
+            customerName: "Ranjith Wickramasinghe",
+            vehicleType: "Van",
+            pickupTime: "06:00 AM",
+            pickupLocation: "Mount Lavinia Hotel",
+            dropoffLocation: "Sigiriya",
+            numPeople: 12,
+            notes: "Corporate team outing"
+          },
+          {
+            date: "2026-01-22",
+            status: "upcoming",
+            customerName: "Linda Thompson",
+            vehicleType: "Van",
+            pickupTime: "10:00 AM",
+            pickupLocation: "Bandaranaike Airport",
+            dropoffLocation: "Nuwara Eliya",
+            numPeople: 7,
+            notes: "Tourist group from UK"
+          },
+          {
+            date: "2026-02-01",
+            status: "upcoming",
+            customerName: "Kasun Bandara",
+            vehicleType: "Van",
+            pickupTime: "07:00 AM",
+            pickupLocation: "Kandy City",
+            dropoffLocation: "Trincomalee Beach",
+            numPeople: 9,
+            notes: "Beach holiday - need AC"
+          },
+          {
+            date: "2026-01-12",
+            status: "cancelled",
+            customerName: "Priya Mendis",
+            vehicleType: "Van",
+            pickupTime: "09:00 AM",
+            pickupLocation: "Galle Face Hotel",
+            dropoffLocation: "Yala National Park",
+            numPeople: 8,
+            notes: "Cancelled - schedule conflict"
+          },
+          {
+            date: "2026-01-20",
+            status: "cancelled",
+            customerName: "Robert Anderson",
+            vehicleType: "Van",
+            pickupTime: "11:00 AM",
+            pickupLocation: "Colombo Airport",
+            dropoffLocation: "Mirissa",
+            numPeople: 6,
+            notes: "Flight cancelled"
           }
         ];
 

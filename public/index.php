@@ -25,6 +25,7 @@ $router->get('transporter/profile', 'TransportProviderController@profile');
 $router->post('transporter/profile', 'TransportProviderController@profile');
 $router->get('transporter/info', 'TransportProviderController@info');
 $router->get('transporter/pending_info', 'TransportProviderController@pendingInfo');
+$router->get('transporter/cancelled_info', 'TransportProviderController@cancelledInfo');
 $router->get('transporter/vehicle', 'TransportProviderController@vehicle');
 $router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
 $router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
