@@ -498,34 +498,10 @@
             <span class="percentage">5%</span>
           </div>
         </div>
-
-        <div class="rating-stats">
-          <div class="stat-box positive">
-            <h4>92%</h4>
-            <p>Would recommend</p>
-          </div>
-          <div class="stat-box">
-            <h4>4.8</h4>
-            <p>Punctuality</p>
-          </div>
-          <div class="stat-box">
-            <h4>4.6</h4>
-            <p>Cleanliness</p>
-          </div>
-        </div>
       </div>
 
-      <!-- Filter Section -->
-      <div class="filter-section">
-        <h3><i class="fa-solid fa-comments"></i> All Reviews</h3>
-        <div class="filter-buttons">
-          <button class="filter-btn active">All</button>
-          <button class="filter-btn">5 Stars</button>
-          <button class="filter-btn">4 Stars</button>
-          <button class="filter-btn">3 Stars</button>
-          <button class="filter-btn">1-2 Stars</button>
-        </div>
-      </div>
+      <!-- Reviews Section Header -->
+      <h3 style="margin: 30px 0 20px 0; font-size: 20px; color: #1a1a2e;">All Reviews</h3>
 
       <!-- Reviews Container -->
       <div class="reviews-container">

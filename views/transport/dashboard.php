@@ -24,9 +24,6 @@
 
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">  
-    
-    <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/responsive.css">  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -34,20 +31,28 @@
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
-      <a href="#">Home</a>
-      <a href="/CeylonGo/views/tourist/tourist_dashboard.php">Logout</a>
-     <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
+      <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+      <a href="/CeylonGo/public/logout">Logout</a>
+      <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
     </nav>
   </header>
+  
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   
   <div class="page-wrapper">
 
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <ul>
         <li class="active"><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
         <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
@@ -205,6 +210,72 @@
             dropoffLocation: "Airport",
             numPeople: 6,
             notes: "Customer cancelled"
+          },
+          {
+            date: "2026-01-15",
+            status: "upcoming",
+            customerName: "Amara Jayawardena",
+            vehicleType: "Van",
+            pickupTime: "08:30 AM",
+            pickupLocation: "Colombo Fort",
+            dropoffLocation: "Ella",
+            numPeople: 10,
+            notes: "Group tour - 3 days trip"
+          },
+          {
+            date: "2026-01-18",
+            status: "upcoming",
+            customerName: "Ranjith Wickramasinghe",
+            vehicleType: "Van",
+            pickupTime: "06:00 AM",
+            pickupLocation: "Mount Lavinia Hotel",
+            dropoffLocation: "Sigiriya",
+            numPeople: 12,
+            notes: "Corporate team outing"
+          },
+          {
+            date: "2026-01-22",
+            status: "upcoming",
+            customerName: "Linda Thompson",
+            vehicleType: "Van",
+            pickupTime: "10:00 AM",
+            pickupLocation: "Bandaranaike Airport",
+            dropoffLocation: "Nuwara Eliya",
+            numPeople: 7,
+            notes: "Tourist group from UK"
+          },
+          {
+            date: "2026-02-01",
+            status: "upcoming",
+            customerName: "Kasun Bandara",
+            vehicleType: "Van",
+            pickupTime: "07:00 AM",
+            pickupLocation: "Kandy City",
+            dropoffLocation: "Trincomalee Beach",
+            numPeople: 9,
+            notes: "Beach holiday - need AC"
+          },
+          {
+            date: "2026-01-12",
+            status: "cancelled",
+            customerName: "Priya Mendis",
+            vehicleType: "Van",
+            pickupTime: "09:00 AM",
+            pickupLocation: "Galle Face Hotel",
+            dropoffLocation: "Yala National Park",
+            numPeople: 8,
+            notes: "Cancelled - schedule conflict"
+          },
+          {
+            date: "2026-01-20",
+            status: "cancelled",
+            customerName: "Robert Anderson",
+            vehicleType: "Van",
+            pickupTime: "11:00 AM",
+            pickupLocation: "Colombo Airport",
+            dropoffLocation: "Mirissa",
+            numPeople: 6,
+            notes: "Flight cancelled"
           }
         ];
 
@@ -444,6 +515,53 @@
     </ul>
   </footer>
 
+  <!-- Hamburger Menu Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar() {
+        hamburgerBtn.classList.toggle('active');
+        sidebar.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+      
+      function closeSidebar() {
+        hamburgerBtn.classList.remove('active');
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+      }
+      
+      // Close sidebar when clicking a link (mobile)
+      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+      
+      // Close sidebar on window resize if switching to desktop
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

@@ -25,6 +25,7 @@ $router->get('transporter/profile', 'TransportProviderController@profile');
 $router->post('transporter/profile', 'TransportProviderController@profile');
 $router->get('transporter/info', 'TransportProviderController@info');
 $router->get('transporter/pending_info', 'TransportProviderController@pendingInfo');
+$router->get('transporter/cancelled_info', 'TransportProviderController@cancelledInfo');
 $router->get('transporter/vehicle', 'TransportProviderController@vehicle');
 $router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
 $router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
@@ -46,6 +47,56 @@ $router->get('admin/reports', 'AdminController@reports');
 $router->get('admin/service', 'AdminController@service');
 $router->get('admin/settings', 'AdminController@settings');
 $router->get('admin/forgot-password', 'AdminController@forgotPassword');
+
+// ========== TOURIST ROUTES ==========
+$router->get('tourist/register', 'TouristController@registerView');
+$router->post('tourist/register', 'TouristController@register');
+$router->get('tourist/dashboard', 'TouristController@dashboard');
+$router->get('tourist/transport-services', 'TouristController@transportRequestView');
+$router->post('tourist/transport-services', 'TouristController@transportRequest');
+$router->get('tourist/transport-report', 'TouristController@transportReport');
+$router->get('tourist/tour-guides', 'TouristController@tourGuides');
+$router->get('tourist/choose-hotel', 'TouristController@chooseHotel');
+$router->get('tourist/hotel-details/{id}', 'TouristController@hotelDetails');
+$router->get('tourist/booking-form', 'TouristController@bookingForm');
+$router->get('tourist/payment', 'TouristController@payment');
+$router->get('tourist/trip-summary', 'TouristController@tripSummary');
+$router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
+$router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
+$router->get('tourist/add-review', 'TouristController@addReview');
+$router->get('tourist/transport-providers', 'TouristController@transportProviders');
+$router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
+$router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
+$router->get('tourist/contact', 'TouristController@contact');
+
+// ========== GUIDE ROUTES ==========
+$router->get('guide/register', 'GuideController@registerView');
+$router->post('guide/register', 'GuideController@register');
+$router->get('guide/dashboard', 'GuideController@dashboard');
+$router->get('guide/upcoming', 'GuideController@upcoming');
+$router->get('guide/pending', 'GuideController@pending');
+$router->get('guide/cancelled', 'GuideController@cancelled');
+$router->get('guide/review', 'GuideController@review');
+$router->get('guide/profile', 'GuideController@profile');
+$router->get('guide/places', 'GuideController@places');
+
+// ========== HOTEL ROUTES ==========
+$router->get('hotel/register', 'HotelController@registerView');
+$router->post('hotel/register', 'HotelController@register');
+$router->get('hotel/dashboard', 'HotelController@dashboard');
+$router->get('hotel/rooms', 'HotelController@rooms');
+$router->get('hotel/add-room', 'HotelController@addRoomView');
+$router->post('hotel/add-room', 'HotelController@addRoom');
+$router->get('hotel/edit-room/{id}', 'HotelController@editRoomView');
+$router->post('hotel/update-room', 'HotelController@updateRoom');
+$router->get('hotel/delete-room/{id}', 'HotelController@deleteRoom');
+$router->get('hotel/bookings', 'HotelController@bookings');
+$router->get('hotel/availability', 'HotelController@availability');
+$router->get('hotel/inquiries', 'HotelController@inquiries');
+$router->get('hotel/notifications', 'HotelController@notifications');
+$router->get('hotel/payments', 'HotelController@payments');
+$router->get('hotel/reviews', 'HotelController@reviews');
+$router->get('hotel/report-issue', 'HotelController@reportIssue');
 
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

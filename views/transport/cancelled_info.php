@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ceylon Go - Booking Details</title>
+  <title>Ceylon Go - Cancelled Booking Details</title>
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
@@ -39,7 +39,7 @@
         }
 
         .page-header h1 i {
-            color: #0077b6;
+            color: #dc3545;
         }
 
         .back-btn {
@@ -55,33 +55,25 @@
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
+            text-decoration: none;
         }
 
         .back-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            color: #fff;
         }
 
-        /* Booking Status Banner */
+        /* Cancelled Status Banner */
         .status-banner {
-            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: #fff;
-            padding: 15px 25px;
+            padding: 20px 25px;
             border-radius: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        }
-
-        .status-banner.pending {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
-        }
-
-        .status-banner.cancelled {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
         }
 
@@ -92,12 +84,12 @@
         }
 
         .status-info i {
-            font-size: 24px;
+            font-size: 28px;
         }
 
         .status-info h3 {
             margin: 0;
-            font-size: 18px;
+            font-size: 20px;
         }
 
         .status-info p {
@@ -114,8 +106,41 @@
             font-size: 14px;
         }
 
-        /* Customer Info Card */
-        .customer-card {
+        /* Cancellation Reason Card */
+        .cancellation-card {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #dc3545;
+        }
+
+        .cancellation-card h4 {
+            margin: 0 0 12px 0;
+            color: #c82333;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cancellation-card p {
+            margin: 0;
+            color: #721c24;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .cancellation-card .cancelled-date {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(220, 53, 69, 0.2);
+            font-size: 13px;
+            color: #856404;
+        }
+
+        /* Info Card */
+        .info-card {
             background: #fff;
             border-radius: 16px;
             padding: 25px;
@@ -124,7 +149,7 @@
             border: 1px solid #e9ecef;
         }
 
-        .customer-card h3 {
+        .info-card h3 {
             font-size: 18px;
             color: #1a1a2e;
             margin: 0 0 20px 0;
@@ -135,23 +160,23 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
-        .customer-card h3 i {
+        .info-card h3 i {
             color: #0077b6;
         }
 
-        .customer-details {
+        .details-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
 
-        .customer-detail-item {
+        .detail-item {
             display: flex;
             align-items: center;
             gap: 12px;
         }
 
-        .customer-detail-item .icon-box {
+        .detail-item .icon-box {
             width: 45px;
             height: 45px;
             background: linear-gradient(135deg, #e8f4f8 0%, #d4edda 100%);
@@ -163,14 +188,14 @@
             font-size: 18px;
         }
 
-        .customer-detail-item .detail-text label {
+        .detail-item .detail-text label {
             display: block;
             font-size: 12px;
             color: #6c757d;
             margin-bottom: 3px;
         }
 
-        .customer-detail-item .detail-text p {
+        .detail-item .detail-text p {
             margin: 0;
             font-size: 15px;
             font-weight: 600;
@@ -180,7 +205,7 @@
         /* Trip Details Grid */
         .trip-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -191,23 +216,18 @@
             padding: 25px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
-        }
-
-        .trip-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            opacity: 0.85;
         }
 
         .trip-card .card-icon {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
-            margin-bottom: 18px;
+            font-size: 24px;
+            margin-bottom: 15px;
         }
 
         .trip-card .card-icon.date {
@@ -230,11 +250,6 @@
             color: #c2185b;
         }
 
-        .trip-card .card-icon.duration {
-            background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%);
-            color: #7b1fa2;
-        }
-
         .trip-card .card-icon.vehicle {
             background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
             color: #0097a7;
@@ -249,184 +264,54 @@
         }
 
         .trip-card p {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: #1a1a2e;
             margin: 0;
         }
 
         .trip-card p.small {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             color: #495057;
             margin-top: 5px;
         }
 
-        /* Itinerary Section */
-        .itinerary-section {
-            background: #fff;
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid #e9ecef;
-            margin-bottom: 30px;
+        /* Refund Status */
+        .refund-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #28a745;
         }
 
-        .itinerary-section h3 {
-            font-size: 20px;
-            color: #1a1a2e;
-            margin: 0 0 25px 0;
+        .refund-card.pending {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left-color: #ff9800;
+        }
+
+        .refund-card h4 {
+            margin: 0 0 10px 0;
+            color: #155724;
+            font-size: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .itinerary-section h3 i {
-            color: #0077b6;
-        }
-
-        .timeline {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            position: relative;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 24px;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: linear-gradient(to bottom, #0077b6, #00b4d8);
-            border-radius: 3px;
-        }
-
-        .timeline-item {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 25px;
-            position: relative;
-        }
-
-        .timeline-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .timeline-badge {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: 700;
-            font-size: 16px;
-            z-index: 1;
-            box-shadow: 0 4px 15px rgba(0, 119, 182, 0.4);
-            flex-shrink: 0;
-        }
-
-        .timeline-content {
-            flex: 1;
-            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
-            border-radius: 12px;
-            padding: 20px;
-            border-left: 4px solid #0077b6;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .timeline-content h4 {
-            margin: 0 0 10px 0;
-            font-size: 17px;
-            color: #1a1a2e;
-        }
-
-        .timeline-content p {
-            margin: 0;
-            color: #6c757d;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, #0077b6 0%, #005a8d 100%);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
-        }
-
-        .action-btn.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 119, 182, 0.4);
-        }
-
-        .action-btn.success {
-            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        }
-
-        .action-btn.success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-        }
-
-        .action-btn.danger {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-        }
-
-        .action-btn.danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-        }
-
-        /* Notes Section */
-        .notes-section {
-            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            border-left: 4px solid #ffc107;
-        }
-
-        .notes-section h4 {
-            margin: 0 0 10px 0;
+        .refund-card.pending h4 {
             color: #856404;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        .notes-section p {
+        .refund-card p {
             margin: 0;
-            color: #664d03;
+            color: #155724;
             font-size: 14px;
+        }
+
+        .refund-card.pending p {
+            color: #856404;
         }
 
         /* Responsive */
@@ -445,24 +330,6 @@
 
             .trip-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .timeline::before {
-                left: 20px;
-            }
-
-            .timeline-badge {
-                width: 42px;
-                height: 42px;
-                font-size: 14px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .action-btn {
-                justify-content: center;
             }
         }
     </style>
@@ -495,9 +362,9 @@
     <aside class="sidebar" id="sidebar">
       <ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li class="active"><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
-        <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
+        <li class="active"><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
         <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
@@ -509,171 +376,121 @@
       
       <!-- Page Header -->
       <div class="page-header">
-        <h1><i class="fa-solid fa-route"></i> Booking Details</h1>
-        <button class="back-btn" onclick="history.back()">
-          <i class="fa-solid fa-arrow-left"></i> Back to List
-        </button>
+        <h1><i class="fa-solid fa-ban"></i> Cancelled Booking Details</h1>
+        <a href="/CeylonGo/public/transporter/cancelled" class="back-btn">
+          <i class="fa-solid fa-arrow-left"></i> Back to Cancelled
+        </a>
       </div>
 
       <!-- Status Banner -->
       <div class="status-banner">
         <div class="status-info">
-          <i class="fa-solid fa-check-circle"></i>
+          <i class="fa-solid fa-circle-xmark"></i>
           <div>
-            <h3>Booking Confirmed</h3>
-            <p>This booking has been confirmed and is ready for pickup</p>
+            <h3>Booking Cancelled</h3>
+            <p>This booking has been cancelled and is no longer active</p>
           </div>
         </div>
-        <span class="booking-id">#BK-12345</span>
+        <span class="booking-id">#BK-54321</span>
+      </div>
+
+      <!-- Cancellation Reason -->
+      <div class="cancellation-card">
+        <h4><i class="fa-solid fa-comment-dots"></i> Cancellation Reason</h4>
+        <p>Customer cancelled due to change in travel plans. They mentioned that their flight was rescheduled and they will be arriving on a different date. They apologize for any inconvenience caused.</p>
+        <div class="cancelled-date">
+          <i class="fa-regular fa-calendar"></i> Cancelled on: January 5, 2026 at 02:30 PM
+        </div>
       </div>
 
       <!-- Customer Information -->
-      <div class="customer-card">
+      <div class="info-card">
         <h3><i class="fa-solid fa-user-circle"></i> Customer Information</h3>
-        <div class="customer-details">
-          <div class="customer-detail-item">
+        <div class="details-grid">
+          <div class="detail-item">
             <div class="icon-box"><i class="fa-solid fa-user"></i></div>
             <div class="detail-text">
               <label>Customer Name</label>
-              <p>John Silva</p>
+              <p>Emma Rajapaksa</p>
             </div>
           </div>
-          <div class="customer-detail-item">
+          <div class="detail-item">
             <div class="icon-box"><i class="fa-solid fa-phone"></i></div>
             <div class="detail-text">
               <label>Contact Number</label>
-              <p>+94 77 123 4567</p>
+              <p>+94 77 456 7890</p>
             </div>
           </div>
-          <div class="customer-detail-item">
+          <div class="detail-item">
             <div class="icon-box"><i class="fa-solid fa-envelope"></i></div>
             <div class="detail-text">
               <label>Email Address</label>
-              <p>john.silva@email.com</p>
+              <p>emma.r@email.com</p>
             </div>
           </div>
-          <div class="customer-detail-item">
+          <div class="detail-item">
             <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
             <div class="detail-text">
               <label>Country</label>
-              <p>United Kingdom</p>
+              <p>Australia</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Trip Details Grid -->
+      <!-- Original Trip Details -->
+      <div class="info-card">
+        <h3><i class="fa-solid fa-route"></i> Original Trip Details</h3>
+      </div>
+
       <div class="trip-grid">
         <div class="trip-card">
           <div class="card-icon date"><i class="fa-regular fa-calendar"></i></div>
-          <h4>Starting Date</h4>
-          <p>January 15, 2026</p>
-          <p class="small">Monday</p>
-        </div>
-
-        <div class="trip-card">
-          <div class="card-icon date"><i class="fa-regular fa-calendar-check"></i></div>
-          <h4>Ending Date</h4>
-          <p>January 22, 2026</p>
-          <p class="small">Monday</p>
+          <h4>Scheduled Date</h4>
+          <p>January 10, 2026</p>
+          <p class="small">Saturday</p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon time"><i class="fa-regular fa-clock"></i></div>
           <h4>Pickup Time</h4>
-          <p>08:30 AM</p>
-          <p class="small">Be ready 15 mins early</p>
-        </div>
-
-        <div class="trip-card">
-          <div class="card-icon duration"><i class="fa-solid fa-hourglass-half"></i></div>
-          <h4>Duration</h4>
-          <p>8 Days / 7 Nights</p>
-          <p class="small">Full package tour</p>
+          <p>09:00 AM</p>
+          <p class="small">Morning pickup</p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon location"><i class="fa-solid fa-location-dot"></i></div>
           <h4>Pickup Location</h4>
-          <p>Hospital Road, Dehiwala</p>
-          <p class="small">Near the main junction</p>
-        </div>
-
-        <div class="trip-card">
-          <div class="card-icon passengers"><i class="fa-solid fa-user-group"></i></div>
-          <h4>Passengers</h4>
-          <p>2 Adults</p>
-          <p class="small">No children</p>
-        </div>
-
-        <div class="trip-card">
-          <div class="card-icon vehicle"><i class="fa-solid fa-car"></i></div>
-          <h4>Vehicle Type</h4>
-          <p>Sedan (AC)</p>
-          <p class="small">Comfortable for 2-3 passengers</p>
+          <p>Galle Face Hotel, Colombo</p>
+          <p class="small">Main entrance</p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon location"><i class="fa-solid fa-flag-checkered"></i></div>
           <h4>Drop-off Location</h4>
-          <p>Bandaranaike Airport</p>
-          <p class="small">International Terminal</p>
+          <p>Yala National Park</p>
+          <p class="small">Safari entrance</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon passengers"><i class="fa-solid fa-user-group"></i></div>
+          <h4>Passengers</h4>
+          <p>4 Adults</p>
+          <p class="small">No children</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon vehicle"><i class="fa-solid fa-van-shuttle"></i></div>
+          <h4>Vehicle Type</h4>
+          <p>Van (AC)</p>
+          <p class="small">8 seater capacity</p>
         </div>
       </div>
 
-      <!-- Special Notes -->
-      <div class="notes-section">
-        <h4><i class="fa-solid fa-sticky-note"></i> Special Notes from Customer</h4>
-        <p>Please be punctual. We have an elderly person traveling with us, so kindly drive carefully. We prefer a non-smoking vehicle. Thank you!</p>
-      </div>
-
-      <!-- Itinerary Section -->
-      <div class="itinerary-section">
-        <h3><i class="fa-solid fa-map-marked-alt"></i> Trip Itinerary</h3>
-        
-        <ul class="timeline">
-          <li class="timeline-item">
-            <div class="timeline-badge">1</div>
-            <div class="timeline-content">
-              <h4>Day 1–2: Kandy</h4>
-              <p>Visit the Temple of the Sacred Tooth Relic, explore the Royal Botanic Gardens at Peradeniya, and enjoy an evening cultural dance show featuring traditional Kandyan dancers.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">2</div>
-            <div class="timeline-content">
-              <h4>Day 3–4: Ella</h4>
-              <p>Hike to Little Adam's Peak for stunning views, visit the iconic Nine Arch Bridge, and enjoy the scenic Ella Gap views. Optional visit to Ravana Falls.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">3</div>
-            <div class="timeline-content">
-              <h4>Day 5–6: Yala</h4>
-              <p>Experience an exciting safari in Yala National Park, home to leopards, elephants, crocodiles, and many exotic bird species. Morning and evening game drives included.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">4</div>
-            <div class="timeline-content">
-              <h4>Day 7–8: Galle</h4>
-              <p>Explore the historic Galle Fort (UNESCO World Heritage Site), walk along the ramparts, and relax on the beautiful beaches of Unawatuna before airport drop-off.</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="action-buttons">
-        <button class="action-btn success" onclick="alert('Contacting customer...')">
-          <i class="fa-solid fa-phone"></i> Contact Customer
-        </button>
-        <button class="action-btn danger" onclick="if(confirm('Are you sure you want to cancel this booking?')) alert('Booking cancelled')">
-          <i class="fa-solid fa-ban"></i> Cancel Booking
-        </button>
+      <!-- Refund Status -->
+      <div class="refund-card pending">
+        <h4><i class="fa-solid fa-clock"></i> Refund Status: Processing</h4>
+        <p>The refund is currently being processed. Customer will receive their refund within 5-7 business days. Refund amount: LKR 15,000</p>
       </div>
 
     </main>
