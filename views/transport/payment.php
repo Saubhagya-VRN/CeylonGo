@@ -7,6 +7,52 @@ if (session_status() === PHP_SESSION_NONE) {
 // Include session initialization for profile picture
 require_once 'session_init.php';
 
+// Include database and model
+require_once "../config/config.php";
+require_once "../core/Database.php";
+require_once "../models/BankDetails.php";
+
+// Check if user is logged in
+if(isset($_SESSION['transporter_id'])){
+    $user_id = trim($_SESSION['transporter_id']);
+} else {
+    header('Location: /CeylonGo/views/transport/login.php');
+    exit();
+}
+
+// Check for session messages (from controller)
+$message = null;
+$error = null;
+
+if (isset($_SESSION['payment_message'])) {
+    $message = $_SESSION['payment_message'];
+    unset($_SESSION['payment_message']);
+}
+
+if (isset($_SESSION['payment_error'])) {
+    $error = $_SESSION['payment_error'];
+    unset($_SESSION['payment_error']);
+}
+
+
+// Fetch bank details from database
+try {
+    $db = Database::getConnection();
+    $bankModel = new BankDetails($db);
+    $bankData = $bankModel->getBankDetailsByRefId($user_id);
+} catch (Exception $e) {
+    $bankData = null;
+}
+
+// Set bank account details from database or defaults
+$bankAccount = [
+    'bank_name' => isset($bankData['bank_name']) ? $bankData['bank_name'] : 'Not set',
+    'account_number' => isset($bankData['acc_no']) && $bankData['acc_no'] ? '****' . substr($bankData['acc_no'], -4) : 'Not set',
+    'account_number_full' => isset($bankData['acc_no']) ? $bankData['acc_no'] : '',
+    'holder_name' => isset($bankData['acc_holder_name']) ? $bankData['acc_holder_name'] : 'Not set',
+    'branch' => isset($bankData['branch_name']) ? $bankData['branch_name'] : 'Not set'
+];
+
 // Sample payment data - Replace with database queries
 $payments = [
     [
@@ -63,15 +109,6 @@ $pendingPayments = array_filter($payments, fn($p) => $p['status'] === 'pending')
 $completedAmount = array_sum(array_column($paidPayments, 'amount'));
 $pendingAmount = array_sum(array_column($pendingPayments, 'amount'));
 $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
-
-// Bank account details
-$bankAccount = [
-    'bank_name' => 'Commercial Bank of Ceylon',
-    'account_number' => '****1234',
-    'account_number_full' => '1234567891234',
-    'holder_name' => 'Kaveesha Dulanjani',
-    'branch' => 'Colombo Fort'
-];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -561,6 +598,21 @@ $bankAccount = [
                 <p>Track your earnings and payment history</p>
             </div>
 
+            <!-- Success/Error Messages -->
+            <?php if ($message): ?>
+                <div style="background: #d4edda; color: #155724; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <?= $message ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div style="background: #f8d7da; color: #721c24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <?= $error ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Payment Summary Cards -->
             <div class="payment-summary">
                 <div class="summary-card total">
@@ -683,22 +735,23 @@ $bankAccount = [
                 <h3><i class="fa-solid fa-building-columns"></i> Update Bank Account</h3>
                 <button class="bank-modal-close" onclick="closeBankModal()">&times;</button>
             </div>
-            <form id="bankAccountForm">
+            <form id="bankAccountForm" method="POST" action="">
+                <input type="hidden" name="action" value="save_bank_details">
                 <div class="form-group">
                     <label>Bank Name</label>
-                    <input type="text" id="bank_name" name="bank_name" placeholder="Enter bank name" required>
+                    <input type="text" id="bank_name" name="bank_name" placeholder="Enter bank name" value="<?= isset($bankData['bank_name']) ? htmlspecialchars($bankData['bank_name']) : '' ?>" required>
                 </div>
                 <div class="form-group">
                     <label>Account Number</label>
-                    <input type="text" id="account_number" name="account_number" placeholder="Enter account number" required>
+                    <input type="text" id="acc_no" name="acc_no" placeholder="Enter account number" value="<?= isset($bankData['acc_no']) ? htmlspecialchars($bankData['acc_no']) : '' ?>" required>
                 </div>
                 <div class="form-group">
                     <label>Account Holder Name</label>
-                    <input type="text" id="holder_name" name="holder_name" placeholder="Enter account holder name" required>
+                    <input type="text" id="acc_holder_name" name="acc_holder_name" placeholder="Enter account holder name" value="<?= isset($bankData['acc_holder_name']) ? htmlspecialchars($bankData['acc_holder_name']) : '' ?>" required>
                 </div>
                 <div class="form-group">
-                    <label>Branch</label>
-                    <input type="text" id="branch" name="branch" placeholder="Enter branch name" required>
+                    <label>Branch Name</label>
+                    <input type="text" id="branch_name" name="branch_name" placeholder="Enter branch name" value="<?= isset($bankData['branch_name']) ? htmlspecialchars($bankData['branch_name']) : '' ?>" required>
                 </div>
                 <div class="bank-modal-actions">
                     <button type="button" class="cancel-btn" onclick="closeBankModal()">Cancel</button>
@@ -738,11 +791,6 @@ $bankAccount = [
         // Bank Modal Functions
         function openBankModal() {
             document.getElementById('bankModal').style.display = 'block';
-            // Pre-fill with current values
-            document.getElementById('bank_name').value = document.getElementById('display-bank-name').textContent;
-            document.getElementById('account_number').value = '<?= $bankAccount['account_number_full'] ?>';
-            document.getElementById('holder_name').value = document.getElementById('display-holder-name').textContent;
-            document.getElementById('branch').value = document.getElementById('display-branch').textContent;
         }
 
         function closeBankModal() {
@@ -756,35 +804,6 @@ $bankAccount = [
                 closeBankModal();
             }
         }
-
-        // Handle form submission
-        document.getElementById('bankAccountForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form values
-            const bankName = document.getElementById('bank_name').value;
-            const accountNumber = document.getElementById('account_number').value;
-            const holderName = document.getElementById('holder_name').value;
-            const branch = document.getElementById('branch').value;
-            
-            // Update display (mask account number)
-            const maskedAccount = '****' + accountNumber.slice(-4);
-            document.getElementById('display-bank-name').textContent = bankName;
-            document.getElementById('display-account-number').textContent = maskedAccount;
-            document.getElementById('display-holder-name').textContent = holderName;
-            document.getElementById('display-branch').textContent = branch;
-            
-            // Close modal and show success message
-            closeBankModal();
-            alert('Bank account details updated successfully!');
-            
-            // TODO: Add AJAX call to save to database
-            // fetch('/CeylonGo/public/transporter/updateBankAccount', {
-            //     method: 'POST',
-            //     headers: { 'Content-Type': 'application/json' },
-            //     body: JSON.stringify({ bankName, accountNumber, holderName, branch })
-            // });
-        });
     </script>
 </body>
 </html>

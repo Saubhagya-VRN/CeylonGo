@@ -1,17 +1,28 @@
 <?php
 // Profile page with database connection
-require_once "../config/config.php";
-require_once "../core/Database.php";
-require_once "../models/User.php";
-require_once "../models/License.php";
-require_once "../models/Vehicle.php";
-
-$message = null;
-$error = null;
+require_once __DIR__ . "/../../config/config.php";
+require_once __DIR__ . "/../../core/Database.php";
+require_once __DIR__ . "/../../models/User.php";
+require_once __DIR__ . "/../../models/License.php";
+require_once __DIR__ . "/../../models/Vehicle.php";
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+// Check for session messages (from redirect after update)
+$message = null;
+$error = null;
+
+if (isset($_SESSION['profile_message'])) {
+    $message = $_SESSION['profile_message'];
+    unset($_SESSION['profile_message']);
+}
+
+if (isset($_SESSION['profile_error'])) {
+    $error = $_SESSION['profile_error'];
+    unset($_SESSION['profile_error']);
 }
 
 // Check if user is logged in
@@ -22,6 +33,7 @@ else{
   header('Location: /CeylonGo/views/transport/login.php');
   exit();
 }
+
 
 // Handle all POST operations
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
@@ -81,32 +93,46 @@ $uploadDir = dirname(__DIR__, 2) . "/uploads/";
         } elseif ($_POST['action'] == 'update_profile') {
             // Handle profile update
             $userModel = new User($db);
-            $userModel->user_id = $user_id;
+            $userModel->user_id = trim($user_id);
             $userModel->full_name = $_POST['full_name'];
             $userModel->dob = $_POST['dob'];
             $userModel->address = $_POST['address'];
             $userModel->contact_no = $_POST['contact_no'];
             $userModel->email = $_POST['email'];
             
-            if ($userModel->updateUser()) {
-                $message = "Profile updated successfully!";
-            } else {
-                $error = "Failed to update profile.";
+            try {
+                if ($userModel->updateUser()) {
+                    $_SESSION['profile_message'] = "Profile updated successfully!";
+                } else {
+                    $_SESSION['profile_error'] = "Failed to update profile. No rows affected.";
+                }
+            } catch (PDOException $e) {
+                $_SESSION['profile_error'] = "Database error: " . $e->getMessage();
             }
+            // Redirect to refresh page with updated data
+            header("Location: /CeylonGo/public/transporter/profile");
+            exit();
             
         } elseif ($_POST['action'] == 'update_license') {
             // Handle license update
             $licenseModel = new License($db);
-            $licenseModel->driver_id = $user_id;
+            $licenseModel->driver_id = trim($user_id);
             $licenseModel->license_no = $_POST['license_no'];
             $licenseModel->license_exp_date = $_POST['license_exp_date'];
             $licenseModel->image = ''; // Empty image for now
             
-            if ($licenseModel->updateLicense()) {
-                $message = "License information updated successfully!";
-            } else {
-                $error = "Failed to update license information.";
+            try {
+                if ($licenseModel->updateLicense()) {
+                    $_SESSION['profile_message'] = "License information updated successfully!";
+                } else {
+                    $_SESSION['profile_error'] = "Failed to update license information.";
+                }
+            } catch (PDOException $e) {
+                $_SESSION['profile_error'] = "Database error: " . $e->getMessage();
             }
+            // Redirect to refresh page with updated data
+            header("Location: /CeylonGo/public/transporter/profile");
+            exit();
             
         } elseif ($_POST['action'] == 'delete_vehicle') {
             // Handle vehicle delete
@@ -131,9 +157,34 @@ try {
     // Trim user_id to remove any leading/trailing spaces
     $user_id = trim($user_id);
     
+    // Debug: Show what user_id we're querying with
+    // Uncomment the next line to debug
+    // echo "<!-- DEBUG: user_id = '" . htmlspecialchars($user_id) . "' (length: " . strlen($user_id) . ") -->";
+    
     // Fetch user data
     $userModel = new User($db);
     $user = $userModel->getUserById($user_id);
+    
+    // If user not found, try to check what's in the database
+    if (!$user) {
+        // Debug: Try raw query to see what's there
+        $debugQuery = "SELECT user_id, full_name, email FROM transport_users LIMIT 5";
+        $debugStmt = $db->query($debugQuery);
+        $allUsers = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Check if any user_id contains our session id (possibly with whitespace)
+        foreach ($allUsers as $u) {
+            if (trim($u['user_id']) === $user_id || strpos($u['user_id'], substr($user_id, 0, 10)) !== false) {
+                // Found a match - use this user_id
+                $user = $userModel->getUserById(trim($u['user_id']));
+                if ($user) {
+                    // Update session with correct user_id
+                    $_SESSION['transporter_id'] = trim($u['user_id']);
+                    break;
+                }
+            }
+        }
+    }
     
     // Fetch license data
     $licenseModel = new License($db);
@@ -143,8 +194,12 @@ try {
     $vehicleModel = new Vehicle($db);
     $vehicles = $vehicleModel->getVehiclesByUser($user_id);
     
-    // Set profile picture
-    $profile_picture = '/CeylonGo/public/images/profile.jpg';
+    // Set profile picture - use saved image or default
+    if (!empty($user['profile_image'])) {
+        $profile_picture = '/CeylonGo/public/uploads/transport/' . $user['profile_image'];
+    } else {
+        $profile_picture = '/CeylonGo/public/images/profile.jpg';
+    }
     
 } catch (Exception $e) {
     die("Database error: " . $e->getMessage());
