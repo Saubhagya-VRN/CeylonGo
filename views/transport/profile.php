@@ -1,17 +1,28 @@
 <?php
 // Profile page with database connection
-require_once "../config/config.php";
-require_once "../core/Database.php";
-require_once "../models/User.php";
-require_once "../models/License.php";
-require_once "../models/Vehicle.php";
-
-$message = null;
-$error = null;
+require_once __DIR__ . "/../../config/config.php";
+require_once __DIR__ . "/../../core/Database.php";
+require_once __DIR__ . "/../../models/User.php";
+require_once __DIR__ . "/../../models/License.php";
+require_once __DIR__ . "/../../models/Vehicle.php";
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+// Check for session messages (from redirect after update)
+$message = null;
+$error = null;
+
+if (isset($_SESSION['profile_message'])) {
+    $message = $_SESSION['profile_message'];
+    unset($_SESSION['profile_message']);
+}
+
+if (isset($_SESSION['profile_error'])) {
+    $error = $_SESSION['profile_error'];
+    unset($_SESSION['profile_error']);
 }
 
 // Check if user is logged in
@@ -22,6 +33,7 @@ else{
   header('Location: /CeylonGo/views/transport/login.php');
   exit();
 }
+
 
 // Handle all POST operations
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
@@ -81,32 +93,46 @@ $uploadDir = dirname(__DIR__, 2) . "/uploads/";
         } elseif ($_POST['action'] == 'update_profile') {
             // Handle profile update
             $userModel = new User($db);
-            $userModel->user_id = $user_id;
+            $userModel->user_id = trim($user_id);
             $userModel->full_name = $_POST['full_name'];
             $userModel->dob = $_POST['dob'];
             $userModel->address = $_POST['address'];
             $userModel->contact_no = $_POST['contact_no'];
             $userModel->email = $_POST['email'];
             
-            if ($userModel->updateUser()) {
-                $message = "Profile updated successfully!";
-            } else {
-                $error = "Failed to update profile.";
+            try {
+                if ($userModel->updateUser()) {
+                    $_SESSION['profile_message'] = "Profile updated successfully!";
+                } else {
+                    $_SESSION['profile_error'] = "Failed to update profile. No rows affected.";
+                }
+            } catch (PDOException $e) {
+                $_SESSION['profile_error'] = "Database error: " . $e->getMessage();
             }
+            // Redirect to refresh page with updated data
+            header("Location: /CeylonGo/public/transporter/profile");
+            exit();
             
         } elseif ($_POST['action'] == 'update_license') {
             // Handle license update
             $licenseModel = new License($db);
-            $licenseModel->driver_id = $user_id;
+            $licenseModel->driver_id = trim($user_id);
             $licenseModel->license_no = $_POST['license_no'];
             $licenseModel->license_exp_date = $_POST['license_exp_date'];
             $licenseModel->image = ''; // Empty image for now
             
-            if ($licenseModel->updateLicense()) {
-                $message = "License information updated successfully!";
-            } else {
-                $error = "Failed to update license information.";
+            try {
+                if ($licenseModel->updateLicense()) {
+                    $_SESSION['profile_message'] = "License information updated successfully!";
+                } else {
+                    $_SESSION['profile_error'] = "Failed to update license information.";
+                }
+            } catch (PDOException $e) {
+                $_SESSION['profile_error'] = "Database error: " . $e->getMessage();
             }
+            // Redirect to refresh page with updated data
+            header("Location: /CeylonGo/public/transporter/profile");
+            exit();
             
         } elseif ($_POST['action'] == 'delete_vehicle') {
             // Handle vehicle delete
@@ -117,6 +143,64 @@ $uploadDir = dirname(__DIR__, 2) . "/uploads/";
             } else {
                 $error = "Failed to delete vehicle.";
             }
+        } elseif ($_POST['action'] == 'update_profile_image') {
+            // Handle profile image upload
+            
+            if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
+                $uploadDir = dirname(__DIR__, 2) . "/public/uploads/transport/";
+                
+                // Create directory if it doesn't exist
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                
+                // Validate file type
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                $fileType = $_FILES['profile_image']['type'];
+                
+                if (!in_array($fileType, $allowedTypes)) {
+                    $_SESSION['profile_error'] = "Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.";
+                } else {
+                    // Generate unique filename - sanitize user_id for filename
+                    $fileInfo = pathinfo($_FILES['profile_image']['name']);
+                    $extension = strtolower($fileInfo['extension']);
+                    $sanitizedUserId = preg_replace('/[^a-zA-Z0-9]/', '', $user_id);
+                    $newFileName = 'profile_' . $sanitizedUserId . '_' . time() . '.' . $extension;
+                    $targetPath = $uploadDir . $newFileName;
+                    
+                    if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $targetPath)) {
+                        // File uploaded successfully, now update database
+                        $userModel = new User($db);
+                        
+                        // Get current profile image to delete old one
+                        $currentUser = $userModel->getUserById($user_id);
+                        $oldImage = $currentUser['profile_image'] ?? '';
+                        
+                        // Delete old image if exists
+                        if (!empty($oldImage) && file_exists($uploadDir . $oldImage)) {
+                            unlink($uploadDir . $oldImage);
+                        }
+                        
+                        // Update database
+                        $updateResult = $userModel->updateProfileImage($user_id, $newFileName);
+                        
+                        if ($updateResult) {
+                            $_SESSION['profile_message'] = "Profile image updated successfully!";
+                        } else {
+                            // Debug: Check if rowCount was 0 - means user_id didn't match
+                            $_SESSION['profile_error'] = "Database update failed. File saved as: $newFileName. Check if user_id matches.";
+                        }
+                    } else {
+                        $_SESSION['profile_error'] = "Failed to upload file to: $targetPath";
+                    }
+                }
+            } else {
+                $errorCode = isset($_FILES['profile_image']) ? $_FILES['profile_image']['error'] : 'No file';
+                $_SESSION['profile_error'] = "File upload error. Code: $errorCode";
+            }
+            // Redirect to refresh page
+            header("Location: /CeylonGo/public/transporter/profile");
+            exit();
         }
         
     } catch (Exception $e) {
@@ -131,9 +215,34 @@ try {
     // Trim user_id to remove any leading/trailing spaces
     $user_id = trim($user_id);
     
+    // Debug: Show what user_id we're querying with
+    // Uncomment the next line to debug
+    // echo "<!-- DEBUG: user_id = '" . htmlspecialchars($user_id) . "' (length: " . strlen($user_id) . ") -->";
+    
     // Fetch user data
     $userModel = new User($db);
     $user = $userModel->getUserById($user_id);
+    
+    // If user not found, try to check what's in the database
+    if (!$user) {
+        // Debug: Try raw query to see what's there
+        $debugQuery = "SELECT user_id, full_name, email FROM transport_users LIMIT 5";
+        $debugStmt = $db->query($debugQuery);
+        $allUsers = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Check if any user_id contains our session id (possibly with whitespace)
+        foreach ($allUsers as $u) {
+            if (trim($u['user_id']) === $user_id || strpos($u['user_id'], substr($user_id, 0, 10)) !== false) {
+                // Found a match - use this user_id
+                $user = $userModel->getUserById(trim($u['user_id']));
+                if ($user) {
+                    // Update session with correct user_id
+                    $_SESSION['transporter_id'] = trim($u['user_id']);
+                    break;
+                }
+            }
+        }
+    }
     
     // Fetch license data
     $licenseModel = new License($db);
@@ -143,8 +252,12 @@ try {
     $vehicleModel = new Vehicle($db);
     $vehicles = $vehicleModel->getVehiclesByUser($user_id);
     
-    // Set profile picture
-    $profile_picture = '/CeylonGo/public/images/profile.jpg';
+    // Set profile picture - use saved image or default
+    if (!empty($user['profile_image'])) {
+        $profile_picture = '/CeylonGo/public/uploads/transport/' . $user['profile_image'];
+    } else {
+        $profile_picture = '/CeylonGo/public/images/profile.jpg';
+    }
     
 } catch (Exception $e) {
     die("Database error: " . $e->getMessage());
@@ -211,12 +324,56 @@ try {
       margin-bottom: 25px;
     }
     
-    .profile-banner img {
-      width: 100px;
-      height: 100px;
+    .profile-image-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+    }
+    
+    .profile-banner img.profile-avatar {
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
       border: 4px solid rgba(255, 255, 255, 0.3);
       object-fit: cover;
+      transition: opacity 0.3s;
+    }
+    
+    .profile-image-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+      cursor: pointer;
+    }
+    
+    .profile-image-container:hover .profile-image-overlay {
+      opacity: 1;
+    }
+    
+    .profile-image-overlay i {
+      font-size: 24px;
+      color: white;
+    }
+    
+    .profile-image-overlay span {
+      color: white;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    
+    .profile-image-overlay-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     
     .profile-banner-info h2 {
@@ -536,6 +693,14 @@ try {
         padding: 25px;
       }
       
+      .profile-image-container {
+        margin: 0 auto 15px;
+      }
+      
+      .profile-image-overlay {
+        opacity: 0.7;
+      }
+      
       .form-grid {
         grid-template-columns: 1fr;
       }
@@ -604,7 +769,20 @@ try {
 
       <!-- Profile Banner -->
       <div class="profile-banner">
-        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="Profile Picture">
+        <div class="profile-image-container">
+          <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="Profile Picture" class="profile-avatar">
+          <div class="profile-image-overlay" onclick="document.getElementById('profileImageInput').click()">
+            <div class="profile-image-overlay-content">
+              <i class="fa-solid fa-camera"></i>
+              <span>Change Photo</span>
+            </div>
+          </div>
+          <form id="profileImageForm" method="POST" enctype="multipart/form-data" style="display: none;">
+            <input type="hidden" name="action" value="update_profile_image">
+            <input type="hidden" id="croppedImageData" name="cropped_image_data">
+            <input type="file" id="profileImageInput" name="profile_image" accept="image/*" onchange="openImageCropper(this)">
+          </form>
+        </div>
         <div class="profile-banner-info">
           <h2><?= $user['full_name'] ?? 'N/A' ?></h2>
           <p>Driver ID: <?= $user['user_id'] ?? 'N/A' ?></p>
@@ -890,6 +1068,252 @@ try {
       window.addEventListener('resize', function() {
         if (window.innerWidth > 768) {
           closeSidebar();
+        }
+      });
+    });
+  </script>
+
+  <!-- Image Cropper Modal -->
+  <div id="imageCropperModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px; width: 95%;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-crop"></i> Crop Profile Picture</h3>
+        <span class="close" onclick="closeCropperModal()">&times;</span>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Drag to position, scroll to zoom. The circular area will be your profile picture.</p>
+        <div id="cropperContainer" style="position: relative; width: 100%; height: 350px; background: #1a1a1a; border-radius: 10px; overflow: hidden; cursor: move;">
+          <img id="cropperImage" src="" alt="Crop Image" style="position: absolute; max-width: none;">
+          <div id="cropOverlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;">
+            <svg width="100%" height="100%" style="position: absolute;">
+              <defs>
+                <mask id="cropMask">
+                  <rect width="100%" height="100%" fill="white"/>
+                  <circle id="cropCircle" cx="50%" cy="50%" r="120" fill="black"/>
+                </mask>
+              </defs>
+              <rect width="100%" height="100%" fill="rgba(0,0,0,0.6)" mask="url(#cropMask)"/>
+              <circle id="cropBorder" cx="50%" cy="50%" r="120" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="8,4"/>
+            </svg>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px; margin-top: 15px;">
+          <span style="font-size: 14px; color: #666;"><i class="fa-solid fa-magnifying-glass-minus"></i></span>
+          <input type="range" id="cropperZoom" min="0.5" max="3" step="0.1" value="1" style="flex: 1; cursor: pointer;">
+          <span style="font-size: 14px; color: #666;"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-delete" onclick="closeCropperModal()" style="flex: none; padding: 10px 20px;">Cancel</button>
+        <button type="button" class="btn-save" onclick="saveCroppedImage()" style="margin-top: 0;"><i class="fa-solid fa-check"></i> Save Photo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Image Cropper Variables
+    let cropperImage = null;
+    let cropperZoom = 1;
+    let cropperX = 0;
+    let cropperY = 0;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let originalFile = null;
+    let imageWidth = 0;
+    let imageHeight = 0;
+
+    function openImageCropper(input) {
+      if (input.files && input.files[0]) {
+        originalFile = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          const img = document.getElementById('cropperImage');
+          img.src = e.target.result;
+          
+          img.onload = function() {
+            imageWidth = img.naturalWidth;
+            imageHeight = img.naturalHeight;
+            
+            // Reset position and zoom
+            cropperZoom = 1;
+            document.getElementById('cropperZoom').value = 1;
+            
+            // Center the image
+            const container = document.getElementById('cropperContainer');
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+            
+            // Scale image to fit container initially
+            const scale = Math.max(240 / imageWidth, 240 / imageHeight, 0.5);
+            cropperZoom = scale;
+            document.getElementById('cropperZoom').value = scale;
+            
+            cropperX = (containerWidth - imageWidth * cropperZoom) / 2;
+            cropperY = (containerHeight - imageHeight * cropperZoom) / 2;
+            
+            updateCropperPosition();
+            document.getElementById('imageCropperModal').style.display = 'flex';
+          };
+        };
+        
+        reader.readAsDataURL(originalFile);
+      }
+    }
+
+    function updateCropperPosition() {
+      const img = document.getElementById('cropperImage');
+      img.style.width = (imageWidth * cropperZoom) + 'px';
+      img.style.height = (imageHeight * cropperZoom) + 'px';
+      img.style.left = cropperX + 'px';
+      img.style.top = cropperY + 'px';
+    }
+
+    function closeCropperModal() {
+      document.getElementById('imageCropperModal').style.display = 'none';
+      document.getElementById('profileImageInput').value = '';
+    }
+
+    function saveCroppedImage() {
+      const container = document.getElementById('cropperContainer');
+      const img = document.getElementById('cropperImage');
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+      
+      // Calculate crop area (center circle)
+      const circleRadius = 120;
+      const centerX = containerWidth / 2;
+      const centerY = containerHeight / 2;
+      
+      // Calculate source coordinates on the original image
+      const sourceX = (centerX - circleRadius - cropperX) / cropperZoom;
+      const sourceY = (centerY - circleRadius - cropperY) / cropperZoom;
+      const sourceSize = (circleRadius * 2) / cropperZoom;
+      
+      // Create canvas for cropped image
+      const canvas = document.createElement('canvas');
+      const outputSize = 300; // Output image size
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+      const ctx = canvas.getContext('2d');
+      
+      // Create circular clip
+      ctx.beginPath();
+      ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      
+      // Draw cropped portion of image
+      ctx.drawImage(
+        img,
+        sourceX, sourceY, sourceSize, sourceSize,
+        0, 0, outputSize, outputSize
+      );
+      
+      // Convert to blob and submit
+      canvas.toBlob(function(blob) {
+        // Create a new form data with the cropped image
+        const formData = new FormData();
+        formData.append('action', 'update_profile_image');
+        formData.append('profile_image', blob, 'profile.jpg');
+        
+        // Submit via fetch
+        fetch(window.location.href, {
+          method: 'POST',
+          body: formData
+        }).then(response => {
+          window.location.reload();
+        }).catch(error => {
+          alert('Error uploading image. Please try again.');
+          closeCropperModal();
+        });
+      }, 'image/jpeg', 0.9);
+    }
+
+    // Set up cropper event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      const container = document.getElementById('cropperContainer');
+      const zoomSlider = document.getElementById('cropperZoom');
+      
+      // Mouse drag
+      container.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        dragStartX = e.clientX - cropperX;
+        dragStartY = e.clientY - cropperY;
+        e.preventDefault();
+      });
+      
+      document.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+          cropperX = e.clientX - dragStartX;
+          cropperY = e.clientY - dragStartY;
+          updateCropperPosition();
+        }
+      });
+      
+      document.addEventListener('mouseup', function() {
+        isDragging = false;
+      });
+      
+      // Touch drag for mobile
+      container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) {
+          isDragging = true;
+          dragStartX = e.touches[0].clientX - cropperX;
+          dragStartY = e.touches[0].clientY - cropperY;
+          e.preventDefault();
+        }
+      });
+      
+      document.addEventListener('touchmove', function(e) {
+        if (isDragging && e.touches.length === 1) {
+          cropperX = e.touches[0].clientX - dragStartX;
+          cropperY = e.touches[0].clientY - dragStartY;
+          updateCropperPosition();
+        }
+      });
+      
+      document.addEventListener('touchend', function() {
+        isDragging = false;
+      });
+      
+      // Zoom slider
+      zoomSlider.addEventListener('input', function() {
+        const oldZoom = cropperZoom;
+        cropperZoom = parseFloat(this.value);
+        
+        // Zoom towards center
+        const container = document.getElementById('cropperContainer');
+        const centerX = container.offsetWidth / 2;
+        const centerY = container.offsetHeight / 2;
+        
+        cropperX = centerX - (centerX - cropperX) * (cropperZoom / oldZoom);
+        cropperY = centerY - (centerY - cropperY) * (cropperZoom / oldZoom);
+        
+        updateCropperPosition();
+      });
+      
+      // Mouse wheel zoom
+      container.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Math.max(0.5, Math.min(3, cropperZoom + delta));
+        
+        if (newZoom !== cropperZoom) {
+          const oldZoom = cropperZoom;
+          cropperZoom = newZoom;
+          zoomSlider.value = cropperZoom;
+          
+          // Zoom towards mouse position
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+          
+          cropperX = mouseX - (mouseX - cropperX) * (cropperZoom / oldZoom);
+          cropperY = mouseY - (mouseY - cropperY) * (cropperZoom / oldZoom);
+          
+          updateCropperPosition();
         }
       });
     });

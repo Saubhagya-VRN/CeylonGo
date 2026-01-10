@@ -15,7 +15,8 @@ $router->get('register', 'AuthController@registerView');
 $router->get('logout', 'AuthController@logout');
 
 // Routes
-$router->get('transporter/register', 'TransportProviderController@loginView');
+$router->get('transporter/register', 'TransportProviderController@registerView');
+$router->post('transporter/register', 'TransportProviderController@registerProvider');
 $router->get('transporter/dashboard', 'TransportProviderController@dashboard');
 $router->get('transporter/upcoming', 'TransportProviderController@upcoming');
 $router->get('transporter/pending', 'TransportProviderController@pending');
@@ -30,6 +31,7 @@ $router->get('transporter/vehicle', 'TransportProviderController@vehicle');
 $router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
 $router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
 $router->get('transporter/payment', 'TransportProviderController@payment');
+$router->post('transporter/payment', 'TransportProviderController@saveBankDetails');
 $router->post('registerProvider', 'TransportProviderController@registerProvider');
 
 // ========== ADMIN ROUTES ==========

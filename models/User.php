@@ -9,6 +9,7 @@ class User {
     public $nic;
     public $address;
     public $contact_no;
+    public $profile_image;
     public $email;
     public $psw;
 
@@ -18,8 +19,8 @@ class User {
 
     public function register() {
         $query = "INSERT INTO " . $this->table . "
-                  (user_id, full_name, dob, nic, address, contact_no, email, psw)
-                  VALUES (:user_id, :full_name, :dob, :nic, :address, :contact_no, :email, :psw)";
+                  (user_id, full_name, dob, nic, address, contact_no, profile_image, email, psw)
+                  VALUES (:user_id, :full_name, :dob, :nic, :address, :contact_no, :profile_image, :email, :psw)";
         
         $stmt = $this->conn->prepare($query);
 
@@ -29,6 +30,8 @@ class User {
         $stmt->bindParam(":nic", $this->nic);
         $stmt->bindParam(":address", $this->address);
         $stmt->bindParam(":contact_no", $this->contact_no);
+        $profile_image = $this->profile_image ?? '';
+        $stmt->bindParam(":profile_image", $profile_image);
         $stmt->bindParam(":email", $this->email);
         $stmt->bindParam(":psw", $this->psw);
 
@@ -78,6 +81,21 @@ class User {
         $stmt->bindParam(":user_id", $this->user_id);
         
         return $stmt->execute();
+    }
+
+    // Update user profile image
+    public function updateProfileImage($user_id, $image_path) {
+        // Use TRIM to handle any whitespace inconsistencies in user_id
+        $query = "UPDATE " . $this->table . " SET profile_image = :profile_image WHERE TRIM(user_id) = TRIM(:user_id)";
+        $stmt = $this->conn->prepare($query);
+        
+        $stmt->bindParam(":profile_image", $image_path);
+        $stmt->bindParam(":user_id", $user_id);
+        
+        $stmt->execute();
+        
+        // Return true only if at least one row was updated
+        return $stmt->rowCount() > 0;
     }
 }
 ?>
