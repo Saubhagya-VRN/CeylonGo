@@ -42,7 +42,7 @@
     <nav class="nav-links">
       <a href="/CeylonGo/public/transporter/dashboard">Home</a>
       <a href="/CeylonGo/public/logout">Logout</a>
-      <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
+      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
   

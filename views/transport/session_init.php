@@ -27,10 +27,10 @@ try {
     $user_data = $userModel->getUserById($user_id);
     
     // Set profile picture path with fallback to default
-    if (!empty($user_data['profile_image']) && file_exists(dirname(__DIR__, 2) . "/uploads/" . $user_data['profile_image'])) {
-        $profile_picture = "/CeylonGo/uploads/" . $user_data['profile_image'];
+    if (!empty($user_data['profile_image'])) {
+        $profile_picture = "/CeylonGo/public/uploads/transport/" . $user_data['profile_image'];
     } else {
-        $profile_picture = "/CeylonGO/public/images/profile.jpg";
+        $profile_picture = "/CeylonGo/public/images/profile.jpg";
     }
     
     // Store user name for display
@@ -38,7 +38,7 @@ try {
     
 } catch (Exception $e) {
     // Fallback to default image if there's an error
-    $profile_picture = "/CeylonGO/public/images/profile.jpg";
+    $profile_picture = "/CeylonGo/public/images/profile.jpg";
     $user_name = 'User';
 }
 ?>

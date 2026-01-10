@@ -85,13 +85,17 @@ class User {
 
     // Update user profile image
     public function updateProfileImage($user_id, $image_path) {
-        $query = "UPDATE " . $this->table . " SET profile_image = :profile_image WHERE user_id = :user_id";
+        // Use TRIM to handle any whitespace inconsistencies in user_id
+        $query = "UPDATE " . $this->table . " SET profile_image = :profile_image WHERE TRIM(user_id) = TRIM(:user_id)";
         $stmt = $this->conn->prepare($query);
         
         $stmt->bindParam(":profile_image", $image_path);
         $stmt->bindParam(":user_id", $user_id);
         
-        return $stmt->execute();
+        $stmt->execute();
+        
+        // Return true only if at least one row was updated
+        return $stmt->rowCount() > 0;
     }
 }
 ?>
