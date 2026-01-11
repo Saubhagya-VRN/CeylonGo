@@ -22,9 +22,11 @@
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
 
+    <!-- Custom icons (Font Awesome replacement) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">  
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
 </head>
 <body>
 
@@ -41,8 +43,13 @@
     </div>
     <nav class="nav-links">
       <a href="/CeylonGo/public/transporter/dashboard">Home</a>
-      <a href="/CeylonGo/public/logout">Logout</a>
-      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
+      <div class="profile-dropdown">
+        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+          <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+      </div>
     </nav>
   </header>
   
@@ -123,14 +130,14 @@
         <div class="tour-calendar">
           <div class="calendar-top" id="selectedDate">
             Sunday, December 14
-            <i class="fa-solid fa-chevron-down"></i>
+            <span class="icon icon-chevron-down"></span>
           </div>
 
           <div class="calendar-body">
             <div class="calendar-month">
-              <button id="prevMonth"><i class="fa-solid fa-chevron-left"></i></button>
+              <button id="prevMonth"><span class="icon icon-chevron-left"></span></button>
               <span id="monthYear"></span>
-              <button id="nextMonth"><i class="fa-solid fa-chevron-right"></i></button>
+              <button id="nextMonth"><span class="icon icon-chevron-right"></span></button>
             </div>
 
             <div class="calendar-grid" id="calendarGrid"></div>
@@ -352,7 +359,7 @@
 
             dateDiv.onclick = () => {
               selectedDateText.innerHTML =
-                `${monthNames[month]} ${d}, ${year} <i class="fa-solid fa-chevron-down"></i>`;
+                `${monthNames[month]} ${d}, ${year} <span class="icon icon-chevron-down"></span>`;
               
               // Show booking details if available
               if (dateDiv.dataset.bookings) {
@@ -395,12 +402,12 @@
                 <span class="status-badge ${booking.status}">${booking.status.toUpperCase()}</span>
               </div>
               <div class="booking-info">
-                <p><i class="fa-solid fa-car"></i> <strong>Vehicle:</strong> ${booking.vehicleType}</p>
-                <p><i class="fa-solid fa-clock"></i> <strong>Pickup Time:</strong> ${booking.pickupTime}</p>
-                <p><i class="fa-solid fa-location-dot"></i> <strong>From:</strong> ${booking.pickupLocation}</p>
-                <p><i class="fa-solid fa-location-dot"></i> <strong>To:</strong> ${booking.dropoffLocation}</p>
-                <p><i class="fa-solid fa-users"></i> <strong>Passengers:</strong> ${booking.numPeople}</p>
-                ${booking.notes ? `<p><i class="fa-solid fa-note-sticky"></i> <strong>Notes:</strong> ${booking.notes}</p>` : ""}
+                <p><span class="icon icon-car"></span> <strong>Vehicle:</strong> ${booking.vehicleType}</p>
+                <p><span class="icon icon-clock"></span> <strong>Pickup Time:</strong> ${booking.pickupTime}</p>
+                <p><span class="icon icon-location"></span> <strong>From:</strong> ${booking.pickupLocation}</p>
+                <p><span class="icon icon-location"></span> <strong>To:</strong> ${booking.dropoffLocation}</p>
+                <p><span class="icon icon-users"></span> <strong>Passengers:</strong> ${booking.numPeople}</p>
+                ${booking.notes ? `<p><span class="icon icon-note"></span> <strong>Notes:</strong> ${booking.notes}</p>` : ""}
               </div>
             `;
             bookingList.appendChild(bookingCard);
@@ -416,7 +423,7 @@
         <div class="pending-requests-card">
           <div class="pending-requests-header">
             Pending Booking Requests
-            <i class="fa-solid fa-clock"></i>
+            <span class="icon icon-clock"></span>
           </div>
 
           <div class="pending-requests-body" id="pendingRequestsBody">
@@ -453,13 +460,13 @@
                 requestCard.className = 'pending-request-card';
                 requestCard.innerHTML = `
                   <div class="request-header">
-                    <i class="fa-solid fa-user"></i>
+                    <span class="icon icon-user"></span>
                     <h4>${booking.customerName}</h4>
                   </div>
                   <div class="request-details">
-                    <p><i class="fa-solid fa-car"></i> ${booking.vehicleType}</p>
-                    <p><i class="fa-solid fa-calendar"></i> ${formattedDate}</p>
-                    <p><i class="fa-solid fa-location-dot"></i> ${booking.pickupLocation} → ${booking.dropoffLocation}</p>
+                    <p><span class="icon icon-car"></span> ${booking.vehicleType}</p>
+                    <p><span class="icon icon-calendar"></span> ${formattedDate}</p>
+                    <p><span class="icon icon-location"></span> ${booking.pickupLocation} → ${booking.dropoffLocation}</p>
                   </div>
                   <span class="request-badge">New</span>
                 `;
@@ -560,6 +567,24 @@
           closeSidebar();
         }
       });
+    });
+  </script>
+
+  <!-- Profile Dropdown Script -->
+  <script>
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('profileDropdown');
+      const profilePic = document.querySelector('.profile-pic');
+      
+      if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+        dropdown.classList.remove('show');
+      }
     });
   </script>
 

@@ -1,0 +1,322 @@
+/* Custom Icons - Font Awesome Replacement */
+/* Uses CSS-only icons with Unicode symbols and pseudo-elements */
+
+/* Base icon styles */
+.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    font-style: normal;
+    font-size: inherit;
+    line-height: 1;
+    margin-right: 0.4em;
+    vertical-align: middle;
+}
+
+/* Dashboard icon */
+.icon-dashboard::before {
+    content: "▦";
+}
+
+/* Calendar icons */
+.icon-calendar::before {
+    content: "📅";
+}
+
+/* Clock icon */
+.icon-clock::before {
+    content: "⏰";
+}
+
+/* X mark / Cancel icon */
+.icon-xmark::before {
+    content: "✖";
+}
+
+/* Star icon */
+.icon-star::before {
+    content: "⭐";
+}
+
+.icon-star-empty::before {
+    content: "☆";
+}
+
+/* User icon */
+.icon-user::before {
+    content: "👤";
+}
+
+/* Users icon */
+.icon-users::before {
+    content: "👥";
+}
+
+/* Credit card icon */
+.icon-credit-card::before {
+    content: "💳";
+}
+
+/* Car icons */
+.icon-car::before {
+    content: "🚗";
+}
+
+.icon-car-side::before {
+    content: "🚙";
+}
+
+/* Road icon */
+.icon-road::before {
+    content: "🛣";
+}
+
+/* Location icon */
+.icon-location::before {
+    content: "📍";
+}
+
+/* Arrow icons */
+.icon-arrow-right::before {
+    content: "→";
+}
+
+.icon-arrow-left::before {
+    content: "←";
+}
+
+.icon-arrow-up::before {
+    content: "↑";
+}
+
+.icon-arrow-down::before {
+    content: "↓";
+}
+
+/* Chevron icons */
+.icon-chevron-down::before {
+    content: "▼";
+    font-size: 0.7em;
+}
+
+.icon-chevron-up::before {
+    content: "▲";
+    font-size: 0.7em;
+}
+
+.icon-chevron-left::before {
+    content: "◀";
+    font-size: 0.7em;
+}
+
+.icon-chevron-right::before {
+    content: "▶";
+    font-size: 0.7em;
+}
+
+/* Check icon */
+.icon-check::before {
+    content: "✓";
+    color: #10b981;
+}
+
+/* Note icon */
+.icon-note::before {
+    content: "📝";
+}
+
+/* Phone icon */
+.icon-phone::before {
+    content: "📞";
+}
+
+/* Email icon */
+.icon-email::before {
+    content: "✉";
+}
+
+/* ID card icon */
+.icon-id-card::before {
+    content: "🪪";
+}
+
+/* Image/Photo icon */
+.icon-image::before {
+    content: "🖼";
+}
+
+/* Edit/Pen icon */
+.icon-edit::before {
+    content: "✏";
+}
+
+/* Eye icons */
+.icon-eye::before {
+    content: "👁";
+}
+
+.icon-eye-slash::before {
+    content: "🙈";
+}
+
+/* Filter icon */
+.icon-filter::before {
+    content: "⚙";
+}
+
+/* Plus icon */
+.icon-plus::before {
+    content: "+";
+    font-weight: bold;
+}
+
+/* Minus icon */
+.icon-minus::before {
+    content: "−";
+}
+
+/* Close icon */
+.icon-close::before {
+    content: "×";
+    font-size: 1.3em;
+}
+
+/* Money/Wallet icon */
+.icon-wallet::before {
+    content: "💰";
+}
+
+/* Bank icon */
+.icon-bank::before {
+    content: "🏦";
+}
+
+/* Chart icon */
+.icon-chart::before {
+    content: "📊";
+}
+
+/* Info icon */
+.icon-info::before {
+    content: "ℹ";
+}
+
+/* Warning icon */
+.icon-warning::before {
+    content: "⚠";
+    color: #f59e0b;
+}
+
+/* Trash icon */
+.icon-trash::before {
+    content: "🗑";
+}
+
+/* Upload icon */
+.icon-upload::before {
+    content: "⬆";
+}
+
+/* Download icon */
+.icon-download::before {
+    content: "⬇";
+}
+
+/* Search icon */
+.icon-search::before {
+    content: "🔍";
+}
+
+/* Settings icon */
+.icon-settings::before {
+    content: "⚙";
+}
+
+/* Home icon */
+.icon-home::before {
+    content: "🏠";
+}
+
+/* Logout icon */
+.icon-logout::before {
+    content: "🚪";
+}
+
+/* User Plus icon */
+.icon-user-plus::before {
+    content: "➕";
+}
+
+/* Info circle icon */
+.icon-info-circle::before {
+    content: "ℹ";
+    color: #2c5530;
+}
+
+/* ID Badge icon */
+.icon-id-badge::before {
+    content: "🪪";
+}
+
+/* Hashtag icon */
+.icon-hashtag::before {
+    content: "#";
+    font-weight: bold;
+}
+
+/* Envelope icon */
+.icon-envelope::before {
+    content: "✉";
+}
+
+/* File/Document icon */
+.icon-file::before {
+    content: "📄";
+}
+
+/* Camera icon */
+.icon-camera::before {
+    content: "📷";
+}
+
+/* Lock icon */
+.icon-lock::before {
+    content: "🔒";
+}
+
+/* Key icon */
+.icon-key::before {
+    content: "🔑";
+}
+
+/* Calendar X icon */
+.icon-calendar-x::before {
+    content: "📅";
+}
+
+/* Message/Comment icon */
+.icon-message::before {
+    content: "💬";
+}
+
+/* Quote left icon */
+.icon-quote::before {
+    content: "❝";
+}
+
+/* Circle icon */
+.icon-circle::before {
+    content: "●";
+}
+
+/* Map marker icon */
+.icon-map-marker::before {
+    content: "📍";
+}
+
+/* Money icon */
+.icon-money::before {
+    content: "💵";
+}

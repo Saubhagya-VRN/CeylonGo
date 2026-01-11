@@ -21,6 +21,7 @@
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
     
+    <!-- Font Awesome -->
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -38,8 +39,13 @@
     </div>
     <nav class="nav-links">
       <a href="/CeylonGo/public/transporter/dashboard">Home</a>
-      <a href="/CeylonGo/public/logout">Logout</a>
-      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
+      <div class="profile-dropdown">
+        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+          <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -356,6 +362,24 @@
           closeSidebar();
         }
       });
+    });
+  </script>
+
+  <!-- Profile Dropdown Script -->
+  <script>
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('profileDropdown');
+      const profilePic = document.querySelector('.profile-pic');
+      
+      if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+        dropdown.classList.remove('show');
+      }
     });
   </script>
 </body>
