@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
   
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
@@ -70,7 +71,7 @@
       margin-top: 0;
     }
 
-    .section-title i {
+    .section-title .icon {
       font-size: 22px;
     }
 
@@ -100,7 +101,7 @@
       gap: 6px;
     }
 
-    .form-group label i {
+    .form-group label .icon {
       color: #2c5530;
       font-size: 14px;
     }
@@ -190,7 +191,7 @@
       gap: 12px;
     }
 
-    .info-box i {
+    .info-box .icon {
       color: #2c5530;
       font-size: 20px;
       margin-top: 2px;
@@ -240,7 +241,7 @@
 
   <!-- Welcome Section -->
   <section class="wlc-section">
-    <h1><i class="fa-solid fa-user-plus"></i> Join as a Transport Provider</h1>
+    <h1><span class="icon icon-user-plus"></span> Join as a Transport Provider</h1>
     <p>Welcome! We're excited to have you join our platform. Please fill in your details below to complete your registration and start connecting with travelers.</p>
   </section>
 
@@ -248,7 +249,7 @@
   <main class="form-container">
     <div class="registration-card">
       <div class="info-box">
-        <i class="fa-solid fa-circle-info"></i>
+        <span class="icon icon-info-circle"></span>
         <p><strong>Important:</strong> Please ensure all information is accurate. You'll need to provide valid documents including your license and vehicle registration.</p>
       </div>
 
@@ -256,76 +257,76 @@
         
         <!-- Personal Information -->
         <h3 class="section-title">
-          <i class="fa-solid fa-user"></i>
+          <span class="icon icon-user"></span>
           Personal Information
         </h3>
         <div class="form-grid">
           <div class="form-group">
-            <label><i class="fa-solid fa-id-card"></i> Full Name</label>
+            <label><span class="icon icon-id-card"></span> Full Name</label>
             <input type="text" name="full_name" placeholder="Enter your full name" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-calendar"></i> Date of Birth</label>
+            <label><span class="icon icon-calendar"></span> Date of Birth</label>
             <input type="date" name="dob" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-id-badge"></i> NIC Number</label>
+            <label><span class="icon icon-id-badge"></span> NIC Number</label>
             <input type="text" name="nic" placeholder="Enter your NIC Number" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-phone"></i> Contact Number</label>
+            <label><span class="icon icon-phone"></span> Contact Number</label>
             <input type="text" name="contact_no" placeholder="Enter your contact number" required>
           </div>
 
           <div class="form-group full-width">
-            <label><i class="fa-solid fa-location-dot"></i> Home Address</label>
+            <label><span class="icon icon-location"></span> Home Address</label>
             <input type="text" name="address" placeholder="Enter your complete home address" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-envelope"></i> Email Address</label>
+            <label><span class="icon icon-envelope"></span> Email Address</label>
             <input type="email" name="email" placeholder="Enter your email address" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-image"></i> Profile Picture</label>
+            <label><span class="icon icon-image"></span> Profile Picture</label>
             <input type="file" name="profile_image" accept="image/*" required>
           </div>
         </div>
 
         <!-- License Information -->
         <h3 class="section-title">
-          <i class="fa-solid fa-id-card-clip"></i>
+          <span class="icon icon-id-card"></span>
           Driving License Information
         </h3>
         <div class="form-grid">
           <div class="form-group">
-            <label><i class="fa-solid fa-hashtag"></i> License Number</label>
+            <label><span class="icon icon-hashtag"></span> License Number</label>
             <input type="text" name="license_no" placeholder="Enter your license number" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-calendar-xmark"></i> License Expiry Date</label>
+            <label><span class="icon icon-calendar-x"></span> License Expiry Date</label>
             <input type="date" name="license_exp_date" id="license_exp_date" required>
           </div>
 
           <div class="form-group full-width">
-            <label><i class="fa-solid fa-file-image"></i> Upload License Document</label>
+            <label><span class="icon icon-file"></span> Upload License Document</label>
             <input type="file" name="license_image" accept="image/*" required>
           </div>
         </div>
 
         <!-- Vehicle Information -->
         <h3 class="section-title">
-          <i class="fa-solid fa-car"></i>
+          <span class="icon icon-car"></span>
           Vehicle Information
         </h3>
         <div class="form-grid">
           <div class="form-group">
-            <label><i class="fa-solid fa-car-side"></i> Vehicle Type</label>
+            <label><span class="icon icon-car-side"></span> Vehicle Type</label>
             <select name="vehicle_type" required>
               <?php if (!empty($vehicleTypes)): ?>
                 <?php foreach ($vehicleTypes as $type): ?>
@@ -340,34 +341,34 @@
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-hashtag"></i> Vehicle Number</label>
+            <label><span class="icon icon-hashtag"></span> Vehicle Number</label>
             <input type="text" name="vehicle_no" placeholder="e.g., ABC-1234" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-users"></i> Passenger Capacity</label>
+            <label><span class="icon icon-users"></span> Passenger Capacity</label>
             <input type="number" name="psg_capacity" min="1" value="1" placeholder="Enter capacity" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-camera"></i> Vehicle Photo</label>
+            <label><span class="icon icon-camera"></span> Vehicle Photo</label>
             <input type="file" name="vehicle_image" accept="image/*" required>
           </div>
         </div>
 
         <!-- Account Security -->
         <h3 class="section-title">
-          <i class="fa-solid fa-lock"></i>
+          <span class="icon icon-lock"></span>
           Account Security
         </h3>
         <div class="form-grid">
           <div class="form-group">
-            <label><i class="fa-solid fa-key"></i> Password</label>
+            <label><span class="icon icon-key"></span> Password</label>
             <input type="password" name="password" placeholder="Create a strong password" required>
           </div>
 
           <div class="form-group">
-            <label><i class="fa-solid fa-key"></i> Confirm Password</label>
+            <label><span class="icon icon-key"></span> Confirm Password</label>
             <input type="password" name="confirm_password" placeholder="Re-enter your password" required>
           </div>
         </div>
@@ -375,10 +376,10 @@
         <!-- Action Buttons -->
         <div class="buttons">
           <button type="button" class="back-button" onclick="window.history.back()">
-            <i class="fa-solid fa-arrow-left"></i> Back
+            <span class="icon icon-arrow-left"></span> Back
           </button>
           <button type="submit" class="register-btn">
-            <i class="fa-solid fa-user-plus"></i> Complete Registration
+            <span class="icon icon-user-plus"></span> Complete Registration
           </button>
         </div>
 

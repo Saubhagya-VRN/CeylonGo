@@ -1,7 +1,7 @@
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  background: #ffffff;
   min-height: 100vh;
   padding: 25px 0;
   position: fixed;
@@ -61,7 +61,7 @@
 }
 
 .sidebar ul li.active {
-  background: linear-gradient(135deg, #2c5530 0%, #3d7042 100%);
+  background: #2c5530;
   box-shadow: 0 4px 12px rgba(44, 85, 48, 0.3);
 }
 
@@ -99,7 +99,7 @@
 /* Sidebar Divider */
 .sidebar-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  background: #ddd;
   margin: 20px 20px;
 }
 

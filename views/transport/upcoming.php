@@ -21,8 +21,8 @@
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
     
-    <link rel="stylesheet" 
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -38,8 +38,13 @@
     </div>
     <nav class="nav-links">
       <a href="/CeylonGo/public/transporter/dashboard">Home</a>
-      <a href="/CeylonGo/public/logout">Logout</a>
-      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
+      <div class="profile-dropdown">
+        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+          <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -62,7 +67,7 @@
 
     <!-- Main Content -->
     <div class="main-content">
-      <h2 class="page-title"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</h2>
+      <h2 class="page-title"><span class="icon icon-calendar"></span> Upcoming Bookings</h2>
 
       <!-- Desktop Table View -->
       <div class="table-container">
@@ -82,42 +87,42 @@
               <td>2025-03-15</td>
               <td>09:00 AM</td>
               <td>123, Park Road, Dehiwala</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
             </tr>
             <tr>
               <td>#77889</td>
               <td>2025-08-19</td>
               <td>02:30 PM</td>
               <td>202 Cedar Road, Colombo</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
             </tr>
             <tr>
               <td>#VN001</td>
               <td>2026-01-15</td>
               <td>08:30 AM</td>
               <td>Colombo Fort</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
             </tr>
             <tr>
               <td>#VN002</td>
               <td>2026-01-18</td>
               <td>06:00 AM</td>
               <td>Mount Lavinia Hotel</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
             </tr>
             <tr>
               <td>#VN003</td>
               <td>2026-01-22</td>
               <td>10:00 AM</td>
               <td>Bandaranaike Airport</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
             </tr>
             <tr>
               <td>#VN004</td>
               <td>2026-02-01</td>
               <td>07:00 AM</td>
               <td>Kandy City</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
             </tr>
           </tbody>
         </table>
@@ -132,23 +137,23 @@
           </div>
           <div class="card-body">
             <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
+              <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
               <span>2025-03-15</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
+              <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
               <span>09:00 AM</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
+              <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
               <span>123, Park Road, Dehiwala</span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
 
@@ -159,23 +164,23 @@
           </div>
           <div class="card-body">
             <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
+              <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
               <span>2025-08-19</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
+              <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
               <span>02:30 PM</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
+              <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
               <span>202 Cedar Road, Colombo</span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
 
@@ -187,28 +192,28 @@
           </div>
           <div class="card-body">
             <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
+              <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
               <span>2026-01-15</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
+              <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
               <span>08:30 AM</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
+              <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
               <span>Colombo Fort</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-users"></i>
+              <span class="icon icon-users"></span>
               <span class="label">Passengers:</span>
               <span>10</span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
 
@@ -220,28 +225,28 @@
           </div>
           <div class="card-body">
             <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
+              <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
               <span>2026-01-18</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
+              <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
               <span>06:00 AM</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
+              <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
               <span>Mount Lavinia Hotel</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-users"></i>
+              <span class="icon icon-users"></span>
               <span class="label">Passengers:</span>
               <span>12</span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
 
@@ -253,28 +258,28 @@
           </div>
           <div class="card-body">
             <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
+              <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
               <span>2026-01-22</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
+              <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
               <span>10:00 AM</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
+              <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
               <span>Bandaranaike Airport</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-users"></i>
+              <span class="icon icon-users"></span>
               <span class="label">Passengers:</span>
               <span>7</span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
 
@@ -286,28 +291,28 @@
           </div>
           <div class="card-body">
             <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
+              <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
               <span>2026-02-01</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
+              <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
               <span>07:00 AM</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
+              <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
               <span>Kandy City</span>
             </div>
             <div class="card-row">
-              <i class="fa-solid fa-users"></i>
+              <span class="icon icon-users"></span>
               <span class="label">Passengers:</span>
               <span>9</span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
       </div>
@@ -365,6 +370,24 @@
           closeSidebar();
         }
       });
+    });
+  </script>
+
+  <!-- Profile Dropdown Script -->
+  <script>
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('profileDropdown');
+      const profilePic = document.querySelector('.profile-pic');
+      
+      if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+        dropdown.classList.remove('show');
+      }
     });
   </script>
 </body>
