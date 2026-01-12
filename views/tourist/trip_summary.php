@@ -14,12 +14,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'tourist') {
 $booking_id = isset($_GET['booking_id']) ? intval($_GET['booking_id']) : 0;
 
 if ($booking_id === 0) {
-    header('Location: tourist_dashboard');
+    header('Location: /CeylonGo/public/tourist/dashboard');
     exit;
 }
 
 // Get booking details from database
-require_once '../../config/database.php';
+require_once dirname(__DIR__, 2) . '/config/database.php';
 
 // Fetch booking information
 $stmt = $conn->prepare("
@@ -43,7 +43,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows === 0) {
-    header('Location: tourist_dashboard');
+    header('Location: /CeylonGo/public/tourist/dashboard');
     exit;
 }
 
@@ -67,7 +67,76 @@ $stmt->execute();
 $destinations_result = $stmt->get_result();
 $destinations = $destinations_result->fetch_all(MYSQLI_ASSOC);
 
-$stmt->close();
+// Fetch transport requests for this user (most recent)
+$transport_request = null;
+$customer_name = $booking['first_name'] . ' ' . $booking['last_name'];
+try {
+    // Check if transport requests table exists
+    $check_table = $conn->query("SHOW TABLES LIKE 'tourist_transport_requests'");
+    if ($check_table && $check_table->num_rows > 0) {
+        $stmt = $conn->prepare("
+            SELECT 
+                customerName,
+                vehicleType,
+                date,
+                pickupTime,
+                pickupLocation,
+                dropoffLocation,
+                numPeople,
+                notes
+            FROM tourist_transport_requests
+            WHERE customerName = ?
+            ORDER BY id DESC
+            LIMIT 1
+        ");
+        $stmt->bind_param("s", $customer_name);
+        $stmt->execute();
+        $transport_result = $stmt->get_result();
+        if ($transport_result->num_rows > 0) {
+            $transport_request = $transport_result->fetch_assoc();
+        }
+        $stmt->close();
+    }
+} catch (Exception $e) {
+    error_log("Error fetching transport request: " . $e->getMessage());
+}
+
+// Fetch tour guide request for this user (most recent) - if guide is required
+$tour_guide_request = null;
+if ($booking['guide_required'] === 'Yes') {
+    try {
+        // Check if there's a tour guide requests table
+        $guide_tables = ['tourist_guide_requests', 'tour_guide_requests', 'guide_requests'];
+        foreach ($guide_tables as $table) {
+            $check_table = $conn->query("SHOW TABLES LIKE '$table'");
+            if ($check_table && $check_table->num_rows > 0) {
+                $stmt = $conn->prepare("
+                    SELECT 
+                        customerName,
+                        location,
+                        language,
+                        date as preferred_date,
+                        notes
+                    FROM $table
+                    WHERE customerName = ?
+                    ORDER BY id DESC
+                    LIMIT 1
+                ");
+                $stmt->bind_param("s", $customer_name);
+                $stmt->execute();
+                $guide_result = $stmt->get_result();
+                if ($guide_result->num_rows > 0) {
+                    $tour_guide_request = $guide_result->fetch_assoc();
+                }
+                $stmt->close();
+                break;
+            }
+        }
+    } catch (Exception $e) {
+        error_log("Error fetching tour guide request: " . $e->getMessage());
+    }
+}
+
 $conn->close();
 
 // Calculate total days and people
@@ -77,6 +146,9 @@ foreach ($destinations as $dest) {
     $total_days += $dest['days'];
     $total_people = max($total_people, $dest['people_count']);
 }
+
+// Get first destination info
+$first_destination = !empty($destinations[0]) ? $destinations[0] : null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -115,103 +187,135 @@ foreach ($destinations as $dest) {
       </div>
     </div>
 
-    <div class="customer-info">
-      <h2>Customer Information</h2>
-      <div class="info-grid">
-        <div class="info-item">
-          <strong>Name:</strong> <?= htmlspecialchars($booking['first_name'] . ' ' . $booking['last_name']) ?>
-        </div>
-        <div class="info-item">
-          <strong>Email:</strong> <?= htmlspecialchars($booking['email']) ?>
-        </div>
-        <div class="info-item">
-          <strong>Contact:</strong> <?= htmlspecialchars($booking['contact_number']) ?>
-        </div>
-      </div>
-    </div>
-
     <div class="trip-details">
       <h2>Trip Summary</h2>
-      
-      <div class="trip-overview">
-        <div class="overview-item">
-          <div class="overview-label">Total Destinations</div>
-          <div class="overview-value"><?= count($destinations) ?></div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-label">Total Days</div>
-          <div class="overview-value"><?= $total_days ?></div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-label">Travelers</div>
-          <div class="overview-value"><?= $total_people ?></div>
-        </div>
-        <div class="overview-item">
-          <div class="overview-label">Tour Guide</div>
-          <div class="overview-value"><?= htmlspecialchars($booking['guide_required']) ?></div>
-        </div>
-      </div>
-
-      <div class="destinations-list">
-        <?php foreach ($destinations as $index => $dest): ?>
-          <div class="destination-card">
-            <div class="destination-header">
-              <h3>Destination <?= $index + 1 ?></h3>
-              <div class="destination-badge"><?= htmlspecialchars($dest['destination']) ?></div>
-            </div>
-            <div class="destination-details">
-              <div class="detail-row">
-                <div class="detail-item">
-                  <span class="detail-icon">👥</span>
-                  <div>
-                    <div class="detail-label">Number of People</div>
-                    <div class="detail-value"><?= htmlspecialchars($dest['people_count']) ?></div>
-                  </div>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-icon">📅</span>
-                  <div>
-                    <div class="detail-label">Duration</div>
-                    <div class="detail-value"><?= htmlspecialchars($dest['days']) ?> Day<?= $dest['days'] > 1 ? 's' : '' ?></div>
-                  </div>
-                </div>
-              </div>
-              
-              <?php if (!empty($dest['hotel'])): ?>
+      <?php if (!empty($destinations)): ?>
+        <div class="trip-summary-box">
+          <?php foreach ($destinations as $i => $destination): ?>
+            <div class="summary-section">
+              <h3 class="section-title">Destination <?= ($i + 1) ?></h3>
+              <p class="destination-name"><?= htmlspecialchars($destination['destination']) ?></p>
+              <div class="details-list">
                 <div class="detail-row">
-                  <div class="detail-item full-width">
-                    <span class="detail-icon">🏨</span>
-                    <div>
-                      <div class="detail-label">Hotel</div>
-                      <div class="detail-value"><?= htmlspecialchars($dest['hotel']) ?></div>
-                    </div>
-                  </div>
+                  <span class="detail-label">PEOPLE:</span>
+                  <span class="detail-value"><?= htmlspecialchars($destination['people_count']) ?></span>
                 </div>
-              <?php endif; ?>
-              
-              <div class="detail-row">
-                <div class="detail-item">
-                  <span class="detail-icon">🚗</span>
-                  <div>
-                    <div class="detail-label">Transport Required</div>
-                    <div class="detail-value"><?= htmlspecialchars($dest['transport']) ?></div>
-                  </div>
+                <div class="detail-row">
+                  <span class="detail-label">DURATION:</span>
+                  <span class="detail-value"><?= htmlspecialchars($destination['days']) ?> Day<?= $destination['days'] > 1 ? 's' : '' ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">HOTEL:</span>
+                  <span class="detail-value">
+                    <?= !empty($destination['hotel']) ? htmlspecialchars($destination['hotel']) : 'Not selected' ?>
+                    <span class="status-pending">Pending</span>
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">TRANSPORT:</span>
+                  <span class="detail-value">
+                    <?= htmlspecialchars($destination['transport']) ?>
+                    <?php if ($destination['transport'] === 'Yes'): ?>
+                      <span class="status-pending">Pending</span>
+                    <?php endif; ?>
+                  </span>
+                </div>
+              </div>
+              <div class="diary-action" style="margin-top:10px;">
+                <a href="/CeylonGo/public/tourist/add-diary-entry" class="btn-outline">
+                  <span>📔</span> My Diaries
+                </a>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+          
+          <!-- Transport Service Section -->
+          <?php if ($transport_request): ?>
+            <div class="summary-section">
+              <h3 class="section-title">Transport Service</h3>
+              <div class="details-list">
+                <div class="detail-row">
+                  <span class="detail-label">VEHICLE:</span>
+                  <span class="detail-value"><?= htmlspecialchars($transport_request['vehicleType']) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">DATE:</span>
+                  <span class="detail-value"><?= date('M d, Y', strtotime($transport_request['date'])) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">TIME:</span>
+                  <span class="detail-value"><?= date('g:i A', strtotime($transport_request['pickupTime'])) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">FROM:</span>
+                  <span class="detail-value"><?= htmlspecialchars($transport_request['pickupLocation']) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">TO:</span>
+                  <span class="detail-value"><?= htmlspecialchars($transport_request['dropoffLocation']) ?></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">STATUS:</span>
+                  <span class="detail-value">
+                    <span class="status-pending">Pending</span>
+                  </span>
                 </div>
               </div>
             </div>
-          </div>
-        <?php endforeach; ?>
-      </div>
+          <?php endif; ?>
+          
+          <!-- Tour Guide Service Section -->
+          <?php if ($booking['guide_required'] === 'Yes'): ?>
+            <div class="summary-section">
+              <h3 class="section-title">Tour Guide Service</h3>
+              <div class="details-list">
+                <?php if ($tour_guide_request): ?>
+                  <div class="detail-row">
+                    <span class="detail-label">LOCATION:</span>
+                    <span class="detail-value"><?= htmlspecialchars($tour_guide_request['location']) ?></span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">LANGUAGE:</span>
+                    <span class="detail-value"><?= htmlspecialchars($tour_guide_request['language']) ?></span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">DATE:</span>
+                    <span class="detail-value"><?= date('M d, Y', strtotime($tour_guide_request['preferred_date'])) ?></span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">STATUS:</span>
+                    <span class="detail-value">
+                      <span class="status-pending">Pending</span>
+                    </span>
+                  </div>
+                <?php else: ?>
+                  <div class="detail-row">
+                    <span class="detail-label">INFO:</span>
+                    <span class="detail-value">Tour guide requested. Details will be confirmed soon.</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="detail-label">STATUS:</span>
+                    <span class="detail-value">
+                      <span class="status-pending">Pending</span>
+                    </span>
+                  </div>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
     </div>
 
     <div class="actions">
       <button onclick="window.print()" class="btn-outline">
         <span>📄</span> Print Summary
       </button>
-      <a href="tourist_dashboard" class="btn-primary">
+      <a href="/CeylonGo/public/tourist/dashboard" class="btn-primary">
         <span>🏠</span> Back to Dashboard
       </a>
-      <a href="tourist_dashboard#customize" class="btn-outline">
+      <a href="/CeylonGo/public/tourist/dashboard#customize" class="btn-outline">
         <span>➕</span> Plan Another Trip
       </a>
     </div>

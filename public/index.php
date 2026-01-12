@@ -22,6 +22,7 @@ $router->get('contact', 'TouristController@contact');
 $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboard');
+$router->post('tourist/dashboard', 'TouristController@dashboard');
 $router->get('tourist/transport-services', 'TouristController@transportRequestView');
 $router->post('tourist/transport-request', 'TouristController@transportRequest');
 $router->get('tourist/transport-report', 'TouristController@transportReport');
@@ -52,6 +53,8 @@ $router->post('tourist/add-comment', 'TouristController@addComment');
 $router->get('tourist/get-comments/{entry_id}', 'TouristController@getComments');
 $router->get('tourist/delete-comment/{id}', 'TouristController@deleteComment');
 $router->get('tourist/tour-guide-request', 'TouristController@tourGuideRequest');
+$router->post('tourist/tour-guide-request', 'TouristController@tourGuideRequestSubmit');
+$router->get('tourist/tour-guide-request-report', 'TouristController@tourGuideRequestReport');
 
 // ========== HOTEL ROUTES ==========
 $router->get('hotel/register', 'HotelController@registerView');

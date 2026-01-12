@@ -22,6 +22,18 @@ $error_message = '';
 $upcoming_trip = null;
 $days_until_trip = null;
 
+// Initialize form data in session if not exists
+if (!isset($_SESSION['trip_form_data'])) {
+    $_SESSION['trip_form_data'] = array(
+        'people' => array(),
+        'destinations' => array(),
+        'days' => array(),
+        'hotels' => array(),
+        'transports' => array(),
+        'guide' => 'No'
+    );
+}
+
 // Fetch the next upcoming trip for logged-in tourists
 if ($is_logged_in) {
     try {
@@ -75,7 +87,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $days = isset($_POST['days']) ? array_map('intval', $_POST['days']) : array();
         $hotels = isset($_POST['hotel']) ? array_map('htmlspecialchars', $_POST['hotel']) : array();
         $transports = isset($_POST['transport']) ? array_map('htmlspecialchars', $_POST['transport']) : array();
-        $guide = isset($_POST['guide']) ? htmlspecialchars($_POST['guide']) : '';
+        $guides = isset($_POST['guide']) ? (is_array($_POST['guide']) ? array_map('htmlspecialchars', $_POST['guide']) : array(htmlspecialchars($_POST['guide']))) : array();
+        // For backward compatibility, use "Yes" if any destination requires a guide
+        $guide = in_array('Yes', $guides) ? 'Yes' : 'No';
 
         // Validate that we have at least one destination
         if (empty($destinations) || empty($destinations[0])) {
@@ -83,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             // Save to database
             try {
-                require_once '../../config/database.php';
+                require_once dirname(__DIR__, 2) . '/config/database.php';
                 
                 // Insert trip booking
                 $stmt = $conn->prepare("INSERT INTO trip_bookings (user_id, guide_required, created_at, status) VALUES (?, ?, NOW(), 'pending')");
@@ -205,7 +219,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="" id="customizeTripForm">
+    <form method="POST" action="/CeylonGo/public/tourist/dashboard" id="customizeTripForm">
       <?php if ($is_logged_in): ?>
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
       <?php endif; ?>
@@ -272,7 +286,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               <div class="box box-hotel-btn">
                 <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
                   <input type="hidden" name="hotel[]" class="hotel-value" value="">
-                  <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-black choose-hotel-btn" style="text-decoration: none; display: inline-flex;">
+                  <span class="selected-hotel" style="color: #2c5530; font-weight: 600; margin-right: 10px;"></span>
+                  <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-black choose-hotel-btn" style="text-decoration: none; display: inline-flex;" onclick="return saveFormData();">
                     <span class="btn-icon"></span>
                     <span>Choose Hotel</span>
                   </a>
@@ -297,31 +312,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div class="row row-5">
-          <div class="box">
-            <div class="inline-control">
-              <div class="box-title">Add a Tour Guide?</div>
-              <div class="btn-group">
-                <input type="hidden" name="guide" id="guideChoice" value="No">
-                <a href="/CeylonGo/public/tourist/tour-guide-request" class="btn-white guide-yes-btn" style="text-decoration: none;">
-                  <span class="btn-icon">✓</span>
-                  <span>Yes</span>
-                </a>
-                <button type="button" class="btn-black guide-no-btn active">
-                  <span>No</span>
-                </button>
+            <div class="row row-4">
+              <div class="box">
+                <div class="inline-control">
+                  <div class="box-title">Add a Tour Guide?</div>
+                  <div class="btn-group">
+                    <input type="hidden" name="guide[]" class="guide-value" value="No">
+                    <a href="/CeylonGo/public/tourist/tour-guide-request" class="btn-white guide-yes-btn" style="text-decoration: none;">
+                      <span class="btn-icon">✓</span>
+                      <span>Yes</span>
+                    </a>
+                    <button type="button" class="btn-black guide-no-btn active">
+                      <span>No</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- Remove button for this destination (only shown if not first group) -->
+            <div class="row row-remove actions-right" style="display: none;">
+              <button type="button" class="btn-danger remove-destination-btn">
+                <span class="btn-icon">×</span>
+                <span>Remove This Destination</span>
+              </button>
+            </div>
+
+            <!-- Section Separator -->
+            <div class="destination-separator"></div>
           </div>
         </div>
 
         <div class="row row-4 actions-right">
           <button type="button" id="addMore" class="btn-white">
             <span class="btn-icon">+</span>
-            <span>Add More +</span>
+            <span>Add More</span>
           </button>
         </div>
       </div>
@@ -406,6 +432,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       initializeAutocomplete(firstWrapper);
     }
 
+    // Handle returning from hotel selection page
+    function handleHotelSelection() {
+      var selectedHotel = sessionStorage.getItem('selectedHotel');
+      if (selectedHotel) {
+        // Find the last trip group's hotel input
+        var groups = document.querySelectorAll('.trip-group');
+        if (groups.length > 0) {
+          var lastGroup = groups[groups.length - 1];
+          var hotelInput = lastGroup.querySelector('.hotel-value');
+          var hotelDisplay = lastGroup.querySelector('.selected-hotel');
+          if (hotelInput) {
+            hotelInput.value = selectedHotel;
+            if (hotelDisplay) {
+              hotelDisplay.textContent = '✓ ' + selectedHotel;
+            }
+          }
+        }
+        sessionStorage.removeItem('selectedHotel');
+      }
+    }
+    
+    // Call this when page loads
+    window.addEventListener('load', handleHotelSelection);
+
+    function saveFormData() {
+      // Save form data before navigating
+      var formData = {
+        people: [],
+        destinations: [],
+        days: [],
+        hotels: [],
+        transports: [],
+        guide: document.getElementById('guideChoice') ? document.getElementById('guideChoice').value : 'No'
+      };
+      
+      var groups = document.querySelectorAll('.trip-group');
+      groups.forEach(function(group) {
+        var peopleInput = group.querySelector('input[name="people[]"]');
+        var destinationInput = group.querySelector('.destination-input');
+        var daysInput = group.querySelector('input[name="days[]"]');
+        var hotelValue = group.querySelector('.hotel-value');
+        var transportValue = group.querySelector('.transport-value');
+        
+        if (peopleInput) formData.people.push(peopleInput.value);
+        if (destinationInput) formData.destinations.push(destinationInput.value);
+        if (daysInput) formData.days.push(daysInput.value);
+        if (hotelValue) formData.hotels.push(hotelValue.value);
+        if (transportValue) formData.transports.push(transportValue.value);
+      });
+      
+      sessionStorage.setItem('tripFormData', JSON.stringify(formData));
+      return true;
+    }
+
     function increasePeople(btn) {
       var input = btn.previousElementSibling;
       var value = parseInt(input.value) || 1;
@@ -429,6 +509,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       (function(){
         var groupIndex = 1;
         
+        // Function to update remove buttons visibility and separators
+        function updateRemoveButtons() {
+          var container = document.getElementById('trip-group-container');
+          if (!container) return;
+          
+          var groups = container.getElementsByClassName('trip-group');
+          
+          // Update visibility for each group
+          for (var i = 0; i < groups.length; i++) {
+            var group = groups[i];
+            var removeRow = group.querySelector('.row-remove');
+            var separator = group.querySelector('.destination-separator');
+            
+            if (i === 0) {
+              // First group - hide remove button, show separator if more than one group
+              if (removeRow) removeRow.style.display = 'none';
+              if (separator) {
+                separator.style.display = groups.length > 1 ? 'block' : 'none';
+              }
+            } else {
+              // Other groups - show remove button
+              if (removeRow) removeRow.style.display = 'flex';
+              
+              // Show separator after each group except the last one
+              if (separator) {
+                separator.style.display = i < groups.length - 1 ? 'block' : 'none';
+              }
+            }
+          }
+        }
+        
         // Function to duplicate trip group
         function duplicateTripGroup() {
           var container = document.getElementById('trip-group-container');
@@ -447,12 +558,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           var clone = groups[0].cloneNode(true);
           clone.setAttribute('data-index', groupIndex++);
 
-          // Remove any existing remove button from clone
-          var existingRemove = clone.querySelector('.actions-right');
-          if (existingRemove) {
-            existingRemove.remove();
-          }
-
            // Reset inputs in clone
            var inputs = clone.querySelectorAll('input[type=number], input[type=text], input[type=hidden], select');
            inputs.forEach(function(el){
@@ -461,10 +566,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
              } else if (el.closest('.number-control')) {
                // Reset number control to 1
                el.value = '1';
-             } else if (!el.classList.contains('hotel-value') && !el.classList.contains('transport-value')) {
+             } else if (!el.classList.contains('hotel-value') && !el.classList.contains('transport-value') && !el.classList.contains('guide-value')) {
                el.value = ''; 
-             } else {
-               el.value = el.classList.contains('transport-value') ? 'No' : '';
+             } else if (el.classList.contains('transport-value')) {
+               el.value = 'No';
+             } else if (el.classList.contains('guide-value')) {
+               el.value = 'No';
              }
            });
           
@@ -488,27 +595,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transportYesBtn.classList.add('btn-black');
           }
 
-          // Add remove button for this clone
-          var removeWrap = document.createElement('div');
-          removeWrap.className = 'actions-right';
-          removeWrap.style.marginTop = '10px';
-          var removeBtn = document.createElement('button');
-          removeBtn.type = 'button';
-          removeBtn.className = 'btn-danger';
-          removeBtn.textContent = 'Remove';
-          removeBtn.addEventListener('click', function(){
-            var tg = this.closest('.trip-group');
-            if (tg) tg.remove();
-            saveFormData();
-          });
-          removeWrap.appendChild(removeBtn);
-          clone.appendChild(removeWrap);
+          // Reset guide button states
+          var guideNoBtn = clone.querySelector('.guide-no-btn');
+          var guideYesBtn = clone.querySelector('.guide-yes-btn');
+          if (guideNoBtn) {
+            guideNoBtn.classList.add('active');
+            guideNoBtn.classList.add('btn-black');
+            guideNoBtn.classList.remove('btn-white');
+          }
+          if (guideYesBtn) {
+            guideYesBtn.classList.remove('active');
+            guideYesBtn.classList.add('btn-white');
+            guideYesBtn.classList.remove('btn-black');
+          }
 
           // Append clone to container
           container.appendChild(clone);
           
           // Attach event listeners to new group
           attachGroupEventListeners(clone);
+          
+          // Update remove buttons visibility after adding
+          updateRemoveButtons();
           
           // Save form data after adding
           saveFormData();
@@ -522,7 +630,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             days: [],
             hotels: [],
             transports: [],
-            guide: document.getElementById('guideChoice') ? document.getElementById('guideChoice').value : 'No'
+            guides: []
           };
           
           var groups = document.querySelectorAll('.trip-group');
@@ -532,12 +640,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             var daysInput = group.querySelector('input[name="days[]"]');
             var hotelValue = group.querySelector('.hotel-value');
             var transportValue = group.querySelector('.transport-value');
+            var guideValue = group.querySelector('.guide-value');
             
             if (peopleInput) formData.people.push(peopleInput.value);
             if (destinationInput) formData.destinations.push(destinationInput.value);
             if (daysInput) formData.days.push(daysInput.value);
             if (hotelValue) formData.hotels.push(hotelValue.value);
             if (transportValue) formData.transports.push(transportValue.value);
+            if (guideValue) formData.guides.push(guideValue.value);
           });
           
           localStorage.setItem('tripFormData', JSON.stringify(formData));
@@ -549,18 +659,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           if (savedData) {
             try {
               var formData = JSON.parse(savedData);
-              
-              // Restore guide choice
-              var guideChoice = document.getElementById('guideChoice');
-              if (guideChoice && formData.guide) {
-                guideChoice.value = formData.guide;
-                if (formData.guide === 'Yes') {
-                  var guideYesBtn = document.querySelector('.guide-yes-btn');
-                  var guideNoBtn = document.querySelector('.guide-no-btn');
-                  if (guideYesBtn) guideYesBtn.classList.add('active');
-                  if (guideNoBtn) guideNoBtn.classList.remove('active');
-                }
-              }
               
               // Restore each trip group
               var groups = document.querySelectorAll('.trip-group');
@@ -578,17 +676,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   var daysInput = group.querySelector('input[name="days[]"]');
                   var hotelValue = group.querySelector('.hotel-value');
                   var transportValue = group.querySelector('.transport-value');
+                  var guideValue = group.querySelector('.guide-value');
                   
                   if (peopleInput) peopleInput.value = formData.people[i] || '';
                   if (destinationInput) destinationInput.value = formData.destinations[i] || '';
                   if (daysInput) daysInput.value = formData.days[i] || '';
                   if (hotelValue) hotelValue.value = formData.hotels[i] || '';
                   if (transportValue) transportValue.value = formData.transports[i] || '';
+                  if (guideValue) {
+                    guideValue.value = formData.guides && formData.guides[i] ? formData.guides[i] : (formData.guide || 'No');
+                    // Update guide button states
+                    var guideYesBtn = group.querySelector('.guide-yes-btn');
+                    var guideNoBtn = group.querySelector('.guide-no-btn');
+                    if (guideValue.value === 'Yes') {
+                      if (guideYesBtn) {
+                        guideYesBtn.classList.add('active');
+                        guideYesBtn.classList.remove('btn-white');
+                        guideYesBtn.classList.add('btn-black');
+                      }
+                      if (guideNoBtn) {
+                        guideNoBtn.classList.remove('active');
+                        guideNoBtn.classList.remove('btn-black');
+                        guideNoBtn.classList.add('btn-white');
+                      }
+                    }
+                  }
                   
                   // Update display
                   if (formData.hotels[i]) {
                     var selectedHotel = group.querySelector('.selected-hotel');
-                    if (selectedHotel) selectedHotel.textContent = 'Selected: ' + formData.hotels[i];
+                    if (selectedHotel) selectedHotel.textContent = '✓ ' + formData.hotels[i];
                   }
                   if (formData.transports[i]) {
                     var selectedTransport = group.querySelector('.selected-transport');
@@ -622,8 +739,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           // Transport Yes button
           var transportYesBtn = group.querySelector('.transport-yes-btn');
           if (transportYesBtn) {
-            transportYesBtn.addEventListener('click', function() {
+            transportYesBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              var transportValue = group.querySelector('.transport-value');
+              if (transportValue) transportValue.value = 'Yes';
+              transportYesBtn.classList.add('active');
+              transportYesBtn.classList.remove('btn-black');
+              transportYesBtn.classList.add('btn-white');
+              var transportNoBtn = group.querySelector('.transport-no-btn');
+              if (transportNoBtn) {
+                transportNoBtn.classList.remove('active');
+                transportNoBtn.classList.remove('btn-white');
+                transportNoBtn.classList.add('btn-black');
+              }
               saveFormData();
+              // Get the number of people from this specific group
+              var peopleInput = group.querySelector('input[name="people[]"]');
+              if (peopleInput && peopleInput.value) {
+                sessionStorage.setItem('transportNumPeople', peopleInput.value);
+              }
               window.location.href = '/CeylonGo/public/tourist/transport-providers';
             });
           }
@@ -635,9 +769,90 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               var transportValue = group.querySelector('.transport-value');
               if (transportValue) transportValue.value = 'No';
               transportNoBtn.classList.add('active');
+              transportNoBtn.classList.remove('btn-white');
+              transportNoBtn.classList.add('btn-black');
               var transportYesBtn = group.querySelector('.transport-yes-btn');
-              if (transportYesBtn) transportYesBtn.classList.remove('active');
+              if (transportYesBtn) {
+                transportYesBtn.classList.remove('active');
+                transportYesBtn.classList.remove('btn-black');
+                transportYesBtn.classList.add('btn-white');
+              }
               saveFormData();
+            });
+          }
+
+          // Guide Yes button
+          var guideYesBtn = group.querySelector('.guide-yes-btn');
+          if (guideYesBtn) {
+            guideYesBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              var guideValue = group.querySelector('.guide-value');
+              if (guideValue) guideValue.value = 'Yes';
+              guideYesBtn.classList.add('active');
+              guideYesBtn.classList.remove('btn-white');
+              guideYesBtn.classList.add('btn-black');
+              var guideNoBtn = group.querySelector('.guide-no-btn');
+              if (guideNoBtn) {
+                guideNoBtn.classList.remove('active');
+                guideNoBtn.classList.remove('btn-black');
+                guideNoBtn.classList.add('btn-white');
+              }
+              saveFormData();
+              
+              // Get the location from this specific group
+              var destinationInput = group.querySelector('.destination-input');
+              if (destinationInput && destinationInput.value) {
+                sessionStorage.setItem('guideLocation', destinationInput.value);
+              } else {
+                // Fallback to saved trip form data (last destination)
+                var savedFormData = localStorage.getItem('tripFormData');
+                if (savedFormData) {
+                  try {
+                    var formData = JSON.parse(savedFormData);
+                    if (formData.destinations && formData.destinations.length > 0) {
+                      var location = formData.destinations[formData.destinations.length - 1];
+                      if (location) {
+                        sessionStorage.setItem('guideLocation', location);
+                      }
+                    }
+                  } catch(e) {
+                    console.error('Error parsing saved form data:', e);
+                  }
+                }
+              }
+              
+              window.location.href = '/CeylonGo/public/tourist/tour-guide-request';
+            });
+          }
+          
+          // Guide No button
+          var guideNoBtn = group.querySelector('.guide-no-btn');
+          if (guideNoBtn) {
+            guideNoBtn.addEventListener('click', function() {
+              var guideValue = group.querySelector('.guide-value');
+              if (guideValue) guideValue.value = 'No';
+              guideNoBtn.classList.add('active');
+              guideNoBtn.classList.remove('btn-black');
+              guideNoBtn.classList.add('btn-white');
+              var guideYesBtn = group.querySelector('.guide-yes-btn');
+              if (guideYesBtn) {
+                guideYesBtn.classList.remove('active');
+                guideYesBtn.classList.remove('btn-white');
+                guideYesBtn.classList.add('btn-black');
+              }
+              saveFormData();
+            });
+          }
+
+          // Remove destination button
+          var removeBtn = group.querySelector('.remove-destination-btn');
+          if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+              if (confirm('Are you sure you want to remove this destination?')) {
+                group.remove();
+                saveFormData();
+                updateRemoveButtons();
+              }
             });
           }
         }
@@ -646,6 +861,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         function init() {
           // Load saved data on page load
           loadFormData();
+          
+          // Update remove buttons on page load (in case there are multiple groups from saved data)
+          setTimeout(function() {
+            updateRemoveButtons();
+          }, 100);
           
           // Add More button functionality
           var addBtn = document.getElementById('addMore');
@@ -662,32 +882,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           document.querySelectorAll('.trip-group').forEach(function(group) {
             attachGroupEventListeners(group);
           });
-          
-          // Guide Yes button
-          var guideYesBtn = document.querySelector('.guide-yes-btn');
-          if (guideYesBtn) {
-            guideYesBtn.addEventListener('click', function() {
-              var guideChoice = document.getElementById('guideChoice');
-              if (guideChoice) guideChoice.value = 'Yes';
-              guideYesBtn.classList.add('active');
-              var guideNoBtn = document.querySelector('.guide-no-btn');
-              if (guideNoBtn) guideNoBtn.classList.remove('active');
-              saveFormData();
-            });
-          }
-          
-          // Guide No button
-          var guideNoBtn = document.querySelector('.guide-no-btn');
-          if (guideNoBtn) {
-            guideNoBtn.addEventListener('click', function() {
-              var guideChoice = document.getElementById('guideChoice');
-              if (guideChoice) guideChoice.value = 'No';
-              guideNoBtn.classList.add('active');
-              var guideYesBtn = document.querySelector('.guide-yes-btn');
-              if (guideYesBtn) guideYesBtn.classList.remove('active');
-              saveFormData();
-            });
-          }
           
           // Save data before form submit
           var form = document.getElementById('customizeTripForm');

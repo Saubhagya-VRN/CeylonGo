@@ -1,5 +1,5 @@
 <?php
-require_once('../../config/database.php');
+require_once(dirname(__DIR__, 2) . '/config/database.php');
 
 // Fetch all requests
 $result = $conn->query("SELECT * FROM tourist_transport_requests ORDER BY created_at DESC");
@@ -17,7 +17,7 @@ $result = $conn->query("SELECT * FROM tourist_transport_requests ORDER BY create
   <link rel="stylesheet" href="../../public/css/tourist/footer.css">
 </head>
 <body>
-  <?php include('./header.php'); ?>
+  <?php include(dirname(__FILE__) . '/header.php'); ?>
 
   <section class="intro" style="padding: 60px 20px;">
     <h1>Transport Requests</h1>
@@ -55,8 +55,8 @@ $result = $conn->query("SELECT * FROM tourist_transport_requests ORDER BY create
               <td style="padding: 12px 16px;"><?php echo htmlspecialchars($row['numPeople']); ?></td>
               <td style="padding: 12px 16px;"><?php echo htmlspecialchars($row['notes']); ?></td>
               <td style="padding: 12px 16px; white-space: nowrap;">
-                <a class="btn btn-black" href="transport_edit?id=<?php echo $row['id']; ?>">Edit</a>
-                <a class="btn" href="transport_delete?id=<?php echo $row['id']; ?>" onclick="return confirm('Are you sure you want to delete this request?')" style="background:#a33; border:2px solid #a33; color:#fff; margin-left:8px;">Delete</a>
+                <a class="btn btn-black" href="/CeylonGo/public/tourist/transport-edit/<?php echo $row['id']; ?>">Edit</a>
+                <a class="btn" href="/CeylonGo/public/tourist/transport-delete/<?php echo $row['id']; ?>" onclick="return confirm('Are you sure you want to delete this request?')" style="background:#a33; border:2px solid #a33; color:#fff; margin-left:8px;">Delete</a>
               </td>
             </tr>
           <?php endwhile; ?>
@@ -65,8 +65,8 @@ $result = $conn->query("SELECT * FROM tourist_transport_requests ORDER BY create
       </div>
 
       <div style="margin-top: 20px; display:flex; gap: 12px;">
-        <a href="transport_providers" class="btn">Submit Another Request</a>
-        <a href="tourist_dashboard" class="btn btn-black">Back to Dashboard</a>
+        <a href="/CeylonGo/public/tourist/transport-providers" class="btn">Submit Another Request</a>
+        <a href="/CeylonGo/public/tourist/dashboard" class="btn btn-black">Back to Dashboard</a>
       </div>
     </div>
   </section>

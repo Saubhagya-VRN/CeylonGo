@@ -1,5 +1,8 @@
 <?php
 // choose_hotel.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -216,6 +219,140 @@
       background: #4a7c59;
       border-color: #4a7c59;
       transform: translateY(-1px);
+    }
+    
+    /* Booking Modal */
+    .booking-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .booking-modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e0e8e0;
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+      color: #2c5530;
+      font-size: 24px;
+    }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    
+    .close-modal:hover {
+      background: #f0f0f0;
+      color: #2c5530;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #2c5530;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e8e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #4a7c59;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+    
+    .btn-cancel {
+      flex: 1;
+      padding: 12px 20px;
+      background: #fff;
+      color: #2c5530;
+      border: 2px solid #2c5530;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+      background: #f0f8f0;
+    }
+    
+    .btn-confirm {
+      flex: 1;
+      padding: 12px 20px;
+      background: #2c5530;
+      color: #fff;
+      border: 2px solid #2c5530;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-confirm:hover {
+      background: #4a7c59;
+      border-color: #4a7c59;
     }
     
     .filters {
@@ -529,6 +666,43 @@
     </div>
   </section>
 
+  <!-- Booking Modal -->
+  <div id="bookingModal" class="booking-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Complete Your Booking</h2>
+        <button class="close-modal" onclick="closeBookingModal()">&times;</button>
+      </div>
+      <form onsubmit="confirmBooking(); return false;">
+        <input type="hidden" id="hotelNameInput" value="">
+        
+        <div class="form-group">
+          <label for="checkInDate">Check-in Date *</label>
+          <input type="date" id="checkInDate" name="checkInDate" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="roomType">Room Type *</label>
+          <select id="roomType" name="roomType" required>
+            <option value="">Select Room Type</option>
+            <option value="Single">Single Room</option>
+            <option value="Double">Double Room</option>
+            <option value="Twin">Twin Room</option>
+            <option value="Triple">Triple Room</option>
+            <option value="Suite">Suite</option>
+            <option value="Deluxe">Deluxe Room</option>
+            <option value="Family">Family Room</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="closeBookingModal()">Cancel</button>
+          <button type="submit" class="btn-confirm">Confirm Booking</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Footer -->
   <?php include 'footer.php'; ?>
 
@@ -584,9 +758,78 @@
 
     // Book hotel
     function bookHotel(hotelName) {
-      if (confirm(`🏨 Ready to book ${hotelName}?\n\nThis will redirect you to the booking form where you can:\n• Select dates\n• Choose room type\n• Add special requests\n• Complete payment\n\nContinue to booking?`)) {
-        window.location.href = `booking_form?hotel=${encodeURIComponent(hotelName)}`;
+      // Get trip form data to calculate check-in date
+      var tripFormData = localStorage.getItem('tripFormData');
+      var checkInDate = '';
+      
+      if (tripFormData) {
+        try {
+          var formData = JSON.parse(tripFormData);
+          // Get the first destination's days to calculate check-in date
+          // For simplicity, we'll use today's date + 1 day as check-in
+          var today = new Date();
+          today.setDate(today.getDate() + 1);
+          checkInDate = today.toISOString().split('T')[0];
+        } catch(e) {
+          console.error('Error parsing trip form data:', e);
+          // Default to tomorrow if parsing fails
+          var today = new Date();
+          today.setDate(today.getDate() + 1);
+          checkInDate = today.toISOString().split('T')[0];
+        }
+      } else {
+        // Default to tomorrow if no trip data
+        var today = new Date();
+        today.setDate(today.getDate() + 1);
+        checkInDate = today.toISOString().split('T')[0];
       }
+      
+      // Show booking modal
+      var modal = document.getElementById('bookingModal');
+      var hotelNameInput = document.getElementById('hotelNameInput');
+      var checkInDateInput = document.getElementById('checkInDate');
+      var roomTypeSelect = document.getElementById('roomType');
+      
+      hotelNameInput.value = hotelName;
+      checkInDateInput.value = checkInDate;
+      checkInDateInput.min = checkInDate; // Set minimum date to check-in date
+      
+      modal.classList.add('active');
+    }
+    
+    // Close modal
+    function closeBookingModal() {
+      var modal = document.getElementById('bookingModal');
+      modal.classList.remove('active');
+    }
+    
+    // Confirm booking
+    function confirmBooking() {
+      var hotelName = document.getElementById('hotelNameInput').value;
+      var checkInDate = document.getElementById('checkInDate').value;
+      var roomType = document.getElementById('roomType').value;
+      
+      if (!checkInDate || !roomType) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+      
+      // Store booking details
+      var bookingData = {
+        hotelName: hotelName,
+        checkInDate: checkInDate,
+        roomType: roomType
+      };
+      
+      // Store the selected hotel with booking details
+      sessionStorage.setItem('selectedHotel', hotelName);
+      sessionStorage.setItem('hotelBookingData', JSON.stringify(bookingData));
+      
+      // Close modal
+      closeBookingModal();
+      
+      // Return to the dashboard
+      window.history.back();
     }
 
     // Event listeners
@@ -603,6 +846,13 @@
           document.querySelectorAll('.hotel-card').forEach(card => {
             card.style.display = 'block';
           });
+        }
+      });
+      
+      // Close modal when clicking outside
+      document.getElementById('bookingModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeBookingModal();
         }
       });
     });

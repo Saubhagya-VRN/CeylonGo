@@ -1,7 +1,39 @@
 <?php
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Get current date and time for validation
 $current_date = date('Y-m-d');
 $current_time = date('H:i');
+
+// Get user name from session if logged in
+$customer_name = '';
+if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
+    // Get name from session if available
+    if (isset($_SESSION['user_name']) && !empty($_SESSION['user_name'])) {
+        $customer_name = $_SESSION['user_name'];
+    } else {
+        // Fetch name from database if not in session
+        try {
+            require_once '../../config/database.php';
+            $stmt = $conn->prepare("SELECT first_name, last_name FROM tourist_users WHERE id = ?");
+            $stmt->bind_param("i", $_SESSION['user_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($row = $result->fetch_assoc()) {
+                $customer_name = trim($row['first_name'] . ' ' . $row['last_name']);
+                // Store in session for future use
+                $_SESSION['user_name'] = $customer_name;
+            }
+            $stmt->close();
+            $conn->close();
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,7 +56,7 @@ $current_time = date('H:i');
       <div class="form-row">
         <div class="form-group">
           <label for="customerName">Customer Name</label>
-          <input type="text" id="customerName" name="customerName" placeholder="Enter your full name" required>
+          <input type="text" id="customerName" name="customerName" placeholder="Enter your full name" value="<?= htmlspecialchars($customer_name) ?>" required>
         </div>
         <div class="form-group">
           <label for="vehicleType">Vehicle Type</label>
@@ -74,8 +106,8 @@ $current_time = date('H:i');
 
       <div class="actions">
         <button type="submit" class="btn-primary">Submit Request</button>
-        <a href="transport_report" class="btn-primary">View Requests</a>
-        <a href="tourist_dashboard" class="btn-outline">Cancel</a>
+        <a href="/CeylonGo/public/tourist/transport-report" class="btn-primary">View Requests</a>
+        <a href="/CeylonGo/public/tourist/dashboard" class="btn-outline">Cancel</a>
       </div>
     </form>
   </section>
@@ -86,8 +118,60 @@ $current_time = date('H:i');
     document.addEventListener('DOMContentLoaded', function() {
       const dateInput = document.getElementById('date');
       const timeInput = document.getElementById('pickupTime');
+      const numPeopleInput = document.getElementById('numPeople');
       const currentDate = '<?php echo $current_date; ?>';
       const currentTime = '<?php echo $current_time; ?>';
+
+      // Auto-fill number of people from saved trip form data
+      function autoFillNumPeople() {
+        // First, try to get from sessionStorage (set when clicking transport Yes button)
+        var transportNumPeople = sessionStorage.getItem('transportNumPeople');
+        if (transportNumPeople && transportNumPeople > 0 && !numPeopleInput.value) {
+          numPeopleInput.value = transportNumPeople;
+          // Clear it after using so it doesn't persist
+          sessionStorage.removeItem('transportNumPeople');
+          return;
+        }
+        
+        // Try to get from localStorage (from the trip form)
+        var savedFormData = localStorage.getItem('tripFormData');
+        if (savedFormData) {
+          try {
+            var formData = JSON.parse(savedFormData);
+            // Get the number of people from the last trip group (most recent)
+            if (formData.people && formData.people.length > 0) {
+              // Get the last entry (most recent destination)
+              var numPeople = formData.people[formData.people.length - 1];
+              if (numPeople && numPeople > 0 && !numPeopleInput.value) {
+                numPeopleInput.value = numPeople;
+              }
+            }
+          } catch(e) {
+            console.error('Error parsing saved form data:', e);
+          }
+        }
+        
+        // Also try sessionStorage as fallback
+        if (!numPeopleInput.value) {
+          var sessionFormData = sessionStorage.getItem('tripFormData');
+          if (sessionFormData) {
+            try {
+              var formData = JSON.parse(sessionFormData);
+              if (formData.people && formData.people.length > 0) {
+                var numPeople = formData.people[formData.people.length - 1];
+                if (numPeople && numPeople > 0) {
+                  numPeopleInput.value = numPeople;
+                }
+              }
+            } catch(e) {
+              console.error('Error parsing session form data:', e);
+            }
+          }
+        }
+      }
+
+      // Auto-fill number of people on page load
+      autoFillNumPeople();
 
       // Function to validate time when date changes
       function validateDateTime() {
