@@ -1,52 +1,502 @@
+<?php require_once 'session_init.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ceylon Go - Transport Provider Dashboard</title>
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
+  <title>Ceylon Go - Booking Details</title>
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
     
     <!-- Component styles -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/cards.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/buttons.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/forms.css">
-    
-    <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/timeline.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/cards.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
 
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">  
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">  
     
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            color: #1a1a2e;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-header h1 i {
+            color: #0077b6;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Booking Status Banner */
+        .status-banner {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .status-banner.pending {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+        }
+
+        .status-banner.cancelled {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-info i {
+            font-size: 24px;
+        }
+
+        .status-info h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .status-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .booking-id {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Customer Info Card */
+        .customer-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+        }
+
+        .customer-card h3 {
+            font-size: 18px;
+            color: #1a1a2e;
+            margin: 0 0 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .customer-card h3 i {
+            color: #0077b6;
+        }
+
+        .customer-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .customer-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .customer-detail-item .icon-box {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4edda 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0077b6;
+            font-size: 18px;
+        }
+
+        .customer-detail-item .detail-text label {
+            display: block;
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .customer-detail-item .detail-text p {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        /* Trip Details Grid */
+        .trip-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .trip-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .trip-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .trip-card .card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin-bottom: 18px;
+        }
+
+        .trip-card .card-icon.date {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1976d2;
+        }
+
+        .trip-card .card-icon.time {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #f57c00;
+        }
+
+        .trip-card .card-icon.location {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            color: #388e3c;
+        }
+
+        .trip-card .card-icon.passengers {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+            color: #c2185b;
+        }
+
+        .trip-card .card-icon.duration {
+            background: linear-gradient(135deg, #ede7f6 0%, #d1c4e9 100%);
+            color: #7b1fa2;
+        }
+
+        .trip-card .card-icon.vehicle {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            color: #0097a7;
+        }
+
+        .trip-card h4 {
+            font-size: 13px;
+            color: #6c757d;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trip-card p {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        .trip-card p.small {
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            margin-top: 5px;
+        }
+
+        /* Itinerary Section */
+        .itinerary-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            margin-bottom: 30px;
+        }
+
+        .itinerary-section h3 {
+            font-size: 20px;
+            color: #1a1a2e;
+            margin: 0 0 25px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .itinerary-section h3 i {
+            color: #0077b6;
+        }
+
+        .timeline {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #0077b6, #00b4d8);
+            border-radius: 3px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-badge {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #0077b6 0%, #00b4d8 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: 16px;
+            z-index: 1;
+            box-shadow: 0 4px 15px rgba(0, 119, 182, 0.4);
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            flex: 1;
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #0077b6;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .timeline-content h4 {
+            margin: 0 0 10px 0;
+            font-size: 17px;
+            color: #1a1a2e;
+        }
+
+        .timeline-content p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #0077b6 0%, #005a8d 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 119, 182, 0.4);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .action-btn.success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .action-btn.danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .action-btn.danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        /* Notes Section */
+        .notes-section {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .notes-section h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notes-section p {
+            margin: 0;
+            color: #664d03;
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .status-banner {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .trip-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline::before {
+                left: 20px;
+            }
+
+            .timeline-badge {
+                width: 42px;
+                height: 42px;
+                font-size: 14px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
-      <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
-      <a href="#">Home</a>
-      <a href="#">Logout</a>
-      <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
+      <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+      <a href="/CeylonGo/public/logout">Logout</a>
+      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="page-wrapper">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <ul>
-        <li class="active"><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
+        <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+        <li class="active"><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
@@ -55,106 +505,178 @@
       </ul>
     </aside>
 
-    <!-- Main -->
+    <!-- Main Content -->
     <main class="main-content">
-      <div class="tour-container">
-
-        <!-- Back Button (top right of container) -->
-        <div class="back-btn-wrapper">
-          <button class="back-btn" onclick="history.back()">
-            <i class="fa-solid fa-arrow-left"></i> Back
-          </button>
-        </div>
-
-        <!-- Trip summary cards -->
-        <div class="summary">       
-          <div class="summary-card">
-              <div class="icon"><i class="fa-regular fa-calendar-days"></i></div>
-              <div class="meta">
-                  <div class="label">Duration</div>
-                  <div class="value">8 Days / 7 Nights</div>
-              </div>
-          </div>
-
-          <div class="summary-card">
-              <div class="icon"><i class="fa-regular fa-calendar"></i></div>
-              <div class="meta">
-                  <div class="label">Starting Date</div>
-                  <div class="value">15th January 2024</div>
-              </div>
-          </div>    
-
-          <div class="summary-card">
-              <div class="icon"><i class="fa-regular fa-clock"></i></div>
-              <div class="meta">
-                  <div class="label">Pickup Time</div>
-                  <div class="value">08:30 am</div>
-              </div>
-          </div>        
-
-          <div class="summary-card">
-              <div class="icon"><i class="fa-regular fa-calendar"></i></div>
-              <div class="meta">
-                  <div class="label">Ending Date</div>
-                  <div class="value">22th January 2024</div>
-              </div>
-          </div>
-
-          <div class="summary-card">
-              <div class="icon"><i class="fa-solid fa-location-dot"></i></div>
-              <div class="meta">
-                  <div class="label">Pickup Place</div>
-                  <div class="value">Hospital Road<br>Dehiwala</div>
-              </div>
-          </div>
-
-          <div class="summary-card">
-              <div class="icon"><i class="fa-solid fa-user-group"></i></div>
-              <div class="meta">
-                  <div class="label">Passengers</div>
-                  <div class="value">2 Passengers</div>
-              </div>
-          </div>
-        </div>
-
-        <!-- Itinerary -->
-        <section class="itinerary">
-          <h2 class="itinerary-title">Itinerary</h2>
-          <ol class="timeline">
-            <li class="timeline-item">
-              <div class="badge">1</div>
-              <div class="content">
-                <h3>Day 1–2: Kandy</h3>
-                <p>Visit the Temple of the Sacred Tooth Relic, explore the Royal Botanic Gardens, and enjoy a cultural show.</p>
-              </div>
-            </li>
-
-            <li class="timeline-item">
-              <div class="badge">2</div>
-              <div class="content">
-                <h3>Day 3–4: Ella</h3>
-                <p>Hike to Little Adam’s Peak, see the Nine Arch Bridge, and enjoy Ella Gap views.</p>
-              </div>
-            </li>
-
-            <li class="timeline-item">
-              <div class="badge">3</div>
-              <div class="content">
-                <h3>Day 5–6: Yala</h3>
-                <p>Experience a safari in Yala National Park, home to leopards, elephants, and many bird species.</p>
-              </div>
-            </li>
-
-            <li class="timeline-item">
-              <div class="badge">4</div>
-              <div class="content">
-                <h3>Day 7–8: Galle</h3>
-                <p>Explore Galle Fort (UNESCO) and relax on the beaches of Unawatuna.</p>
-              </div>
-            </li>
-          </ol>
-        </section>
+      
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1><i class="fa-solid fa-route"></i> Booking Details</h1>
+        <button class="back-btn" onclick="history.back()">
+          <i class="fa-solid fa-arrow-left"></i> Back to List
+        </button>
       </div>
+
+      <!-- Status Banner -->
+      <div class="status-banner">
+        <div class="status-info">
+          <i class="fa-solid fa-check-circle"></i>
+          <div>
+            <h3>Booking Confirmed</h3>
+            <p>This booking has been confirmed and is ready for pickup</p>
+          </div>
+        </div>
+        <span class="booking-id">#BK-12345</span>
+      </div>
+
+      <!-- Customer Information -->
+      <div class="customer-card">
+        <h3><i class="fa-solid fa-user-circle"></i> Customer Information</h3>
+        <div class="customer-details">
+          <div class="customer-detail-item">
+            <div class="icon-box"><i class="fa-solid fa-user"></i></div>
+            <div class="detail-text">
+              <label>Customer Name</label>
+              <p>John Silva</p>
+            </div>
+          </div>
+          <div class="customer-detail-item">
+            <div class="icon-box"><i class="fa-solid fa-phone"></i></div>
+            <div class="detail-text">
+              <label>Contact Number</label>
+              <p>+94 77 123 4567</p>
+            </div>
+          </div>
+          <div class="customer-detail-item">
+            <div class="icon-box"><i class="fa-solid fa-envelope"></i></div>
+            <div class="detail-text">
+              <label>Email Address</label>
+              <p>john.silva@email.com</p>
+            </div>
+          </div>
+          <div class="customer-detail-item">
+            <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
+            <div class="detail-text">
+              <label>Country</label>
+              <p>United Kingdom</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trip Details Grid -->
+      <div class="trip-grid">
+        <div class="trip-card">
+          <div class="card-icon date"><i class="fa-regular fa-calendar"></i></div>
+          <h4>Starting Date</h4>
+          <p>January 15, 2026</p>
+          <p class="small">Monday</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon date"><i class="fa-regular fa-calendar-check"></i></div>
+          <h4>Ending Date</h4>
+          <p>January 22, 2026</p>
+          <p class="small">Monday</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon time"><i class="fa-regular fa-clock"></i></div>
+          <h4>Pickup Time</h4>
+          <p>08:30 AM</p>
+          <p class="small">Be ready 15 mins early</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon duration"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h4>Duration</h4>
+          <p>8 Days / 7 Nights</p>
+          <p class="small">Full package tour</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon location"><i class="fa-solid fa-location-dot"></i></div>
+          <h4>Pickup Location</h4>
+          <p>Hospital Road, Dehiwala</p>
+          <p class="small">Near the main junction</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon passengers"><i class="fa-solid fa-user-group"></i></div>
+          <h4>Passengers</h4>
+          <p>2 Adults</p>
+          <p class="small">No children</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon vehicle"><i class="fa-solid fa-car"></i></div>
+          <h4>Vehicle Type</h4>
+          <p>Sedan (AC)</p>
+          <p class="small">Comfortable for 2-3 passengers</p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon location"><i class="fa-solid fa-flag-checkered"></i></div>
+          <h4>Drop-off Location</h4>
+          <p>Bandaranaike Airport</p>
+          <p class="small">International Terminal</p>
+        </div>
+      </div>
+
+      <!-- Special Notes -->
+      <div class="notes-section">
+        <h4><i class="fa-solid fa-sticky-note"></i> Special Notes from Customer</h4>
+        <p>Please be punctual. We have an elderly person traveling with us, so kindly drive carefully. We prefer a non-smoking vehicle. Thank you!</p>
+      </div>
+
+      <!-- Itinerary Section -->
+      <div class="itinerary-section">
+        <h3><i class="fa-solid fa-map-marked-alt"></i> Trip Itinerary</h3>
+        
+        <ul class="timeline">
+          <li class="timeline-item">
+            <div class="timeline-badge">1</div>
+            <div class="timeline-content">
+              <h4>Day 1–2: Kandy</h4>
+              <p>Visit the Temple of the Sacred Tooth Relic, explore the Royal Botanic Gardens at Peradeniya, and enjoy an evening cultural dance show featuring traditional Kandyan dancers.</p>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <div class="timeline-badge">2</div>
+            <div class="timeline-content">
+              <h4>Day 3–4: Ella</h4>
+              <p>Hike to Little Adam's Peak for stunning views, visit the iconic Nine Arch Bridge, and enjoy the scenic Ella Gap views. Optional visit to Ravana Falls.</p>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <div class="timeline-badge">3</div>
+            <div class="timeline-content">
+              <h4>Day 5–6: Yala</h4>
+              <p>Experience an exciting safari in Yala National Park, home to leopards, elephants, crocodiles, and many exotic bird species. Morning and evening game drives included.</p>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <div class="timeline-badge">4</div>
+            <div class="timeline-content">
+              <h4>Day 7–8: Galle</h4>
+              <p>Explore the historic Galle Fort (UNESCO World Heritage Site), walk along the ramparts, and relax on the beautiful beaches of Unawatuna before airport drop-off.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="action-btn success" onclick="alert('Contacting customer...')">
+          <i class="fa-solid fa-phone"></i> Contact Customer
+        </button>
+        <button class="action-btn danger" onclick="if(confirm('Are you sure you want to cancel this booking?')) alert('Booking cancelled')">
+          <i class="fa-solid fa-ban"></i> Cancel Booking
+        </button>
+      </div>
+
     </main>
   </div>
 
@@ -165,6 +687,52 @@
       <li><a href="#">Contact Us</a></li>
     </ul>
   </footer>
+
+  <!-- Hamburger Menu Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar() {
+        hamburgerBtn.classList.toggle('active');
+        sidebar.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+      
+      function closeSidebar() {
+        hamburgerBtn.classList.remove('active');
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+      }
+      
+      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+      
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

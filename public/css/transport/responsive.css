@@ -1,0 +1,375 @@
+/* ===== RESPONSIVE STYLES FOR TRANSPORTER UI ===== */
+
+/* CSS Variables for consistent theming */
+:root {
+    --sidebar-width: 250px;
+    --navbar-height: 70px;
+    --primary-color: #2c5530;
+    --primary-dark: #1e3d22;
+    --accent-color: #4CAF50;
+    --text-color: #333;
+    --text-light: #666;
+    --bg-light: #fafafa;
+    --bg-white: #ffffff;
+    --border-color: #e0e0e0;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --transition: all 0.3s ease;
+}
+
+/* ===== HAMBURGER MENU BUTTON ===== */
+.hamburger-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 28px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1100;
+}
+
+.hamburger-btn span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: #fff;
+    border-radius: 3px;
+    transition: var(--transition);
+}
+
+.hamburger-btn.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-btn.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-btn.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+/* ===== SIDEBAR OVERLAY ===== */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 899;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* ===== RESPONSIVE CARD GRID ===== */
+.responsive-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* ===== BOOKING CARDS (Mobile Alternative to Tables) ===== */
+.booking-cards {
+    display: none;
+}
+
+.booking-card-item {
+    background: var(--bg-white);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--accent-color);
+    transition: var(--transition);
+}
+
+.booking-card-item:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.booking-card-item .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.booking-card-item .booking-no {
+    font-weight: 700;
+    color: var(--primary-color);
+    font-size: 1.1em;
+}
+
+.booking-card-item .card-body {
+    display: grid;
+    gap: 8px;
+}
+
+.booking-card-item .card-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.booking-card-item .card-row i {
+    color: var(--text-light);
+    width: 20px;
+    text-align: center;
+}
+
+.booking-card-item .card-row .label {
+    font-weight: 500;
+    color: var(--text-light);
+    min-width: 100px;
+}
+
+.booking-card-item .card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.booking-card-item .see-more-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.booking-card-item .see-more-link:hover {
+    text-decoration: underline;
+}
+
+/* ===== TABLET BREAKPOINT (max-width: 992px) ===== */
+@media (max-width: 992px) {
+    .quick-stats-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .dashboard-widgets {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ===== MOBILE BREAKPOINT (max-width: 768px) ===== */
+@media (max-width: 768px) {
+
+    /* Show hamburger button */
+    .hamburger-btn {
+        display: flex;
+    }
+
+    /* Hide nav links on mobile */
+    .navbar .nav-links a:not(.profile-pic-link) {
+        display: none;
+    }
+
+    /* Sidebar transforms to overlay */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        padding-top: 80px;
+        z-index: 950;
+        transition: left 0.3s ease;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    /* Main content takes full width */
+    .main-content {
+        margin-left: 0 !important;
+        padding: 20px 15px;
+        width: 100%;
+    }
+
+    /* Page wrapper adjustments */
+    .page-wrapper {
+        flex-direction: column;
+    }
+
+    /* Navbar adjustments */
+    .navbar {
+        padding: 12px 15px;
+    }
+
+    .logo-text {
+        font-size: 18px;
+    }
+
+    .logo-img {
+        height: 35px;
+    }
+
+    /* Stats cards responsive */
+    .quick-stats-row {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .stat-card {
+        padding: 16px !important;
+    }
+
+    .stat-card h3 {
+        font-size: 1.5em !important;
+    }
+
+    /* Hide tables, show cards */
+    .table-container {
+        display: none !important;
+    }
+
+    .booking-cards {
+        display: block;
+    }
+
+    /* Welcome section */
+    .welcome h1 {
+        font-size: 1.5em;
+    }
+
+    .welcome h5 {
+        font-size: 0.9em;
+    }
+
+    /* Dashboard widgets stack */
+    .dashboard-widgets {
+        display: flex !important;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .tour-calendar,
+    .pending-requests-card {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Footer responsive */
+    footer {
+        padding: 15px;
+        text-align: center;
+    }
+
+    footer ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Modal responsive */
+    .modal-content {
+        width: 95% !important;
+        max-width: 95% !important;
+        margin: 10px;
+        padding: 20px !important;
+    }
+}
+
+/* ===== SMALL MOBILE BREAKPOINT (max-width: 480px) ===== */
+@media (max-width: 480px) {
+    .main-content {
+        padding: 15px 10px;
+    }
+
+    .booking-card-item {
+        padding: 15px;
+    }
+
+    .booking-card-item .card-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .booking-card-item .card-actions {
+        flex-direction: column;
+    }
+
+    .booking-card-item .card-actions button {
+        width: 100%;
+    }
+
+    .stat-card {
+        flex-direction: row !important;
+        text-align: left !important;
+    }
+
+    .stat-icon {
+        margin-right: 15px;
+        margin-bottom: 0 !important;
+    }
+
+    /* Calendar responsiveness */
+    .calendar-grid {
+        font-size: 0.85em;
+    }
+
+    .calendar-body {
+        padding: 10px !important;
+    }
+
+    .pending-request-card {
+        padding: 12px !important;
+    }
+}
+
+/* ===== TOUCH-FRIENDLY IMPROVEMENTS ===== */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Larger tap targets for touch devices */
+    .sidebar ul li a {
+        padding: 15px 20px;
+        font-size: 16px;
+    }
+
+    button,
+    .btn,
+    a.btn {
+        min-height: 44px;
+        padding: 12px 20px;
+    }
+
+    .accept-btn,
+    .reject-btn {
+        padding: 12px 24px;
+        font-size: 15px;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+
+    .sidebar,
+    .hamburger-btn,
+    .sidebar-overlay {
+        display: none !important;
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+}

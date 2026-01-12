@@ -1,9 +1,10 @@
+<?php require_once 'session_init.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ceylon Go - Transport Provider Cancelled Bookings</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ceylon Go - Cancelled Bookings</title>
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
@@ -15,38 +16,46 @@
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/forms.css">
     
     <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/timeline.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/profile.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/reviews.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/charts.css">
 
     <!-- Responsive styles (always last) -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">  
-
-   <link rel="stylesheet" 
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body> 
-
-    <!-- Navbar -->
-    <header class="navbar">
-        <div class="branding">
-            <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Logo">
-            <div class="logo-text">Ceylon Go</div>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="branding">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <img src="/CeylonGO/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <div class="logo-text">Ceylon Go</div>
+    </div>
+    <nav class="nav-links">
+      <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+      <div class="profile-dropdown">
+        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+          <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </div>
-        <nav class="nav-links">
-            <a href="#">Home</a>
-            <a href="#">Logout</a>
-            <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
-        </nav>
-    </header>
+      </div>
+    </nav>
+  </header>
 
-    <div class="page-wrapper">
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <ul>
+  <div class="page-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
         <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
         <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
@@ -55,56 +64,323 @@
         <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
         <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
-        </div>
-
-        <div class="main-content">
-
-            <!-- Welcome Section -->
-            <div class="welcome">
-                <h2>Cancelled Bookings</h2>
-            </div>
-
-            <!-- Bookings Table -->
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Booking No</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Reason</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        <tr>
-                            <td>#12345</td>
-                            <td>2025-03-15</td>
-                            <td>09:00 AM</td>
-                            <td>Customer Cancelled</td>
-                            <td><a href="/CeylonGO/public/transpoter/info">See More</a></td>
-                        </tr>
-
-                        <tr>
-                            <td>#77889</td>
-                            <td>2025-08-19</td>
-                            <td>02:30 PM</td>
-                            <td>Vehicle Unavailable</td>
-                            <td><a href="/CeylonGO/public/transpoter/info">See More</a></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
-    <!-- Footer Links -->
-    <footer>
-        <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Contact Us</a></li>
-        </ul>
-    </footer>
+    <!-- Main Content -->
+    <div class="main-content">
+      <h2 class="page-title"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</h2>
+
+      <!-- Desktop Table View -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Booking No</th>
+              <th>Date</th>
+              <th>Pickup Time</th>
+              <th>Pickup Location</th>
+              <th>Reason</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>#54321</td>
+              <td>2025-02-10</td>
+              <td>10:30 AM</td>
+              <td>45 Beach Road, Negombo</td>
+              <td>Customer cancelled</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#98765</td>
+              <td>2025-01-25</td>
+              <td>08:00 AM</td>
+              <td>Colombo Fort Station</td>
+              <td>Weather conditions</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN201</td>
+              <td>2026-01-12</td>
+              <td>09:00 AM</td>
+              <td>Galle Face Hotel</td>
+              <td>Schedule conflict</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN202</td>
+              <td>2026-01-20</td>
+              <td>11:00 AM</td>
+              <td>Colombo Airport</td>
+              <td>Flight cancelled</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+            <tr>
+              <td>#VN203</td>
+              <td>2026-01-28</td>
+              <td>06:30 AM</td>
+              <td>Mount Lavinia</td>
+              <td>Group size changed</td>
+              <td><a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="booking-cards">
+        <div class="booking-card-item" style="border-left-color: #f44336;">
+          <div class="card-header">
+            <span class="booking-no">#54321</span>
+            <span class="status-badge cancelled" style="background: #ffebee; color: #c62828;">Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2025-02-10</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>10:30 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>45 Beach Road, Negombo</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Customer cancelled</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <div class="booking-card-item" style="border-left-color: #f44336;">
+          <div class="card-header">
+            <span class="booking-no">#98765</span>
+            <span class="status-badge cancelled" style="background: #ffebee; color: #c62828;">Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2025-01-25</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>08:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Colombo Fort Station</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Weather conditions</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Cancelled Booking 1 -->
+        <div class="booking-card-item" style="border-left-color: #9c27b0;">
+          <div class="card-header">
+            <span class="booking-no">#VN201</span>
+            <span class="status-badge cancelled" style="background: #f3e5f5; color: #7b1fa2;">Van - Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-12</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>09:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Galle Face Hotel</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>8</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Schedule conflict</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Cancelled Booking 2 -->
+        <div class="booking-card-item" style="border-left-color: #9c27b0;">
+          <div class="card-header">
+            <span class="booking-no">#VN202</span>
+            <span class="status-badge cancelled" style="background: #f3e5f5; color: #7b1fa2;">Van - Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-20</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>11:00 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Colombo Airport</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>6</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Flight cancelled</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+
+        <!-- Van Cancelled Booking 3 -->
+        <div class="booking-card-item" style="border-left-color: #9c27b0;">
+          <div class="card-header">
+            <span class="booking-no">#VN203</span>
+            <span class="status-badge cancelled" style="background: #f3e5f5; color: #7b1fa2;">Van - Cancelled</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <i class="fa-solid fa-calendar"></i>
+              <span class="label">Date:</span>
+              <span>2026-01-28</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-clock"></i>
+              <span class="label">Time:</span>
+              <span>06:30 AM</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-location-dot"></i>
+              <span class="label">Pickup:</span>
+              <span>Mount Lavinia</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-users"></i>
+              <span class="label">Passengers:</span>
+              <span>10</span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-circle-info"></i>
+              <span class="label">Reason:</span>
+              <span>Group size changed</span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/transporter/cancelled_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <ul>
+      <li><a href="#">About Us</a></li>
+      <li><a href="#">Contact Us</a></li>
+    </ul>
+  </footer>
+
+  <!-- Hamburger Menu Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburgerBtn = document.getElementById('hamburgerBtn');
+      const sidebar = document.getElementById('sidebar');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      
+      function toggleSidebar() {
+        hamburgerBtn.classList.toggle('active');
+        sidebar.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+      }
+      
+      function closeSidebar() {
+        hamburgerBtn.classList.remove('active');
+        sidebar.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+      
+      if (hamburgerBtn) {
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+      }
+      
+      if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeSidebar);
+      }
+      
+      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          if (window.innerWidth <= 768) {
+            closeSidebar();
+          }
+        });
+      });
+      
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
+
+  <!-- Profile Dropdown Script -->
+  <script>
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('profileDropdown');
+      const profilePic = document.querySelector('.profile-pic');
+      
+      if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+        dropdown.classList.remove('show');
+      }
+    });
+  </script>
 </body>
 </html>
