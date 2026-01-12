@@ -120,7 +120,7 @@ class AdminController {
             $contact = trim($_POST['contact']);
             $email = trim($_POST['email']);
 
-            $success = $userModel->updateUser($userId, $firstName, $lastName, $contact, $email);
+            $success = $userModel->updateUserByAdmin($userId, $firstName, $lastName, $contact, $email);
 
             if ($success) {
                 $_SESSION['success'] = "User updated successfully!";

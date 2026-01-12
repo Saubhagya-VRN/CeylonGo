@@ -1,0 +1,8 @@
+/* Admin specific highlights */
+.sidebar ul li.active {
+  background: #1f7a1f; /* darker admin green */
+}
+
+.profile-dropdown-menu a:last-child:hover {
+  color: #b02a37;
+}

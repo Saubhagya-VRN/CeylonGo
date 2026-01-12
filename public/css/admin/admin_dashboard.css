@@ -1,5 +1,40 @@
 @import url("admin_common.css");
 
+.dashboard-header {
+  display: flex;
+  justify-content: space-between; /* left-right alignment */
+  align-items: center;
+  padding: 15px 25px;
+  background-color: #f1f6f5;; /* light background */
+  border-bottom: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.header-title {
+  color: #1f2937; /* dark gray / heading color */
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-weight: bold;
+}
+
+.header-info {
+  text-align: right;
+  color: #374151;
+}
+
+.header-info h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.header-info h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280; /* lighter gray for role */
+}
+
 /* Add spacing between sections */
 .summary-overview,
 .recent,
@@ -7,46 +42,6 @@
     margin-bottom: 20px;
     padding-bottom: 10px;
     border-bottom: 1px solid #eee;
-}
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #39663e;
-  color: #fff;
-  padding: 15px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-}
-
-.profile-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.role {
-  background: #222;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.btn-outline {
-  background: rgb(160, 151, 151);
-  border: 1px solid #fff;
-  color: #fff;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.btn-black {
-  background: rgb(160, 151, 151);
-  color: #fff;
-  border: 1px solid #fff;
-  padding: 6px 12px;
-  cursor: pointer;
 }
 
 .stats {
@@ -111,26 +106,4 @@
 
 .profile-link:hover {
   color: #e0e0e0 !important;
-}
-
-footer {
-  margin-top: 20px;
-  background: #333;
-  color: #fff;
-  padding: 15px;
-  text-align: center;
-}
-
-footer ul {
-  list-style: none;
-}
-
-footer ul li {
-  display: inline;
-  margin: 0 60px;
-}
-
-footer ul li a {
-  color: #fff;
-  text-decoration: none;
 }

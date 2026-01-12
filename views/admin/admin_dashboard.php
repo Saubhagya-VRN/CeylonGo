@@ -52,81 +52,132 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Font Awesome (REQUIRED) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Shared Transport Layout -->
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
+
+    <!-- Optional admin-only overrides -->
+    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_overrides.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_dashboard.css">
+    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_common.css">
+
+    <!-- Responsive styles (always last) -->
+    <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
+
     <title>Ceylon Go - Admin Dashboard</title>
-    <link rel="stylesheet" href="../../public/css/admin/admin_dashboard.css">
   </head>
 
   <body>
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img src="../../public/images/logo.png" alt="Ceylon Go Logo" class="logo-img">
-        <h2>Ceylon Go</h2>
+    <!-- Navbar -->
+    <header class="navbar">
+      <div class="branding">
+        <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+        <div class="logo-text">Ceylon Go</div>
       </div>
-      <ul class="sidebar-menu">
-        <li><a href="/CeylonGo/public/admin/dashboard" class="active">Home</a></li>
-        <li><a href="/CeylonGo/public/admin/users">Users</a></li>
-        <li><a href="/CeylonGo/public/admin/bookings">Bookings</a></li>
-        <li><a href="/CeylonGo/public/admin/service">Service Providers</a></li>
-        <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
-        <li><a href="/CeylonGo/public/admin/reports">Reports</a></li>
-        <li><a href="/CeylonGo/public/admin/reviews">Reviews</a></li>
-        <li><a href="/CeylonGo/public/admin/inquiries">Inquiries</a></li>
-        <li><a href="/CeylonGo/public/admin/settings">System Settings</a></li>
-        <li><a href="/CeylonGo/public/admin/promotions">Promotions</a></li>
-        <li><a href="/CeylonGo/public/logout">Logout</a></li>
-      </ul>
-    </aside>
- 
-    <!-- Main Content -->
-    <div class="main-content">
-      <header class="navbar">
-        <div class="profile-info">
-          <div>
-            <h2><?= htmlspecialchars($admin_name) ?></h2><br>
-            <span class="role"><?= htmlspecialchars($admin_role) ?></span>
+
+      <nav class="nav-links">
+        <a href="/CeylonGo/public/admin/dashboard">Home</a>
+        <div class="profile-dropdown">
+          <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+          <div class="profile-dropdown-menu" id="profileDropdown">
+            <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+            <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
           </div>
         </div>
-        <div class="profile-buttons">
-          <button class="btn-black"><a href="/CeylonGo/public/admin/profile" class="profile-link">View/ Edit/ Delete Profile</a></button>
-        </div>
-      </header>
+      </nav>
+    </header>
 
-      <section class="summary-overview">
-        <h3>Summary Overview</h3>
-        <div class="stats">
-          <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
-          <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Providers</h4></a><p>58</p></div>
-          <div class="stat"><a href="/CeylonGo/public/admin/bookings" class="stat-link"><h4>Pending Bookings</h4></a><p><?= $totalPendingBookings ?></p></div>
-          <div class="stat"><a href="/CeylonGo/public/admin/payments" class="stat-link"><h4>Total Payments</h4></a><p>LKR 10,250</p></div>
-          <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Refund Requests</h4><p>5</p></div>
-          <div class="stat"><h4>Pending Validations</h4><p>12</p></div>
-        </div>
-      </section>
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-      <section class="recent">
-        <h3>Recent Inquiries</h3>
-        <div class="list">
-          <div class="item">Inquiry 123 - Fathima Zara <span>Pending</span></div>
-          <div class="item">Inquiry 124 - Jane Roe <span>Resolved</span></div>
-          <div class="item">Inquiry 125 - Mark Smith <span>Pending</span></div>
-        </div>
-      </section>
+    <div class="page-wrapper">
 
-      <section class="reviews">
-        <h3>Latest Reviews</h3>
-        <div class="review">Alice - Great service! ⭐⭐⭐⭐⭐</div>
-        <div class="review">Bob - Very helpful support! ⭐⭐⭐⭐⭐</div>
-        <div class="review">Jane - Good customer service! ⭐⭐⭐⭐⭐</div>
-      </section>
-      
-      <footer>
+      <!-- Sidebar -->
+      <div class="sidebar">
         <ul>
-          <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-          <li><a href="/CeylonGo/public/admin/settings">Update Settings</a></li>
-          <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
-          <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+          <li class="active"><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+          <li><a href="/CeylonGo/public/admin/users"><i class="fa-solid fa-users"></i> Users</a></li>
+          <li><a href="/CeylonGo/public/admin/bookings"><i class="fa-regular fa-calendar"></i> Bookings</a></li>
+          <li><a href="/CeylonGo/public/admin/service"><i class="fa-solid fa-van-shuttle"></i> Service Providers</a></li>
+          <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
+          <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
+          <li><a href="/CeylonGo/public/admin/settings"><i class="fa-solid fa-gear"></i> Settings</a></li>
         </ul>
-      </footer>
+      </div>
+ 
+      <!-- Main Content -->
+      <div class="main-content">
+        <div class="dashboard-header">
+          <h2 class="header-title">Admin Dashboard</h2>
+          <div class="header-info">
+            <h3><?= htmlspecialchars($admin_name) ?></h3>
+            <h5><span class="role"><?= htmlspecialchars($admin_role) ?></span></h5>
+          </div>
+        </div>
+
+        <section class="summary-overview">
+          <h3>Summary Overview</h3>
+          <div class="stats">
+            <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Providers</h4></a><p>58</p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/bookings" class="stat-link"><h4>Pending Bookings</h4></a><p><?= $totalPendingBookings ?></p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/payments" class="stat-link"><h4>Total Payments</h4></a><p>LKR 10,250</p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Refund Requests</h4><p>5</p></div>
+            <div class="stat"><h4>Pending Validations</h4><p>12</p></div>
+          </div>
+        </section>
+
+        <section class="recent">
+          <h3>Recent Inquiries</h3>
+          <div class="list">
+            <div class="item">Inquiry 123 - Fathima Zara <span>Pending</span></div>
+            <div class="item">Inquiry 124 - Jane Roe <span>Resolved</span></div>
+            <div class="item">Inquiry 125 - Mark Smith <span>Pending</span></div>
+          </div>
+        </section>
+
+        <section class="reviews">
+          <h3>Latest Reviews</h3>
+          <div class="review">Alice - Great service! ⭐⭐⭐⭐⭐</div>
+          <div class="review">Bob - Very helpful support! ⭐⭐⭐⭐⭐</div>
+          <div class="review">Jane - Good customer service! ⭐⭐⭐⭐⭐</div>
+        </section>
+      </div>
+
     </div>
+
+    <!-- Footer -->
+    <footer>
+      <ul>
+        <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
+        <li><a href="/CeylonGo/public/admin/settings">Update Settings</a></li>
+        <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
+        <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+      </ul>
+    </footer>
+
+    <script>
+      function toggleProfileDropdown() {
+        const dropdown = document.getElementById('profileDropdown');
+        dropdown.classList.toggle('show');
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('profileDropdown');
+        const profilePic = document.querySelector('.profile-pic');
+        
+        if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+          dropdown.classList.remove('show');
+        }
+      });
+    </script>
+
   </body>
 </html>

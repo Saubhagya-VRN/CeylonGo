@@ -4,6 +4,8 @@
   box-sizing: border-box;
 }
 
+/* remove 
+
 body {
   font-family: Arial, sans-serif;
   background: #f0f8f0;
@@ -92,6 +94,7 @@ body {
   font-weight: bold;
 }
 
+remove */
 .page-title {
   font-size: 22px;
   font-weight: bold;
