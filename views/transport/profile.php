@@ -314,7 +314,7 @@ try {
     }
     
     .profile-banner {
-      background: linear-gradient(135deg, #2c5530 0%, #4CAF50 100%);
+      background: #3d8b40;
       border-radius: 12px;
       padding: 30px;
       color: white;
@@ -435,7 +435,7 @@ try {
     }
     
     .btn-save {
-      background: linear-gradient(135deg, #2c5530 0%, #4CAF50 100%);
+      background: #3d8b40;
       color: white;
       border: none;
       padding: 12px 30px;
@@ -578,7 +578,7 @@ try {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, #2c5530 0%, #4CAF50 100%);
+      background: #3d8b40;
       color: white;
       padding: 12px 25px;
       border-radius: 8px;
