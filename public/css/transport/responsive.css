@@ -177,8 +177,8 @@
         display: flex;
     }
 
-    /* Hide nav links on mobile */
-    .navbar .nav-links a:not(.profile-pic-link) {
+    /* Hide nav links on mobile, but not dropdown menu links */
+    .navbar .nav-links>a {
         display: none;
     }
 
