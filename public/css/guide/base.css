@@ -5,11 +5,30 @@
   box-sizing: border-box;
 }
 
+/* CSS Variables */
+:root {
+  --sidebar-width: 260px;
+  --navbar-height: 72px;
+  --primary-color: #2c5530;
+  --primary-dark: #1e3d22;
+  --accent-color: #4CAF50;
+  --text-color: #333;
+  --text-light: #666;
+  --bg-light: #f5f7fa;
+  --bg-white: #ffffff;
+  --border-color: #e0e0e0;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --transition: all 0.3s ease;
+  --border-radius: 12px;
+}
+
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
   margin: 0;
-  background: #fff;
-  color: #333;
+  background: var(--bg-light);
+  color: var(--text-color);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -21,13 +40,115 @@ body {
 .page-wrapper {
   display: flex;
   flex: 1;
-  min-height: calc(100vh - 70px);
+  min-height: calc(100vh - var(--navbar-height));
+  position: relative;
 }
 
 .main-content {
   flex: 1;
-  margin-left: 250px;
+  margin-left: var(--sidebar-width);
   padding: 30px;
-  padding-bottom: 80px; 
-  background: #fafafa;
+  padding-bottom: 100px;
+  background: var(--bg-light);
+  transition: margin-left 0.3s ease;
+  min-height: calc(100vh - var(--navbar-height));
+}
+
+/* ===== WELCOME SECTION ===== */
+.welcome {
+  margin-bottom: 25px;
+}
+
+.welcome h1 {
+  font-size: 1.8em;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 5px;
+}
+
+.welcome h5 {
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--text-light);
+}
+
+/* ===== UTILITY CLASSES ===== */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-1 {
+  margin-top: 8px;
+}
+
+.mt-2 {
+  margin-top: 16px;
+}
+
+.mt-3 {
+  margin-top: 24px;
+}
+
+.mb-1 {
+  margin-bottom: 8px;
+}
+
+.mb-2 {
+  margin-bottom: 16px;
+}
+
+.mb-3 {
+  margin-bottom: 24px;
+}
+
+.p-1 {
+  padding: 8px;
+}
+
+.p-2 {
+  padding: 16px;
+}
+
+.p-3 {
+  padding: 24px;
+}
+
+/* ===== PAGE TITLE ===== */
+.page-title {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-title i {
+  color: var(--primary-color);
+}
+
+/* ===== RESPONSIVE LAYOUT ===== */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 20px 15px;
+    padding-bottom: 120px;
+  }
+
+  .welcome h1 {
+    font-size: 1.4em;
+  }
+
+  .page-title {
+    font-size: 1.25em;
+  }
 }
