@@ -8,15 +8,47 @@ require_once '../core/Router.php';
 
 $router = new Router();
 
-// ========== AUTH ROUTES ==========
-$router->get('', 'AuthController@loginView');
+// Auth Routes
 $router->get('login', 'AuthController@loginView');
 $router->post('login', 'AuthController@login');
-$router->get('logout', 'AuthController@logout');
 $router->get('register', 'AuthController@registerView');
+$router->get('logout', 'AuthController@logout');
 
-// ========== PUBLIC PAGES ==========
-$router->get('contact', 'TouristController@contact');
+// Routes
+$router->get('transporter/register', 'TransportProviderController@registerView');
+$router->post('transporter/register', 'TransportProviderController@registerProvider');
+$router->get('transporter/dashboard', 'TransportProviderController@dashboard');
+$router->get('transporter/upcoming', 'TransportProviderController@upcoming');
+$router->get('transporter/pending', 'TransportProviderController@pending');
+$router->get('transporter/cancelled', 'TransportProviderController@cancelled');
+$router->get('transporter/review', 'TransportProviderController@review');
+$router->get('transporter/profile', 'TransportProviderController@profile');
+$router->post('transporter/profile', 'TransportProviderController@profile');
+$router->get('transporter/info', 'TransportProviderController@info');
+$router->get('transporter/pending_info', 'TransportProviderController@pendingInfo');
+$router->get('transporter/cancelled_info', 'TransportProviderController@cancelledInfo');
+$router->get('transporter/vehicle', 'TransportProviderController@vehicle');
+$router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
+$router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
+$router->get('transporter/payment', 'TransportProviderController@payment');
+$router->post('transporter/payment', 'TransportProviderController@saveBankDetails');
+$router->post('registerProvider', 'TransportProviderController@registerProvider');
+
+// ========== ADMIN ROUTES ==========
+$router->get('admin/dashboard', 'AdminController@dashboard');
+$router->get('admin/profile', 'AdminController@profile');
+$router->post('admin/profile', 'AdminController@updateProfile');
+$router->post('admin/delete-profile', 'AdminController@deleteProfile');
+$router->get('admin/users', 'AdminController@users');
+$router->get('admin/bookings', 'AdminController@bookings');
+$router->get('admin/payments', 'AdminController@payments');
+$router->get('admin/reviews', 'AdminController@reviews');
+$router->get('admin/inquiries', 'AdminController@inquiries');
+$router->get('admin/promotions', 'AdminController@promotions');
+$router->get('admin/reports', 'AdminController@reports');
+$router->get('admin/service', 'AdminController@service');
+$router->get('admin/settings', 'AdminController@settings');
+$router->get('admin/forgot-password', 'AdminController@forgotPassword');
 
 // ========== TOURIST ROUTES ==========
 $router->get('tourist/register', 'TouristController@registerView');
@@ -24,7 +56,7 @@ $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboard');
 $router->post('tourist/dashboard', 'TouristController@dashboard');
 $router->get('tourist/transport-services', 'TouristController@transportRequestView');
-$router->post('tourist/transport-request', 'TouristController@transportRequest');
+$router->post('tourist/transport-services', 'TouristController@transportRequest');
 $router->get('tourist/transport-report', 'TouristController@transportReport');
 $router->get('tourist/tour-guides', 'TouristController@tourGuides');
 $router->get('tourist/choose-hotel', 'TouristController@chooseHotel');
@@ -55,6 +87,19 @@ $router->get('tourist/delete-comment/{id}', 'TouristController@deleteComment');
 $router->get('tourist/tour-guide-request', 'TouristController@tourGuideRequest');
 $router->post('tourist/tour-guide-request', 'TouristController@tourGuideRequestSubmit');
 $router->get('tourist/tour-guide-request-report', 'TouristController@tourGuideRequestReport');
+$router->get('tourist/contact', 'TouristController@contact');
+
+// ========== GUIDE ROUTES ==========
+$router->get('guide/register', 'GuideController@registerView');
+$router->post('guide/register', 'GuideController@register');
+$router->get('guide/dashboard', 'GuideController@dashboard');
+$router->get('guide/upcoming', 'GuideController@upcoming');
+$router->get('guide/pending', 'GuideController@pending');
+$router->get('guide/cancelled', 'GuideController@cancelled');
+$router->get('guide/review', 'GuideController@review');
+$router->get('guide/profile', 'GuideController@profile');
+$router->get('guide/places', 'GuideController@places');
+$router->get('guide/bookings-calendar', 'GuideController@getBookingsCalendar');
 
 // ========== HOTEL ROUTES ==========
 $router->get('hotel/register', 'HotelController@registerView');
@@ -75,51 +120,7 @@ $router->get('hotel/reviews', 'HotelController@reviews');
 $router->get('hotel/report-issue', 'HotelController@reportIssue');
 $router->get('hotel/bookings-calendar', 'HotelController@getBookingsCalendar');
 
-// ========== GUIDE ROUTES ==========
-$router->get('guide/register', 'GuideController@registerView');
-$router->post('guide/register', 'GuideController@register');
-$router->get('guide/dashboard', 'GuideController@dashboard');
-$router->get('guide/upcoming', 'GuideController@upcoming');
-$router->get('guide/pending', 'GuideController@pending');
-$router->get('guide/cancelled', 'GuideController@cancelled');
-$router->get('guide/review', 'GuideController@review');
-$router->get('guide/profile', 'GuideController@profile');
-$router->get('guide/places', 'GuideController@places');
-$router->get('guide/bookings-calendar', 'GuideController@getBookingsCalendar');
-
-// ========== TRANSPORT PROVIDER ROUTES ==========
-$router->get('transporter/register', 'TransportProviderController@loginView');
-$router->get('transporter/dashboard', 'TransportProviderController@dashboard');
-$router->get('transporter/upcoming', 'TransportProviderController@upcoming');
-$router->get('transporter/pending', 'TransportProviderController@pending');
-$router->get('transporter/cancelled', 'TransportProviderController@cancelled');
-$router->get('transporter/review', 'TransportProviderController@review');
-$router->get('transporter/profile', 'TransportProviderController@profile');
-$router->post('transporter/profile', 'TransportProviderController@profile');
-$router->get('transporter/info', 'TransportProviderController@info');
-$router->get('transporter/vehicle', 'TransportProviderController@vehicle');
-$router->post('transporter/vehicle', 'TransportProviderController@addVehicle');
-$router->post('transporter/update-vehicle', 'TransportProviderController@updateVehicle');
-$router->get('transporter/payment', 'TransportProviderController@payment');
-$router->post('registerProvider', 'TransportProviderController@registerProvider');
 $router->get('transporter/bookings-calendar', 'TransportProviderController@getBookingsCalendar');
-
-// ========== ADMIN ROUTES ==========
-$router->get('admin/dashboard', 'AdminController@dashboard');
-$router->get('admin/profile', 'AdminController@profile');
-$router->post('admin/profile', 'AdminController@updateProfile');
-$router->post('admin/delete-profile', 'AdminController@deleteProfile');
-$router->get('admin/users', 'AdminController@users');
-$router->get('admin/bookings', 'AdminController@bookings');
-$router->get('admin/payments', 'AdminController@payments');
-$router->get('admin/reviews', 'AdminController@reviews');
-$router->get('admin/inquiries', 'AdminController@inquiries');
-$router->get('admin/promotions', 'AdminController@promotions');
-$router->get('admin/reports', 'AdminController@reports');
-$router->get('admin/service', 'AdminController@service');
-$router->get('admin/settings', 'AdminController@settings');
-$router->get('admin/forgot-password', 'AdminController@forgotPassword');
-
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 ?>

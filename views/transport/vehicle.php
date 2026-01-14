@@ -3,7 +3,9 @@ require_once "../config/config.php";
 require_once "../core/Database.php";
 require_once "../models/Vehicle.php";
 require_once "../models/VehicleType.php";
+require_once "session_init.php";
 
+$user_id = $_SESSION['transporter_id'];
 $user_id = $_SESSION['transporter_id'];
 $message = "";
 $error = "";
@@ -14,39 +16,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $vehicle_no = $_POST['vehicle_no'] ?? '';
         $vehicle_type = $_POST['vehicle_type'] ?? '';
-        $psg_capacity = $_POST['psg_capacity'] ?? '';
+        $psg_capacity = $_POST['psg_capacity'] ?? 0;
 
-        // Handle file upload
-        $image = '';
-        if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-            $uploadDir = __DIR__ . '/CeylonGo/uploads/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
-            $extension = $fileInfo['extension'];
-            $newFileName = uniqid('img_', true) . '.' . $extension;
-            $targetPath = $uploadDir . $newFileName;
-
-            if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
-                $image = $newFileName;
-            }
-        }
-
-        // Save vehicle
-        $vehicle = new Vehicle($db);
-        $vehicle->vehicle_no = $vehicle_no;
-        $vehicle->user_id = $user_id;
-        $vehicle->vehicle_type = $vehicle_type;
-        $vehicle->psg_capacity = $psg_capacity;
-        $vehicle->image = $image;
-
-        if ($vehicle->addVehicle()) {
-            header("Location: profile");
-            exit;
+        // Validate passenger capacity
+        if ($psg_capacity < 1) {
+            $error = "Passenger capacity must be at least 1.";
         } else {
-            $error = "Failed to add vehicle. Please try again.";
+            // Handle file upload
+            $image = '';
+            if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
+                $uploadDir = __DIR__ . '/CeylonGo/uploads/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
+                $extension = $fileInfo['extension'];
+                $newFileName = uniqid('img_', true) . '.' . $extension;
+                $targetPath = $uploadDir . $newFileName;
+
+                if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
+                    $image = $newFileName;
+                }
+            }
+
+            // Save vehicle
+            $vehicle = new Vehicle($db);
+            $vehicle->vehicle_no = $vehicle_no;
+            $vehicle->user_id = trim($user_id);
+            $vehicle->vehicle_type = $vehicle_type;
+            $vehicle->psg_capacity = $psg_capacity;
+            $vehicle->image = $image;
+
+            if ($vehicle->addVehicle()) {
+                header("Location: profile");
+                exit;
+            } else {
+                $error = "Failed to add vehicle. Please try again.";
+            }
         }
 
     } catch (Exception $e) {
@@ -90,6 +97,7 @@ try {
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">   
     
+    <!-- Font Awesome -->
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -102,8 +110,8 @@ try {
     </div>
     <nav class="nav-links">
       <a href="#">Home</a>
-      <a href="#">Logout</a>
-      <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
+      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
+      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
@@ -166,7 +174,7 @@ try {
       <input type="file" name="vehicle_image" accept="image/*">
 
       <label>Passenger Capacity</label>
-      <input type="number" name="psg_capacity" placeholder="Enter your Vehicle's Passenger Capacity" required>
+      <input type="number" name="psg_capacity" min="1" value="1" placeholder="Enter your Vehicle's Passenger Capacity" required>
 
       <input type="hidden" name="user_id" value="<?=$user_id?>">
 
