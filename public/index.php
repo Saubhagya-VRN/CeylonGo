@@ -80,6 +80,7 @@ $router->get('guide/pending', 'GuideController@pending');
 $router->get('guide/cancelled', 'GuideController@cancelled');
 $router->get('guide/review', 'GuideController@review');
 $router->get('guide/profile', 'GuideController@profile');
+$router->post('guide/profile', 'GuideController@profile');
 $router->get('guide/places', 'GuideController@places');
 
 // ========== HOTEL ROUTES ==========

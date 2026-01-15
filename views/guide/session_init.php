@@ -28,7 +28,7 @@ try {
     
     // Set profile picture path with fallback to default
     if (!empty($user_data['profile_photo'])) {
-        $profile_picture = "/CeylonGo/public/uploads/" . $user_data['profile_photo'];
+        $profile_picture = "/CeylonGo/public/uploads/guide/" . $user_data['profile_photo'];
     } else {
         $profile_picture = "/CeylonGo/public/images/profile.jpg";
     }

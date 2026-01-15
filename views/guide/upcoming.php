@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/cards.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/buttons.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/tables.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -196,5 +197,12 @@
       }
     }
   </script>
+  <!-- Footer -->
+  <footer>
+    <ul>
+      <li><a href="#">About Us</a></li>
+      <li><a href="#">Contact Us</a></li>
+    </ul>
+  </footer>
 </body>
 </html>
