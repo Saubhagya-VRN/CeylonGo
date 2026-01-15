@@ -70,6 +70,64 @@ class Guide {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function updateGuide() {
+        $query = "UPDATE " . $this->table . " SET 
+                  first_name = :first_name,
+                  last_name = :last_name,
+                  contact_number = :contact_number,
+                  email = :email,
+                  specialization = :specialization,
+                  languages = :languages,
+                  experience = :experience
+                  WHERE id = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $stmt->bindParam(':first_name', $this->first_name);
+        $stmt->bindParam(':last_name', $this->last_name);
+        $stmt->bindParam(':contact_number', $this->contact_number);
+        $stmt->bindParam(':email', $this->email);
+        $stmt->bindParam(':specialization', $this->specialization);
+        $stmt->bindParam(':languages', $this->languages);
+        $stmt->bindParam(':experience', $this->experience);
+        $stmt->bindParam(':id', $this->id);
+        
+        return $stmt->execute();
+    }
+
+    public function updateProfilePhoto($id, $photo) {
+        $query = "UPDATE " . $this->table . " SET profile_photo = :profile_photo WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':profile_photo', $photo);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    public function updateLicense($id, $license_number) {
+        $query = "UPDATE " . $this->table . " SET license_number = :license_number WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':license_number', $license_number);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    public function updatePassword($id, $password) {
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $query = "UPDATE " . $this->table . " SET password = :password WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':password', $hashed_password);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    public function verifyPassword($id, $password) {
+        $guide = $this->getGuideById($id);
+        if ($guide && isset($guide['password'])) {
+            return password_verify($password, $guide['password']);
+        }
+        return false;
+    }
 }
 ?>
 
