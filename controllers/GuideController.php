@@ -125,6 +125,18 @@ class GuideController {
     public function places() {
         view('guide/places');
     }
+
+    public function info() {
+        view('guide/info');
+    }
+
+    public function pendingInfo() {
+        view('guide/pending_info');
+    }
+
+    public function cancelledInfo() {
+        view('guide/cancelled_info');
+    }
 }
 ?>
 

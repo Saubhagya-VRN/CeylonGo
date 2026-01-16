@@ -81,7 +81,7 @@
               <td>Sigiriya Rock Fortress</td>
               <td>Historical Tour</td>
               <td>4</td>
-              <td><a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG002</td>
@@ -91,7 +91,7 @@
               <td>Temple of the Tooth</td>
               <td>Cultural Tour</td>
               <td>6</td>
-              <td><a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG003</td>
@@ -101,7 +101,7 @@
               <td>Galle Fort</td>
               <td>Historical Tour</td>
               <td>3</td>
-              <td><a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG004</td>
@@ -111,7 +111,7 @@
               <td>Yala National Park</td>
               <td>Wildlife Safari</td>
               <td>8</td>
-              <td><a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG005</td>
@@ -121,7 +121,7 @@
               <td>Adam's Peak</td>
               <td>Adventure Tour</td>
               <td>5</td>
-              <td><a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
           </tbody>
         </table>
@@ -142,7 +142,7 @@
             <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Historical Tour</span></div>
           </div>
           <div class="card-actions">
-            <a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
         <div class="booking-card-item">
@@ -158,7 +158,7 @@
             <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Cultural Tour</span></div>
           </div>
           <div class="card-actions">
-            <a href="#" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
       </div>
