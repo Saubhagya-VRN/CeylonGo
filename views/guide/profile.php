@@ -164,18 +164,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             } elseif (strlen($new_password) < 8) {
                 $_SESSION['profile_error'] = "New password must be at least 8 characters long.";
             } else {
-                // Get current user data to verify password
-                $user = $guideModel->getGuideById($user_id);
+                // Get current guide data to get email
+                $guide = $guideModel->getGuideById($user_id);
+                $userEmail = $guide['email'] ?? '';
                 
-                if ($user && password_verify($current_password, $user['password'])) {
+                // Verify password from users table (where login authenticates)
+                $passwordValid = false;
+                if (!empty($userEmail)) {
+                    $verifyQuery = "SELECT password FROM users WHERE email = :email AND role = 'guide'";
+                    $verifyStmt = $db->prepare($verifyQuery);
+                    $verifyStmt->bindParam(':email', $userEmail);
+                    $verifyStmt->execute();
+                    $authUser = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($authUser && password_verify($current_password, $authUser['password'])) {
+                        $passwordValid = true;
+                    }
+                }
+                
+                if ($passwordValid) {
                     // Update password
                     $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                    
+                    // Update password in guide_users table
                     $query = "UPDATE guide_users SET password = :password WHERE id = :id";
                     $stmt = $db->prepare($query);
                     $stmt->bindParam(':password', $hashed_password);
                     $stmt->bindParam(':id', $user_id);
+                    $guideUpdated = $stmt->execute();
                     
-                    if ($stmt->execute()) {
+                    // Update password in users table
+                    $usersQuery = "UPDATE users SET password = :password WHERE email = :email AND role = 'guide'";
+                    $usersStmt = $db->prepare($usersQuery);
+                    $usersStmt->bindParam(':password', $hashed_password);
+                    $usersStmt->bindParam(':email', $userEmail);
+                    $usersUpdated = $usersStmt->execute();
+                    
+                    if ($guideUpdated || $usersUpdated) {
                         $_SESSION['profile_message'] = "Password changed successfully!";
                     } else {
                         $_SESSION['profile_error'] = "Failed to update password.";
@@ -282,7 +307,7 @@ $specializations = [
     }
     
     .profile-banner {
-      background: linear-gradient(135deg, #3d8b40 0%, #2c5530 100%);
+      background: #3d8b40;
       border-radius: 12px;
       padding: 30px;
       color: white;
@@ -290,19 +315,6 @@ $specializations = [
       align-items: center;
       gap: 25px;
       margin-bottom: 25px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .profile-banner::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -20%;
-      width: 400px;
-      height: 400px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 50%;
     }
     
     .profile-image-container {
@@ -454,7 +466,7 @@ $specializations = [
     }
     
     .btn-save {
-      background: linear-gradient(135deg, #3d8b40 0%, #2c5530 100%);
+      background: #3d8b40;
       color: white;
       border: none;
       padding: 12px 30px;
@@ -478,7 +490,7 @@ $specializations = [
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 20px;
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      background: #f8f9fa;
       padding: 20px;
       border-radius: 10px;
       margin-bottom: 25px;
@@ -582,7 +594,7 @@ $specializations = [
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+      background: #ffd700;
       color: #333;
       padding: 8px 16px;
       border-radius: 20px;
