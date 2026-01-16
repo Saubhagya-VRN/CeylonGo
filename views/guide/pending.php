@@ -104,6 +104,7 @@
               <th>People</th>
               <th>Status</th>
               <th>Actions</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -120,6 +121,7 @@
                 <button class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
                 <button class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
               </td>
+              <td><a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG011</td>
@@ -134,6 +136,7 @@
                 <button class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
                 <button class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
               </td>
+              <td><a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG012</td>
@@ -148,6 +151,7 @@
                 <button class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
                 <button class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
               </td>
+              <td><a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
           </tbody>
         </table>
@@ -170,6 +174,7 @@
           <div class="card-actions">
             <button class="btn-accept"><i class="fa-solid fa-check"></i> Accept</button>
             <button class="btn-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
+            <a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
         <div class="booking-card-item" style="border-left-color: #ffc107;">
@@ -187,6 +192,7 @@
           <div class="card-actions">
             <button class="btn-accept"><i class="fa-solid fa-check"></i> Accept</button>
             <button class="btn-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
+            <a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
       </div>

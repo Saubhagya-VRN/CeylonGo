@@ -79,6 +79,7 @@
               <th>Tour Type</th>
               <th>Status</th>
               <th>Cancellation Reason</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -90,6 +91,7 @@
               <td>Nature Tour</td>
               <td><span class="status-badge cancelled">Cancelled</span></td>
               <td>Weather conditions - heavy rain expected</td>
+              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG006</td>
@@ -99,6 +101,7 @@
               <td>Beach Tour</td>
               <td><span class="status-badge cancelled">Cancelled</span></td>
               <td>Customer request - change of plans</td>
+              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG007</td>
@@ -108,6 +111,7 @@
               <td>Wildlife Safari</td>
               <td><span class="status-badge cancelled">Cancelled</span></td>
               <td>Park closed for maintenance</td>
+              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#TG008</td>
@@ -117,6 +121,7 @@
               <td>Cultural Tour</td>
               <td><span class="status-badge cancelled">Cancelled</span></td>
               <td>Guide unavailable - medical emergency</td>
+              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
           </tbody>
         </table>
@@ -136,6 +141,9 @@
             <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Nature Tour</span></div>
             <div class="card-row"><i class="fa-solid fa-info-circle"></i><span class="label">Reason:</span><span>Weather conditions</span></div>
           </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
         </div>
         <div class="booking-card-item" style="border-left-color: #dc3545;">
           <div class="card-header">
@@ -148,6 +156,9 @@
             <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Mirissa Beach</span></div>
             <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Beach Tour</span></div>
             <div class="card-row"><i class="fa-solid fa-info-circle"></i><span class="label">Reason:</span><span>Customer request</span></div>
+          </div>
+          <div class="card-actions">
+            <a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
       </div>
