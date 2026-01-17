@@ -137,6 +137,10 @@ class GuideController {
     public function cancelledInfo() {
         view('guide/cancelled_info');
     }
+
+    public function payment() {
+        view('guide/payment');
+    }
 }
 ?>
 
