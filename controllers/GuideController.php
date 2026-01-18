@@ -126,74 +126,16 @@ class GuideController {
         view('guide/places');
     }
 
-    // API endpoint to get bookings for calendar (JSON)
-    public function getBookingsCalendar() {
-        header('Content-Type: application/json');
-        
-        $bookings = [];
-        
-        // Query guide bookings table if it exists
-        try {
-            $query = "SELECT * FROM guide_bookings WHERE guide_id = ? AND status IN ('confirmed', 'pending') ORDER BY tour_date ASC";
-            $stmt = $this->db->prepare($query);
-            $guide_id = $_SESSION['guide_id'] ?? 1; // Get from session or default
-            $stmt->execute([$guide_id]);
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            foreach ($results as $booking) {
-                $time = isset($booking['tour_time']) && !empty($booking['tour_time']) 
-                    ? $booking['tour_time'] 
-                    : '09:00:00';
-                
-                if (strlen($time) == 5) {
-                    $time = $time . ':00';
-                }
-                
-                $bookings[] = [
-                    'id' => $booking['id'] ?? 0,
-                    'start' => ($booking['tour_date'] ?? '') . 'T' . $time,
-                    'location' => $booking['location'] ?? '',
-                    'time' => $time,
-                    'touristName' => $booking['tourist_name'] ?? 'Tourist',
-                    'status' => $booking['status'] ?? 'pending'
-                ];
-            }
-        } catch (Exception $e) {
-            // If table doesn't exist, return sample data for testing
-        }
-        
-        // Add sample bookings if no bookings exist (for testing)
-        if (empty($bookings)) {
-            $bookings = [
-                [
-                    'id' => 1,
-                    'start' => date('Y-m-d', strtotime('+2 days')) . 'T09:00:00',
-                    'location' => 'Kandy',
-                    'time' => '09:00:00',
-                    'touristName' => 'Alice Johnson',
-                    'status' => 'confirmed'
-                ],
-                [
-                    'id' => 2,
-                    'start' => date('Y-m-d', strtotime('+5 days')) . 'T14:00:00',
-                    'location' => 'Galle',
-                    'time' => '14:00:00',
-                    'touristName' => 'Bob Williams',
-                    'status' => 'pending'
-                ],
-                [
-                    'id' => 3,
-                    'start' => date('Y-m-d', strtotime('+12 days')) . 'T10:30:00',
-                    'location' => 'Sigiriya',
-                    'time' => '10:30:00',
-                    'touristName' => 'Emma Davis',
-                    'status' => 'confirmed'
-                ]
-            ];
-        }
-        
-        echo json_encode($bookings);
-        exit;
+    public function info() {
+        view('guide/info');
+    }
+
+    public function pendingInfo() {
+        view('guide/pending_info');
+    }
+
+    public function cancelledInfo() {
+        view('guide/cancelled_info');
     }
 }
 ?>
