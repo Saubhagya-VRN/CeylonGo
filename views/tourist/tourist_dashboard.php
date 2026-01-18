@@ -165,36 +165,303 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <?php endif; ?>
 
   <section class="intro">
-    <h1>Plan Your Perfect Trip to Sri Lanka</h1>
-    <p>Explore the beauty of Sri Lanka with our customizable tour packages.</p>
+    <div class="carousel-container">
+      <!-- Carousel Slides -->
+      <div class="carousel-slide active"></div>
+      <div class="carousel-slide"></div>
+      <div class="carousel-slide"></div>
+      <div class="carousel-slide"></div>
+      
+      <!-- Carousel Content (overlays the slides) -->
+      <div class="carousel-content">
+        <h1>Plan Your Perfect Trip to Sri Lanka</h1>
+        <p>Explore the beauty of Sri Lanka with our customizable tour packages.</p>
 
-    <?php if (!$is_logged_in): ?>
-      <a href="/CeylonGo/public/register" class="btn">Get Started</a>
-    <?php else: ?>
-      <a href="#customize" class="btn">Customize Your Trip</a>
-    <?php endif; ?>
-  </section>
-
-  <section class="recommended-packages">
-    <h2>Recommended Packages</h2>
-    <a href="/CeylonGo/public/tourist/recommended-packages" class="btn btn-black">See All Packages</a>
-    <div class="packages">
-      <div class="package">
-        <div class="package-image"></div>
-        <h3>Unawatuna Package</h3>
-        <p>3 Days, 2 Nights</p>
+        <?php if (!$is_logged_in): ?>
+          <a href="/CeylonGo/public/register" class="btn">Get Started</a>
+        <?php else: ?>
+          <a href="#customize" class="btn">Customize Your Trip</a>
+        <?php endif; ?>
       </div>
-      <div class="package">
-        <div class="package-image"></div>
-        <h3>Hill Country Package</h3>
-        <p>4 Days, 3 Nights</p>
-      </div>
-      <div class="package">
-        <div class="package-image"></div>
-        <h3>Sigiriya Package</h3>
-        <p>5 Days, 4 Nights</p>
+      
+      <!-- Carousel Navigation Arrows -->
+      <button class="carousel-btn prev" onclick="changeSlide(-1)">‹</button>
+      <button class="carousel-btn next" onclick="changeSlide(1)">›</button>
+      
+      <!-- Carousel Indicators -->
+      <div class="carousel-indicators">
+        <span class="carousel-indicator active" onclick="goToSlide(0)"></span>
+        <span class="carousel-indicator" onclick="goToSlide(1)"></span>
+        <span class="carousel-indicator" onclick="goToSlide(2)"></span>
+        <span class="carousel-indicator" onclick="goToSlide(3)"></span>
       </div>
     </div>
+  </section>
+
+  <script>
+    // Carousel functionality
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.carousel-slide');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+    const totalSlides = slides.length;
+    let autoSlideInterval;
+
+    function showSlide(index) {
+      // Remove active class from all slides and indicators
+      slides.forEach(slide => slide.classList.remove('active'));
+      indicators.forEach(indicator => indicator.classList.remove('active'));
+      
+      // Add active class to current slide and indicator
+      slides[index].classList.add('active');
+      indicators[index].classList.add('active');
+    }
+
+    function changeSlide(direction) {
+      currentSlide += direction;
+      
+      // Loop around
+      if (currentSlide >= totalSlides) {
+        currentSlide = 0;
+      } else if (currentSlide < 0) {
+        currentSlide = totalSlides - 1;
+      }
+      
+      showSlide(currentSlide);
+      resetAutoSlide();
+    }
+
+    function goToSlide(index) {
+      currentSlide = index;
+      showSlide(currentSlide);
+      resetAutoSlide();
+    }
+
+    function autoSlide() {
+      currentSlide++;
+      if (currentSlide >= totalSlides) {
+        currentSlide = 0;
+      }
+      showSlide(currentSlide);
+    }
+
+    function resetAutoSlide() {
+      clearInterval(autoSlideInterval);
+      autoSlideInterval = setInterval(autoSlide, 5000);
+    }
+
+    // Start auto-sliding
+    autoSlideInterval = setInterval(autoSlide, 5000);
+
+    // Pause auto-slide on hover
+    const carouselContainer = document.querySelector('.carousel-container');
+    carouselContainer.addEventListener('mouseenter', () => {
+      clearInterval(autoSlideInterval);
+    });
+    
+    carouselContainer.addEventListener('mouseleave', () => {
+      autoSlideInterval = setInterval(autoSlide, 5000);
+    });
+  </script>
+
+  <section class="recommended-packages">
+    <h2>Discover Your Perfect Journey</h2>
+    <p class="section-subtitle">Curated experiences tailored to your travel style</p>
+    
+    <!-- Filter Tabs -->
+    <div class="package-filters">
+      <button class="filter-btn active" data-filter="all">
+        All Packages
+      </button>
+      <button class="filter-btn" data-filter="region">
+        By Region
+      </button>
+      <button class="filter-btn" data-filter="duration">
+        By Duration
+      </button>
+      <button class="filter-btn" data-filter="experience">
+        By Experience
+      </button>
+      <button class="filter-btn" data-filter="group">
+        By Group
+      </button>
+    </div>
+
+    <!-- Packages Grid -->
+    <div class="packages-grid">
+      <!-- Region-based Packages -->
+      <a href="/CeylonGo/public/tourist/package-details/1" class="package-card" data-category="region" data-tags="central cultural heritage">
+        <div class="package-image" style="background-image: url('../../images/sigiriya.jpg');">
+          <div class="package-badge">Central</div>
+        </div>
+        <div class="package-content">
+          <h3>Cultural Triangle Explorer</h3>
+          <p class="package-description">Kandy • Sigiriya • Dambulla</p>
+          <div class="package-meta">
+            <span class="meta-item">4-5 Days</span>
+            <span class="meta-item">Cultural</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/CeylonGo/public/tourist/package-details/2" class="package-card" data-category="region" data-tags="south beach relaxation">
+        <div class="package-image" style="background-image: url('../../images/unawatuna.jpg');">
+          <div class="package-badge badge-blue">South Coast</div>
+        </div>
+        <div class="package-content">
+          <h3>Southern Beach Paradise</h3>
+          <p class="package-description">Galle • Mirissa • Unawatuna</p>
+          <div class="package-meta">
+            <span class="meta-item">3 Days</span>
+            <span class="meta-item">Beach</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/CeylonGo/public/tourist/package-details/3" class="package-card" data-category="region" data-tags="central nature adventure">
+        <div class="package-image" style="background-image: url('../../images/hiking.jpg');">
+          <div class="package-badge badge-green">Hill Country</div>
+        </div>
+        <div class="package-content">
+          <h3>Misty Mountain Escape</h3>
+          <p class="package-description">Nuwara Eliya • Ella • Horton Plains</p>
+          <div class="package-meta">
+            <span class="meta-item">4 Days</span>
+            <span class="meta-item">Nature</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Duration-based Packages -->
+      <a href="/CeylonGo/public/tourist/package-details/4" class="package-card" data-category="duration" data-tags="day-trip adventure">
+        <div class="package-image" style="background-image: url('../../images/adventure.jpg');">
+          <div class="package-badge badge-orange">Day Trip</div>
+        </div>
+        <div class="package-content">
+          <h3>Colombo City Explorer</h3>
+          <p class="package-description">Full day city tour with lunch</p>
+          <div class="package-meta">
+            <span class="meta-item">1 Day</span>
+            <span class="meta-item">City Tour</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/CeylonGo/public/tourist/package-details/5" class="package-card" data-category="duration" data-tags="short beach family">
+        <div class="package-image" style="background-image: url('../../images/beach.jpg');">
+          <div class="package-badge badge-cyan">Weekend</div>
+        </div>
+        <div class="package-content">
+          <h3>Quick Beach Getaway</h3>
+          <p class="package-description">Bentota • Hikkaduwa</p>
+          <div class="package-meta">
+            <span class="meta-item">2-3 Days</span>
+            <span class="meta-item">Family</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Experience-based Packages -->
+      <a href="/CeylonGo/public/tourist/package-details/6" class="package-card" data-category="experience" data-tags="cultural heritage solo">
+        <div class="package-image" style="background-image: url('../../images/cultural.jpg');">
+          <div class="package-badge badge-purple">Cultural</div>
+        </div>
+        <div class="package-content">
+          <h3>Ancient Heritage Trail</h3>
+          <p class="package-description">Temples • Historical Sites • Local Villages</p>
+          <div class="package-meta">
+            <span class="meta-item">5 Days</span>
+            <span class="meta-item">Heritage</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/CeylonGo/public/tourist/package-details/7" class="package-card" data-category="experience" data-tags="wildlife nature adventure">
+        <div class="package-image" style="background-image: url('../../images/factory.jpg');">
+          <div class="package-badge badge-green">Wildlife</div>
+        </div>
+        <div class="package-content">
+          <h3>Safari & Nature Adventure</h3>
+          <p class="package-description">National Parks • Waterfalls • Wildlife</p>
+          <div class="package-meta">
+            <span class="meta-item">4 Days</span>
+            <span class="meta-item">Safari</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Group Type Packages -->
+      <a href="/CeylonGo/public/tourist/package-details/8" class="package-card" data-category="group" data-tags="solo adventure">
+        <div class="package-image" style="background-image: url('../../images/hiking.jpg');">
+          <div class="package-badge badge-red">Solo</div>
+        </div>
+        <div class="package-content">
+          <h3>Solo Adventurer Special</h3>
+          <p class="package-description">Curated for independent travelers</p>
+          <div class="package-meta">
+            <span class="meta-item">Flexible</span>
+            <span class="meta-item">Solo</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="/CeylonGo/public/tourist/package-details/9" class="package-card" data-category="group" data-tags="family beach">
+        <div class="package-image" style="background-image: url('../../images/beach_hotel.jpg');">
+          <div class="package-badge badge-pink">Family</div>
+        </div>
+        <div class="package-content">
+          <h3>Family Fun Package</h3>
+          <p class="package-description">Kid-friendly activities & resorts</p>
+          <div class="package-meta">
+            <span class="meta-item">4-6 Days</span>
+            <span class="meta-item">Family</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <a href="/CeylonGo/public/tourist/recommended-packages" class="btn btn-view-all">
+      View All Packages
+      <span class="btn-arrow">→</span>
+    </a>
+  </section>
+
+  <script>
+    // Package filtering functionality
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const packageCards = document.querySelectorAll('.package-card');
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remove active class from all buttons
+        filterBtns.forEach(b => b.classList.remove('active'));
+        // Add active class to clicked button
+        btn.classList.add('active');
+
+        const filter = btn.getAttribute('data-filter');
+
+        packageCards.forEach(card => {
+          if (filter === 'all') {
+            card.style.display = 'block';
+            setTimeout(() => card.classList.add('show'), 10);
+          } else {
+            const category = card.getAttribute('data-category');
+            if (category === filter) {
+              card.style.display = 'block';
+              setTimeout(() => card.classList.add('show'), 10);
+            } else {
+              card.classList.remove('show');
+              setTimeout(() => card.style.display = 'none', 300);
+            }
+          }
+        });
+      });
+    });
+
+    // Initialize all cards as visible
+    packageCards.forEach(card => {
+      card.classList.add('show');
+    });
+  </script>
   </section>
 
   <!-- ✅ NEW CUSTOMIZE YOUR TRIP SECTION STARTS HERE -->
