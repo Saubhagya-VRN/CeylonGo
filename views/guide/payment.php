@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $db = Database::getConnection();
         $bankModel = new GuideBankDetails($db);
         
-        $bankModel->ref_id = $user_id;
+        $bankModel->id = $user_id;
         $bankModel->bank_name = trim($_POST['bank_name']);
         $bankModel->acc_no = trim($_POST['acc_no']);
         $bankModel->acc_holder_name = trim($_POST['acc_holder_name']);
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 try {
     $db = Database::getConnection();
     $bankModel = new GuideBankDetails($db);
-    $bankData = $bankModel->getBankDetailsByRefId($user_id);
+    $bankData = $bankModel->getBankDetailsById($user_id);
 } catch (Exception $e) {
     $bankData = null;
 }
@@ -654,7 +654,6 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                 <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
                 <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
                 <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-                <li><a href="/CeylonGo/public/guide/places"><i class="fa-solid fa-map-location-dot"></i> My Places</a></li>
                 <li class="active"><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
             </ul>
         </div>
