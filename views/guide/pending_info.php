@@ -377,50 +377,133 @@
       line-height: 1.6;
     }
 
-    /* Action Buttons */
+    /* Floating Decision Panel */
+    .decision-section {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 25px 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      z-index: 1000;
+      max-width: 400px;
+      animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .decision-section h3 {
+      margin: 0 0 18px 0;
+      font-size: 16px;
+      color: #1a1a2e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .decision-section h3 i {
+      color: #ffc107;
+      font-size: 18px;
+    }
+
+    .decision-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: nowrap;
+    }
+
+    .decision-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .decision-btn.accept {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.35);
+    }
+
+    .decision-btn.accept:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(40, 167, 69, 0.45);
+    }
+
+    .decision-btn.accept:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .decision-btn.accept i {
+      font-size: 16px;
+    }
+
+    .decision-btn.reject {
+      background: linear-gradient(135deg, #dc3545 0%, #e74c5e 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(220, 53, 69, 0.35);
+    }
+
+    .decision-btn.reject:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(220, 53, 69, 0.45);
+    }
+
+    .decision-btn.reject:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .decision-btn.reject i {
+      font-size: 16px;
+    }
+
+    /* Other Action Buttons */
     .action-buttons {
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
+      margin-bottom: 30px;
     }
 
     .action-btn {
-      padding: 14px 30px;
+      padding: 12px 25px;
       border: none;
       border-radius: 10px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       transition: all 0.3s ease;
     }
 
-    .action-btn.accept {
-      background: #28a745;
-      color: #fff;
-      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-    }
-
-    .action-btn.accept:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-    }
-
-    .action-btn.reject {
-      background: #dc3545;
-      color: #fff;
-      box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-    }
-
-    .action-btn.reject:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-    }
-
     .action-btn.contact {
-      background: #3d8b40;
+      background: linear-gradient(135deg, #3d8b40 0%, #2c5530 100%);
       color: #fff;
       box-shadow: 0 4px 15px rgba(61, 139, 64, 0.3);
     }
@@ -458,8 +541,25 @@
         font-size: 14px;
       }
 
+      .decision-section {
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+        max-width: none;
+      }
+
+      .decision-buttons {
+        flex-direction: row;
+      }
+
+      .decision-btn {
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+
       .action-buttons {
         flex-direction: column;
+        padding-bottom: 120px;
       }
 
       .action-btn {
@@ -506,7 +606,7 @@
         <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
         <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="/CeylonGo/public/guide/places"><i class="fa-solid fa-map-location-dot"></i> My Places</a></li>
+        <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </aside>
 
@@ -670,18 +770,27 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button class="action-btn accept" onclick="if(confirm('Accept this tour request?')) alert('Request accepted!')">
-          <i class="fa-solid fa-check"></i> Accept Request
-        </button>
-        <button class="action-btn reject" onclick="if(confirm('Are you sure you want to reject this request?')) alert('Request rejected')">
-          <i class="fa-solid fa-xmark"></i> Reject Request
-        </button>
         <button class="action-btn contact" onclick="alert('Contacting tourist...')">
           <i class="fa-solid fa-phone"></i> Contact Tourist
         </button>
       </div>
 
     </main>
+  </div>
+
+  <!-- Floating Decision Panel -->
+  <div class="decision-section">
+    <h3><i class="fa-solid fa-gavel"></i> Make Your Decision</h3>
+    <div class="decision-buttons">
+      <button class="decision-btn accept" onclick="if(confirm('Accept this tour request?')) alert('Request accepted!')">
+        <i class="fa-solid fa-check-circle"></i>
+        Accept
+      </button>
+      <button class="decision-btn reject" onclick="if(confirm('Are you sure you want to reject this request?')) alert('Request rejected')">
+        <i class="fa-solid fa-times-circle"></i>
+        Reject
+      </button>
+    </div>
   </div>
 
   <!-- Footer -->
