@@ -43,9 +43,9 @@
     <div class="packages">
       <!-- Package 1 -->
       <div class="package-card">
-        <div class="image-box cultural">Cultural</div>
-        <h3>Cultural Experience in Sri Lanka</h3>
-        <p>Dates: 5 days, 4 nights</p>
+        <div class="package-image" style="background-image: url('../../public/images/kandy.jpeg');"></div>
+        <h3>Cultural Triangle Explorer</h3>
+        <p>Kandy • Sigiriya • Dambulla</p>
         <div class="card-buttons">
           <a href="package_details?package=cultural" class="btn-outline">View Details</a>
           <a href="#booking" class="btn-black">Book Now</a>
@@ -53,9 +53,9 @@
       </div>
 
       <div class="package-card">
-        <div class="image-box beach">Beach</div>
-        <h3>Tropical Beach Retreat</h3>
-        <p>Dates: 5 days, 4 nights</p>
+        <div class="package-image" style="background-image: url('../../public/images/beach.jpg');"></div>
+        <h3>Southern Beach Paradise</h3>
+        <p>Galle • Mirissa • Unawatuna</p>
         <div class="card-buttons">
           <a href="package_details?package=beach" class="btn-outline">View Details</a>
           <a href="#booking" class="btn-black">Book Now</a>
@@ -63,11 +63,61 @@
       </div>
 
       <div class="package-card">
-        <div class="image-box adventure">Adventure</div>
-        <h3>Adventure in the Hills</h3>
-        <p>Dates: 5 days, 4 nights</p>
+        <div class="package-image" style="background-image: url('../../public/images/greenary.jpg');"></div>
+        <h3>Misty Mountain Escape</h3>
+        <p>Nuwara Eliya • Ella • Horton Plains</p>
         <div class="card-buttons">
           <a href="package_details?package=adventure" class="btn-outline">View Details</a>
+          <a href="#booking" class="btn-black">Book Now</a>
+        </div>
+      </div>
+
+      <div class="package-card">
+        <div class="package-image" style="background-image: url('../../public/images/perehara.jpeg');"></div>
+        <h3>Ancient Heritage Trail</h3>
+        <p>Temples • Historical Sites</p>
+        <div class="card-buttons">
+          <a href="package_details?package=heritage" class="btn-outline">View Details</a>
+          <a href="#booking" class="btn-black">Book Now</a>
+        </div>
+      </div>
+
+      <div class="package-card">
+        <div class="package-image" style="background-image: url('../../public/images/elephant.jpg');"></div>
+        <h3>Safari & Nature Adventure</h3>
+        <p>National Parks • Wildlife</p>
+        <div class="card-buttons">
+          <a href="package_details?package=safari" class="btn-outline">View Details</a>
+          <a href="#booking" class="btn-black">Book Now</a>
+        </div>
+      </div>
+
+      <div class="package-card">
+        <div class="package-image" style="background-image: url('../../public/images/train.jpg');"></div>
+        <h3>Solo Adventurer Special</h3>
+        <p>Curated for independent travelers</p>
+        <div class="card-buttons">
+          <a href="package_details?package=solo" class="btn-outline">View Details</a>
+          <a href="#booking" class="btn-black">Book Now</a>
+        </div>
+      </div>
+
+      <div class="package-card">
+        <div class="package-image" style="background-image: url('../../public/images/resort.jpg');"></div>
+        <h3>Family Fun Package</h3>
+        <p>Kid-friendly activities & resorts</p>
+        <div class="card-buttons">
+          <a href="package_details?package=family" class="btn-outline">View Details</a>
+          <a href="#booking" class="btn-black">Book Now</a>
+        </div>
+      </div>
+
+      <div class="package-card">
+        <div class="package-image" style="background-image: url('../../public/images/sunset.jpg');"></div>
+        <h3>Quick Beach Getaway</h3>
+        <p>Bentota • Hikkaduwa</p>
+        <div class="card-buttons">
+          <a href="package_details?package=weekend" class="btn-outline">View Details</a>
           <a href="#booking" class="btn-black">Book Now</a>
         </div>
       </div>

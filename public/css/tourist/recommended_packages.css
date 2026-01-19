@@ -109,9 +109,16 @@ body {
 
   
   .section {
-    padding: 40px 20px;
-    max-width: 1200px;
+    padding: 40px 0;
     margin: auto;
+  }
+  
+  .section h2,
+  .section .section-subtitle {
+    padding: 0 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
   }
   
   .section h2 {
@@ -126,22 +133,59 @@ body {
   
   .packages {
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding: 0 20px 20px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #4a7c59 #e8f0e9;
+    width: 100%;
+  }
+
+  .packages::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .packages::-webkit-scrollbar-track {
+    background: #e8f0e9;
+    border-radius: 4px;
+  }
+
+  .packages::-webkit-scrollbar-thumb {
+    background: #4a7c59;
+    border-radius: 4px;
+  }
+
+  .packages::-webkit-scrollbar-thumb:hover {
+    background: #2c5530;
   }
   
   .package-card {
     background: #fff;
     border: 1px solid #ddd;
-    padding: 20px;
-    flex: 1 1 30%;
+    padding: 16px;
+    min-width: 260px;
+    max-width: 280px;
+    flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
   }
 
+  .package-card h3 {
+    font-size: 16px;
+    margin: 12px 0 8px;
+  }
+
+  .package-card p {
+    font-size: 13px;
+    margin: 8px 0;
+  }
   
-  
-  .image-box {
-  height: 250px;
+  .image-box,
+  .package-image {
+  height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -150,9 +194,11 @@ body {
   background-size: cover;
   background-position: center;
   position: relative;
+  border-radius: 6px;
 }
 
-.image-box::after {
+.image-box::after,
+.package-image::after {
   content: "";
   position: absolute;
   top: 0;
