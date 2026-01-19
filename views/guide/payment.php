@@ -167,7 +167,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
             background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
             border-radius: 12px;
             padding: 20px;
-            border-left: 4px solid #2d6a4f;
+            border-left: 4px solid #4CAF50;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
@@ -201,8 +201,8 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
         }
 
         .summary-card.total .summary-card-icon {
-            background: rgba(45, 106, 79, 0.1);
-            color: #2d6a4f;
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
         }
 
         .summary-card.pending .summary-card-icon {
@@ -254,7 +254,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
         }
 
         .bank-account-section h3 i {
-            color: #2d6a4f;
+            color: #4CAF50;
         }
 
         .bank-details {
@@ -320,7 +320,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
             padding: 8px 15px;
             border: none;
             border-radius: 6px;
-            background: #2d6a4f;
+            background: #4CAF50;
             color: #fff;
             font-size: 14px;
             cursor: pointer;
@@ -331,7 +331,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
         }
 
         .export-btn:hover {
-            background: #1e4d39;
+            background: #3d8b40;
         }
 
         .export-btn i {
@@ -365,9 +365,9 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
         /* Action Buttons */
         .action-btn {
             padding: 6px 12px;
-            border: 1px solid #2d6a4f;
+            border: 1px solid #4CAF50;
             background: transparent;
-            color: #2d6a4f;
+            color: #4CAF50;
             border-radius: 6px;
             font-size: 12px;
             cursor: pointer;
@@ -375,7 +375,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
         }
 
         .action-btn:hover {
-            background: #2d6a4f;
+            background: #4CAF50;
             color: #fff;
         }
 
@@ -448,7 +448,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
             padding: 10px 20px;
             border: none;
             border-radius: 8px;
-            background: linear-gradient(135deg, #2d6a4f 0%, #1e4d39 100%);
+            background: #4CAF50;
             color: #fff;
             font-size: 14px;
             font-weight: 600;
@@ -457,12 +457,13 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(45, 106, 79, 0.3);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
         }
 
         .add-account-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(45, 106, 79, 0.4);
+            background: #3d8b40;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
         }
 
         /* Bank Modal Styles */
@@ -552,8 +553,8 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
 
         .bank-modal .form-group input:focus {
             outline: none;
-            border-color: #2d6a4f;
-            box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1);
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
 
         .bank-modal-actions {

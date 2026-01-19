@@ -899,11 +899,11 @@ try {
           <div class="form-grid">
             <div class="form-group">
               <label>Full Name</label>
-              <input type="text" name="full_name" value="<?= $user['full_name'] ?? '' ?>" required>
+              <input type="text" name="full_name" value="<?= $user['full_name'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group">
               <label>Date of Birth</label>
-              <input type="date" name="dob" value="<?= $user['dob'] ?? '' ?>" required>
+              <input type="date" name="dob" value="<?= $user['dob'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group full-width">
               <label>Home Address</label>
@@ -944,14 +944,15 @@ try {
         <!-- Update License Form -->
         <form method="POST" action="">
           <input type="hidden" name="action" value="update_license">
+          <input type="hidden" name="license_no" value="<?= $license['license_no'] ?? '' ?>">
           <div class="form-grid">
             <div class="form-group">
               <label>License Number</label>
-              <input type="text" name="license_no" value="<?= $license['license_no'] ?? '' ?>" required>
+              <input type="text" value="<?= $license['license_no'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group">
               <label>Expiry Date</label>
-              <input type="date" name="license_exp_date" value="<?= $license['license_exp_date'] ?? '' ?>" required>
+              <input type="date" name="license_exp_date" value="<?= $license['license_exp_date'] ?? '' ?>" min="<?= date('Y-m-d') ?>" required>
             </div>
           </div>
           <button type="submit" class="btn-save"><i class="fa-solid fa-save"></i> Update License</button>
@@ -1078,21 +1079,18 @@ try {
       <form id="editVehicleForm" method="POST" enctype="multipart/form-data">
         <div class="modal-body">
           <input type="hidden" id="edit_vehicle_no_old" name="vehicle_no_old">
+          <input type="hidden" id="edit_vehicle_no" name="vehicle_no">
+          <input type="hidden" id="edit_vehicle_type" name="vehicle_type">
           <input type="hidden" name="action" value="edit_vehicle">
           
           <div class="form-group" style="margin-bottom: 15px;">
             <label>Vehicle Number</label>
-            <input type="text" id="edit_vehicle_no" name="vehicle_no" required>
+            <input type="text" id="edit_vehicle_no_display" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
           </div>
           
           <div class="form-group" style="margin-bottom: 15px;">
             <label>Vehicle Type</label>
-            <select id="edit_vehicle_type" name="vehicle_type" required>
-              <option value="1">TUK</option>
-              <option value="2">VAN</option>
-              <option value="3">CAR</option>
-              <option value="4">BUS</option>
-            </select>
+            <input type="text" id="edit_vehicle_type_display" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
           </div>
           
           <div class="form-group" style="margin-bottom: 15px;">
@@ -1120,7 +1118,13 @@ try {
     function openEditModal(vehicleNo, vehicleType, psgCapacity, currentImage) {
       document.getElementById('edit_vehicle_no_old').value = vehicleNo;
       document.getElementById('edit_vehicle_no').value = vehicleNo;
+      document.getElementById('edit_vehicle_no_display').value = vehicleNo;
       document.getElementById('edit_vehicle_type').value = vehicleType;
+      
+      // Set display value for vehicle type
+      const vehicleTypeNames = { '1': 'TUK', '2': 'VAN', '3': 'CAR', '4': 'BUS' };
+      document.getElementById('edit_vehicle_type_display').value = vehicleTypeNames[vehicleType] || vehicleType;
+      
       document.getElementById('edit_psg_capacity').value = psgCapacity;
       
       // Show current image if exists

@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $last_name = trim($_POST['last_name']);
             $contact_number = trim($_POST['contact_number']);
             $email = trim($_POST['email']);
-            $specialization = trim($_POST['specialization']);
+            $specialization = isset($_POST['specialization']) ? implode(',', $_POST['specialization']) : '';
             $languages = trim($_POST['languages']);
             $experience = intval($_POST['experience']);
             $bio = trim($_POST['bio'] ?? '');
@@ -810,11 +810,11 @@ $specializations = [
           <div class="form-grid">
             <div class="form-group">
               <label>First Name</label>
-              <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name'] ?? '') ?>" required>
+              <input type="text" name="first_name" value="<?= htmlspecialchars($user['first_name'] ?? '') ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group">
               <label>Last Name</label>
-              <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name'] ?? '') ?>" required>
+              <input type="text" name="last_name" value="<?= htmlspecialchars($user['last_name'] ?? '') ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group">
               <label>Contact Number</label>
@@ -824,13 +824,19 @@ $specializations = [
               <label>Email Address</label>
               <input type="email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>" required>
             </div>
-            <div class="form-group">
-              <label>Specialization</label>
-              <select name="specialization" required>
-                <?php foreach ($specializations as $key => $value): ?>
-                  <option value="<?= $key ?>" <?= ($user['specialization'] ?? '') === $key ? 'selected' : '' ?>><?= $value ?></option>
+            <div class="form-group full-width">
+              <label>Specialization Areas (Select multiple)</label>
+              <div class="specialization-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #ddd;">
+                <?php 
+                $userSpecializations = explode(',', $user['specialization'] ?? '');
+                foreach ($specializations as $key => $value): 
+                ?>
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; background: white; border-radius: 6px; border: 1px solid #e0e0e0; transition: all 0.2s;" class="spec-checkbox-label">
+                    <input type="checkbox" name="specialization[]" value="<?= $key ?>" <?= in_array($key, $userSpecializations) ? 'checked' : '' ?> style="width: 18px; height: 18px; accent-color: #3d8b40;">
+                    <span style="font-size: 14px; color: #333;"><?= $value ?></span>
+                  </label>
                 <?php endforeach; ?>
-              </select>
+              </div>
             </div>
             <div class="form-group">
               <label>Years of Experience</label>
@@ -903,9 +909,22 @@ $specializations = [
           ?>
         </div>
         
-        <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Tour Specialization</h4>
+        <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Tour Specializations</h4>
         <div class="skills-container">
-          <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> <?= htmlspecialchars($specializations[$user['specialization'] ?? 'cultural'] ?? 'Cultural Heritage') ?></span>
+          <?php 
+          $userSpecs = explode(',', $user['specialization'] ?? '');
+          foreach ($userSpecs as $spec):
+            $spec = trim($spec);
+            if (!empty($spec) && isset($specializations[$spec])):
+          ?>
+            <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> <?= htmlspecialchars($specializations[$spec]) ?></span>
+          <?php 
+            endif;
+          endforeach;
+          if (empty(trim($user['specialization'] ?? ''))):
+          ?>
+            <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> Not specified</span>
+          <?php endif; ?>
         </div>
         
         <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Experience</h4>
