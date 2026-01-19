@@ -444,12 +444,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="/CeylonGo/public/tourist/dashboard" id="customizeTripForm">
-      <?php if ($is_logged_in): ?>
-        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
-      <?php endif; ?>
-      
-      <div class="customize-trip-box">
+    <div class="customize-layout">
+      <!-- Task Checklist Sidebar -->
+      <div class="trip-checklist">
+        <h3>📋 Booking Steps</h3>
+        <p class="checklist-subtitle">Complete each step</p>
+        <ul class="checklist">
+          <li class="checklist-item" data-step="people">
+            <input type="checkbox" id="step-people" disabled>
+            <label for="step-people">
+              <span class="step-number">1</span>
+              <span class="step-text">Select number of people</span>
+            </label>
+          </li>
+          <li class="checklist-item" data-step="date">
+            <input type="checkbox" id="step-date" disabled>
+            <label for="step-date">
+              <span class="step-number">2</span>
+              <span class="step-text">Choose start date</span>
+            </label>
+          </li>
+          <li class="checklist-item" data-step="destination">
+            <input type="checkbox" id="step-destination" disabled>
+            <label for="step-destination">
+              <span class="step-number">3</span>
+              <span class="step-text">Select destination</span>
+            </label>
+          </li>
+          <li class="checklist-item" data-step="days">
+            <input type="checkbox" id="step-days" disabled>
+            <label for="step-days">
+              <span class="step-number">4</span>
+              <span class="step-text">Specify days staying</span>
+            </label>
+          </li>
+          <li class="checklist-item" data-step="hotel">
+            <input type="checkbox" id="step-hotel" disabled>
+            <label for="step-hotel">
+              <span class="step-number">5</span>
+              <span class="step-text">Choose hotel</span>
+            </label>
+          </li>
+          <li class="checklist-item" data-step="transport">
+            <input type="checkbox" id="step-transport" disabled>
+            <label for="step-transport">
+              <span class="step-number">6</span>
+              <span class="step-text">Select transport</span>
+            </label>
+          </li>
+          <li class="checklist-item" data-step="guide">
+            <input type="checkbox" id="step-guide" disabled>
+            <label for="step-guide">
+              <span class="step-number">7</span>
+              <span class="step-text">Need tour guide?</span>
+            </label>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Main Form Content -->
+      <div class="form-content">
+        <form method="POST" action="/CeylonGo/public/tourist/dashboard" id="customizeTripForm">
+          <?php if ($is_logged_in): ?>
+            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+          <?php endif; ?>
+          
+          <div class="customize-trip-box">
         <div id="trip-group-container">
           <div class="trip-group" data-index="0">
             <div class="row row-1">
@@ -588,6 +648,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
       </div>
     </form>
+      </div><!-- End form-content -->
+    </div><!-- End customize-layout -->
 
     <script>
     // Autocomplete functionality
@@ -1144,6 +1206,84 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
           init();
         }
+      })();
+
+      // Checklist auto-update functionality
+      (function() {
+        function updateChecklist() {
+          const firstGroup = document.querySelector('.trip-group[data-index="0"]');
+          if (!firstGroup) return;
+
+          // Step 1: Number of people
+          const peopleInput = firstGroup.querySelector('input[name="people[]"]');
+          const peopleCheckbox = document.getElementById('step-people');
+          if (peopleInput && peopleCheckbox) {
+            peopleCheckbox.checked = peopleInput.value && parseInt(peopleInput.value) > 0;
+          }
+
+          // Step 2: Start date
+          const dateInput = firstGroup.querySelector('input[name="start_dates[]"]');
+          const dateCheckbox = document.getElementById('step-date');
+          if (dateInput && dateCheckbox) {
+            dateCheckbox.checked = dateInput.value && dateInput.value.trim() !== '';
+          }
+
+          // Step 3: Destination
+          const destinationSelect = firstGroup.querySelector('select[name="destinations[]"]');
+          const destinationCheckbox = document.getElementById('step-destination');
+          if (destinationSelect && destinationCheckbox) {
+            destinationCheckbox.checked = destinationSelect.value && destinationSelect.value !== '';
+          }
+
+          // Step 4: Number of days
+          const daysInput = firstGroup.querySelector('input[name="days[]"]');
+          const daysCheckbox = document.getElementById('step-days');
+          if (daysInput && daysCheckbox) {
+            daysCheckbox.checked = daysInput.value && parseInt(daysInput.value) > 0;
+          }
+
+          // Step 5: Hotel
+          const hotelSelect = firstGroup.querySelector('select[name="hotels[]"]');
+          const hotelCheckbox = document.getElementById('step-hotel');
+          if (hotelSelect && hotelCheckbox) {
+            hotelCheckbox.checked = hotelSelect.value && hotelSelect.value !== '';
+          }
+
+          // Step 6: Transport
+          const transportRadios = firstGroup.querySelectorAll('input[name="transports[]"]');
+          const transportCheckbox = document.getElementById('step-transport');
+          if (transportRadios && transportCheckbox) {
+            let transportSelected = false;
+            transportRadios.forEach(radio => {
+              if (radio.checked) transportSelected = true;
+            });
+            transportCheckbox.checked = transportSelected;
+          }
+
+          // Step 7: Guide
+          const guideRadios = document.querySelectorAll('input[name="guide"]');
+          const guideCheckbox = document.getElementById('step-guide');
+          if (guideRadios && guideCheckbox) {
+            let guideSelected = false;
+            guideRadios.forEach(radio => {
+              if (radio.checked) guideSelected = true;
+            });
+            guideCheckbox.checked = guideSelected;
+          }
+        }
+
+        // Initial check
+        setTimeout(updateChecklist, 500);
+
+        // Add event listeners to form inputs
+        document.addEventListener('change', updateChecklist);
+        document.addEventListener('input', updateChecklist);
+        document.addEventListener('click', function(e) {
+          if (e.target.classList.contains('increase-btn') || 
+              e.target.classList.contains('decrease-btn')) {
+            setTimeout(updateChecklist, 100);
+          }
+        });
       })();
     </script>
 

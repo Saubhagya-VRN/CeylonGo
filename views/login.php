@@ -19,7 +19,7 @@ $error = $error ?? '';
 <body class="bg-app">
   <?php include 'index_navbar.php'; ?>
 
-  <section class="intro" style="padding: 60px 20px;">
+  <section class="hero login-hero">
     <h1>Welcome Back</h1>
     <p>Login to your Ceylon Go account to continue planning your perfect trip!</p>
   </section>
