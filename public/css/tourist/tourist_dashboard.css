@@ -111,15 +111,15 @@ nav ul li {
 }
 
 .carousel-slide:nth-child(2) {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../images/unawatuna.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../images/sunset.jpg');
 }
 
 .carousel-slide:nth-child(3) {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../images/sigiriya.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../images/night.jpeg');
 }
 
 .carousel-slide:nth-child(4) {
-  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../images/cultural.jpg');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../../images/perehara.jpeg');
 }
 
 .carousel-content {

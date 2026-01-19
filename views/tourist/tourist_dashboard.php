@@ -265,7 +265,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   <section class="recommended-packages">
     <h2>Discover Your Perfect Journey</h2>
-    <p class="section-subtitle">Curated experiences tailored to your travel style</p>
+    <p class="section-subtitle">Browse curated packages by destination, duration, experience type, or travel group to create your ideal Sri Lankan adventure.</p>
     
     <!-- Filter Tabs -->
     <div class="package-filters">
@@ -290,7 +290,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div class="packages-grid">
       <!-- Region-based Packages -->
       <a href="/CeylonGo/public/tourist/package-details/1" class="package-card" data-category="region" data-tags="central cultural heritage">
-        <div class="package-image" style="background-image: url('../../images/sigiriya.jpg');">
+        <div class="package-image" style="background-image: url('../../public/images/kandy.jpeg');">
           <div class="package-badge">Central</div>
         </div>
         <div class="package-content">
@@ -304,7 +304,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </a>
 
       <a href="/CeylonGo/public/tourist/package-details/2" class="package-card" data-category="region" data-tags="south beach relaxation">
-        <div class="package-image" style="background-image: url('../../images/unawatuna.jpg');">
+        <div class="package-image" style="background-image: url('../../public/images/beach.jpg');">
           <div class="package-badge badge-blue">South Coast</div>
         </div>
         <div class="package-content">
@@ -318,7 +318,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </a>
 
       <a href="/CeylonGo/public/tourist/package-details/3" class="package-card" data-category="region" data-tags="central nature adventure">
-        <div class="package-image" style="background-image: url('../../images/hiking.jpg');">
+        <div class="package-image" style="background-image: url('../../public/images/greenary.jpg');">
           <div class="package-badge badge-green">Hill Country</div>
         </div>
         <div class="package-content">
@@ -333,7 +333,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <!-- Duration-based Packages -->
       <a href="/CeylonGo/public/tourist/package-details/4" class="package-card" data-category="duration" data-tags="day-trip adventure">
-        <div class="package-image" style="background-image: url('../../images/adventure.jpg');">
+        <div class="package-image" style="background-image: url('../../public/images/fort.jpg');">
           <div class="package-badge badge-orange">Day Trip</div>
         </div>
         <div class="package-content">
@@ -347,7 +347,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </a>
 
       <a href="/CeylonGo/public/tourist/package-details/5" class="package-card" data-category="duration" data-tags="short beach family">
-        <div class="package-image" style="background-image: url('../../images/beach.jpg');">
+        <div class="package-image" style="background-image: url('../../public/images/sunset.jpg');">
           <div class="package-badge badge-cyan">Weekend</div>
         </div>
         <div class="package-content">
@@ -362,7 +362,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <!-- Experience-based Packages -->
       <a href="/CeylonGo/public/tourist/package-details/6" class="package-card" data-category="experience" data-tags="cultural heritage solo">
-        <div class="package-image" style="background-image: url('../../images/cultural.jpg');">
+        <div class="package-image" style="background-image: url('../../public/images/perehara.jpeg');">
           <div class="package-badge badge-purple">Cultural</div>
         </div>
         <div class="package-content">
@@ -375,48 +375,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
       </a>
 
-      <a href="/CeylonGo/public/tourist/package-details/7" class="package-card" data-category="experience" data-tags="wildlife nature adventure">
-        <div class="package-image" style="background-image: url('../../images/factory.jpg');">
-          <div class="package-badge badge-green">Wildlife</div>
-        </div>
-        <div class="package-content">
-          <h3>Safari & Nature Adventure</h3>
-          <p class="package-description">National Parks • Waterfalls • Wildlife</p>
-          <div class="package-meta">
-            <span class="meta-item">4 Days</span>
-            <span class="meta-item">Safari</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Group Type Packages -->
-      <a href="/CeylonGo/public/tourist/package-details/8" class="package-card" data-category="group" data-tags="solo adventure">
-        <div class="package-image" style="background-image: url('../../images/hiking.jpg');">
-          <div class="package-badge badge-red">Solo</div>
-        </div>
-        <div class="package-content">
-          <h3>Solo Adventurer Special</h3>
-          <p class="package-description">Curated for independent travelers</p>
-          <div class="package-meta">
-            <span class="meta-item">Flexible</span>
-            <span class="meta-item">Solo</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="/CeylonGo/public/tourist/package-details/9" class="package-card" data-category="group" data-tags="family beach">
-        <div class="package-image" style="background-image: url('../../images/beach_hotel.jpg');">
-          <div class="package-badge badge-pink">Family</div>
-        </div>
-        <div class="package-content">
-          <h3>Family Fun Package</h3>
-          <p class="package-description">Kid-friendly activities & resorts</p>
-          <div class="package-meta">
-            <span class="meta-item">4-6 Days</span>
-            <span class="meta-item">Family</span>
-          </div>
-        </div>
-      </a>
     </div>
 
     <a href="/CeylonGo/public/tourist/recommended-packages" class="btn btn-view-all">

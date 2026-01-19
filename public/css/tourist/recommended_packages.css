@@ -27,37 +27,53 @@ body {
     font-weight: 500;
   }
   
+  /* Card Buttons Container */
+  .card-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  
   .btn-outline {
-    border: 1px solid #000;
+    border: 1.5px solid var(--color-primary, #2c5530);
     background: transparent;
-    padding: 6px 12px;
+    padding: 5px 12px;
     cursor: pointer;
     text-decoration: none;
-    color: #000;
+    color: var(--color-primary, #2c5530);
     display: inline-block;
     text-align: center;
     transition: all 0.3s ease;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
   }
   
   .btn-outline:hover {
-    background: #000;
+    background: var(--color-primary, #2c5530);
     color: #fff;
   }
   
   .btn-black {
-    background: #000;
+    background: var(--color-primary, #2c5530);
     color: #fff;
     border: none;
-    padding: 6px 12px;
+    padding: 6px 14px;
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
     text-align: center;
     transition: all 0.3s ease;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
   }
   
   .btn-black:hover {
-    background: #333;
+    background: var(--color-primary-600, #4a7c59);
     color: #fff;
   }
   
