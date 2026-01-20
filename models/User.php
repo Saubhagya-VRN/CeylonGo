@@ -42,9 +42,9 @@ class User {
 
     // Get user by user_id
     public function getUserById($user_id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE user_id = ?";
+        $query = "SELECT * FROM " . $this->table . " WHERE TRIM(user_id) = TRIM(?)";
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([$user_id]);
+        $stmt->execute([trim($user_id)]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 

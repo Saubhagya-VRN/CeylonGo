@@ -39,6 +39,20 @@ class GuideController {
             $errors[] = "Contact number must be 10 digits.";
         }
 
+        // Check if email already exists in guide_users table
+        $guide = new Guide($this->db);
+        $existingGuide = $guide->getGuideByEmail(trim($data['email']));
+        if ($existingGuide) {
+            $errors[] = "Email already exists. Please use a different email.";
+        }
+
+        // Check if email exists in central users table
+        $authUser = new AuthUser($this->db);
+        $existingUser = $authUser->getUserByEmail(trim($data['email']));
+        if ($existingUser) {
+            $errors[] = "Email already registered. Please use a different email.";
+        }
+
         if (!empty($errors)) {
             echo "<h2>Registration Errors:</h2><ul>";
             foreach ($errors as $err) {
