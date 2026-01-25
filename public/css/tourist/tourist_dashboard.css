@@ -818,16 +818,68 @@ nav ul li {
 .row-1 {
   grid-template-columns: 1fr;
 }
+
+.row-trip-details {
+  grid-template-columns: 1fr;
+  margin-bottom: 16px;
+}
+
+.row-trip-details .box {
+  padding: 20px;
+}
+
+.row-trip-details .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.row-trip-details .form-row:last-child {
+  margin-bottom: 0;
+}
+
+.row-trip-details .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.row-date-destination {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.row-date-destination .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.row-2 {
+  grid-template-columns: 1fr;
+}
+.row-2-days-hotel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.row-2-days-hotel .form-group {
+  display: flex;
+  flex-direction: column;
+}
 .row-2.three {
   grid-template-columns: 1.6fr 1.4fr 0.9fr;
 }
 .row-3 {
   grid-template-columns: 1fr;
+  margin-bottom: 16px;
 }
 .row-4 {
   grid-template-columns: 1fr;
-  margin-top: 24px;
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 .row-5 {
   grid-template-columns: 1fr;
@@ -865,13 +917,13 @@ nav ul li {
 
 .box {
   background: #ffffff;
-  padding: 20px;
+  padding: 16px 20px;
   border-radius: 8px;
   width: 100%;
-  min-height: 80px;
+  min-height: 60px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   border: 1.5px solid #e0e5e0;
   text-align: left;
@@ -969,6 +1021,13 @@ nav ul li {
 
 .input-with-icon input[type="number"] {
   padding-right: 80px;
+  -moz-appearance: textfield;
+}
+
+.input-with-icon input[type="number"]::-webkit-outer-spin-button,
+.input-with-icon input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .input-with-icon select {
@@ -1103,6 +1162,13 @@ nav ul li {
   font-weight: 600;
   background: #fff;
   min-width: 60px;
+  -moz-appearance: textfield;
+}
+
+.number-control input::-webkit-outer-spin-button,
+.number-control input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .number-control input:focus {
@@ -1440,9 +1506,9 @@ nav ul li {
    ============================== */
 .customize-layout {
   display: flex;
-  gap: 15px;
+  gap: 30px;
   align-items: flex-start;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   justify-content: center;
 }
@@ -1457,8 +1523,8 @@ nav ul li {
 .trip-checklist {
   background: white;
   border-radius: 8px;
-  padding: 20px;
-  width: 280px;
+  padding: 16px;
+  width: 240px;
   flex-shrink: 0;
   border: 2px solid var(--color-primary);
   box-shadow: 0 2px 8px rgba(44, 85, 48, 0.1);
@@ -1470,15 +1536,15 @@ nav ul li {
 
 .trip-checklist h3 {
   color: var(--color-primary);
-  margin: 0 0 5px 0;
-  font-size: 18px;
+  margin: 0 0 4px 0;
+  font-size: 16px;
   font-weight: 700;
 }
 
 .checklist-subtitle {
   color: #666;
-  margin: 0 0 15px 0;
-  font-size: 12px;
+  margin: 0 0 12px 0;
+  font-size: 11px;
 }
 
 .checklist {
@@ -1537,20 +1603,20 @@ nav ul li {
 .checklist-item .step-number {
   background-color: var(--color-primary);
   color: white;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .checklist-item .step-text {
   color: #333;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.3;
 }

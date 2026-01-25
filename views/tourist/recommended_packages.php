@@ -127,7 +127,7 @@
   <!-- All Packages Section -->
   <section class="section recommended-packages">
     <h2>All Available Packages</h2>
-    <p class="section-subtitle">Browse curated packages by destination, duration, experience type, or travel group to create your ideal Sri Lankan adventure.</p>
+    <p class="section-subtitle">Find the perfect package for your Sri Lankan adventure</p>
     
     <!-- Filter Tabs -->
     <div class="package-filters">
@@ -153,13 +153,13 @@
       <!-- Region-based Packages -->
       <div class="package-card" data-category="region" data-tags="central cultural heritage">
         <div class="package-image" style="background-image: url('../../public/images/kandy.jpeg');">
-          <div class="package-badge">Central</div>
         </div>
         <div class="package-content">
           <h3>Cultural Triangle Explorer</h3>
           <p class="package-description">Kandy • Sigiriya • Dambulla</p>
           <div class="package-meta">
             <span class="meta-item">4-5 Days</span>
+            <span class="meta-item">Central</span>
             <span class="meta-item">Cultural</span>
           </div>
           <div class="card-buttons">
@@ -171,13 +171,13 @@
 
       <div class="package-card" data-category="region" data-tags="south beach relaxation">
         <div class="package-image" style="background-image: url('../../public/images/beach.jpg');">
-          <div class="package-badge badge-blue">South Coast</div>
         </div>
         <div class="package-content">
           <h3>Southern Beach Paradise</h3>
           <p class="package-description">Galle • Mirissa • Unawatuna</p>
           <div class="package-meta">
             <span class="meta-item">3 Days</span>
+            <span class="meta-item">South Coast</span>
             <span class="meta-item">Beach</span>
           </div>
           <div class="card-buttons">
@@ -189,13 +189,13 @@
 
       <div class="package-card" data-category="region" data-tags="central nature adventure">
         <div class="package-image" style="background-image: url('../../public/images/greenary.jpg');">
-          <div class="package-badge badge-green">Hill Country</div>
         </div>
         <div class="package-content">
           <h3>Misty Mountain Escape</h3>
           <p class="package-description">Nuwara Eliya • Ella • Horton Plains</p>
           <div class="package-meta">
             <span class="meta-item">4 Days</span>
+            <span class="meta-item">Hill Country</span>
             <span class="meta-item">Nature</span>
           </div>
           <div class="card-buttons">
@@ -208,13 +208,13 @@
       <!-- Duration-based Packages -->
       <div class="package-card" data-category="duration" data-tags="day-trip adventure">
         <div class="package-image" style="background-image: url('../../public/images/fort.jpg');">
-          <div class="package-badge badge-orange">Day Trip</div>
         </div>
         <div class="package-content">
           <h3>Colombo City Explorer</h3>
           <p class="package-description">Full day city tour with lunch</p>
           <div class="package-meta">
             <span class="meta-item">1 Day</span>
+            <span class="meta-item">Day Trip</span>
             <span class="meta-item">City Tour</span>
           </div>
           <div class="card-buttons">
@@ -226,13 +226,13 @@
 
       <div class="package-card" data-category="duration" data-tags="short beach family">
         <div class="package-image" style="background-image: url('../../public/images/sunset.jpg');">
-          <div class="package-badge badge-cyan">Weekend</div>
         </div>
         <div class="package-content">
           <h3>Quick Beach Getaway</h3>
           <p class="package-description">Bentota • Hikkaduwa</p>
           <div class="package-meta">
             <span class="meta-item">2-3 Days</span>
+            <span class="meta-item">Weekend</span>
             <span class="meta-item">Family</span>
           </div>
           <div class="card-buttons">
@@ -245,13 +245,13 @@
       <!-- Experience-based Packages -->
       <div class="package-card" data-category="experience" data-tags="cultural heritage solo">
         <div class="package-image" style="background-image: url('../../public/images/perehara.jpeg');">
-          <div class="package-badge badge-purple">Cultural</div>
         </div>
         <div class="package-content">
           <h3>Ancient Heritage Trail</h3>
           <p class="package-description">Temples • Historical Sites • Local Villages</p>
           <div class="package-meta">
             <span class="meta-item">5 Days</span>
+            <span class="meta-item">Cultural</span>
             <span class="meta-item">Heritage</span>
           </div>
           <div class="card-buttons">
@@ -263,13 +263,13 @@
 
       <div class="package-card" data-category="experience" data-tags="wildlife nature adventure">
         <div class="package-image" style="background-image: url('../../public/images/elephant.jpg');">
-          <div class="package-badge badge-green">Wildlife</div>
         </div>
         <div class="package-content">
           <h3>Safari & Nature Adventure</h3>
           <p class="package-description">National Parks • Waterfalls • Wildlife</p>
           <div class="package-meta">
             <span class="meta-item">4 Days</span>
+            <span class="meta-item">Wildlife</span>
             <span class="meta-item">Safari</span>
           </div>
           <div class="card-buttons">
@@ -282,7 +282,6 @@
       <!-- Group Type Packages -->
       <div class="package-card" data-category="group" data-tags="solo adventure">
         <div class="package-image" style="background-image: url('../../public/images/train.jpg');">
-          <div class="package-badge badge-red">Solo</div>
         </div>
         <div class="package-content">
           <h3>Solo Adventurer Special</h3>
@@ -300,7 +299,6 @@
 
       <div class="package-card" data-category="group" data-tags="family beach">
         <div class="package-image" style="background-image: url('../../public/images/resort.jpg');">
-          <div class="package-badge badge-pink">Family</div>
         </div>
         <div class="package-content">
           <h3>Family Fun Package</h3>

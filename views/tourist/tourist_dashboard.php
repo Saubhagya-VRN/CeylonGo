@@ -265,7 +265,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   <section class="recommended-packages">
     <h2>Discover Your Perfect Journey</h2>
-    <p class="section-subtitle">Browse curated packages by destination, duration, experience type, or travel group to create your ideal Sri Lankan adventure.</p>
+    <p class="section-subtitle">Find the perfect package for your Sri Lankan adventure</p>
     
     <!-- Filter Tabs -->
     <div class="package-filters">
@@ -291,13 +291,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <!-- Region-based Packages -->
       <a href="/CeylonGo/public/tourist/package-details/1" class="package-card" data-category="region" data-tags="central cultural heritage">
         <div class="package-image" style="background-image: url('../../public/images/kandy.jpeg');">
-          <div class="package-badge">Central</div>
         </div>
         <div class="package-content">
-          <h3>Cultural Triangle Explorer</h3>
-          <p class="package-description">Kandy • Sigiriya • Dambulla</p>
+          <h3>Cultural Triangle Tour</h3>
+          <p class="package-description">Kandy, Sigiriya & Dambulla</p>
           <div class="package-meta">
             <span class="meta-item">4-5 Days</span>
+            <span class="meta-item">Central</span>
             <span class="meta-item">Cultural</span>
           </div>
         </div>
@@ -305,13 +305,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <a href="/CeylonGo/public/tourist/package-details/2" class="package-card" data-category="region" data-tags="south beach relaxation">
         <div class="package-image" style="background-image: url('../../public/images/beach.jpg');">
-          <div class="package-badge badge-blue">South Coast</div>
         </div>
         <div class="package-content">
-          <h3>Southern Beach Paradise</h3>
-          <p class="package-description">Galle • Mirissa • Unawatuna</p>
+          <h3>South Coast Beaches</h3>
+          <p class="package-description">Galle, Mirissa & Unawatuna</p>
           <div class="package-meta">
             <span class="meta-item">3 Days</span>
+            <span class="meta-item">South Coast</span>
             <span class="meta-item">Beach</span>
           </div>
         </div>
@@ -319,13 +319,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <a href="/CeylonGo/public/tourist/package-details/3" class="package-card" data-category="region" data-tags="central nature adventure">
         <div class="package-image" style="background-image: url('../../public/images/greenary.jpg');">
-          <div class="package-badge badge-green">Hill Country</div>
         </div>
         <div class="package-content">
-          <h3>Misty Mountain Escape</h3>
-          <p class="package-description">Nuwara Eliya • Ella • Horton Plains</p>
+          <h3>Hill Country Experience</h3>
+          <p class="package-description">Nuwara Eliya, Ella & Horton Plains</p>
           <div class="package-meta">
             <span class="meta-item">4 Days</span>
+            <span class="meta-item">Hill Country</span>
             <span class="meta-item">Nature</span>
           </div>
         </div>
@@ -334,13 +334,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <!-- Duration-based Packages -->
       <a href="/CeylonGo/public/tourist/package-details/4" class="package-card" data-category="duration" data-tags="day-trip adventure">
         <div class="package-image" style="background-image: url('../../public/images/fort.jpg');">
-          <div class="package-badge badge-orange">Day Trip</div>
         </div>
         <div class="package-content">
-          <h3>Colombo City Explorer</h3>
-          <p class="package-description">Full day city tour with lunch</p>
+          <h3>Colombo City Tour</h3>
+          <p class="package-description">Full day tour with lunch included</p>
           <div class="package-meta">
             <span class="meta-item">1 Day</span>
+            <span class="meta-item">Day Trip</span>
             <span class="meta-item">City Tour</span>
           </div>
         </div>
@@ -348,13 +348,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <a href="/CeylonGo/public/tourist/package-details/5" class="package-card" data-category="duration" data-tags="short beach family">
         <div class="package-image" style="background-image: url('../../public/images/sunset.jpg');">
-          <div class="package-badge badge-cyan">Weekend</div>
         </div>
         <div class="package-content">
-          <h3>Quick Beach Getaway</h3>
-          <p class="package-description">Bentota • Hikkaduwa</p>
+          <h3>Weekend Beach Trip</h3>
+          <p class="package-description">Bentota & Hikkaduwa</p>
           <div class="package-meta">
             <span class="meta-item">2-3 Days</span>
+            <span class="meta-item">Weekend</span>
             <span class="meta-item">Family</span>
           </div>
         </div>
@@ -363,13 +363,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <!-- Experience-based Packages -->
       <a href="/CeylonGo/public/tourist/package-details/6" class="package-card" data-category="experience" data-tags="cultural heritage solo">
         <div class="package-image" style="background-image: url('../../public/images/perehara.jpeg');">
-          <div class="package-badge badge-purple">Cultural</div>
         </div>
         <div class="package-content">
-          <h3>Ancient Heritage Trail</h3>
-          <p class="package-description">Temples • Historical Sites • Local Villages</p>
+          <h3>Heritage & Culture Tour</h3>
+          <p class="package-description">Temples, historic sites & villages</p>
           <div class="package-meta">
             <span class="meta-item">5 Days</span>
+            <span class="meta-item">Cultural</span>
             <span class="meta-item">Heritage</span>
           </div>
         </div>
@@ -533,49 +533,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               </div>
             </div>
 
-            <div class="row row-2 three">
+            <div class="row row-trip-details">
               <div class="box">
-                <div class="box-title">Where are You Going?</div>
-                <div class="input-with-icon autocomplete-wrapper">
-                  <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                  </svg>
-                  <input 
-                    type="text" 
-                    name="destination[]" 
-                    class="destination-input"
-                    placeholder="Type a place..."
-                    required
-                    autocomplete="off"
-                  >
-                  <ul class="autocomplete-list">
-                    <li data-value="Kandy">Kandy</li>
-                    <li data-value="Colombo">Colombo</li>
-                    <li data-value="Galle">Galle</li>
-                    <li data-value="Nuwara Eliya">Nuwara Eliya</li>
-                    <li data-value="Sigiriya">Sigiriya</li>
-                    <li data-value="Unawatuna">Unawatuna</li>
-                    <li data-value="Ella">Ella</li>
-                  </ul>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="start_date">Start Date of the Trip</label>
+                    <input type="date" name="start_date[]" class="trip-start-date" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="destination">Where are You Going?</label>
+                    <input 
+                      type="text" 
+                      name="destination[]" 
+                      class="destination-input"
+                      placeholder="Type a place..."
+                      required
+                      autocomplete="off"
+                    >
+                  </div>
                 </div>
-              </div>
-              <div class="box">
-                <div class="box-title">How Many Days Do You Plan To Stay?</div>
-                <div class="input-with-icon">
-                  <span class="icon"></span>
-                  <input type="number" name="days[]" min="1" max="10" placeholder="" required oninput="if(this.value > 10) this.value = 10; if(this.value < 1) this.value = 1;">
-                  <span class="nights-text">Nights</span>
-                </div>
-              </div>
-              <div class="box box-hotel-btn">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-                  <input type="hidden" name="hotel[]" class="hotel-value" value="">
-                  <span class="selected-hotel" style="color: #2c5530; font-weight: 600; margin-right: 10px;"></span>
-                  <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-black choose-hotel-btn" style="text-decoration: none; display: inline-flex;" onclick="return saveFormData();">
-                    <span class="btn-icon"></span>
-                    <span>Choose Hotel</span>
-                  </a>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="days">How Many Days Do You Plan To Stay?</label>
+                    <input type="number" name="days[]" min="1" max="10" placeholder="Number of nights" required oninput="if(this.value > 10) this.value = 10; if(this.value < 1) this.value = 1;">
+                  </div>
+                  <div class="form-group">
+                    <label for="hotel" style="margin-bottom: 8px; visibility: hidden;">Hotel</label>
+                    <input type="hidden" name="hotel[]" class="hotel-value" value="">
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                      <span class="selected-hotel" style="color: #2c5530; font-weight: 600; display: none; flex: 1;"></span>
+                      <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-modal-primary choose-hotel-btn" style="text-decoration: none; display: inline-flex; padding: 10px 20px; font-size: 14px;" onclick="return saveFormData();">
+                        Choose Hotel
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -605,7 +597,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   <div class="box-title">Add a Tour Guide?</div>
                   <div class="btn-group">
                     <input type="hidden" name="guide[]" class="guide-value" value="No">
-                    <button type="button" class="btn-white guide-yes-btn" onclick="openGuideModal(this)">
+                    <button type="button" class="btn-white guide-yes-btn" onclick="goToGuideRequestForm()">
                       <span class="btn-icon">✓</span>
                       <span>Yes</span>
                     </button>
@@ -654,62 +646,96 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div><!-- End customize-layout -->
 
     <script>
-    // Autocomplete functionality
+    // API-based location autocomplete functionality
+    let debounceTimer;
+    
     function initializeAutocomplete(wrapper) {
       var input = wrapper.querySelector('.destination-input');
       var list = wrapper.querySelector('.autocomplete-list');
-      var items = list.querySelectorAll('li');
 
       if (!input || !list) return;
 
-      // Show suggestions on focus
-      input.addEventListener('focus', function() {
-        filterSuggestions();
-      });
-
-      // Filter suggestions on input
+      // Fetch location suggestions from Nominatim API
       input.addEventListener('input', function() {
-        filterSuggestions();
-      });
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
 
-      function filterSuggestions() {
-        var searchValue = input.value.toLowerCase();
-        var visibleItems = 0;
-
-        items.forEach(function(item) {
-          var text = item.textContent.toLowerCase();
-          var matches = !searchValue || text.includes(searchValue);
-          
-          if (matches) {
-            item.style.display = 'block';
-            visibleItems++;
-          } else {
-            item.style.display = 'none';
-          }
-          item.classList.remove('active');
-        });
-
-        list.classList.toggle('show', visibleItems > 0);
-      }
-
-      // Handle item selection
-      items.forEach(function(item) {
-        item.addEventListener('click', function(e) {
-          e.preventDefault();
-          input.value = this.getAttribute('data-value');
+        if (query.length < 2) {
+          list.innerHTML = '';
           list.classList.remove('show');
-          input.dispatchEvent(new Event('change'));
-        });
+          return;
+        }
 
-        item.addEventListener('mouseover', function() {
-          items.forEach(function(i) { i.classList.remove('active'); });
-          this.classList.add('active');
-        });
+        debounceTimer = setTimeout(async () => {
+          try {
+            const searchQuery = encodeURIComponent(query + ', Sri Lanka');
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}&limit=5&countrycodes=lk`);
+            const data = await response.json();
+
+            list.innerHTML = '';
+
+            if (data && data.length > 0) {
+              data.forEach(place => {
+                const li = document.createElement('li');
+                // Extract the main place name (first part before comma)
+                const displayName = place.display_name.split(',')[0];
+                li.textContent = displayName;
+                li.setAttribute('data-value', displayName);
+                li.setAttribute('data-full', place.display_name);
+                
+                li.addEventListener('click', function(e) {
+                  e.preventDefault();
+                  input.value = this.getAttribute('data-value');
+                  list.innerHTML = '';
+                  list.classList.remove('show');
+                  input.dispatchEvent(new Event('change'));
+                });
+
+                li.addEventListener('mouseover', function() {
+                  list.querySelectorAll('li').forEach(item => item.classList.remove('active'));
+                  this.classList.add('active');
+                });
+
+                list.appendChild(li);
+              });
+              list.classList.add('show');
+            } else {
+              list.innerHTML = '<li style="color: #999; cursor: default;">No locations found</li>';
+              list.classList.add('show');
+            }
+          } catch (error) {
+            console.error('Location search error:', error);
+          }
+        }, 300);
       });
 
       // Close list when clicking outside
       document.addEventListener('click', function(e) {
         if (!wrapper.contains(e.target)) {
+          list.classList.remove('show');
+        }
+      });
+
+      // Keyboard navigation
+      input.addEventListener('keydown', function(e) {
+        const items = list.querySelectorAll('li');
+        const active = list.querySelector('li.active');
+        let index = Array.from(items).indexOf(active);
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          index = (index + 1) % items.length;
+          items.forEach(item => item.classList.remove('active'));
+          items[index]?.classList.add('active');
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          index = index <= 0 ? items.length - 1 : index - 1;
+          items.forEach(item => item.classList.remove('active'));
+          items[index]?.classList.add('active');
+        } else if (e.key === 'Enter' && active) {
+          e.preventDefault();
+          active.click();
+        } else if (e.key === 'Escape') {
           list.classList.remove('show');
         }
       });
@@ -1103,6 +1129,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
           init();
         }
+
+        // Set minimum date for all trip start date inputs to today
+        function setMinDateForTripStartDates() {
+          const today = new Date().toISOString().split('T')[0];
+          const dateInputs = document.querySelectorAll('.trip-start-date');
+          dateInputs.forEach(input => {
+            input.setAttribute('min', today);
+          });
+        }
+        
+        // Call on load
+        setMinDateForTripStartDates();
+        
+        // Also set min date when new trip groups are added
+        const observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+              setMinDateForTripStartDates();
+            }
+          });
+        });
+        
+        const container = document.getElementById('trip-group-container');
+        if (container) {
+          observer.observe(container, { childList: true, subtree: true });
+        }
       })();
 
       // Checklist auto-update functionality
@@ -1360,33 +1412,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <div id="guideModal" class="service-modal">
     <div class="service-modal-content">
       <div class="service-modal-header">
-        <h3>Request Tour Guide</h3>
+        <h3>Tour Guide Request</h3>
         <button type="button" class="service-modal-close" onclick="closeGuideModal()">&times;</button>
       </div>
       <div class="service-modal-body">
-        <p class="modal-subtitle">Select your preferred tour guide type</p>
-        <div class="guide-options">
-          <div class="guide-option" data-guide="Local Guide">
-            <div class="option-icon">👤</div>
-            <h4>Local Guide</h4>
-            <p>Expert knowledge of local culture and history</p>
+        <p class="modal-subtitle">Provide your preferences to request a tour guide</p>
+        <form id="guideRequestForm" class="modal-form">
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="guideCustomerName">Customer Name</label>
+              <input type="text" id="guideCustomerName" name="customerName" placeholder="Enter your full name" required>
+            </div>
           </div>
-          <div class="guide-option" data-guide="Adventure Guide">
-            <div class="option-icon">🏔️</div>
-            <h4>Adventure Guide</h4>
-            <p>Specialized in outdoor activities and trekking</p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="guideLocation">Location</label>
+              <input type="text" id="guideLocation" name="location" placeholder="e.g., Kandy" required>
+            </div>
+            <div class="form-group">
+              <label for="guideLanguage">Preferred Language</label>
+              <select id="guideLanguage" name="language" required>
+                <option value="">Select language</option>
+                <option value="English">English</option>
+                <option value="Sinhala">Sinhala</option>
+                <option value="Tamil">Tamil</option>
+                <option value="Hindi">Hindi</option>
+                <option value="French">French</option>
+              </select>
+            </div>
           </div>
-          <div class="guide-option" data-guide="Cultural Guide">
-            <div class="option-icon">🏛️</div>
-            <h4>Cultural Guide</h4>
-            <p>Deep insights into heritage and traditions</p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="guideDate">Preferred Date</label>
+              <input type="date" id="guideDate" name="date" required>
+            </div>
+            <div class="form-group">
+              <label for="guideNotes">Notes (optional)</label>
+              <input type="text" id="guideNotes" name="notes" placeholder="Any special requests">
+            </div>
           </div>
-          <div class="guide-option" data-guide="Nature Guide">
-            <div class="option-icon">🌿</div>
-            <h4>Nature Guide</h4>
-            <p>Wildlife and nature conservation expert</p>
+
+          <div class="modal-actions">
+            <button type="submit" class="btn-modal-primary">Submit Request</button>
+            <button type="button" class="btn-modal-outline" onclick="closeGuideModal()">Cancel</button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   </div>
@@ -1562,8 +1634,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Guide Modal Functions
     let currentGuideGroup = null;
 
-    function openGuideModal(button) {
-      currentGuideGroup = button.closest('.trip-group');
+    function goToGuideRequestForm() {
+      currentGuideGroup = event.target.closest('.trip-group');
+      
+      // Set minimum date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('guideDate').min = today;
+      
       document.getElementById('guideModal').style.display = 'block';
       document.body.style.overflow = 'hidden';
     }
@@ -1571,6 +1648,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     function closeGuideModal() {
       document.getElementById('guideModal').style.display = 'none';
       document.body.style.overflow = 'auto';
+      document.getElementById('guideRequestForm').reset();
       currentGuideGroup = null;
     }
 
@@ -1588,28 +1666,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       infoDiv.textContent = '';
     }
 
-    // Guide option selection
+    // Guide request form submission
     document.addEventListener('DOMContentLoaded', function() {
-      const guideOptions = document.querySelectorAll('.guide-option');
-      guideOptions.forEach(option => {
-        option.addEventListener('click', function() {
+      const guideForm = document.getElementById('guideRequestForm');
+      if (guideForm) {
+        guideForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
           if (!currentGuideGroup) return;
           
-          const guide = this.getAttribute('data-guide');
+          const customerName = document.getElementById('guideCustomerName').value;
+          const location = document.getElementById('guideLocation').value;
+          const language = document.getElementById('guideLanguage').value;
+          const date = document.getElementById('guideDate').value;
+          const notes = document.getElementById('guideNotes').value;
+          
+          // Update the guide value and display
           const guideValue = currentGuideGroup.querySelector('.guide-value');
           const yesBtn = currentGuideGroup.querySelector('.guide-yes-btn');
           const noBtn = currentGuideGroup.querySelector('.guide-no-btn');
           const infoDiv = currentGuideGroup.querySelector('.selected-guide-info');
           
-          guideValue.value = guide;
+          guideValue.value = 'Yes';
           yesBtn.classList.add('active');
           noBtn.classList.remove('active');
-          infoDiv.textContent = '✓ ' + guide + ' requested';
+          infoDiv.textContent = `✓ Tour guide requested for ${location} on ${date}`;
           infoDiv.style.display = 'block';
           
           closeGuideModal();
         });
-      });
+      }
 
       // Close modals when clicking outside
       window.onclick = function(event) {
