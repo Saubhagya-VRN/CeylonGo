@@ -64,7 +64,13 @@ $router->get('guide/pending', 'GuideController@pending');
 $router->get('guide/cancelled', 'GuideController@cancelled');
 $router->get('guide/review', 'GuideController@review');
 $router->get('guide/profile', 'GuideController@profile');
+$router->post('guide/profile', 'GuideController@profile');
 $router->get('guide/places', 'GuideController@places');
+$router->get('guide/info', 'GuideController@info');
+$router->get('guide/pending_info', 'GuideController@pendingInfo');
+$router->get('guide/cancelled_info', 'GuideController@cancelledInfo');
+$router->get('guide/payment', 'GuideController@payment');
+$router->post('guide/payment', 'GuideController@payment');
 
 // ========== HOTEL ROUTES ==========
 $router->get('hotel/register', 'HotelController@registerView');

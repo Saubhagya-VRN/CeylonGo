@@ -201,6 +201,39 @@ $uploadDir = dirname(__DIR__, 2) . "/uploads/";
             // Redirect to refresh page
             header("Location: /CeylonGo/public/transporter/profile");
             exit();
+        } elseif ($_POST['action'] == 'change_password') {
+            // Handle password change
+            $current_password = $_POST['current_password'];
+            $new_password = $_POST['new_password'];
+            $confirm_password = $_POST['confirm_password'];
+            
+            $userModel = new User($db);
+            $userModel->user_id = trim($user_id);
+            
+            // Validate inputs
+            if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
+                $_SESSION['profile_error'] = "All password fields are required.";
+            } elseif ($new_password !== $confirm_password) {
+                $_SESSION['profile_error'] = "New password and confirm password do not match.";
+            } elseif (strlen($new_password) < 8) {
+                $_SESSION['profile_error'] = "New password must be at least 8 characters long.";
+            } elseif (!$userModel->verifyPassword($user_id, $current_password)) {
+                $_SESSION['profile_error'] = "Current password is incorrect.";
+            } else {
+                // Password validation passed, update the password
+                try {
+                    if ($userModel->updatePassword($new_password)) {
+                        $_SESSION['profile_message'] = "Password changed successfully!";
+                    } else {
+                        $_SESSION['profile_error'] = "Failed to update password. Please try again.";
+                    }
+                } catch (PDOException $e) {
+                    $_SESSION['profile_error'] = "Database error: " . $e->getMessage();
+                }
+            }
+            // Redirect to refresh page
+            header("Location: /CeylonGo/public/transporter/profile");
+            exit();
         }
         
     } catch (Exception $e) {
@@ -314,7 +347,7 @@ try {
     }
     
     .profile-banner {
-      background: linear-gradient(135deg, #2c5530 0%, #4CAF50 100%);
+      background: #3d8b40;
       border-radius: 12px;
       padding: 30px;
       color: white;
@@ -435,7 +468,7 @@ try {
     }
     
     .btn-save {
-      background: linear-gradient(135deg, #2c5530 0%, #4CAF50 100%);
+      background: #3d8b40;
       color: white;
       border: none;
       padding: 12px 30px;
@@ -578,7 +611,7 @@ try {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, #2c5530 0%, #4CAF50 100%);
+      background: #3d8b40;
       color: white;
       padding: 12px 25px;
       border-radius: 8px;
@@ -709,6 +742,66 @@ try {
         grid-template-columns: 1fr;
       }
     }
+    
+    /* Password Input Styles */
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    
+    .password-input-wrapper input {
+      width: 100%;
+      padding-right: 45px;
+    }
+    
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #666;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.3s;
+    }
+    
+    .password-toggle:hover {
+      color: #3d8b40;
+    }
+    
+    .password-hint {
+      display: block;
+      margin-top: 5px;
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .password-strength {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .password-strength-bar {
+      flex: 1;
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+    
+    .password-strength-bar.weak { background: #f44336; }
+    .password-strength-bar.medium { background: #ff9800; }
+    .password-strength-bar.strong { background: #4caf50; }
+    
+    .form-group.half-width {
+      min-width: 350px;
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -806,11 +899,11 @@ try {
           <div class="form-grid">
             <div class="form-group">
               <label>Full Name</label>
-              <input type="text" name="full_name" value="<?= $user['full_name'] ?? '' ?>" required>
+              <input type="text" name="full_name" value="<?= $user['full_name'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group">
               <label>Date of Birth</label>
-              <input type="date" name="dob" value="<?= $user['dob'] ?? '' ?>" required>
+              <input type="date" name="dob" value="<?= $user['dob'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group full-width">
               <label>Home Address</label>
@@ -851,14 +944,15 @@ try {
         <!-- Update License Form -->
         <form method="POST" action="">
           <input type="hidden" name="action" value="update_license">
+          <input type="hidden" name="license_no" value="<?= $license['license_no'] ?? '' ?>">
           <div class="form-grid">
             <div class="form-group">
               <label>License Number</label>
-              <input type="text" name="license_no" value="<?= $license['license_no'] ?? '' ?>" required>
+              <input type="text" value="<?= $license['license_no'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
             </div>
             <div class="form-group">
               <label>Expiry Date</label>
-              <input type="date" name="license_exp_date" value="<?= $license['license_exp_date'] ?? '' ?>" required>
+              <input type="date" name="license_exp_date" value="<?= $license['license_exp_date'] ?? '' ?>" min="<?= date('Y-m-d') ?>" required>
             </div>
           </div>
           <button type="submit" class="btn-save"><i class="fa-solid fa-save"></i> Update License</button>
@@ -927,6 +1021,51 @@ try {
         <?php endif; ?>
       </div>
 
+      <!-- Change Password Card -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <i class="fa-solid fa-key"></i>
+          <h3>Change Password</h3>
+        </div>
+        <form method="POST" action="" id="changePasswordForm">
+          <input type="hidden" name="action" value="change_password">
+          <div class="form-grid">
+            <div class="form-group half-width">
+              <label>Current Password</label>
+              <div class="password-input-wrapper">
+                <input type="password" name="current_password" id="current_password" placeholder="Enter your current password" required>
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('current_password', this)">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group half-width">
+              <label>New Password</label>
+              <div class="password-input-wrapper">
+                <input type="password" name="new_password" id="new_password" placeholder="Enter new password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new_password', this)">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+              <small class="password-hint">Minimum 8 characters</small>
+            </div>
+            <div class="form-group half-width">
+              <label>Confirm New Password</label>
+              <div class="password-input-wrapper">
+                <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm new password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm_password', this)">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div id="password-match-error" style="color: #c62828; font-size: 14px; margin-top: 10px; display: none;">
+            <i class="fa-solid fa-exclamation-circle"></i> Passwords do not match
+          </div>
+          <button type="submit" class="btn-save"><i class="fa-solid fa-lock"></i> Change Password</button>
+        </form>
+      </div>
+
     </div>
   </div>
 
@@ -940,21 +1079,18 @@ try {
       <form id="editVehicleForm" method="POST" enctype="multipart/form-data">
         <div class="modal-body">
           <input type="hidden" id="edit_vehicle_no_old" name="vehicle_no_old">
+          <input type="hidden" id="edit_vehicle_no" name="vehicle_no">
+          <input type="hidden" id="edit_vehicle_type" name="vehicle_type">
           <input type="hidden" name="action" value="edit_vehicle">
           
           <div class="form-group" style="margin-bottom: 15px;">
             <label>Vehicle Number</label>
-            <input type="text" id="edit_vehicle_no" name="vehicle_no" required>
+            <input type="text" id="edit_vehicle_no_display" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
           </div>
           
           <div class="form-group" style="margin-bottom: 15px;">
             <label>Vehicle Type</label>
-            <select id="edit_vehicle_type" name="vehicle_type" required>
-              <option value="1">TUK</option>
-              <option value="2">VAN</option>
-              <option value="3">CAR</option>
-              <option value="4">BUS</option>
-            </select>
+            <input type="text" id="edit_vehicle_type_display" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
           </div>
           
           <div class="form-group" style="margin-bottom: 15px;">
@@ -982,7 +1118,13 @@ try {
     function openEditModal(vehicleNo, vehicleType, psgCapacity, currentImage) {
       document.getElementById('edit_vehicle_no_old').value = vehicleNo;
       document.getElementById('edit_vehicle_no').value = vehicleNo;
+      document.getElementById('edit_vehicle_no_display').value = vehicleNo;
       document.getElementById('edit_vehicle_type').value = vehicleType;
+      
+      // Set display value for vehicle type
+      const vehicleTypeNames = { '1': 'TUK', '2': 'VAN', '3': 'CAR', '4': 'BUS' };
+      document.getElementById('edit_vehicle_type_display').value = vehicleTypeNames[vehicleType] || vehicleType;
+      
       document.getElementById('edit_psg_capacity').value = psgCapacity;
       
       // Show current image if exists
@@ -1338,6 +1480,68 @@ try {
       
       if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
         dropdown.classList.remove('show');
+      }
+    });
+  </script>
+
+  <!-- Password Change Scripts -->
+  <script>
+    // Toggle password visibility
+    function togglePasswordVisibility(inputId, button) {
+      const input = document.getElementById(inputId);
+      const icon = button.querySelector('i');
+      
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+
+    // Password change form validation
+    document.addEventListener('DOMContentLoaded', function() {
+      const changePasswordForm = document.getElementById('changePasswordForm');
+      const newPassword = document.getElementById('new_password');
+      const confirmPassword = document.getElementById('confirm_password');
+      const matchError = document.getElementById('password-match-error');
+
+      // Check password match on input
+      function checkPasswordMatch() {
+        if (confirmPassword.value && newPassword.value !== confirmPassword.value) {
+          matchError.style.display = 'block';
+          confirmPassword.style.borderColor = '#c62828';
+        } else {
+          matchError.style.display = 'none';
+          confirmPassword.style.borderColor = '';
+        }
+      }
+
+      if (newPassword && confirmPassword) {
+        newPassword.addEventListener('input', checkPasswordMatch);
+        confirmPassword.addEventListener('input', checkPasswordMatch);
+      }
+
+      // Form submission validation
+      if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', function(e) {
+          if (newPassword.value !== confirmPassword.value) {
+            e.preventDefault();
+            matchError.style.display = 'block';
+            confirmPassword.focus();
+            return false;
+          }
+          
+          if (newPassword.value.length < 8) {
+            e.preventDefault();
+            alert('Password must be at least 8 characters long.');
+            newPassword.focus();
+            return false;
+          }
+        });
       }
     });
   </script>

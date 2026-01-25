@@ -87,42 +87,42 @@
               <td>2025-03-15</td>
               <td>09:00 AM</td>
               <td>123, Park Road, Dehiwala</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#77889</td>
               <td>2025-08-19</td>
               <td>02:30 PM</td>
               <td>202 Cedar Road, Colombo</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#VN001</td>
               <td>2026-01-15</td>
               <td>08:30 AM</td>
               <td>Colombo Fort</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#VN002</td>
               <td>2026-01-18</td>
               <td>06:00 AM</td>
               <td>Mount Lavinia Hotel</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#VN003</td>
               <td>2026-01-22</td>
               <td>10:00 AM</td>
               <td>Bandaranaike Airport</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
             <tr>
               <td>#VN004</td>
               <td>2026-02-01</td>
               <td>07:00 AM</td>
               <td>Kandy City</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <span class="icon icon-arrow-right"></span></a></td>
+              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
           </tbody>
         </table>

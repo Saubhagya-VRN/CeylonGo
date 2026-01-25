@@ -42,9 +42,9 @@ class User {
 
     // Get user by user_id
     public function getUserById($user_id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE user_id = ?";
+        $query = "SELECT * FROM " . $this->table . " WHERE TRIM(user_id) = TRIM(?)";
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([$user_id]);
+        $stmt->execute([trim($user_id)]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
@@ -129,17 +129,57 @@ class User {
         return $stmt->execute();
     }
 
-    // Update user password
+    // Verify current password
+    public function verifyPassword($user_id, $current_password) {
+        $query = "SELECT psw FROM " . $this->table . " WHERE TRIM(user_id) = TRIM(:user_id)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":user_id", $user_id);
+        $stmt->execute();
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($result && password_verify($current_password, $result['psw'])) {
+            return true;
+        }
+        return false;
+    }
+
+    // Update user password in both transport_users and users tables
     public function updatePassword($new_password) {
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         
-        $query = "UPDATE " . $this->table . " SET psw = :psw WHERE user_id = :user_id";
-        $stmt = $this->conn->prepare($query);
+        // Begin transaction to ensure both tables are updated
+        $this->conn->beginTransaction();
         
-        $stmt->bindParam(":psw", $hashed_password);
-        $stmt->bindParam(":user_id", $this->user_id);
-        
-        return $stmt->execute();
+        try {
+            // Update transport_users table
+            $query1 = "UPDATE " . $this->table . " SET psw = :psw WHERE TRIM(user_id) = TRIM(:user_id)";
+            $stmt1 = $this->conn->prepare($query1);
+            $stmt1->bindParam(":psw", $hashed_password);
+            $stmt1->bindParam(":user_id", $this->user_id);
+            $stmt1->execute();
+            
+            // Get email for this user to update users table
+            $emailQuery = "SELECT email FROM " . $this->table . " WHERE TRIM(user_id) = TRIM(:user_id)";
+            $emailStmt = $this->conn->prepare($emailQuery);
+            $emailStmt->bindParam(":user_id", $this->user_id);
+            $emailStmt->execute();
+            $emailResult = $emailStmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($emailResult) {
+                // Update users table (central auth table)
+                $query2 = "UPDATE users SET password = :password WHERE email = :email AND role = 'transport'";
+                $stmt2 = $this->conn->prepare($query2);
+                $stmt2->bindParam(":password", $hashed_password);
+                $stmt2->bindParam(":email", $emailResult['email']);
+                $stmt2->execute();
+            }
+            
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return false;
+        }
     }
 
     // Update user profile image
