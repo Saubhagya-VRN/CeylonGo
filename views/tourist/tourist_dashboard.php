@@ -564,7 +564,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="box-title">How Many Days Do You Plan To Stay?</div>
                 <div class="input-with-icon">
                   <span class="icon"></span>
-                  <input type="number" name="days[]" min="1" max="10" placeholder="Days" required oninput="if(this.value > 10) this.value = 10; if(this.value < 1) this.value = 1;">
+                  <input type="number" name="days[]" min="1" max="10" placeholder="" required oninput="if(this.value > 10) this.value = 10; if(this.value < 1) this.value = 1;">
                   <span class="nights-text">Nights</span>
                 </div>
               </div>
@@ -586,14 +586,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   <div class="box-title">Do You Want Transport?</div>
                   <div class="btn-group">
                     <input type="hidden" name="transport[]" class="transport-value" value="No">
-                    <a href="/CeylonGo/public/tourist/transport-providers" class="btn-white transport-yes-btn" style="text-decoration: none;">
+                    <button type="button" class="btn-white transport-yes-btn" onclick="openTransportModal(this)">
                       <span class="btn-icon">✓</span>
                       <span>Yes</span>
-                    </a>
-                    <button type="button" class="btn-black transport-no-btn active">
+                    </button>
+                    <button type="button" class="btn-black transport-no-btn active" onclick="selectNoTransport(this)">
                       <span>No</span>
                     </button>
                   </div>
+                  <div class="selected-transport-info" style="margin-top: 10px; color: #2c5530; font-weight: 600; display: none;"></div>
                 </div>
               </div>
             </div>
@@ -604,14 +605,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   <div class="box-title">Add a Tour Guide?</div>
                   <div class="btn-group">
                     <input type="hidden" name="guide[]" class="guide-value" value="No">
-                    <a href="/CeylonGo/public/tourist/tour-guide-request" class="btn-white guide-yes-btn" style="text-decoration: none;">
+                    <button type="button" class="btn-white guide-yes-btn" onclick="openGuideModal(this)">
                       <span class="btn-icon">✓</span>
                       <span>Yes</span>
-                    </a>
-                    <button type="button" class="btn-black guide-no-btn active">
+                    </button>
+                    <button type="button" class="btn-black guide-no-btn active" onclick="selectNoGuide(this)">
                       <span>No</span>
                     </button>
                   </div>
+                  <div class="selected-guide-info" style="margin-top: 10px; color: #2c5530; font-weight: 600; display: none;"></div>
                 </div>
               </div>
             </div>
@@ -1023,113 +1025,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
           }
           
-          // Transport Yes button
-          var transportYesBtn = group.querySelector('.transport-yes-btn');
-          if (transportYesBtn) {
-            transportYesBtn.addEventListener('click', function(e) {
-              e.preventDefault();
-              var transportValue = group.querySelector('.transport-value');
-              if (transportValue) transportValue.value = 'Yes';
-              transportYesBtn.classList.add('active');
-              transportYesBtn.classList.remove('btn-black');
-              transportYesBtn.classList.add('btn-white');
-              var transportNoBtn = group.querySelector('.transport-no-btn');
-              if (transportNoBtn) {
-                transportNoBtn.classList.remove('active');
-                transportNoBtn.classList.remove('btn-white');
-                transportNoBtn.classList.add('btn-black');
-              }
-              saveFormData();
-              // Get the number of people from this specific group
-              var peopleInput = group.querySelector('input[name="people[]"]');
-              if (peopleInput && peopleInput.value) {
-                sessionStorage.setItem('transportNumPeople', peopleInput.value);
-              }
-              window.location.href = '/CeylonGo/public/tourist/transport-providers';
-            });
-          }
-          
-          // Transport No button
-          var transportNoBtn = group.querySelector('.transport-no-btn');
-          if (transportNoBtn) {
-            transportNoBtn.addEventListener('click', function() {
-              var transportValue = group.querySelector('.transport-value');
-              if (transportValue) transportValue.value = 'No';
-              transportNoBtn.classList.add('active');
-              transportNoBtn.classList.remove('btn-white');
-              transportNoBtn.classList.add('btn-black');
-              var transportYesBtn = group.querySelector('.transport-yes-btn');
-              if (transportYesBtn) {
-                transportYesBtn.classList.remove('active');
-                transportYesBtn.classList.remove('btn-black');
-                transportYesBtn.classList.add('btn-white');
-              }
-              saveFormData();
-            });
-          }
-
-          // Guide Yes button
-          var guideYesBtn = group.querySelector('.guide-yes-btn');
-          if (guideYesBtn) {
-            guideYesBtn.addEventListener('click', function(e) {
-              e.preventDefault();
-              var guideValue = group.querySelector('.guide-value');
-              if (guideValue) guideValue.value = 'Yes';
-              guideYesBtn.classList.add('active');
-              guideYesBtn.classList.remove('btn-white');
-              guideYesBtn.classList.add('btn-black');
-              var guideNoBtn = group.querySelector('.guide-no-btn');
-              if (guideNoBtn) {
-                guideNoBtn.classList.remove('active');
-                guideNoBtn.classList.remove('btn-black');
-                guideNoBtn.classList.add('btn-white');
-              }
-              saveFormData();
-              
-              // Get the location from this specific group
-              var destinationInput = group.querySelector('.destination-input');
-              if (destinationInput && destinationInput.value) {
-                sessionStorage.setItem('guideLocation', destinationInput.value);
-              } else {
-                // Fallback to saved trip form data (last destination)
-                var savedFormData = localStorage.getItem('tripFormData');
-                if (savedFormData) {
-                  try {
-                    var formData = JSON.parse(savedFormData);
-                    if (formData.destinations && formData.destinations.length > 0) {
-                      var location = formData.destinations[formData.destinations.length - 1];
-                      if (location) {
-                        sessionStorage.setItem('guideLocation', location);
-                      }
-                    }
-                  } catch(e) {
-                    console.error('Error parsing saved form data:', e);
-                  }
-                }
-              }
-              
-              window.location.href = '/CeylonGo/public/tourist/tour-guide-request';
-            });
-          }
-          
-          // Guide No button
-          var guideNoBtn = group.querySelector('.guide-no-btn');
-          if (guideNoBtn) {
-            guideNoBtn.addEventListener('click', function() {
-              var guideValue = group.querySelector('.guide-value');
-              if (guideValue) guideValue.value = 'No';
-              guideNoBtn.classList.add('active');
-              guideNoBtn.classList.remove('btn-black');
-              guideNoBtn.classList.add('btn-white');
-              var guideYesBtn = group.querySelector('.guide-yes-btn');
-              if (guideYesBtn) {
-                guideYesBtn.classList.remove('active');
-                guideYesBtn.classList.remove('btn-white');
-                guideYesBtn.classList.add('btn-black');
-              }
-              saveFormData();
-            });
-          }
+          // Note: Transport and Guide buttons now use onclick attributes with modal functions
+          // No need to add event listeners here
 
           // Remove destination button
           var removeBtn = group.querySelector('.remove-destination-btn');
@@ -1362,5 +1259,381 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <!-- Navbar include -->
   <?php include 'footer.php'; ?>
 
+  <!-- Transport Request Modal -->
+  <div id="transportModal" class="service-modal">
+    <div class="service-modal-content">
+      <div class="service-modal-header">
+        <h3>Request Transport Service</h3>
+        <button type="button" class="service-modal-close" onclick="closeTransportModal()">&times;</button>
+      </div>
+      <div class="service-modal-body">
+        <form id="transportForm" class="modal-form">
+          <!-- Customer Name (Full Width) -->
+          <div class="form-group">
+            <label for="transportCustomerName">Customer Name</label>
+            <input type="text" id="transportCustomerName" name="customerName" placeholder="Enter your full name" value="<?php echo isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : ''; ?>" required>
+          </div>
+
+          <!-- Date and Pickup Location -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transportDate">Date</label>
+              <input type="date" id="transportDate" name="date" required>
+            </div>
+            <div class="form-group">
+              <label for="transportPickup">Pickup Location</label>
+              <input type="text" id="transportPickup" name="pickupLocation" placeholder="e.g., Bandaranaike Airport" required>
+            </div>
+          </div>
+
+          <!-- No. of People and Vehicle Type -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transportNumPeople">No. of People</label>
+              <input type="number" id="transportNumPeople" name="numPeople" min="1" placeholder="Number of passengers" required>
+            </div>
+            <div class="form-group">
+              <label for="transportVehicleType">Vehicle Type</label>
+              <select id="transportVehicleType" name="vehicleType" required>
+                <option value="">Select a vehicle</option>
+                <option value="Tuk">Tuk (3 People)</option>
+                <option value="Car">Car (4 People)</option>
+                <option value="SUV">SUV (4 People)</option>
+                <option value="Minivan">Minivan (5 People)</option>
+                <option value="Bus">Bus (20 People)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Pickup Time and Dropoff Location -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transportTime">Pickup Time</label>
+              <input type="time" id="transportTime" name="pickupTime" required>
+            </div>
+            <div class="form-group">
+              <label for="transportDropoff">Dropoff Location</label>
+              <input type="text" id="transportDropoff" name="dropoffLocation" placeholder="e.g., Galle Fort" required>
+            </div>
+          </div>
+
+          <!-- Notes and Fare Estimation -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transportNotes">Notes (optional)</label>
+              <input type="text" id="transportNotes" name="notes" placeholder="Any extra details">
+            </div>
+            <div class="form-group">
+              <label for="estimatedFare">Estimated Fare</label>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="estimatedFare" name="estimatedFare" placeholder="LKR 0.00" readonly style="flex: 1;">
+                <button type="button" class="btn-calculate-fare" onclick="calculateFare()" title="Calculate fare based on distance and vehicle type">Calculate</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="fareBreakdown" style="display: none; padding: 12px; background: #f0f7f0; border-radius: 6px; margin-bottom: 16px; font-size: 13px; color: #2d4a2d;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Distance:</span>
+              <span id="fareDistance">0 km</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Base Rate:</span>
+              <span id="fareBaseRate">LKR 0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+              <span>Total Fare:</span>
+              <span id="fareTotalAmount">LKR 0.00</span>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-modal-primary" onclick="confirmTransport()">Confirm Selection</button>
+            <button type="button" class="btn-modal-outline" onclick="closeTransportModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tour Guide Request Modal -->
+  <div id="guideModal" class="service-modal">
+    <div class="service-modal-content">
+      <div class="service-modal-header">
+        <h3>Request Tour Guide</h3>
+        <button type="button" class="service-modal-close" onclick="closeGuideModal()">&times;</button>
+      </div>
+      <div class="service-modal-body">
+        <p class="modal-subtitle">Select your preferred tour guide type</p>
+        <div class="guide-options">
+          <div class="guide-option" data-guide="Local Guide">
+            <div class="option-icon">👤</div>
+            <h4>Local Guide</h4>
+            <p>Expert knowledge of local culture and history</p>
+          </div>
+          <div class="guide-option" data-guide="Adventure Guide">
+            <div class="option-icon">🏔️</div>
+            <h4>Adventure Guide</h4>
+            <p>Specialized in outdoor activities and trekking</p>
+          </div>
+          <div class="guide-option" data-guide="Cultural Guide">
+            <div class="option-icon">🏛️</div>
+            <h4>Cultural Guide</h4>
+            <p>Deep insights into heritage and traditions</p>
+          </div>
+          <div class="guide-option" data-guide="Nature Guide">
+            <div class="option-icon">🌿</div>
+            <h4>Nature Guide</h4>
+            <p>Wildlife and nature conservation expert</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Transport Modal Functions
+    let currentTransportGroup = null;
+
+    function openTransportModal(button) {
+      currentTransportGroup = button.closest('.trip-group');
+      
+      // Pre-fill number of people from the group
+      const peopleInput = currentTransportGroup.querySelector('input[name="people[]"]');
+      if (peopleInput && peopleInput.value) {
+        document.getElementById('transportNumPeople').value = peopleInput.value;
+      }
+      
+      // Set minimum date to today
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('transportDate').min = today;
+      
+      document.getElementById('transportModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeTransportModal() {
+      document.getElementById('transportModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      document.getElementById('transportForm').reset();
+      currentTransportGroup = null;
+    }
+
+    async function calculateFare() {
+      const pickup = document.getElementById('transportPickup').value.trim();
+      const dropoff = document.getElementById('transportDropoff').value.trim();
+      const vehicleType = document.getElementById('transportVehicleType').value;
+
+      if (!pickup || !dropoff) {
+        alert('Please enter both pickup and dropoff locations');
+        return;
+      }
+
+      if (!vehicleType) {
+        alert('Please select a vehicle type');
+        return;
+      }
+
+      // Show loading state
+      const fareInput = document.getElementById('estimatedFare');
+      fareInput.value = 'Calculating...';
+
+      try {
+        // Get coordinates for both locations using Nominatim (OpenStreetMap)
+        const pickupCoords = await geocodeLocation(pickup);
+        const dropoffCoords = await geocodeLocation(dropoff);
+
+        if (!pickupCoords || !dropoffCoords) {
+          fareInput.value = 'Location not found';
+          return;
+        }
+
+        // Calculate distance using Haversine formula
+        const distance = calculateDistance(
+          pickupCoords.lat, pickupCoords.lon,
+          dropoffCoords.lat, dropoffCoords.lon
+        );
+
+        // Define fare rates per km for different vehicle types
+        const fareRates = {
+          'Car': 120,
+          'Van': 150,
+          'Bus': 200,
+          'Three-Wheeler': 80,
+          'Bike': 60
+        };
+
+        const baseRate = fareRates[vehicleType] || 100;
+        const totalFare = (distance * baseRate).toFixed(2);
+
+        // Display fare
+        fareInput.value = 'LKR ' + totalFare;
+
+        // Show breakdown
+        document.getElementById('fareDistance').textContent = distance.toFixed(2) + ' km';
+        document.getElementById('fareBaseRate').textContent = 'LKR ' + baseRate + '/km';
+        document.getElementById('fareTotalAmount').textContent = 'LKR ' + totalFare;
+        document.getElementById('fareBreakdown').style.display = 'block';
+
+      } catch (error) {
+        console.error('Fare calculation error:', error);
+        fareInput.value = 'Error calculating fare';
+      }
+    }
+
+    async function geocodeLocation(location) {
+      try {
+        // Add 'Sri Lanka' to improve geocoding accuracy
+        const query = encodeURIComponent(location + ', Sri Lanka');
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          return {
+            lat: parseFloat(data[0].lat),
+            lon: parseFloat(data[0].lon)
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        return null;
+      }
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      // Haversine formula to calculate distance between two points
+      const R = 6371; // Earth's radius in kilometers
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+      
+      return distance;
+    }
+
+    function toRad(degrees) {
+      return degrees * (Math.PI / 180);
+    }
+
+    function confirmTransport() {
+      const form = document.getElementById('transportForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      
+      if (!currentTransportGroup) return;
+      
+      const vehicleType = document.getElementById('transportVehicleType').value;
+      const transportValue = currentTransportGroup.querySelector('.transport-value');
+      const yesBtn = currentTransportGroup.querySelector('.transport-yes-btn');
+      const noBtn = currentTransportGroup.querySelector('.transport-no-btn');
+      const infoDiv = currentTransportGroup.querySelector('.selected-transport-info');
+      
+      transportValue.value = vehicleType;
+      yesBtn.classList.add('active');
+      noBtn.classList.remove('active');
+      infoDiv.textContent = '✓ ' + vehicleType + ' booked';
+      infoDiv.style.display = 'block';
+      
+      closeTransportModal();
+    }
+
+    function selectNoTransport(button) {
+      const group = button.closest('.trip-group');
+      const transportValue = group.querySelector('.transport-value');
+      const yesBtn = group.querySelector('.transport-yes-btn');
+      const noBtn = group.querySelector('.transport-no-btn');
+      const infoDiv = group.querySelector('.selected-transport-info');
+      
+      transportValue.value = 'No';
+      yesBtn.classList.remove('active');
+      noBtn.classList.add('active');
+      infoDiv.style.display = 'none';
+      infoDiv.textContent = '';
+    }
+
+    // Guide Modal Functions
+    let currentGuideGroup = null;
+
+    function openGuideModal(button) {
+      currentGuideGroup = button.closest('.trip-group');
+      document.getElementById('guideModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeGuideModal() {
+      document.getElementById('guideModal').style.display = 'none';
+      document.body.style.overflow = 'auto';
+      currentGuideGroup = null;
+    }
+
+    function selectNoGuide(button) {
+      const group = button.closest('.trip-group');
+      const guideValue = group.querySelector('.guide-value');
+      const yesBtn = group.querySelector('.guide-yes-btn');
+      const noBtn = group.querySelector('.guide-no-btn');
+      const infoDiv = group.querySelector('.selected-guide-info');
+      
+      guideValue.value = 'No';
+      yesBtn.classList.remove('active');
+      noBtn.classList.add('active');
+      infoDiv.style.display = 'none';
+      infoDiv.textContent = '';
+    }
+
+    // Guide option selection
+    document.addEventListener('DOMContentLoaded', function() {
+      const guideOptions = document.querySelectorAll('.guide-option');
+      guideOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          if (!currentGuideGroup) return;
+          
+          const guide = this.getAttribute('data-guide');
+          const guideValue = currentGuideGroup.querySelector('.guide-value');
+          const yesBtn = currentGuideGroup.querySelector('.guide-yes-btn');
+          const noBtn = currentGuideGroup.querySelector('.guide-no-btn');
+          const infoDiv = currentGuideGroup.querySelector('.selected-guide-info');
+          
+          guideValue.value = guide;
+          yesBtn.classList.add('active');
+          noBtn.classList.remove('active');
+          infoDiv.textContent = '✓ ' + guide + ' requested';
+          infoDiv.style.display = 'block';
+          
+          closeGuideModal();
+        });
+      });
+
+      // Close modals when clicking outside
+      window.onclick = function(event) {
+        const transportModal = document.getElementById('transportModal');
+        const guideModal = document.getElementById('guideModal');
+        
+        if (event.target == transportModal) {
+          closeTransportModal();
+        }
+        if (event.target == guideModal) {
+          closeGuideModal();
+        }
+      }
+
+      // Close modals with Escape key
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+          closeTransportModal();
+          closeGuideModal();
+        }
+      });
+    });
+  </script>
+
 </body>
 </html>
+
