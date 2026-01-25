@@ -1,3 +1,60 @@
+<?php
+    // Session already started in public/index.php
+    require_once(__DIR__ . '/../../config/config.php');
+    require_once(__DIR__ . '/../../core/Database.php');
+
+    // Admin-only access
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+        header("Location: /CeylonGo/public/login");
+        exit();
+    }
+
+    $conn = Database::getMysqliConnection();
+
+    /*
+    We UNION provider data based on role
+    Each SELECT returns: provider_name, email, role
+    */
+    $sql = "
+        SELECT 
+            CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
+            u.email,
+            u.role
+        FROM users u
+        JOIN guide_users g ON u.ref_id = g.id
+        WHERE u.role = 'guide'
+
+        UNION ALL
+
+        SELECT 
+            t.full_name AS provider_name,
+            u.email,
+            u.role
+        FROM users u
+        JOIN transport_users t ON u.ref_id = t.user_id
+        WHERE u.role = 'transport'
+
+        UNION ALL
+
+        SELECT 
+            h.hotel_name AS provider_name,
+            u.email,
+            u.role
+        FROM users u
+        JOIN hotel_users h ON u.ref_id = h.id
+        WHERE u.role = 'hotel'
+    ";
+
+    $result = $conn->query($sql);
+    $providers = [];
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $providers[] = $row;
+        }
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -58,7 +115,7 @@
                 <li class="active"><a href="/CeylonGo/public/admin/service"><i class="fa-solid fa-van-shuttle"></i> Service Providers</a></li>
                 <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                 <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
-                <li><a href="/CeylonGo/public/admin/promotions"><i class="fa-solid fa-bullhorn"></i> Promotions</a></li>
+                <li><a href="/CeylonGo/public/admin/promotions"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
                 <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
                 <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
                 <li><a href="/CeylonGo/public/admin/settings"><i class="fa-solid fa-gear"></i> Settings</a></li>
@@ -109,44 +166,33 @@
 
                     <div class="providers-section">
                         <table class="provider-table">
-                        <thead>
-                            <tr>
-                            <th>Provider Name</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                            <td>Provider A</td>
-                            <td><span class="status pending">Pending Validation</span></td>
-                            <td class="actions">
-                                <button class="icon-btn">✔️</button>
-                                <button class="icon-btn danger">❌</button>
-                                <button class="icon-btn">✏️</button>
-                            </td>
-                            </tr>
-                            <tr>
-                            <td>Provider B</td>
-                            <td><span class="status approved">Approved</span></td>
-                            <td class="actions">
-                                <button class="icon-btn danger>❌</button>
-                                <button class="icon-btn">✏️</button>
-                            </td>
-                            </tr>
-                            <tr>
-                            <td>Provider C</td>
-                            <td><span class="status rejected">Rejected</span></td>
-                            <td class="actions">
-                                <button class="icon-btn">✏️</button>
-                            </td>
-                            </tr>
-                        </tbody>
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th>Provider Name</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($providers)): ?>
+                                    <?php foreach ($providers as $provider): ?>
+                                        <tr>
+                                            <td><?= ucfirst(htmlspecialchars($provider['role'])) ?> Provider</td>
+                                            <td><?= htmlspecialchars($provider['provider_name']) ?></td>
+                                            <td><?= htmlspecialchars($provider['email']) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="3" style="text-align:center;">No service providers found</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
                         </table>
                     </div>
                     
                     <div class="footer-buttons">
-                        <button class="footer-btn black" id="exportBtn">Export Users</button>
+                        <button class="footer-btn black" id="exportBtn">Export Details</button>
                     </div>
                 </div>
             </div>
