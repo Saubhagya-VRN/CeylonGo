@@ -102,9 +102,9 @@ $currentPackage = isset($packages[$package]) ? $packages[$package] : $packages['
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= $currentPackage['title'] ?> - Ceylon Go</title>
-  <link rel="stylesheet" href="../../public/css/tourist/package_details.css">
-  <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
-  <link rel="stylesheet" href="../../public/css/tourist/footer.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/package_details.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/navbar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/footer.css">
 </head>
 <body>
   <!-- Navbar -->

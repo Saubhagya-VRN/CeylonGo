@@ -1506,7 +1506,7 @@ nav ul li {
    ============================== */
 .customize-layout {
   display: flex;
-  gap: 30px;
+  gap: 0;
   align-items: flex-start;
   max-width: 1200px;
   margin: 0 auto;
@@ -1518,6 +1518,7 @@ nav ul li {
   min-width: 0;
   max-width: 700px;
   order: 1;
+  margin-right: 30px;
 }
 
 .trip-checklist {
