@@ -71,6 +71,10 @@ $router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
 $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
 $router->get('tourist/contact', 'TouristController@contact');
 
+// ========== API ROUTES ==========
+$router->get('api/geocode', 'GeocodeController@geocode');
+$router->get('api/calculate-fare', 'GeocodeController@calculateFare');
+
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
 $router->post('guide/register', 'GuideController@register');

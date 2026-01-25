@@ -48,8 +48,8 @@ if ($is_logged_in) {
                 GROUP_CONCAT(td.destination SEPARATOR ', ') as destinations,
                 SUM(td.days) as total_days,
                 MAX(td.people_count) as people_count
-            FROM trip_bookings tb
-            LEFT JOIN trip_destinations td ON tb.id = td.booking_id
+            FROM tourist_trip_bookings tb
+            LEFT JOIN tourist_trip_destinations td ON tb.id = td.booking_id
             WHERE tb.user_id = ?
             GROUP BY tb.id
             ORDER BY tb.created_at DESC
@@ -83,6 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Validate and sanitize input
         $people = isset($_POST['people']) ? array_map('intval', $_POST['people']) : array();
+        $start_dates = isset($_POST['start_date']) ? array_map('htmlspecialchars', $_POST['start_date']) : array();
         $destinations = isset($_POST['destination']) ? array_map('htmlspecialchars', $_POST['destination']) : array();
         $days = isset($_POST['days']) ? array_map('intval', $_POST['days']) : array();
         $hotels = isset($_POST['hotel']) ? array_map('htmlspecialchars', $_POST['hotel']) : array();
@@ -100,22 +101,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 require_once dirname(__DIR__, 2) . '/config/database.php';
                 
                 // Insert trip booking
-                $stmt = $conn->prepare("INSERT INTO trip_bookings (user_id, guide_required, created_at, status) VALUES (?, ?, NOW(), 'pending')");
+                $stmt = $conn->prepare("INSERT INTO tourist_trip_bookings (user_id, guide_required, created_at, status) VALUES (?, ?, NOW(), 'pending')");
                 $stmt->bind_param("is", $_SESSION['user_id'], $guide);
                 $stmt->execute();
                 $booking_id = $conn->insert_id;
                 
-                // Insert each destination
-                $stmt = $conn->prepare("INSERT INTO trip_destinations (booking_id, destination, people_count, days, hotel, transport) VALUES (?, ?, ?, ?, ?, ?)");
+                // Insert each destination with start_date
+                $stmt = $conn->prepare("INSERT INTO tourist_trip_destinations (booking_id, destination, start_date, people_count, days, hotel, transport) VALUES (?, ?, ?, ?, ?, ?, ?)");
                 
                 for ($i = 0; $i < count($destinations); $i++) {
                     $dest = $destinations[$i];
+                    $start_dt = isset($start_dates[$i]) && !empty($start_dates[$i]) ? $start_dates[$i] : NULL;
                     $ppl = isset($people[$i]) ? $people[$i] : 0;
                     $dy = isset($days[$i]) ? $days[$i] : 0;
                     $htl = isset($hotels[$i]) ? $hotels[$i] : '';
                     $trn = isset($transports[$i]) ? $transports[$i] : '';
                     
-                    $stmt->bind_param("isiiss", $booking_id, $dest, $ppl, $dy, $htl, $trn);
+                    $stmt->bind_param("issiiss", $booking_id, $dest, $start_dt, $ppl, $dy, $htl, $trn);
                     $stmt->execute();
                 }
                 
@@ -152,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   <!-- ✅ UPCOMING TRIP NOTIFICATION -->
   <?php if ($is_logged_in && $upcoming_trip): ?>
-  <div class="upcoming-trip-notification">
+  <div class="upcoming-trip-notification" id="tripNotification">
     <div class="notification-content">
       <span class="notification-icon">✈️</span>
       <div class="notification-text">
@@ -160,6 +162,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <p><?= htmlspecialchars($upcoming_trip['destinations']) ?> • Trip in <?= $days_until_trip ?> days</p>
       </div>
       <a href="/CeylonGo/public/tourist/trip-summary?booking_id=<?= $upcoming_trip['booking_id'] ?>" class="notification-btn">View Details</a>
+      <button class="notification-close" onclick="closeNotification()" aria-label="Close notification">&times;</button>
     </div>
   </div>
   <?php endif; ?>
@@ -199,6 +202,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   </section>
 
   <script>
+    // Close notification function
+    function closeNotification() {
+      const notification = document.getElementById('tripNotification');
+      if (notification) {
+        notification.style.animation = 'slideOut 0.3s ease forwards';
+        setTimeout(() => {
+          notification.style.display = 'none';
+        }, 300);
+      }
+    }
+
     // Carousel functionality
     let currentSlide = 0;
     const slides = document.querySelectorAll('.carousel-slide');
@@ -327,50 +341,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <span class="meta-item">4 Days</span>
             <span class="meta-item">Hill Country</span>
             <span class="meta-item">Nature</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Duration-based Packages -->
-      <a href="/CeylonGo/public/tourist/package-details/4" class="package-card" data-category="duration" data-tags="day-trip adventure">
-        <div class="package-image" style="background-image: url('../../public/images/fort.jpg');">
-        </div>
-        <div class="package-content">
-          <h3>Colombo City Tour</h3>
-          <p class="package-description">Full day tour with lunch included</p>
-          <div class="package-meta">
-            <span class="meta-item">1 Day</span>
-            <span class="meta-item">Day Trip</span>
-            <span class="meta-item">City Tour</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="/CeylonGo/public/tourist/package-details/5" class="package-card" data-category="duration" data-tags="short beach family">
-        <div class="package-image" style="background-image: url('../../public/images/sunset.jpg');">
-        </div>
-        <div class="package-content">
-          <h3>Weekend Beach Trip</h3>
-          <p class="package-description">Bentota & Hikkaduwa</p>
-          <div class="package-meta">
-            <span class="meta-item">2-3 Days</span>
-            <span class="meta-item">Weekend</span>
-            <span class="meta-item">Family</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Experience-based Packages -->
-      <a href="/CeylonGo/public/tourist/package-details/6" class="package-card" data-category="experience" data-tags="cultural heritage solo">
-        <div class="package-image" style="background-image: url('../../public/images/perehara.jpeg');">
-        </div>
-        <div class="package-content">
-          <h3>Heritage & Culture Tour</h3>
-          <p class="package-description">Temples, historic sites & villages</p>
-          <div class="package-meta">
-            <span class="meta-item">5 Days</span>
-            <span class="meta-item">Cultural</span>
-            <span class="meta-item">Heritage</span>
           </div>
         </div>
       </a>
@@ -540,7 +510,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <label for="start_date">Start Date of the Trip</label>
                     <input type="date" name="start_date[]" class="trip-start-date" required>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group" style="position: relative;">
                     <label for="destination">Where are You Going?</label>
                     <input 
                       type="text" 
@@ -550,6 +520,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                       required
                       autocomplete="off"
                     >
+                    <div class="destination-autocomplete"></div>
                   </div>
                 </div>
 
@@ -930,6 +901,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           // Attach event listeners to new group
           attachGroupEventListeners(clone);
           
+          // Initialize autocomplete for new destination input
+          initDestinationAutocomplete();
+          
           // Update remove buttons visibility after adding
           updateRemoveButtons();
           
@@ -1129,6 +1103,264 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
           init();
         }
+
+        // Function to update booking steps checklist
+        function updateBookingSteps() {
+          const firstTripGroup = document.querySelector('.trip-group[data-index="0"]');
+          if (!firstTripGroup) return;
+
+          // Check people count
+          const peopleInput = firstTripGroup.querySelector('input[name="people[]"]');
+          const stepPeople = document.getElementById('step-people');
+          if (peopleInput && parseInt(peopleInput.value) > 0) {
+            stepPeople.checked = true;
+            stepPeople.parentElement.classList.add('completed');
+          }
+
+          // Check start date
+          const dateInput = firstTripGroup.querySelector('input[name="start_date[]"]');
+          const stepDate = document.getElementById('step-date');
+          if (dateInput && dateInput.value) {
+            stepDate.checked = true;
+            stepDate.parentElement.classList.add('completed');
+          } else {
+            stepDate.checked = false;
+            stepDate.parentElement.classList.remove('completed');
+          }
+
+          // Check destination
+          const destinationInput = firstTripGroup.querySelector('input[name="destination[]"]');
+          const stepDestination = document.getElementById('step-destination');
+          if (destinationInput && destinationInput.value.trim()) {
+            stepDestination.checked = true;
+            stepDestination.parentElement.classList.add('completed');
+          } else {
+            stepDestination.checked = false;
+            stepDestination.parentElement.classList.remove('completed');
+          }
+
+          // Check days
+          const daysInput = firstTripGroup.querySelector('input[name="days[]"]');
+          const stepDays = document.getElementById('step-days');
+          if (daysInput && parseInt(daysInput.value) > 0) {
+            stepDays.checked = true;
+            stepDays.parentElement.classList.add('completed');
+          } else {
+            stepDays.checked = false;
+            stepDays.parentElement.classList.remove('completed');
+          }
+
+          // Check hotel
+          const hotelInput = firstTripGroup.querySelector('input[name="hotel[]"]');
+          const stepHotel = document.getElementById('step-hotel');
+          if (hotelInput && hotelInput.value) {
+            stepHotel.checked = true;
+            stepHotel.parentElement.classList.add('completed');
+          } else {
+            stepHotel.checked = false;
+            stepHotel.parentElement.classList.remove('completed');
+          }
+
+          // Check transport
+          const transportInput = firstTripGroup.querySelector('input[name="transport[]"]');
+          const stepTransport = document.getElementById('step-transport');
+          if (transportInput && transportInput.value && transportInput.value !== 'No') {
+            stepTransport.checked = true;
+            stepTransport.parentElement.classList.add('completed');
+          } else {
+            stepTransport.checked = false;
+            stepTransport.parentElement.classList.remove('completed');
+          }
+
+          // Check guide
+          const guideInput = firstTripGroup.querySelector('input[name="guide[]"]');
+          const stepGuide = document.getElementById('step-guide');
+          if (guideInput && guideInput.value) {
+            stepGuide.checked = true;
+            stepGuide.parentElement.classList.add('completed');
+          } else {
+            stepGuide.checked = false;
+            stepGuide.parentElement.classList.remove('completed');
+          }
+        }
+
+        // Add event listeners to form inputs
+        function attachBookingStepListeners() {
+          const firstTripGroup = document.querySelector('.trip-group[data-index="0"]');
+          if (!firstTripGroup) return;
+
+          // People input
+          const peopleInput = firstTripGroup.querySelector('input[name="people[]"]');
+          if (peopleInput) {
+            peopleInput.addEventListener('input', updateBookingSteps);
+          }
+
+          // Date input
+          const dateInput = firstTripGroup.querySelector('input[name="start_date[]"]');
+          if (dateInput) {
+            dateInput.addEventListener('change', updateBookingSteps);
+          }
+
+          // Destination input
+          const destinationInput = firstTripGroup.querySelector('input[name="destination[]"]');
+          if (destinationInput) {
+            destinationInput.addEventListener('input', updateBookingSteps);
+          }
+
+          // Days input
+          const daysInput = firstTripGroup.querySelector('input[name="days[]"]');
+          if (daysInput) {
+            daysInput.addEventListener('input', updateBookingSteps);
+          }
+
+          // Hotel input (hidden field)
+          const hotelInput = firstTripGroup.querySelector('input[name="hotel[]"]');
+          if (hotelInput) {
+            const observer = new MutationObserver(updateBookingSteps);
+            observer.observe(hotelInput, { attributes: true, attributeFilter: ['value'] });
+          }
+
+          // Transport input (hidden field)
+          const transportInput = firstTripGroup.querySelector('input[name="transport[]"]');
+          if (transportInput) {
+            const observer = new MutationObserver(updateBookingSteps);
+            observer.observe(transportInput, { attributes: true, attributeFilter: ['value'] });
+          }
+
+          // Guide input (hidden field)
+          const guideInput = firstTripGroup.querySelector('input[name="guide[]"]');
+          if (guideInput) {
+            const observer = new MutationObserver(updateBookingSteps);
+            observer.observe(guideInput, { attributes: true, attributeFilter: ['value'] });
+          }
+
+          // Initial check
+          updateBookingSteps();
+        }
+
+        // Call this after DOM is loaded
+        setTimeout(attachBookingStepListeners, 500);
+
+        // Destination Autocomplete Functionality
+        function initDestinationAutocomplete() {
+          const destinationInputs = document.querySelectorAll('.destination-input');
+          
+          destinationInputs.forEach(input => {
+            const autocompleteDiv = input.nextElementSibling;
+            if (!autocompleteDiv || !autocompleteDiv.classList.contains('destination-autocomplete')) return;
+            
+            let selectedIndex = -1;
+            let debounceTimer;
+
+            input.addEventListener('input', function() {
+              const value = this.value.trim();
+              autocompleteDiv.innerHTML = '';
+              selectedIndex = -1;
+
+              // Clear previous timer
+              clearTimeout(debounceTimer);
+
+              if (value.length < 2) {
+                autocompleteDiv.classList.remove('active');
+                return;
+              }
+
+              // Debounce API calls
+              debounceTimer = setTimeout(async () => {
+                try {
+                  // Fetch suggestions from API
+                  const response = await fetch(`/CeylonGo/public/api/geocode?location=${encodeURIComponent(value)}`);
+                  const data = await response.json();
+
+                  // Also get local suggestions from cities list
+                  const cities = [
+                    'Colombo', 'Kandy', 'Galle', 'Galle Fort', 'Negombo', 'Negombo Beach',
+                    'Jaffna', 'Trincomalee', 'Batticaloa', 'Matara', 'Anuradhapura',
+                    'Polonnaruwa', 'Badulla', 'Ratnapura', 'Nuwara Eliya', 'Ella',
+                    'Sigiriya', 'Dambulla', 'Bentota', 'Hikkaduwa', 'Mirissa',
+                    'Arugam Bay', 'Unawatuna', 'Mount Lavinia', 'Kalutara', 'Kurunegala',
+                    'Hambantota', 'Katunayake', 'Bandaranaike Airport', 'Colombo Airport',
+                    'Yala National Park', 'Udawalawe', 'Wilpattu National Park',
+                    'Horton Plains', 'Adams Peak', 'Sri Pada', 'Pidurangala Rock',
+                    'Temple of the Tooth', 'Peradeniya Botanical Garden'
+                  ];
+
+                  const matches = cities.filter(city => 
+                    city.toLowerCase().includes(value.toLowerCase())
+                  ).slice(0, 8);
+
+                  if (matches.length > 0) {
+                    matches.forEach((city, index) => {
+                      const item = document.createElement('div');
+                      item.className = 'destination-suggestion-item';
+                      item.innerHTML = `
+                        <span class="name">${city}</span>
+                      `;
+                      item.addEventListener('click', function() {
+                        input.value = city;
+                        autocompleteDiv.classList.remove('active');
+                        autocompleteDiv.innerHTML = '';
+                        // Trigger input event to update booking steps
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                      });
+                      autocompleteDiv.appendChild(item);
+                    });
+                    autocompleteDiv.classList.add('active');
+                  } else {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'destination-no-suggestions';
+                    noResults.textContent = 'No locations found. Try: Colombo, Kandy, Galle...';
+                    autocompleteDiv.appendChild(noResults);
+                    autocompleteDiv.classList.add('active');
+                  }
+                } catch (error) {
+                  console.error('Autocomplete error:', error);
+                }
+              }, 300); // 300ms debounce
+            });
+
+            // Keyboard navigation
+            input.addEventListener('keydown', function(e) {
+              const items = autocompleteDiv.querySelectorAll('.destination-suggestion-item');
+              
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection(items);
+              } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                items[selectedIndex].click();
+              } else if (e.key === 'Escape') {
+                autocompleteDiv.classList.remove('active');
+              }
+            });
+
+            function updateSelection(items) {
+              items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                  item.classList.add('selected');
+                  item.scrollIntoView({ block: 'nearest' });
+                } else {
+                  item.classList.remove('selected');
+                }
+              });
+            }
+
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+              if (!input.contains(e.target) && !autocompleteDiv.contains(e.target)) {
+                autocompleteDiv.classList.remove('active');
+              }
+            });
+          });
+        }
+
+        // Initialize destination autocomplete on page load and after adding new trip groups
+        setTimeout(initDestinationAutocomplete, 500);
 
         // Set minimum date for all trip start date inputs to today
         function setMinDateForTripStartDates() {
@@ -1511,59 +1743,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       fareInput.value = 'Calculating...';
 
       try {
-        // Get coordinates for both locations using Nominatim (OpenStreetMap)
-        const pickupCoords = await geocodeLocation(pickup);
-        const dropoffCoords = await geocodeLocation(dropoff);
+        // Call our backend API to calculate fare
+        const params = new URLSearchParams({
+          pickup: pickup,
+          dropoff: dropoff,
+          vehicleType: vehicleType
+        });
+        
+        const response = await fetch(`/CeylonGo/public/api/calculate-fare?${params}`);
+        const data = await response.json();
 
-        if (!pickupCoords || !dropoffCoords) {
+        if (!response.ok || !data.success) {
           fareInput.value = 'Location not found';
+          alert(data.error || 'Failed to calculate fare. Please check your locations.');
           return;
         }
 
-        // Calculate distance using Haversine formula
-        const distance = calculateDistance(
-          pickupCoords.lat, pickupCoords.lon,
-          dropoffCoords.lat, dropoffCoords.lon
-        );
-
-        // Define fare rates per km for different vehicle types
-        const fareRates = {
-          'Car': 120,
-          'Van': 150,
-          'Bus': 200,
-          'Three-Wheeler': 80,
-          'Bike': 60
-        };
-
-        const baseRate = fareRates[vehicleType] || 100;
-        const totalFare = (distance * baseRate).toFixed(2);
-
         // Display fare
-        fareInput.value = 'LKR ' + totalFare;
+        fareInput.value = 'LKR ' + data.totalFare;
 
         // Show breakdown
-        document.getElementById('fareDistance').textContent = distance.toFixed(2) + ' km';
-        document.getElementById('fareBaseRate').textContent = 'LKR ' + baseRate + '/km';
-        document.getElementById('fareTotalAmount').textContent = 'LKR ' + totalFare;
+        document.getElementById('fareDistance').textContent = data.distance + ' km';
+        document.getElementById('fareBaseRate').textContent = 'LKR ' + data.baseRate + '/km';
+        document.getElementById('fareTotalAmount').textContent = 'LKR ' + data.totalFare;
         document.getElementById('fareBreakdown').style.display = 'block';
+
+        console.log('Fare calculated:', data);
 
       } catch (error) {
         console.error('Fare calculation error:', error);
         fareInput.value = 'Error calculating fare';
+        alert('An error occurred. Please try again.');
       }
     }
 
     async function geocodeLocation(location) {
       try {
-        // Add 'Sri Lanka' to improve geocoding accuracy
-        const query = encodeURIComponent(location + ', Sri Lanka');
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+        const params = new URLSearchParams({ location: location });
+        const response = await fetch(`/CeylonGo/public/api/geocode?${params}`);
         const data = await response.json();
         
-        if (data && data.length > 0) {
+        if (data && data.success) {
           return {
-            lat: parseFloat(data[0].lat),
-            lon: parseFloat(data[0].lon)
+            lat: data.lat,
+            lon: data.lon,
+            name: data.name
           };
         }
         return null;
@@ -1615,6 +1839,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       infoDiv.style.display = 'block';
       
       closeTransportModal();
+      
+      // Update booking steps
+      if (typeof updateBookingSteps === 'function') {
+        updateBookingSteps();
+      }
     }
 
     function selectNoTransport(button) {
@@ -1629,6 +1858,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       noBtn.classList.add('active');
       infoDiv.style.display = 'none';
       infoDiv.textContent = '';
+      
+      // Update booking steps
+      if (typeof updateBookingSteps === 'function') {
+        updateBookingSteps();
+      }
     }
 
     // Guide Modal Functions
@@ -1664,6 +1898,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       noBtn.classList.add('active');
       infoDiv.style.display = 'none';
       infoDiv.textContent = '';
+      
+      // Update booking steps
+      if (typeof updateBookingSteps === 'function') {
+        updateBookingSteps();
+      }
     }
 
     // Guide request form submission
@@ -1692,6 +1931,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           noBtn.classList.remove('active');
           infoDiv.textContent = `✓ Tour guide requested for ${location} on ${date}`;
           infoDiv.style.display = 'block';
+          
+          // Update booking steps
+          if (typeof updateBookingSteps === 'function') {
+            updateBookingSteps();
+          }
           
           closeGuideModal();
         });
