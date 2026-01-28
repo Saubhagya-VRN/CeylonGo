@@ -10,49 +10,6 @@
     }
 
     $conn = Database::getMysqliConnection();
-
-    /*
-    We UNION provider data based on role
-    Each SELECT returns: provider_name, email, role
-    */
-    $sql = "
-        SELECT 
-            CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
-            u.email,
-            u.role
-        FROM users u
-        JOIN guide_users g ON u.ref_id = g.id
-        WHERE u.role = 'guide'
-
-        UNION ALL
-
-        SELECT 
-            t.full_name AS provider_name,
-            u.email,
-            u.role
-        FROM users u
-        JOIN transport_users t ON u.ref_id = t.user_id
-        WHERE u.role = 'transport'
-
-        UNION ALL
-
-        SELECT 
-            h.hotel_name AS provider_name,
-            u.email,
-            u.role
-        FROM users u
-        JOIN hotel_users h ON u.ref_id = h.id
-        WHERE u.role = 'hotel'
-    ";
-
-    $result = $conn->query($sql);
-    $providers = [];
-
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $providers[] = $row;
-        }
-    }
 ?>
 
 <!DOCTYPE html>
@@ -130,36 +87,36 @@
                     
                     <div class="toolbar">
                         <div class="search-section">
-                        <input type="text" placeholder="Search by name or status" class="search-input">
-                        <button class="search-btn">🔍</button>
+                            <input type="text" placeholder="Search by role, name or email" id="searchInput" class="search-input">
+                            <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
                         </div>
                         <div class="filter-buttons">
-                        <button class="filter-btn active">All</button>
-                        <button class="filter-btn">Pending</button>
-                        <button class="filter-btn">Approved</button>
-                        <button class="filter-btn">Rejected</button>
+                            <button class="filter-btn active" onclick="filterProviders('all')">All</button>
+                            <button class="filter-btn" onclick="filterProviders('guide')">Tour Guides</button>
+                            <button class="filter-btn" onclick="filterProviders('hotel')">Hotels</button>
+                            <button class="filter-btn" onclick="filterProviders('transport')">Transport Providers</button>
                         </div>
                     </div>
 
                     <div class="stats-section">
                         <h4>Provider Statistics</h4>
                         <div class="stats-grid">
-                        <div class="stat-box">
-                            <strong>Total Providers</strong><br>
-                            <span>150</span>
-                        </div>
-                        <div class="stat-box">
-                            <strong>Approved</strong><br>
-                            <span>100</span>
-                        </div>
-                        <div class="stat-box">
-                            <strong>Pending</strong><br>
-                            <span>30</span>
-                        </div>
-                        <div class="stat-box">
-                            <strong>Rejected</strong><br>
-                            <span>20</span>
-                        </div>
+                            <div class="stat-box">
+                                <strong>Total Providers</strong><br>
+                                <span><?= $stats['total'] ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Tour Guides</strong><br>
+                                <span><?= $stats['guide'] ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Hotels</strong><br>
+                                <span><?= $stats['hotel'] ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Transport Providers</strong><br>
+                                <span><?= $stats['transport'] ?></span>
+                            </div>
                         </div>
                     </div>
                     <br>
@@ -168,16 +125,16 @@
                         <table class="provider-table">
                             <thead>
                                 <tr>
-                                    <th>Role</th>
-                                    <th>Provider Name</th>
+                                    <th>Service Provider Role</th>
+                                    <th>Name</th>
                                     <th>Email</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="providerTableBody">
                                 <?php if (!empty($providers)): ?>
                                     <?php foreach ($providers as $provider): ?>
                                         <tr>
-                                            <td><?= ucfirst(htmlspecialchars($provider['role'])) ?> Provider</td>
+                                            <td><?= $roleLabels[$provider['role']] ?? ucfirst($provider['role']) ?></td>
                                             <td><?= htmlspecialchars($provider['provider_name']) ?></td>
                                             <td><?= htmlspecialchars($provider['email']) ?></td>
                                         </tr>
@@ -223,7 +180,54 @@
                 dropdown.classList.remove('show');
                 }
             });
+
+            function applySearch() {
+                const searchTerm = document
+                    .getElementById("searchInput")
+                    .value
+                    .toLowerCase();
+
+                document.querySelectorAll("#providerTableBody tr").forEach(row => {
+                    const text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? "" : "none";
+                });
+            }
+
+            // Enter key search
+            document.getElementById("searchInput").addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    applySearch();
+                }
+            });
+
+            // Auto-search while typing
+            document.getElementById("searchInput").addEventListener("input", applySearch);
+
+            function filterProviders(role) {
+                const rows = document.querySelectorAll("#providerTableBody tr");
+                const buttons = document.querySelectorAll(".filter-btn");
+
+                // Toggle active class
+                buttons.forEach(btn => btn.classList.remove("active"));
+                event.target.classList.add("active");
+
+                rows.forEach(row => {
+                    const roleCell = row.cells[0].innerText.toLowerCase();
+
+                    if (role === "all") {
+                        row.style.display = "";
+                    } else if (role === "guide" && roleCell.includes("guide")) {
+                        row.style.display = "";
+                    } else if (role === "hotel" && roleCell.includes("hotel")) {
+                        row.style.display = "";
+                    } else if (role === "transport" && roleCell.includes("transport")) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            }
         </script>
-        
     </body>
 </html>

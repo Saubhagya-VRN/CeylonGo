@@ -213,7 +213,77 @@ class AdminController {
     }
 
     public function service() {
-        view('admin/admin_service');
+        $conn = Database::getMysqliConnection();
+
+        // Fetch all providers (union guides, hotels, transport)
+        $sql = "
+            SELECT 
+                CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
+                u.email,
+                u.role
+            FROM users u
+            JOIN guide_users g ON u.ref_id = g.id
+            WHERE u.role = 'guide'
+
+            UNION ALL
+
+            SELECT 
+                t.full_name AS provider_name,
+                u.email,
+                u.role
+            FROM users u
+            JOIN transport_users t ON u.ref_id = t.user_id
+            WHERE u.role = 'transport'
+
+            UNION ALL
+
+            SELECT 
+                h.hotel_name AS provider_name,
+                u.email,
+                u.role
+            FROM users u
+            JOIN hotel_users h ON u.ref_id = h.id
+            WHERE u.role = 'hotel'
+        ";
+
+        $result = $conn->query($sql);
+        $providers = [];
+
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $providers[] = $row;
+            }
+        }
+
+        // Role labels for display
+        $roleLabels = [
+            'guide'     => 'Tour Guide',
+            'hotel'     => 'Hotel',
+            'transport' => 'Transport Provider'
+        ];
+
+        // Statistics
+        $stats = [
+            'total' => count($providers),
+            'guide' => 0,
+            'hotel' => 0,
+            'transport' => 0
+        ];
+
+        foreach ($providers as $p) {
+            if (isset($p['role'])) {
+                if ($p['role'] === 'guide') $stats['guide']++;
+                if ($p['role'] === 'hotel') $stats['hotel']++;
+                if ($p['role'] === 'transport') $stats['transport']++;
+            }
+        }
+
+        // Pass data to the view
+        view('admin/admin_service', [
+            'providers' => $providers,
+            'stats' => $stats,
+            'roleLabels' => $roleLabels
+        ]);
     }
 
     public function settings() {

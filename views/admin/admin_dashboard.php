@@ -44,7 +44,13 @@
       $totalPendingBookings = $row['total'];
   }
 
-  // Don't close connection - it's a singleton
+  // Total number of active service providers
+  $totalProviders = 0;
+  $sqlProviders = "SELECT COUNT(*) AS total FROM users WHERE role IN ('guide', 'hotel', 'transport')";
+  $resultProviders = $conn->query($sqlProviders);
+  if ($resultProviders && $row = $resultProviders->fetch_assoc()) {
+      $totalProviders = $row['total'];
+  }
 ?>
 
 <!DOCTYPE html>
@@ -127,7 +133,7 @@
           <h3>Summary Overview</h3>
           <div class="stats">
             <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
-            <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Providers</h4></a><p>58</p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Service Providers</h4></a><p><?= $totalProviders ?></p></div>
             <div class="stat"><a href="/CeylonGo/public/admin/bookings" class="stat-link"><h4>Pending Bookings</h4></a><p><?= $totalPendingBookings ?></p></div>
             <div class="stat"><a href="/CeylonGo/public/admin/payments" class="stat-link"><h4>Total Payments</h4></a><p>LKR 10,250</p></div>
             <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Refund Requests</h4><p>5</p></div>
