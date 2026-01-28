@@ -152,133 +152,50 @@ class TouristController {
         $data = $_POST;
 
         // Validate required fields
-        if (empty($data['customerName']) || empty($data['location']) || empty($data['language']) || empty($data['date'])) {
-            header("Location: /CeylonGo/public/tourist/tour-guide-request?error=" . urlencode("Please fill in all required fields"));
+        if (empty($data['customerName']) || empty($data['contact']) || empty($data['location']) || 
+            empty($data['language']) || empty($data['date']) || empty($data['time'])) {
+            header("Location: /CeylonGo/public/tourist/dashboard?error=" . urlencode("Please fill in all required fields"));
             exit();
         }
 
         try {
-            require_once dirname(__DIR__) . '/config/database.php';
-            
-            // Try to insert into one of the possible table names
-            $guide_tables = ['tourist_guide_requests', 'tour_guide_requests', 'guide_requests'];
-            $inserted = false;
-            
-            foreach ($guide_tables as $table) {
-                // Check if table exists
-                $check_table = $conn->query("SHOW TABLES LIKE '$table'");
-                if ($check_table && $check_table->num_rows > 0) {
-                    $query = "INSERT INTO $table (customerName, location, language, date, notes, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
-                    $stmt = $conn->prepare($query);
-                    $notes = isset($data['notes']) ? $data['notes'] : '';
-                    $stmt->bind_param("sssss", 
-                        $data['customerName'],
-                        $data['location'],
-                        $data['language'],
-                        $data['date'],
-                        $notes
-                    );
-                    
-                    if ($stmt->execute()) {
-                        $inserted = true;
-                        $stmt->close();
-                        break;
-                    }
-                    $stmt->close();
-                }
-            }
-            
-            if ($inserted) {
-                header("Location: /CeylonGo/public/tourist/dashboard?success=" . urlencode("Tour guide request submitted successfully"));
-                exit();
+            // Use the GuideRequest model
+            $guideRequest = new GuideRequest($this->db);
+            $guideRequest->customerName = $data['customerName'];
+            $guideRequest->contactNumber = $data['contact'];
+            $guideRequest->location = $data['location'];
+            $guideRequest->language = $data['language'];
+            $guideRequest->date = $data['date'];
+            $guideRequest->time = $data['time'];
+            $guideRequest->notes = $data['notes'] ?? '';
+
+            if ($guideRequest->create()) {
+                header("Location: /CeylonGo/public/tourist/tour-guide-report");
             } else {
-                // If no table exists, create one and insert
-                $query = "CREATE TABLE IF NOT EXISTS tourist_guide_requests (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    customerName VARCHAR(255) NOT NULL,
-                    location VARCHAR(255) NOT NULL,
-                    language VARCHAR(100) NOT NULL,
-                    date DATE NOT NULL,
-                    notes TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )";
-                $conn->query($query);
-                
-                $query = "INSERT INTO tourist_guide_requests (customerName, location, language, date, notes, created_at) VALUES (?, ?, ?, ?, ?, NOW())";
-                $stmt = $conn->prepare($query);
-                $stmt->bind_param("sssss", 
-                    $data['customerName'],
-                    $data['location'],
-                    $data['language'],
-                    $data['date'],
-                    $data['notes'] ?? ''
-                );
-                
-                if ($stmt->execute()) {
-                    header("Location: /CeylonGo/public/tourist/dashboard?success=" . urlencode("Tour guide request submitted successfully"));
-                } else {
-                    header("Location: /CeylonGo/public/tourist/tour-guide-request?error=" . urlencode("Failed to submit request"));
-                }
-                $stmt->close();
+                header("Location: /CeylonGo/public/tourist/dashboard?error=" . urlencode("Failed to submit request"));
             }
-            
-            $conn->close();
             exit();
             
         } catch (Exception $e) {
             error_log($e->getMessage());
-            header("Location: /CeylonGo/public/tourist/tour-guide-request?error=" . urlencode("An error occurred. Please try again."));
+            header("Location: /CeylonGo/public/tourist/dashboard?error=" . urlencode("An error occurred. Please try again."));
             exit();
         }
     }
 
     public function tourGuideRequestReport() {
         try {
-            require_once dirname(__DIR__) . '/config/database.php';
+            $guideRequest = new GuideRequest($this->db);
+            $requests = $guideRequest->getAll();
             
-            // Try to fetch from one of the possible table names
-            $guide_tables = ['tourist_guide_requests', 'tour_guide_requests', 'guide_requests'];
-            $requests = [];
-            $table_used = null;
-            
-            foreach ($guide_tables as $table) {
-                // Check if table exists
-                $check_table = $conn->query("SHOW TABLES LIKE '$table'");
-                if ($check_table && $check_table->num_rows > 0) {
-                    // Fetch requests - filter by logged-in user if available
-                    if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
-                        // Get customer name from session
-                        $customer_name = $_SESSION['user_name'] ?? '';
-                        if (!empty($customer_name)) {
-                            $query = "SELECT id, customerName, location, language, date, notes, created_at FROM $table WHERE customerName = ? ORDER BY created_at DESC";
-                            $stmt = $conn->prepare($query);
-                            $stmt->bind_param("s", $customer_name);
-                            $stmt->execute();
-                            $result = $stmt->get_result();
-                            while ($row = $result->fetch_assoc()) {
-                                $requests[] = $row;
-                            }
-                            $stmt->close();
-                        } else {
-                            // If no name, get all requests
-                            $result = $conn->query("SELECT id, customerName, location, language, date, notes, created_at FROM $table ORDER BY created_at DESC");
-                            while ($row = $result->fetch_assoc()) {
-                                $requests[] = $row;
-                            }
-                        }
-                    } else {
-                        // For guests or non-logged-in users, show all requests
-                        $result = $conn->query("SELECT id, customerName, location, language, date, notes, created_at FROM $table ORDER BY created_at DESC");
-                        while ($row = $result->fetch_assoc()) {
-                            $requests[] = $row;
-                        }
-                    }
-                    $table_used = $table;
-                    break;
+            // Filter by logged-in user if needed
+            if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
+                $customer_name = $_SESSION['user_name'] ?? '';
+                if (!empty($customer_name)) {
+                    $requests = $guideRequest->getByCustomerName($customer_name);
                 }
             }
             
-            $conn->close();
             view('tourist/tour_guide_request_report', ['requests' => $requests]);
             
         } catch (Exception $e) {

@@ -1,9 +1,12 @@
 <?php
-session_start();
+/**
+ * Web Application Entry Point
+ */
 
-require_once '../config/config.php';
-require_once '../core/autoload.php';
-require_once '../core/helpers.php';
+// Load bootstrap
+require_once '../core/bootstrap.php';
+
+// Load router
 require_once '../core/Router.php';
 
 $router = new Router();
@@ -70,6 +73,8 @@ $router->get('tourist/add-review', 'TouristController@addReview');
 $router->get('tourist/transport-providers', 'TouristController@transportProviders');
 $router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
 $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
+$router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSubmit');
+$router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
 $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 

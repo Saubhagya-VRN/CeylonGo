@@ -21,6 +21,20 @@ $success_message = '';
 $error_message = '';
 $upcoming_trip = null;
 $days_until_trip = null;
+$tourist_data = null;
+
+// Fetch tourist data for logged-in users
+if ($is_logged_in) {
+    try {
+        require_once dirname(__DIR__, 2) . '/core/Database.php';
+        require_once dirname(__DIR__, 2) . '/models/Tourist.php';
+        $db = Database::getConnection();
+        $touristModel = new Tourist($db);
+        $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
+    } catch (Exception $e) {
+        error_log("Error fetching tourist data: " . $e->getMessage());
+    }
+}
 
 // Initialize form data in session if not exists
 if (!isset($_SESSION['trip_form_data'])) {
@@ -48,8 +62,8 @@ if ($is_logged_in) {
                 GROUP_CONCAT(td.destination SEPARATOR ', ') as destinations,
                 SUM(td.days) as total_days,
                 MAX(td.people_count) as people_count
-            FROM tourist_trip_bookings tb
-            LEFT JOIN tourist_trip_destinations td ON tb.id = td.booking_id
+            FROM trip_bookings tb
+            LEFT JOIN trip_destinations td ON tb.id = td.booking_id
             WHERE tb.user_id = ?
             GROUP BY tb.id
             ORDER BY tb.created_at DESC
@@ -83,7 +97,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Validate and sanitize input
         $people = isset($_POST['people']) ? array_map('intval', $_POST['people']) : array();
-        $start_dates = isset($_POST['start_date']) ? array_map('htmlspecialchars', $_POST['start_date']) : array();
         $destinations = isset($_POST['destination']) ? array_map('htmlspecialchars', $_POST['destination']) : array();
         $days = isset($_POST['days']) ? array_map('intval', $_POST['days']) : array();
         $hotels = isset($_POST['hotel']) ? array_map('htmlspecialchars', $_POST['hotel']) : array();
@@ -101,23 +114,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 require_once dirname(__DIR__, 2) . '/config/database.php';
                 
                 // Insert trip booking
-                $stmt = $conn->prepare("INSERT INTO tourist_trip_bookings (user_id, guide_required, created_at, status) VALUES (?, ?, NOW(), 'pending')");
+                $stmt = $conn->prepare("INSERT INTO trip_bookings (user_id, guide_required, created_at, status) VALUES (?, ?, NOW(), 'pending')");
                 $stmt->bind_param("is", $_SESSION['user_id'], $guide);
                 $stmt->execute();
                 $booking_id = $conn->insert_id;
                 
-                // Insert each destination with start_date
-                $stmt = $conn->prepare("INSERT INTO tourist_trip_destinations (booking_id, destination, start_date, people_count, days, hotel, transport) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                // Insert each destination
+                $stmt = $conn->prepare("INSERT INTO trip_destinations (booking_id, destination, people_count, days, hotel, transport) VALUES (?, ?, ?, ?, ?, ?)");
                 
                 for ($i = 0; $i < count($destinations); $i++) {
                     $dest = $destinations[$i];
-                    $start_dt = isset($start_dates[$i]) && !empty($start_dates[$i]) ? $start_dates[$i] : NULL;
                     $ppl = isset($people[$i]) ? $people[$i] : 0;
                     $dy = isset($days[$i]) ? $days[$i] : 0;
                     $htl = isset($hotels[$i]) ? $hotels[$i] : '';
                     $trn = isset($transports[$i]) ? $transports[$i] : '';
                     
-                    $stmt->bind_param("issiiss", $booking_id, $dest, $start_dt, $ppl, $dy, $htl, $trn);
+                    $stmt->bind_param("isiiss", $booking_id, $dest, $ppl, $dy, $htl, $trn);
                     $stmt->execute();
                 }
                 
@@ -146,6 +158,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <link rel="stylesheet" href="../../public/css/tourist/tourist_dashboard.css">
   <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
   <link rel="stylesheet" href="../../public/css/tourist/footer.css">
+  <style>
+    .autocomplete-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #d0d7d0;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .autocomplete-suggestions.active {
+      display: block;
+    }
+    .suggestion-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+      color: #333;
+    }
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    .suggestion-item:hover,
+    .suggestion-item.active {
+      background-color: #f5f8f5;
+      color: #2d5016;
+    }
+    .suggestion-loading {
+      padding: 10px 14px;
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+    }
+  </style>
 
 </head>
 <body class="bg-app">
@@ -1651,16 +1704,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <p class="modal-subtitle">Provide your preferences to request a tour guide</p>
         <form id="guideRequestForm" class="modal-form">
           <div class="form-row">
-            <div class="form-group full-width">
+            <div class="form-group">
               <label for="guideCustomerName">Customer Name</label>
-              <input type="text" id="guideCustomerName" name="customerName" placeholder="Enter your full name" required>
+              <input type="text" id="guideCustomerName" name="customerName" placeholder="Enter your full name" value="<?php echo isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : ''; ?>" required>
+            </div>
+            <div class="form-group">
+              <label for="guideContact">Contact Number</label>
+              <input type="tel" id="guideContact" name="contact" placeholder="e.g., +94 77 123 4567" value="<?php echo isset($tourist_data['contact_number']) ? htmlspecialchars($tourist_data['contact_number']) : ''; ?>" required>
             </div>
           </div>
 
           <div class="form-row">
-            <div class="form-group">
+            <div class="form-group" style="position: relative;">
               <label for="guideLocation">Location</label>
-              <input type="text" id="guideLocation" name="location" placeholder="e.g., Kandy" required>
+              <input type="text" id="guideLocation" name="location" placeholder="e.g., Kandy" autocomplete="off" required>
+              <div id="locationSuggestions" class="autocomplete-suggestions"></div>
             </div>
             <div class="form-group">
               <label for="guideLanguage">Preferred Language</label>
@@ -1671,6 +1729,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <option value="Tamil">Tamil</option>
                 <option value="Hindi">Hindi</option>
                 <option value="French">French</option>
+                <option value="Spanish">Spanish</option>
+                <option value="Chinese">Chinese (Mandarin)</option>
+                <option value="German">German</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Russian">Russian</option>
+                <option value="Italian">Italian</option>
+                <option value="Portuguese">Portuguese</option>
+                <option value="Korean">Korean</option>
               </select>
             </div>
           </div>
@@ -1681,6 +1748,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               <input type="date" id="guideDate" name="date" required>
             </div>
             <div class="form-group">
+              <label for="guideTime">Preferred Time</label>
+              <select id="guideTime" name="time" required style="padding: 12px 14px; border: 1.5px solid #d0d7d0; border-radius: 6px; font-size: 14px; width: 100%; background: #fff;">
+                <option value="">Select time</option>
+                <option value="06:00">06:00 AM</option>
+                <option value="06:30">06:30 AM</option>
+                <option value="07:00">07:00 AM</option>
+                <option value="07:30">07:30 AM</option>
+                <option value="08:00">08:00 AM</option>
+                <option value="08:30">08:30 AM</option>
+                <option value="09:00">09:00 AM</option>
+                <option value="09:30">09:30 AM</option>
+                <option value="10:00">10:00 AM</option>
+                <option value="10:30">10:30 AM</option>
+                <option value="11:00">11:00 AM</option>
+                <option value="11:30">11:30 AM</option>
+                <option value="12:00">12:00 PM</option>
+                <option value="12:30">12:30 PM</option>
+                <option value="13:00">01:00 PM</option>
+                <option value="13:30">01:30 PM</option>
+                <option value="14:00">02:00 PM</option>
+                <option value="14:30">02:30 PM</option>
+                <option value="15:00">03:00 PM</option>
+                <option value="15:30">03:30 PM</option>
+                <option value="16:00">04:00 PM</option>
+                <option value="16:30">04:30 PM</option>
+                <option value="17:00">05:00 PM</option>
+                <option value="17:30">05:30 PM</option>
+                <option value="18:00">06:00 PM</option>
+                <option value="18:30">06:30 PM</option>
+                <option value="19:00">07:00 PM</option>
+                <option value="19:30">07:30 PM</option>
+                <option value="20:00">08:00 PM</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
               <label for="guideNotes">Notes (optional)</label>
               <input type="text" id="guideNotes" name="notes" placeholder="Any special requests">
             </div>
@@ -1907,6 +2012,56 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Guide request form submission
     document.addEventListener('DOMContentLoaded', function() {
+      // Update available times based on selected date
+      const dateInput = document.getElementById('guideDate');
+      const timeSelect = document.getElementById('guideTime');
+      
+      function updateAvailableTimes() {
+        if (!dateInput.value) return;
+        
+        const selectedDate = new Date(dateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        selectedDate.setHours(0, 0, 0, 0);
+        
+        const isToday = selectedDate.getTime() === today.getTime();
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        // Enable/disable time options based on current time
+        Array.from(timeSelect.options).forEach(option => {
+          if (option.value === '') return; // Skip placeholder
+          
+          if (isToday) {
+            const [hour, minute] = option.value.split(':').map(Number);
+            const isPast = hour < currentHour || (hour === currentHour && minute <= currentMinute);
+            option.disabled = isPast;
+            if (isPast) {
+              option.style.color = '#ccc';
+            } else {
+              option.style.color = '';
+            }
+          } else {
+            option.disabled = false;
+            option.style.color = '';
+          }
+        });
+        
+        // If currently selected time is now disabled, clear selection
+        if (timeSelect.value && timeSelect.options[timeSelect.selectedIndex].disabled) {
+          timeSelect.value = '';
+        }
+      }
+      
+      if (dateInput && timeSelect) {
+        dateInput.addEventListener('change', updateAvailableTimes);
+        // Check on load if date is already set
+        if (dateInput.value) {
+          updateAvailableTimes();
+        }
+      }
+      
       const guideForm = document.getElementById('guideRequestForm');
       if (guideForm) {
         guideForm.addEventListener('submit', function(e) {
@@ -1914,30 +2069,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           
           if (!currentGuideGroup) return;
           
-          const customerName = document.getElementById('guideCustomerName').value;
-          const location = document.getElementById('guideLocation').value;
-          const language = document.getElementById('guideLanguage').value;
-          const date = document.getElementById('guideDate').value;
-          const notes = document.getElementById('guideNotes').value;
-          
-          // Update the guide value and display
-          const guideValue = currentGuideGroup.querySelector('.guide-value');
-          const yesBtn = currentGuideGroup.querySelector('.guide-yes-btn');
-          const noBtn = currentGuideGroup.querySelector('.guide-no-btn');
-          const infoDiv = currentGuideGroup.querySelector('.selected-guide-info');
-          
-          guideValue.value = 'Yes';
-          yesBtn.classList.add('active');
-          noBtn.classList.remove('active');
-          infoDiv.textContent = `✓ Tour guide requested for ${location} on ${date}`;
-          infoDiv.style.display = 'block';
-          
-          // Update booking steps
-          if (typeof updateBookingSteps === 'function') {
-            updateBookingSteps();
+          // Validate time is selected
+          if (!timeSelect.value || timeSelect.value === '') {
+            alert('Please select a preferred time');
+            timeSelect.focus();
+            return;
           }
           
-          closeGuideModal();
+          const formData = new FormData(guideForm);
+          
+          // Submit to server via fetch
+          fetch('/CeylonGo/public/tourist/tour-guide-submit', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => {
+            if (response.redirected) {
+              window.location.href = response.url;
+            } else {
+              return response.text();
+            }
+          })
+          .then(data => {
+            if (data) {
+              // Handle any returned data
+              const customerName = document.getElementById('guideCustomerName').value;
+              const location = document.getElementById('guideLocation').value;
+              const date = document.getElementById('guideDate').value;
+              const time = document.getElementById('guideTime').value;
+              
+              // Update the guide value and display
+              const guideValue = currentGuideGroup.querySelector('.guide-value');
+              const yesBtn = currentGuideGroup.querySelector('.guide-yes-btn');
+              const noBtn = currentGuideGroup.querySelector('.guide-no-btn');
+              const infoDiv = currentGuideGroup.querySelector('.selected-guide-info');
+              
+              guideValue.value = 'Yes';
+              yesBtn.classList.add('active');
+              noBtn.classList.remove('active');
+              infoDiv.textContent = `✓ Tour guide requested for ${location} on ${date} at ${time}`;
+              infoDiv.style.display = 'block';
+              
+              // Update booking steps
+              if (typeof updateBookingSteps === 'function') {
+                updateBookingSteps();
+              }
+              
+              closeGuideModal();
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to submit guide request. Please try again.');
+          });
         });
       }
 
@@ -1959,6 +2143,144 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (event.key === 'Escape') {
           closeTransportModal();
           closeGuideModal();
+        }
+      });
+
+      // Custom Places Autocomplete (Vanilla JS)
+      const locationInput = document.getElementById('guideLocation');
+      const suggestionsContainer = document.getElementById('locationSuggestions');
+      let debounceTimer;
+      let selectedIndex = -1;
+      let suggestions = [];
+
+      locationInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (query.length < 2) {
+          suggestionsContainer.classList.remove('active');
+          return;
+        }
+
+        // Show loading state
+        suggestionsContainer.innerHTML = '<div class="suggestion-loading">Loading...</div>';
+        suggestionsContainer.classList.add('active');
+
+        // Debounce API calls
+        debounceTimer = setTimeout(() => {
+          fetch('/CeylonGo/api/places_autocomplete.php?input=' + encodeURIComponent(query))
+            .then(response => response.json())
+            .then(data => {
+              if (data.error) {
+                console.error('Google API Error:', data.error);
+                // Fallback to local cities if API fails
+                useFallbackSuggestions(query);
+              } else {
+                suggestions = data.predictions || [];
+                displaySuggestions(suggestions);
+              }
+            })
+            .catch(error => {
+              console.error('Autocomplete error:', error);
+              useFallbackSuggestions(query);
+            });
+        }, 300);
+      });
+
+      // Fallback suggestions for common Sri Lankan locations
+      const sriLankanCities = [
+        'Colombo, Sri Lanka',
+        'Kandy, Sri Lanka',
+        'Galle, Sri Lanka',
+        'Jaffna, Sri Lanka',
+        'Negombo, Sri Lanka',
+        'Trincomalee, Sri Lanka',
+        'Anuradhapura, Sri Lanka',
+        'Polonnaruwa, Sri Lanka',
+        'Nuwara Eliya, Sri Lanka',
+        'Ella, Sri Lanka',
+        'Sigiriya, Sri Lanka',
+        'Mirissa, Sri Lanka',
+        'Bentota, Sri Lanka',
+        'Hikkaduwa, Sri Lanka',
+        'Arugam Bay, Sri Lanka',
+        'Dambulla, Sri Lanka',
+        'Matara, Sri Lanka',
+        'Batticaloa, Sri Lanka',
+        'Ratnapura, Sri Lanka',
+        'Badulla, Sri Lanka'
+      ];
+
+      function useFallbackSuggestions(query) {
+        const matches = sriLankanCities.filter(city => 
+          city.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 5);
+
+        if (matches.length > 0) {
+          suggestions = matches.map(city => ({ description: city }));
+          displaySuggestions(suggestions);
+        } else {
+          suggestionsContainer.innerHTML = '<div class="suggestion-loading">No matches found</div>';
+        }
+      }
+
+      function displaySuggestions(predictions) {
+        if (predictions.length === 0) {
+          suggestionsContainer.classList.remove('active');
+          return;
+        }
+
+        suggestionsContainer.innerHTML = '';
+        predictions.forEach((prediction, index) => {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item';
+          div.textContent = prediction.description;
+          div.dataset.index = index;
+          
+          div.addEventListener('click', function() {
+            locationInput.value = prediction.description;
+            suggestionsContainer.classList.remove('active');
+            selectedIndex = -1;
+          });
+          
+          suggestionsContainer.appendChild(div);
+        });
+        
+        suggestionsContainer.classList.add('active');
+      }
+
+      // Keyboard navigation
+      locationInput.addEventListener('keydown', function(e) {
+        const items = suggestionsContainer.querySelectorAll('.suggestion-item');
+        
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+          updateSelection(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = Math.max(selectedIndex - 1, -1);
+          updateSelection(items);
+        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+          e.preventDefault();
+          items[selectedIndex].click();
+        } else if (e.key === 'Escape') {
+          suggestionsContainer.classList.remove('active');
+          selectedIndex = -1;
+        }
+      });
+
+      function updateSelection(items) {
+        items.forEach((item, index) => {
+          item.classList.toggle('active', index === selectedIndex);
+        });
+      }
+
+      // Close suggestions when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!locationInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+          suggestionsContainer.classList.remove('active');
+          selectedIndex = -1;
         }
       });
     });
