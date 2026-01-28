@@ -132,6 +132,10 @@ class TouristController {
         view('tourist/package_details', ['package_id' => $id]);
     }
 
+    public function packageDetailsQuery() {
+        view('tourist/package_details');
+    }
+
     public function addReview() {
         view('tourist/add_review');
     }

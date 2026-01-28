@@ -65,11 +65,13 @@ $router->get('tourist/payment', 'TouristController@payment');
 $router->get('tourist/trip-summary', 'TouristController@tripSummary');
 $router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
 $router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
+$router->get('tourist/package_details', 'TouristController@packageDetailsQuery');
 $router->get('tourist/add-review', 'TouristController@addReview');
 $router->get('tourist/transport-providers', 'TouristController@transportProviders');
 $router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
 $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
 $router->get('tourist/contact', 'TouristController@contact');
+$router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
