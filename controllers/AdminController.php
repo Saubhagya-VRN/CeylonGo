@@ -197,7 +197,32 @@ class AdminController {
     }
 
     public function reviews() {
-        view('admin/admin_reviews');
+        $reviewModel = new Review($this->db);
+
+        // GET filter (same logic as users)
+        $rating = $_GET['rating'] ?? 'all';
+
+        $reviews = $reviewModel->getAllReviews($rating);
+
+        view('admin/admin_reviews', [
+            'reviews' => $reviews,
+            'selectedRating' => $rating
+        ]);
+    }
+
+    public function deleteReview() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->deleteReview($reviewId);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
     }
 
     public function inquiries() {

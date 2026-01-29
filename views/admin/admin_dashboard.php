@@ -51,6 +51,30 @@
   if ($resultProviders && $row = $resultProviders->fetch_assoc()) {
       $totalProviders = $row['total'];
   }
+
+  // Latest 5 reviews
+  $latestReviews = [];
+  try {
+      $sqlReviews = "
+          SELECT r.review_text, r.rating, r.created_at, CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
+          FROM reviews r
+          JOIN tourist_users t ON r.user_id = t.id
+          ORDER BY r.created_at DESC
+          LIMIT 5
+      ";
+      $stmtReviews = $conn->prepare($sqlReviews);
+      $stmtReviews->execute();
+      $resultReviews = $stmtReviews->get_result();
+      if ($resultReviews) {
+          while ($row = $resultReviews->fetch_assoc()) {
+              $latestReviews[] = $row;
+          }
+      }
+      $stmtReviews->close();
+  } catch (Exception $e) {
+      error_log("Error fetching latest reviews: " . $e->getMessage());
+  }
+
 ?>
 
 <!DOCTYPE html>
@@ -133,16 +157,14 @@
           <h3>Summary Overview</h3>
           <div class="stats">
             <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
-            <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Service Providers</h4></a><p><?= $totalProviders ?></p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Service Providers</h4></a><p><?= $totalProviders ?></p></div><br>
             <div class="stat"><a href="/CeylonGo/public/admin/bookings" class="stat-link"><h4>Pending Bookings</h4></a><p><?= $totalPendingBookings ?></p></div>
-            <div class="stat"><a href="/CeylonGo/public/admin/payments" class="stat-link"><h4>Total Payments</h4></a><p>LKR 10,250</p></div>
-            <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Refund Requests</h4><p>5</p></div>
-            <div class="stat"><h4>Pending Validations</h4><p>12</p></div>
+            <div class="stat"><a href="/CeylonGo/public/admin/payments" class="stat-link"><h4>Revenue</h4></a><p>LKR 10,250</p></div>
           </div>
         </section>
 
         <section class="recent">
-          <h3>Recent Inquiries</h3>
+          <a href="/CeylonGo/public/admin/inquiries" class="stat-link"><h3>Recent Inquiries</h3></a>
           <div class="list">
             <div class="item">Inquiry 123 - Fathima Zara <span>Pending</span></div>
             <div class="item">Inquiry 124 - Jane Roe <span>Resolved</span></div>
@@ -151,10 +173,19 @@
         </section>
 
         <section class="reviews">
-          <h3>Latest Reviews</h3>
-          <div class="review">Alice - Great service! ⭐⭐⭐⭐⭐</div>
-          <div class="review">Bob - Very helpful support! ⭐⭐⭐⭐⭐</div>
-          <div class="review">Jane - Good customer service! ⭐⭐⭐⭐⭐</div>
+          <a href="/CeylonGo/public/admin/reviews" class="stat-link"><h3>Latest Reviews</h3></a>
+          <?php if (!empty($latestReviews)): ?>
+              <?php foreach ($latestReviews as $rev): ?>
+                  <div class="review">
+                      <?= htmlspecialchars($rev['tourist_name']) ?> - <?= htmlspecialchars($rev['review_text']) ?> 
+                      <?php for ($i = 0; $i < (int)$rev['rating']; $i++): ?>
+                          ⭐
+                      <?php endfor; ?>
+                  </div>
+              <?php endforeach; ?>
+          <?php else: ?>
+              <div class="review">No reviews yet.</div>
+          <?php endif; ?>
         </section>
       </div>
 

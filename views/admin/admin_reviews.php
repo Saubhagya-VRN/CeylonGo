@@ -1,3 +1,10 @@
+<?php
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+        header("Location: /CeylonGo/public/login");
+        exit();
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -70,54 +77,77 @@
                     <h2 class="page-title">Reviews Management</h2>
                     <br>
 
-                    <div class="filter-buttons">
-                        <button class="filter-btn active">User Reviews</button>
-                        <button class="filter-btn">Service Feedback</button>
-                    </div>
-                    <br>
+                    <form method="GET" action="/CeylonGo/public/admin/reviews">
+                        <div class="toolbar">
+                            <div class="filter-buttons">
+                                <button type="submit" name="rating" value="all"
+                                    class="filter-btn <?= ($selectedRating=='all')?'active':'' ?>">
+                                    All
+                                </button>
 
-                    <h3>Recent Reviews</h3><br>
-                    <p class="sub-text">Latest user comments</p>
+                                <?php for ($i = 5; $i >= 1; $i--): ?>
+                                    <button type="submit" name="rating" value="<?= $i ?>"
+                                        class="filter-btn <?= ($selectedRating==$i)?'active':'' ?>">
+                                        <?= $i ?> ⭐
+                                    </button>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                    </form>
+                    <br>
 
                     <div class="users-section">
                         <table class="user-table">
                             <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Comment</th>
-                                <th>Rating</th>
-                                <th>Actions</th>
-                            </tr>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>User Name</th>
+                                    <th>Comment</th>
+                                    <th>Rating</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
-                            <tbody>
-                            <tr>
-                                <td>John Doe</td>
-                                <td>Great service! Highly recommended.</td>
-                                <td>⭐⭐⭐⭐⭐</td>
-                                <td class="actions">
-                                <button class="icon-btn">💬</button>
-                                <button class="icon-btn danger">❌</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Jane Smith</td>
-                                <td>Could be better, had some issues with delivery.</td>
-                                <td>⭐⭐⭐⭐⭐</td>
-                                <td class="actions">
-                                <button class="icon-btn">💬</button>
-                                <button class="icon-btn danger">❌</button>
-                                </td>
-                            </tr>
+                            <tbody id="reviewTableBody">
+                                <?php if(count($reviews) > 0): ?>
+                                    <?php foreach($reviews as $review): ?>
+                                        <tr data-id="<?= $review['id'] ?>">
+                                            <td><?= htmlspecialchars($review['user_id']) ?></td>
+                                            <td><?= htmlspecialchars($review['tourist_name']) ?></td>
+                                            <td><?= htmlspecialchars($review['review_text']) ?></td>
+
+                                            <!-- ⭐ Rating -->
+                                            <td>
+                                                <?php
+                                                    for ($i = 1; $i <= 5; $i++) {
+                                                        echo $i <= $review['rating'] ? "⭐" : "☆";
+                                                    }
+                                                ?>
+                                            </td>
+
+                                            <td>
+                                                <?php if ($review['status'] === 'approved'): ?>
+                                                    <span style="color:green;font-weight:bold">Approved</span>
+                                                <?php elseif ($review['status'] === 'rejected'): ?>
+                                                    <span style="color:red;font-weight:bold">Rejected</span>
+                                                <?php else: ?>
+                                                    <span style="color:orange;font-weight:bold">Pending</span>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="actions">
+                                                <button class="icon-btn reply-btn">💬</button>
+                                                <button class="icon-btn danger delete-btn">❌</button>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align:center;">No reviews found.</td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
-                    </div>
-                    <br><br>
-
-                    <h3>Filter by Rating</h3><br>
-                    <div class="filter-buttons">
-                        <button class="filter-btn">5 Star</button>
-                        <button class="filter-btn">4 Star</button>
-                        <button class="filter-btn">3 Star</button>
                     </div>
                     <br><br>
 
@@ -177,20 +207,53 @@
         </footer>
 
         <script>
-        function toggleProfileDropdown() {
-            const dropdown = document.getElementById('profileDropdown');
-            dropdown.classList.toggle('show');
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('profileDropdown');
-            const profilePic = document.querySelector('.profile-pic');
-            
-            if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
-            dropdown.classList.remove('show');
+            function toggleProfileDropdown() {
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.classList.toggle('show');
             }
-        });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profilePic = document.querySelector('.profile-pic');
+                
+                if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+                dropdown.classList.remove('show');
+                }
+            });
+
+            document.getElementById("reviewTableBody").addEventListener("click", function(e) {
+
+                const button = e.target.closest("button");
+                if (!button) return;
+
+                const row = button.closest("tr");
+                const reviewId = row.dataset.id;
+
+                // Delete review
+                if (button.classList.contains("delete-btn")) {
+                    if (!confirm("Delete this review?")) return;
+
+                    fetch("/CeylonGo/public/admin/review/delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `review_id=${reviewId}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            row.remove();
+                        } else {
+                            alert("Failed to delete review");
+                        }
+                    });
+                }
+
+                // Reply (placeholder)
+                if (button.classList.contains("reply-btn")) {
+                    alert("Reply feature coming soon 🚀");
+                }
+            });
         </script>
     </body>
 </html>

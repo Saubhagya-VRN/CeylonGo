@@ -108,6 +108,7 @@ $router->get('admin/forgot-password', 'AdminController@forgotPassword');
 $router->post('admin/user/status', 'AdminController@toggleUserStatus');
 $router->post('admin/users', 'AdminController@users');
 $router->get('admin/booking-details', 'AdminController@getBookingDetails');
+$router->post('admin/review/delete', 'AdminController@deleteReview');
 
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
