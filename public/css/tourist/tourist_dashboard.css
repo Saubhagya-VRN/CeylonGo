@@ -1807,6 +1807,10 @@ nav ul li {
   margin-bottom: 16px;
 }
 
+.form-row.form-row-three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

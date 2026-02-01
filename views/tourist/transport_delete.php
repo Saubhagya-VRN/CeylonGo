@@ -1,9 +1,13 @@
 <?php
 require_once('../../config/database.php');
-$id = $_GET['id'];
+$id = (int) ($_GET['id'] ?? 0);
 
-// Delete request
-$conn->query("DELETE FROM tourist_transport_requests WHERE id=$id");
+if ($id) {
+    $stmt = $conn->prepare("DELETE FROM transport_requests WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
+}
 
 // Redirect back to report page
 header("Location: /CeylonGo/public/tourist/transport-report");

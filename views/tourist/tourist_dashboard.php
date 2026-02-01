@@ -447,7 +447,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
   <!-- ✅ NEW CUSTOMIZE YOUR TRIP SECTION STARTS HERE -->
   <section id="customize" class="customize-trip">
-    <h2>Customize Your Trip</h2>
+    <div style="margin-bottom: 40px;">
+      <h2 style="margin: 0;">Customize Your Trip</h2>
+    </div>
 
     <?php if ($success_message): ?>
       <div class="alert alert-success"><?= $success_message ?></div>
@@ -670,7 +672,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div><!-- End customize-layout -->
 
     <script>
-    // API-based location autocomplete functionality
+    // Local location autocomplete functionality (no external libraries)
     let debounceTimer;
     
     function initializeAutocomplete(wrapper) {
@@ -679,7 +681,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       if (!input || !list) return;
 
-      // Fetch location suggestions from Nominatim API
+      // Fetch location suggestions from local API
       input.addEventListener('input', function() {
         clearTimeout(debounceTimer);
         const query = this.value.trim();
@@ -692,20 +694,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         debounceTimer = setTimeout(async () => {
           try {
-            const searchQuery = encodeURIComponent(query + ', Sri Lanka');
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}&limit=5&countrycodes=lk`);
+            const response = await fetch(`/CeylonGo/api/locations.php?input=${encodeURIComponent(query)}`);
             const data = await response.json();
 
             list.innerHTML = '';
 
-            if (data && data.length > 0) {
-              data.forEach(place => {
+            if (data.predictions && data.predictions.length > 0) {
+              data.predictions.forEach(prediction => {
                 const li = document.createElement('li');
-                // Extract the main place name (first part before comma)
-                const displayName = place.display_name.split(',')[0];
-                li.textContent = displayName;
-                li.setAttribute('data-value', displayName);
-                li.setAttribute('data-full', place.display_name);
+                li.textContent = prediction.description;
+                li.setAttribute('data-value', prediction.description);
                 
                 li.addEventListener('click', function(e) {
                   e.preventDefault();
@@ -1318,39 +1316,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 return;
               }
 
-              // Debounce API calls
+              // Debounce for local suggestions only (no external APIs)
               debounceTimer = setTimeout(async () => {
                 try {
-                  // Fetch suggestions from API
-                  const response = await fetch(`/CeylonGo/public/api/geocode?location=${encodeURIComponent(value)}`);
+                  // Fetch from local locations API
+                  const response = await fetch(`/CeylonGo/api/locations.php?input=${encodeURIComponent(value)}`);
                   const data = await response.json();
 
-                  // Also get local suggestions from cities list
-                  const cities = [
-                    'Colombo', 'Kandy', 'Galle', 'Galle Fort', 'Negombo', 'Negombo Beach',
-                    'Jaffna', 'Trincomalee', 'Batticaloa', 'Matara', 'Anuradhapura',
-                    'Polonnaruwa', 'Badulla', 'Ratnapura', 'Nuwara Eliya', 'Ella',
-                    'Sigiriya', 'Dambulla', 'Bentota', 'Hikkaduwa', 'Mirissa',
-                    'Arugam Bay', 'Unawatuna', 'Mount Lavinia', 'Kalutara', 'Kurunegala',
-                    'Hambantota', 'Katunayake', 'Bandaranaike Airport', 'Colombo Airport',
-                    'Yala National Park', 'Udawalawe', 'Wilpattu National Park',
-                    'Horton Plains', 'Adams Peak', 'Sri Pada', 'Pidurangala Rock',
-                    'Temple of the Tooth', 'Peradeniya Botanical Garden'
-                  ];
-
-                  const matches = cities.filter(city => 
-                    city.toLowerCase().includes(value.toLowerCase())
-                  ).slice(0, 8);
-
-                  if (matches.length > 0) {
-                    matches.forEach((city, index) => {
+                  if (data.predictions && data.predictions.length > 0) {
+                    data.predictions.forEach((prediction, index) => {
                       const item = document.createElement('div');
                       item.className = 'destination-suggestion-item';
                       item.innerHTML = `
-                        <span class="name">${city}</span>
+                        <span class="name">${prediction.description}</span>
                       `;
                       item.addEventListener('click', function() {
-                        input.value = city;
+                        input.value = prediction.description;
                         autocompleteDiv.classList.remove('active');
                         autocompleteDiv.innerHTML = '';
                         // Trigger input event to update booking steps
@@ -1368,6 +1349,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   }
                 } catch (error) {
                   console.error('Autocomplete error:', error);
+                  // Fallback to empty state
+                  autocompleteDiv.classList.remove('active');
                 }
               }, 300); // 300ms debounce
             });
@@ -1605,30 +1588,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
       <div class="service-modal-body">
         <form id="transportForm" class="modal-form">
-          <!-- Customer Name (Full Width) -->
-          <div class="form-group">
-            <label for="transportCustomerName">Customer Name</label>
-            <input type="text" id="transportCustomerName" name="customerName" placeholder="Enter your full name" value="<?php echo isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : ''; ?>" required>
+          <!-- Customer Name and Contact Number -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="transportCustomerName">Customer Name</label>
+              <input type="text" id="transportCustomerName" name="customerName" placeholder="Enter your full name" value="<?php echo isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : ''; ?>" required>
+            </div>
+            <div class="form-group">
+              <label for="transportContactNumber">Contact Number</label>
+              <input type="tel" id="transportContactNumber" name="contactNumber" placeholder="e.g., 07X XXX XXXX" value="<?php echo isset($tourist_data['contact_number']) ? htmlspecialchars($tourist_data['contact_number']) : ''; ?>" required pattern="[0-9]{10}">
+            </div>
           </div>
 
-          <!-- Date and Pickup Location -->
+          <!-- Date and No. of People -->
           <div class="form-row">
             <div class="form-group">
               <label for="transportDate">Date</label>
               <input type="date" id="transportDate" name="date" required>
             </div>
             <div class="form-group">
-              <label for="transportPickup">Pickup Location</label>
-              <input type="text" id="transportPickup" name="pickupLocation" placeholder="e.g., Bandaranaike Airport" required>
-            </div>
-          </div>
-
-          <!-- No. of People and Vehicle Type -->
-          <div class="form-row">
-            <div class="form-group">
               <label for="transportNumPeople">No. of People</label>
               <input type="number" id="transportNumPeople" name="numPeople" min="1" placeholder="Number of passengers" required>
             </div>
+          </div>
+
+          <!-- Vehicle Type and Pickup Location -->
+          <div class="form-row">
             <div class="form-group">
               <label for="transportVehicleType">Vehicle Type</label>
               <select id="transportVehicleType" name="vehicleType" required>
@@ -1639,6 +1624,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <option value="Minivan">Minivan (5 People)</option>
                 <option value="Bus">Bus (20 People)</option>
               </select>
+            </div>
+            <div class="form-group">
+              <label for="transportPickup">Pickup Location</label>
+              <input type="text" id="transportPickup" name="pickupLocation" placeholder="e.g., Bandaranaike Airport" required>
             </div>
           </div>
 
@@ -1817,6 +1806,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('transportDate').min = today;
       
+      // Initialize time restrictions
+      setTimeout(updateTimeRestrictions, 100);
+      
+      document.getElementById('transportModal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function openTransportModalStandalone() {
+      currentTransportGroup = null;
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('transportDate').min = today;
+      setTimeout(updateTimeRestrictions, 100);
       document.getElementById('transportModal').style.display = 'block';
       document.body.style.overflow = 'hidden';
     }
@@ -1922,6 +1923,140 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       return degrees * (Math.PI / 180);
     }
 
+    // Validate date and time
+    function validateDateTime(dateStr, timeStr) {
+      if (!dateStr || !timeStr) {
+        alert('Please select both date and time for pickup.');
+        return false;
+      }
+
+      const now = new Date();
+      const selectedDateTime = new Date(dateStr + 'T' + timeStr);
+      
+      // Check if date/time is in the past
+      if (selectedDateTime < now) {
+        alert('Pickup time cannot be in the past. Please select a future date and time.');
+        document.getElementById('transportDate').focus();
+        return false;
+      }
+
+      // Check if booking is at least 2 hours in advance
+      const twoHoursFromNow = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+      if (selectedDateTime < twoHoursFromNow) {
+        alert('Please book at least 2 hours in advance.');
+        document.getElementById('transportTime').focus();
+        return false;
+      }
+
+      // Check if time is within operating hours (5 AM - 11 PM)
+      const selectedHour = selectedDateTime.getHours();
+      if (selectedHour < 5 || selectedHour >= 23) {
+        alert('Service is available between 5:00 AM and 11:00 PM only.');
+        document.getElementById('transportTime').focus();
+        return false;
+      }
+
+      return true;
+    }
+
+    // Add real-time validation on date and time change
+    document.addEventListener('DOMContentLoaded', function() {
+      const dateInput = document.getElementById('transportDate');
+      const timeInput = document.getElementById('transportTime');
+      
+      if (dateInput) {
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        
+        dateInput.addEventListener('change', function() {
+          updateTimeRestrictions();
+          if (timeInput.value) {
+            validateDateTimeFields();
+          }
+        });
+      }
+      
+      if (timeInput) {
+        timeInput.addEventListener('change', function() {
+          if (dateInput.value) {
+            validateDateTimeFields();
+          }
+        });
+      }
+      
+      // Initial time restrictions setup
+      updateTimeRestrictions();
+    });
+
+    function updateTimeRestrictions() {
+      const dateInput = document.getElementById('transportDate');
+      const timeInput = document.getElementById('transportTime');
+      
+      if (!dateInput || !timeInput) return;
+      
+      const selectedDate = dateInput.value;
+      const today = new Date().toISOString().split('T')[0];
+      
+      if (selectedDate === today) {
+        // For today, set minimum time to 2 hours from now
+        const now = new Date();
+        const twoHoursLater = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+        
+        // Format time as HH:MM
+        const hours = String(twoHoursLater.getHours()).padStart(2, '0');
+        const minutes = String(twoHoursLater.getMinutes()).padStart(2, '0');
+        const minTime = `${hours}:${minutes}`;
+        
+        // Set min time, but also respect operating hours (5 AM - 11 PM)
+        if (twoHoursLater.getHours() >= 23) {
+          // Too late today, show message
+          timeInput.disabled = true;
+          timeInput.value = '';
+          alert('Too late to book for today. Service ends at 11:00 PM and requires 2 hours advance booking. Please select a future date.');
+          dateInput.value = '';
+          timeInput.disabled = false;
+          return;
+        }
+        
+        timeInput.min = minTime;
+        timeInput.max = '23:00';
+        
+        // Clear the time if it's now invalid
+        if (timeInput.value && timeInput.value < minTime) {
+          timeInput.value = '';
+        }
+      } else {
+        // For future dates, only apply operating hours
+        timeInput.min = '05:00';
+        timeInput.max = '23:00';
+      }
+    }
+
+    function validateDateTimeFields() {
+      const dateStr = document.getElementById('transportDate').value;
+      const timeStr = document.getElementById('transportTime').value;
+      
+      if (!dateStr || !timeStr) return;
+      
+      const now = new Date();
+      const selectedDateTime = new Date(dateStr + 'T' + timeStr);
+      const twoHoursFromNow = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+      const selectedHour = selectedDateTime.getHours();
+      
+      // Clear previous custom validity
+      document.getElementById('transportDate').setCustomValidity('');
+      document.getElementById('transportTime').setCustomValidity('');
+      
+      if (selectedDateTime < now) {
+        document.getElementById('transportTime').setCustomValidity('Pickup time cannot be in the past');
+      } else if (selectedDateTime < twoHoursFromNow) {
+        document.getElementById('transportTime').setCustomValidity('Please book at least 2 hours in advance');
+      } else if (selectedHour < 5 || selectedHour >= 23) {
+        document.getElementById('transportTime').setCustomValidity('Service available between 5:00 AM and 11:00 PM only');
+      }
+    }
+
     function confirmTransport() {
       const form = document.getElementById('transportForm');
       if (!form.checkValidity()) {
@@ -1929,26 +2064,66 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         return;
       }
       
-      if (!currentTransportGroup) return;
+      // Validate date and time
+      const selectedDate = document.getElementById('transportDate').value;
+      const selectedTime = document.getElementById('transportTime').value;
       
-      const vehicleType = document.getElementById('transportVehicleType').value;
-      const transportValue = currentTransportGroup.querySelector('.transport-value');
-      const yesBtn = currentTransportGroup.querySelector('.transport-yes-btn');
-      const noBtn = currentTransportGroup.querySelector('.transport-no-btn');
-      const infoDiv = currentTransportGroup.querySelector('.selected-transport-info');
-      
-      transportValue.value = vehicleType;
-      yesBtn.classList.add('active');
-      noBtn.classList.remove('active');
-      infoDiv.textContent = '✓ ' + vehicleType + ' booked';
-      infoDiv.style.display = 'block';
-      
-      closeTransportModal();
-      
-      // Update booking steps
-      if (typeof updateBookingSteps === 'function') {
-        updateBookingSteps();
+      if (!validateDateTime(selectedDate, selectedTime)) {
+        return;
       }
+      
+      // Collect form data
+      const formData = {
+        customerName: document.getElementById('transportCustomerName').value,
+        contactNumber: document.getElementById('transportContactNumber').value,
+        date: selectedDate,
+        numPeople: document.getElementById('transportNumPeople').value,
+        vehicleType: document.getElementById('transportVehicleType').value,
+        pickupLocation: document.getElementById('transportPickup').value,
+        pickupTime: selectedTime,
+        dropoffLocation: document.getElementById('transportDropoff').value,
+        notes: document.getElementById('transportNotes').value,
+        estimatedFare: document.getElementById('estimatedFare').value,
+        distance: document.getElementById('fareDistance') ? document.getElementById('fareDistance').textContent.replace(' km', '') : null
+      };
+      
+      // Save to database via AJAX
+      fetch('/CeylonGo/controllers/tourist/save_transport_request.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const hadTripGroup = currentTransportGroup;
+          closeTransportModal();
+          if (hadTripGroup) {
+            const vehicleType = formData.vehicleType;
+            const transportValue = hadTripGroup.querySelector('.transport-value');
+            const yesBtn = hadTripGroup.querySelector('.transport-yes-btn');
+            const noBtn = hadTripGroup.querySelector('.transport-no-btn');
+            const infoDiv = hadTripGroup.querySelector('.selected-transport-info');
+            if (transportValue) transportValue.value = vehicleType;
+            if (yesBtn) yesBtn.classList.add('active');
+            if (noBtn) noBtn.classList.remove('active');
+            if (infoDiv) {
+              infoDiv.textContent = '✓ ' + vehicleType + ' booked (Request #' + (data.requestId || '') + ')';
+              infoDiv.style.display = 'block';
+            }
+            if (typeof updateBookingSteps === 'function') updateBookingSteps();
+          }
+          window.location.href = '/CeylonGo/public/tourist/transport-report';
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting your request. Please try again.');
+      });
     }
 
     function selectNoTransport(button) {
@@ -2008,6 +2183,92 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       if (typeof updateBookingSteps === 'function') {
         updateBookingSteps();
       }
+    }
+
+    // Location autocomplete for guide request modal
+    let locationDebounceTimer;
+    const locationInput = document.getElementById('guideLocation');
+    const locationSuggestions = document.getElementById('locationSuggestions');
+    
+    if (locationInput && locationSuggestions) {
+      let selectedLocationIndex = -1;
+      
+      locationInput.addEventListener('input', function() {
+        clearTimeout(locationDebounceTimer);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+          locationSuggestions.innerHTML = '';
+          locationSuggestions.classList.remove('active');
+          return;
+        }
+        
+        locationDebounceTimer = setTimeout(async () => {
+          try {
+            const response = await fetch(`/CeylonGo/api/locations.php?input=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            locationSuggestions.innerHTML = '';
+            
+            if (data.predictions && data.predictions.length > 0) {
+              data.predictions.forEach((prediction, index) => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = prediction.description;
+                item.addEventListener('click', function() {
+                  locationInput.value = prediction.description;
+                  locationSuggestions.classList.remove('active');
+                  locationSuggestions.innerHTML = '';
+                });
+                locationSuggestions.appendChild(item);
+              });
+              locationSuggestions.classList.add('active');
+            } else {
+              locationSuggestions.innerHTML = '<div class="suggestion-loading">No locations found</div>';
+              locationSuggestions.classList.add('active');
+            }
+          } catch (error) {
+            console.error('Location autocomplete error:', error);
+          }
+        }, 300);
+      });
+      
+      // Keyboard navigation
+      locationInput.addEventListener('keydown', function(e) {
+        const items = locationSuggestions.querySelectorAll('.suggestion-item');
+        
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedLocationIndex = Math.min(selectedLocationIndex + 1, items.length - 1);
+          updateLocationSelection(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedLocationIndex = Math.max(selectedLocationIndex - 1, -1);
+          updateLocationSelection(items);
+        } else if (e.key === 'Enter' && selectedLocationIndex >= 0 && items[selectedLocationIndex]) {
+          e.preventDefault();
+          items[selectedLocationIndex].click();
+        } else if (e.key === 'Escape') {
+          locationSuggestions.classList.remove('active');
+        }
+      });
+      
+      function updateLocationSelection(items) {
+        items.forEach((item, index) => {
+          if (index === selectedLocationIndex) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+      
+      // Close when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!locationInput.contains(e.target) && !locationSuggestions.contains(e.target)) {
+          locationSuggestions.classList.remove('active');
+        }
+      });
     }
 
     // Guide request form submission
@@ -2145,6 +2406,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           closeGuideModal();
         }
       });
+
+      // Open transport modal when coming from "Submit Another Request" link
+      if (new URLSearchParams(window.location.search).get('open_transport') === '1') {
+        openTransportModalStandalone();
+      }
 
       // Custom Places Autocomplete (Vanilla JS)
       const locationInput = document.getElementById('guideLocation');

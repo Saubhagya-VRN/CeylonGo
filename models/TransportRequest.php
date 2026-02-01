@@ -5,6 +5,7 @@ class TransportRequest {
 
     public $id;
     public $customerName;
+    public $contactNumber;
     public $vehicleType;
     public $date;
     public $pickupTime;
@@ -19,12 +20,13 @@ class TransportRequest {
 
     public function addRequest() {
         $query = "INSERT INTO " . $this->table . "
-                  (customerName, vehicleType, date, pickupTime, pickupLocation, dropoffLocation, numPeople, notes)
-                  VALUES (:customerName, :vehicleType, :date, :pickupTime, :pickupLocation, :dropoffLocation, :numPeople, :notes)";
+                  (customerName, contactNumber, vehicleType, date, pickupTime, pickupLocation, dropoffLocation, numPeople, notes)
+                  VALUES (:customerName, :contactNumber, :vehicleType, :date, :pickupTime, :pickupLocation, :dropoffLocation, :numPeople, :notes)";
         
         $stmt = $this->conn->prepare($query);
 
         $stmt->bindParam(":customerName", $this->customerName);
+        $stmt->bindParam(":contactNumber", $this->contactNumber);
         $stmt->bindParam(":vehicleType", $this->vehicleType);
         $stmt->bindParam(":date", $this->date);
         $stmt->bindParam(":pickupTime", $this->pickupTime);

@@ -186,6 +186,15 @@ if (session_status() === PHP_SESSION_NONE) {
       gap: 12px;
     }
     
+    .hotel-actions a {
+      text-decoration: none;
+      text-align: center;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
     .btn-details {
       flex: 1;
       padding: 12px 20px;
@@ -504,8 +513,8 @@ if (session_status() === PHP_SESSION_NONE) {
               </div>
             </div>
             <div class="hotel-actions">
-              <button class="btn-details" onclick="viewDetails('Sunset Beach Resort')">View Details</button>
-              <button class="btn-book" onclick="bookHotel('Sunset Beach Resort')">Book Now</button>
+              <a href="/CeylonGo/public/tourist/hotel-details/sunset-beach" class="btn-details">View Details</a>
+              <a href="/CeylonGo/public/tourist/hotel-details/sunset-beach" class="btn-book">Book Now</a>
             </div>
           </div>
         </div>
@@ -535,8 +544,8 @@ if (session_status() === PHP_SESSION_NONE) {
               </div>
             </div>
             <div class="hotel-actions">
-              <button class="btn-details" onclick="viewDetails('Downtown Comfort Inn')">View Details</button>
-              <button class="btn-book" onclick="bookHotel('Downtown Comfort Inn')">Book Now</button>
+              <a href="/CeylonGo/public/tourist/hotel-details/downtown-comfort" class="btn-details">View Details</a>
+              <a href="/CeylonGo/public/tourist/hotel-details/downtown-comfort" class="btn-book">Book Now</a>
             </div>
           </div>
         </div>
@@ -565,8 +574,8 @@ if (session_status() === PHP_SESSION_NONE) {
               </div>
             </div>
             <div class="hotel-actions">
-              <button class="btn-details" onclick="viewDetails('Budget Stay Hostel')">View Details</button>
-              <button class="btn-book" onclick="bookHotel('Budget Stay Hostel')">Book Now</button>
+              <a href="/CeylonGo/public/tourist/hotel-details/budget-stay" class="btn-details">View Details</a>
+              <a href="/CeylonGo/public/tourist/hotel-details/budget-stay" class="btn-book">Book Now</a>
             </div>
           </div>
         </div>
@@ -596,8 +605,8 @@ if (session_status() === PHP_SESSION_NONE) {
               </div>
             </div>
             <div class="hotel-actions">
-              <button class="btn-details" onclick="viewDetails('Grand Ocean Resort')">View Details</button>
-              <button class="btn-book" onclick="bookHotel('Grand Ocean Resort')">Book Now</button>
+              <a href="/CeylonGo/public/tourist/hotel-details/grand-ocean" class="btn-details">View Details</a>
+              <a href="/CeylonGo/public/tourist/hotel-details/grand-ocean" class="btn-book">Book Now</a>
             </div>
           </div>
         </div>
@@ -627,8 +636,8 @@ if (session_status() === PHP_SESSION_NONE) {
               </div>
             </div>
             <div class="hotel-actions">
-              <button class="btn-details" onclick="viewDetails('City Center Hotel')">View Details</button>
-              <button class="btn-book" onclick="bookHotel('City Center Hotel')">Book Now</button>
+              <a href="/CeylonGo/public/tourist/hotel-details/city-center" class="btn-details">View Details</a>
+              <a href="/CeylonGo/public/tourist/hotel-details/city-center" class="btn-book">Book Now</a>
             </div>
           </div>
         </div>
@@ -657,8 +666,8 @@ if (session_status() === PHP_SESSION_NONE) {
               </div>
             </div>
             <div class="hotel-actions">
-              <button class="btn-details" onclick="viewDetails('Backpacker\'s Paradise')">View Details</button>
-              <button class="btn-book" onclick="bookHotel('Backpacker\'s Paradise')">Book Now</button>
+              <a href="/CeylonGo/public/tourist/hotel-details/backpackers-paradise" class="btn-details">View Details</a>
+              <a href="/CeylonGo/public/tourist/hotel-details/backpackers-paradise" class="btn-book">Book Now</a>
             </div>
           </div>
         </div>
@@ -666,7 +675,7 @@ if (session_status() === PHP_SESSION_NONE) {
     </div>
   </section>
 
-  <!-- Booking Modal -->
+  <!-- Booking Modal (kept for backward compatibility; primary flow is via hotel details page) -->
   <div id="bookingModal" class="booking-modal">
     <div class="modal-content">
       <div class="modal-header">
