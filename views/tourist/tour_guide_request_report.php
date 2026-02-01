@@ -172,20 +172,17 @@ $error = $error ?? null;
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Customer Name</th>
               <th>Location</th>
               <th>Language</th>
               <th>Preferred Date</th>
               <th>Status</th>
               <th>Notes</th>
-              <th>Requested On</th>
             </tr>
           </thead>
           <tbody>
           <?php foreach($requests as $request): ?>
             <tr>
-              <td>#<?php echo $request['id']; ?></td>
               <td><?php echo htmlspecialchars($request['customerName']); ?></td>
               <td><?php echo htmlspecialchars($request['location']); ?></td>
               <td><?php echo htmlspecialchars($request['language']); ?></td>
@@ -207,15 +204,6 @@ $error = $error ?? null;
               </td>
               <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                 <?php echo !empty($request['notes']) ? htmlspecialchars($request['notes']) : '-'; ?>
-              </td>
-              <td>
-                <?php 
-                  if (isset($request['created_at'])) {
-                    echo date('M d, Y H:i', strtotime($request['created_at']));
-                  } else {
-                    echo 'N/A';
-                  }
-                ?>
               </td>
             </tr>
           <?php endforeach; ?>
