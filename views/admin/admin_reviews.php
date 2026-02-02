@@ -77,6 +77,17 @@
                     <h2 class="page-title">Reviews Management</h2>
                     <br>
 
+                    
+                    <h4>Overall Ratings</h4><br>
+                    <p class="sub-text">Service Performance Metrics</p>
+
+                    <div class="footer-buttons">
+                        <button class="footer-btn">Average Rating: <b>4.6</b></button>
+                        <button class="footer-btn">Total Reviews: <b>350 (+20%)</b></button>
+                        <button class="footer-btn">Positive Feedback: <b>85% (+5%)</b></button>
+                    </div>
+                    <br><br>
+
                     <form method="GET" action="/CeylonGo/public/admin/reviews">
                         <div class="toolbar">
                             <div class="filter-buttons">
@@ -149,49 +160,12 @@
                             </tbody>
                         </table>
                     </div>
-                    <br><br>
-
-                    <h3>Top Rated Services</h3><br>
-                    <p class="sub-text">User satisfaction ratings</p>
-
-                    <div class="users-section">
-                        <table class="user-table">
-                            <thead>
-                            <tr>
-                                <th>Service</th>
-                                <th>Rating</th>
-                                <th>Total Reviews</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>Service A 🏆</td>
-                                <td>4.8</td>
-                                <td>200 reviews</td>
-                            </tr>
-                            <tr>
-                                <td>Service B 🔴</td>
-                                <td>4.5</td>
-                                <td>150 reviews</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <br><br>
-
-                    <h3>Overall Ratings</h3><br>
-                    <p class="sub-text">Service Performance Metrics</p>
+                    <br>
 
                     <div class="footer-buttons">
-                        <button class="footer-btn">Average Rating: <b>4.6</b></button>
-                        <button class="footer-btn">Total Reviews: <b>350 (+20%)</b></button>
-                        <button class="footer-btn">Positive Feedback: <b>85% (+5%)</b></button>
+                        <button class="footer-btn black"id="exportBtn">Export Reviews</button>
                     </div>
 
-                    <div class="footer-buttons">
-                        <button class="footer-btn black">Export Reviews</button>
-                    </div>
-                    <br><br>
                 </div>
             </div>
         </div>
@@ -253,6 +227,36 @@
                 if (button.classList.contains("reply-btn")) {
                     alert("Reply feature coming soon 🚀");
                 }
+            });
+
+            // Export Reviews
+            document.getElementById("exportBtn").addEventListener("click", () => {
+                const rows = document.querySelectorAll("#reviewTableBody tr");
+                if(rows.length === 0) return alert("No reviews to export!");
+
+                // Column headers
+                let txt = "User ID\tUser Name\tComment\tRating\tStatus\n";
+
+                rows.forEach(row => {
+                    if(row.style.display !== "none") { // Only visible rows (filters/search)
+                        const cells = [...row.cells];
+                        const userId = cells[0].innerText.trim();
+                        const userName = cells[1].innerText.trim();
+                        const comment = cells[2].innerText.trim();
+                        const rating = cells[3].innerText.trim();
+                        const status = cells[4].innerText.trim();
+
+                        txt += [userId, userName, comment, rating, status].join("\t") + "\n";
+                    }
+                });
+
+                const blob = new Blob([txt], { type: "text/plain" });
+                const link = document.createElement("a");
+
+                const date = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+                link.download = `reviews_${date}.txt`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
             });
         </script>
     </body>

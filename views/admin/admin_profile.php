@@ -16,7 +16,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Profile - Ceylon Go</title>
-<link rel="stylesheet" href="../../public/css/admin/admin_profile.css">
+<link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_profile.css">
 </head>
 <body>
 <div class="profile-container">

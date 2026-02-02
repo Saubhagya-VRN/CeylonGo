@@ -157,7 +157,7 @@
                     </div>
 
                     <div class="footer-buttons">
-                        <button class="footer-btn black" id="exportBtn">Export Users</button>
+                        <button class="footer-btn black" id="exportBtn">Export Details</button>
                     </div>
                 </div>
             </div>
@@ -267,8 +267,9 @@
                 });
                 const blob = new Blob([txt], {type:"text/plain"});
                 const link = document.createElement("a");
+                const date = new Date().toISOString().slice(0,10);
                 link.href = URL.createObjectURL(blob);
-                link.download = "bookings.txt";
+                link.download = `bookings_${date}.txt`;
                 link.click();
             });
         </script>

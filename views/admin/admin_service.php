@@ -228,6 +228,27 @@
                     }
                 });
             }
+
+            // Export Service Providers table
+            document.getElementById("exportBtn").addEventListener("click", () => {
+                const rows = document.querySelectorAll("#providerTableBody tr");
+                if(rows.length === 0) return alert("No providers to export!");
+
+                let txt = "Role\tName\tEmail\n"; // Column headers
+
+                rows.forEach(r => {
+                    if(r.style.display !== "none"){ // Only visible rows
+                        txt += [...r.cells].map(c => c.innerText.trim()).join("\t") + "\n";
+                    }
+                });
+
+                const blob = new Blob([txt], {type: "text/plain"});
+                const link = document.createElement("a");
+                const date = new Date().toISOString().slice(0,10);
+                link.href = URL.createObjectURL(blob);
+                link.download = `service_providers_${date}.txt`;
+                link.click();
+            });
         </script>
     </body>
 </html>

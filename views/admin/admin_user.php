@@ -313,8 +313,9 @@
 
                 const blob = new Blob([txtContent], { type: "text/plain" });
                 const link = document.createElement("a");
+                const date = new Date().toISOString().slice(0,10);
                 link.href = URL.createObjectURL(blob);
-                link.download = "tourist_users.txt";
+                link.download = `tourist_users_${date}.txt`;
                 link.click();
             });
         </script>

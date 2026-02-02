@@ -154,7 +154,7 @@
         </div>
 
         <section class="summary-overview">
-          <h3>Summary Overview</h3>
+          <h4>Summary Overview</h4>
           <div class="stats">
             <div class="stat"><a href="/CeylonGo/public/admin/users" class="stat-link"><h4>Total Users</h4></a><p><?= $totalUsers ?></p></div>
             <div class="stat"><a href="/CeylonGo/public/admin/service" class="stat-link"><h4>Active Service Providers</h4></a><p><?= $totalProviders ?></p></div><br>
@@ -164,7 +164,7 @@
         </section>
 
         <section class="recent">
-          <a href="/CeylonGo/public/admin/inquiries" class="stat-link"><h3>Recent Inquiries</h3></a>
+          <a href="/CeylonGo/public/admin/inquiries" class="stat-link"><h4>Recent Inquiries</h4></a>
           <div class="list">
             <div class="item">Inquiry 123 - Fathima Zara <span>Pending</span></div>
             <div class="item">Inquiry 124 - Jane Roe <span>Resolved</span></div>
@@ -173,7 +173,7 @@
         </section>
 
         <section class="reviews">
-          <a href="/CeylonGo/public/admin/reviews" class="stat-link"><h3>Latest Reviews</h3></a>
+          <a href="/CeylonGo/public/admin/reviews" class="stat-link"><h4>Latest Reviews</h4></a>
           <?php if (!empty($latestReviews)): ?>
               <?php foreach ($latestReviews as $rev): ?>
                   <div class="review">

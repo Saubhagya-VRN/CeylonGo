@@ -107,3 +107,16 @@
 .profile-link:hover {
   color: #e0e0e0 !important;
 }
+
+/* FORCE dashboard section titles to match Summary Overview */
+.recent h4,
+.reviews h4 {
+  color: #6b7280 !important;
+  font-weight: 600;
+}
+
+/* If h4 is inside a link */
+.recent a h4,
+.reviews a h4 {
+  color: #6b7280 !important;
+}
