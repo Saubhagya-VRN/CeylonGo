@@ -5,8 +5,10 @@ $is_user_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === '
 ?>
 <header class="navbar">
   <div class="branding">
-      <img src="../../public/images/logo.png" alt="Ceylon Go Logo" class="logo-img">
-      <div class="logo-text">Ceylon Go</div>
+      <a href="/CeylonGo/public/tourist/dashboard" class="branding-link">
+        <img src="/CeylonGo/public/images/logo.png" alt="Ceylon Go Logo" class="logo-img">
+        <span class="logo-text">Ceylon Go</span>
+      </a>
   </div>
   <nav class="nav-links">
     <a href="/CeylonGo/public/tourist/dashboard">Home</a>

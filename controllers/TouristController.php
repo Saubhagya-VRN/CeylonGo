@@ -62,8 +62,57 @@ class TouristController {
         }
     }
 
-    public function dashboard() {
+    public function newDashboard() {
+        // Fetch tourist data if logged in
+        $tourist_data = null;
+        if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
+            require_once dirname(__DIR__) . '/models/Tourist.php';
+            $touristModel = new Tourist($this->db);
+            $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
+        }
+
+        // Pass data to view
+        view('tourist/dashboard', ['tourist_data' => $tourist_data]);
+    }
+
+    public function oldDashboard() {
         view('tourist/tourist_dashboard');
+    }
+
+    /**
+     * Customise trip page (trip.php). Requires tourist login.
+     */
+    public function trip() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/tourist/dashboard');
+            exit();
+        }
+        $touristModel = new Tourist($this->db);
+        $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
+        $user_name = isset($_SESSION['user_name']) ? trim($_SESSION['user_name']) : '';
+        if ($user_name === '' && $tourist_data) {
+            $user_name = trim(($tourist_data['first_name'] ?? '') . ' ' . ($tourist_data['last_name'] ?? ''));
+        }
+        view('tourist/trip', [
+            'tourist_data' => $tourist_data,
+            'user_name' => $user_name
+        ]);
+    }
+
+    /**
+     * New dashboard (separate from old dashboard).
+     * Uses view dashboard.php and CSS dashboard.css.
+     */
+    public function dashboardNew() {
+        $tourist_data = null;
+        if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
+            $touristModel = new Tourist($this->db);
+            $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
+        }
+        view('tourist/dashboard', [
+            'tourist_data' => $tourist_data,
+            'is_logged_in' => isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist'
+        ]);
     }
 
     public function transportRequestView() {

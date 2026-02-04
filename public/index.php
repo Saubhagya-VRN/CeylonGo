@@ -56,7 +56,9 @@ $router->get('admin/forgot-password', 'AdminController@forgotPassword');
 // ========== TOURIST ROUTES ==========
 $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
-$router->get('tourist/dashboard', 'TouristController@dashboard');
+$router->get('tourist/dashboard', 'TouristController@dashboardNew');
+$router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
+$router->get('tourist/customize-trip', 'TouristController@trip');
 $router->get('tourist/transport-services', 'TouristController@transportRequestView');
 $router->post('tourist/transport-services', 'TouristController@transportRequest');
 $router->get('tourist/transport-report', 'TouristController@transportReport');

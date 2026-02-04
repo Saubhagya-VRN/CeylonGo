@@ -1,0 +1,821 @@
+/**
+ * Trip page – stepper, step cards, forms, toggles, counters
+ * Uses --trip-* variables from trip_layout.css
+ */
+
+/* Breadcrumbs */
+.trip-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--trip-text-light);
+  margin-bottom: 20px;
+}
+
+.trip-breadcrumbs a {
+  color: var(--trip-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trip-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.trip-breadcrumbs span:last-child {
+  color: var(--trip-text);
+  font-weight: 500;
+}
+
+/* Header row: Previous | Title | Next */
+.trip-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.trip-stepper-prev,
+.trip-stepper-next {
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.trip-stepper-next {
+  text-align: right;
+}
+
+.trip-page-title.trip-title-centered {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.trip-page-title.trip-title-centered i {
+  font-size: 24px;
+  color: #2196f3;
+}
+
+.btn-prev,
+.btn-next {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-prev {
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #555;
+}
+
+.btn-prev:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #ddd;
+  color: #333;
+}
+
+.btn-next {
+  border: none;
+  background: #2196f3;
+  color: #fff;
+}
+
+.btn-next:hover {
+  background: #1976d2;
+  color: #fff;
+}
+
+.btn-prev:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Stepper steps strip – subtle shadow, active = thick blue underline */
+.trip-stepper-steps-wrap {
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.trip-stepper-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: min-content;
+}
+
+.trip-step {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.trip-step-line {
+  width: 24px;
+  height: 2px;
+  background: #e8e8e8;
+  margin: 0 4px;
+  transition: background 0.2s ease;
+}
+
+.trip-step-line.active {
+  background: #2196f3;
+}
+
+.trip-step-label {
+  font-size: 12px;
+  color: #999;
+  padding: 6px 10px 10px;
+  border-radius: 6px 6px 0 0;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.trip-step-label.active {
+  color: #1a1a1a;
+  font-weight: 700;
+  border-bottom-color: #2196f3;
+  background: transparent;
+}
+
+/* Step panels */
+.trip-step-panel {
+  display: none;
+}
+
+.trip-step-panel.active {
+  display: block;
+}
+
+.trip-step-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--trip-border);
+}
+
+/* Destination & Dates step – centered, blue accent, reference layout */
+.trip-step-card--dest-dates {
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 36px 32px 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.trip-step-card--dest-dates .step-icon--dest-dates {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+}
+
+.trip-step-card--dest-dates .step-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.trip-step-card--dest-dates .step-subheading {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+.dest-dates-destination-row {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.trip-step-card--dest-dates .dest-dates-destination-row .form-group--full {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 420px;
+  width: 100%;
+  text-align: left;
+}
+
+.trip-step-card--dest-dates .dest-dates-destination-row label {
+  text-align: center;
+}
+
+/* Destination: icon left, chevron right */
+.input-with-icon--dest,
+.input-with-icon--date {
+  position: relative;
+}
+
+.input-with-icon--dest .input-icon--left {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.input-with-icon--date .input-icon--left {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2196f3;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.input-with-icon--dest .input-icon--right,
+.input-with-icon--date .input-icon--right {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.input-with-icon--dest select,
+.input-with-icon--date input {
+  width: 100%;
+  padding: 12px 40px 12px 42px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-with-icon--dest select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.input-with-icon--dest select:focus,
+.input-with-icon--date input:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.15);
+}
+
+.dest-dates-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dest-dates-row .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-step-card--dest-dates .dest-dates-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.trip-step-card--dest-dates .trip-duration-banner {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 28px;
+}
+
+/* Full-width light blue nights banner – white bold text */
+.trip-duration-banner {
+  width: 100%;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #64b5f6, #2196f3);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 28px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.25);
+}
+
+.step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--trip-primary), var(--trip-accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.step-heading {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--trip-text);
+}
+
+.step-subheading {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--trip-text-light);
+}
+
+/* Form layout */
+.trip-step-card .form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 16px;
+  margin-bottom: 20px;
+}
+
+.trip-step-card .form-row.trip-dates-row {
+  gap: 0 16px;
+}
+
+.trip-step-card .form-group {
+  flex: 1;
+  min-width: 140px;
+}
+
+.trip-step-card label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--trip-text);
+  margin-bottom: 6px;
+}
+
+.trip-step-card .input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.trip-step-card .input-with-icon .input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--trip-text-light);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.trip-step-card .input-with-icon input,
+.trip-step-card .input-with-icon select {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid var(--trip-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--trip-text);
+}
+
+.trip-step-card .input-with-icon input:focus,
+.trip-step-card .input-with-icon select:focus {
+  outline: none;
+  border-color: var(--trip-primary);
+  box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.15);
+}
+
+/* Destinations */
+.trip-destinations-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--trip-text);
+  margin-bottom: 12px;
+}
+
+.trip-destinations-list {
+  margin-bottom: 12px;
+}
+
+.trip-destination-block {
+  background: var(--trip-bg-light);
+  border: 1px solid var(--trip-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.trip-destination-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+}
+
+.trip-dest-district {
+  flex: 1;
+  min-width: 160px;
+}
+
+.trip-dest-days {
+  width: 100px;
+}
+
+.trip-dest-days .trip-days-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--trip-border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.trip-dest-hotel .btn-choose-hotel,
+.trip-dest-remove .btn-remove-dest {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.trip-dest-hotel .btn-choose-hotel {
+  background: var(--trip-primary);
+  color: #fff;
+}
+
+.trip-dest-hotel .btn-choose-hotel:hover {
+  background: var(--trip-primary-dark);
+}
+
+.trip-dest-remove .btn-remove-dest {
+  background: #fff;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.trip-dest-remove .btn-remove-dest:hover:not(:disabled) {
+  background: #dc3545;
+  color: #fff;
+}
+
+.trip-dest-remove .btn-remove-dest:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.trip-add-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #fff;
+  border: 2px dashed var(--trip-border);
+  border-radius: 8px;
+  color: var(--trip-primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.trip-add-more-btn:hover {
+  border-color: var(--trip-primary);
+  background: rgba(44, 85, 48, 0.06);
+}
+
+.trip-duration {
+  margin: 16px 0 24px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--trip-primary);
+}
+
+/* Transport / Tour guide toggles */
+.trip-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 32px;
+  margin-top: 24px;
+}
+
+.trip-option-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--trip-text);
+  margin-bottom: 8px;
+}
+
+.trip-toggle-group {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--trip-border);
+}
+
+.trip-toggle-btn {
+  padding: 10px 18px;
+  border: none;
+  background: #fff;
+  color: var(--trip-text-light);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.trip-toggle-btn:first-child {
+  border-right: 1px solid var(--trip-border);
+}
+
+.trip-toggle-btn.selected {
+  background: var(--trip-primary);
+  color: #fff;
+}
+
+.trip-toggle-btn:hover:not(.selected) {
+  background: var(--trip-bg-light);
+}
+
+/* Travel Group step – centered, not full width; match reference */
+.trip-step-card--travel-group {
+  text-align: center;
+  padding: 36px 32px 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  max-width: 720px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.trip-step-card--travel-group .step-icon--travel-group {
+  margin-left: auto;
+  margin-right: auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7eb8da, #5b9bd5);
+  color: #fff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trip-step-card--travel-group .step-heading {
+  text-align: center;
+  margin-bottom: 6px;
+  font-size: 22px;
+  color: #1a1a1a;
+}
+
+.trip-step-card--travel-group .step-subheading {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.trip-travel-group-form {
+  margin-top: 0;
+  text-align: left;
+}
+
+.trip-counters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 48px;
+  margin-bottom: 36px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.trip-counter-group {
+  flex: 0 1 auto;
+  min-width: 140px;
+  max-width: 180px;
+}
+
+.trip-counter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.trip-counter-icon {
+  color: #5b9bd5;
+  font-size: 17px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Single integrated counter: light grey border, one cohesive unit */
+.trip-counter {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 150px;
+  background: #f8f8f8;
+  min-height: 44px;
+}
+
+.trip-counter-btn {
+  width: 42px;
+  min-height: 44px;
+  border: none;
+  background: #f8f8f8;
+  color: #555;
+  font-size: 18px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.trip-counter-btn:hover {
+  background: #eee;
+  color: #333;
+}
+
+.trip-counter-value {
+  flex: 1;
+  min-width: 44px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid #e8e8e8;
+  border-right: 1px solid #e8e8e8;
+  font-size: 17px;
+  font-weight: 700;
+  background: #f8f8f8;
+  color: #1a1a1a;
+}
+
+/* Type of Trip – cards with subtle shadow; selected = light blue, darker blue text */
+.trip-type-section {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid #eee;
+  text-align: left;
+}
+
+.trip-type-heading {
+  margin: 0 0 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.trip-type-options.trip-type-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.trip-type-card {
+  flex: 1;
+  min-width: 96px;
+  padding: 22px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.trip-type-card:hover {
+  border-color: #5b9bd5;
+  background: #fafcff;
+}
+
+.trip-type-card .trip-type-card-icon {
+  font-size: 24px;
+  color: #aaa;
+  display: block;
+}
+
+.trip-type-card .trip-type-card-label {
+  display: block;
+  text-align: center;
+  color: #333;
+}
+
+/* Selected: light blue bg, blue border, solid blue heart, darker blue text */
+.trip-type-card.selected {
+  background: #e3f2fd;
+  border: 1px solid #2196f3;
+  box-shadow: 0 1px 4px rgba(33, 150, 243, 0.2);
+}
+
+.trip-type-card.selected .trip-type-card-icon {
+  color: #2196f3;
+}
+
+.trip-type-card.selected .trip-type-card-label {
+  color: #1565c0;
+  font-weight: 600;
+}
+
+/* Responsive: center title on small screens */
+@media (max-width: 768px) {
+  .trip-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trip-stepper-prev,
+  .trip-stepper-next {
+    min-width: 0;
+    text-align: center;
+  }
+
+  .trip-page-title.trip-title-centered {
+    order: -1;
+    font-size: 18px;
+  }
+
+  .trip-step-card {
+    padding: 20px 16px;
+  }
+
+  .trip-destination-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trip-dest-days {
+    width: 100%;
+  }
+
+  .trip-counters-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .trip-type-options.trip-type-cards {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .trip-type-card {
+    min-width: calc(50% - 8px);
+  }
+}

@@ -37,9 +37,17 @@ class AuthController {
                 }
             }
 
+            $redirect = trim($_POST['redirect'] ?? '');
+            if (!empty($redirect) && strpos($redirect, '/CeylonGo/public/') === 0 && strpos($redirect, '//') === false) {
+                // Allow same-site redirect from login (e.g. customise trip → old-dashboard)
+                $redirectTo = $redirect;
+            } else {
+                $redirectTo = null;
+            }
+
             switch ($user['role']) {
                 case 'tourist':
-                    header("Location: /CeylonGo/public/tourist/dashboard");
+                    header("Location: " . ($redirectTo ?: "/CeylonGo/public/tourist/dashboard"));
                     break;
                 case 'hotel':
                     header("Location: /CeylonGo/public/hotel/dashboard");
@@ -67,7 +75,7 @@ class AuthController {
 
     public function logout() {
         session_destroy();
-        header("Location: /CeylonGo/public/login");
+        header("Location: /CeylonGo/public/tourist/dashboard");
         exit();
     }
 
