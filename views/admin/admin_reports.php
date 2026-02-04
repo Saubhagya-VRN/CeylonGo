@@ -1,3 +1,13 @@
+<?php 
+    // Session is already started in public/index.php
+    require_once(__DIR__ . '/../../config/config.php');
+
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+        header("Location: /CeylonGo/public/login");
+        exit();
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -7,21 +17,19 @@
         <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+        <!-- Optional admin-only overrides -->
+        <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_reports.css">
+
         <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
 
-        <!-- Optional admin-only overrides -->
-        <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_overrides.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_reports.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_common.css">
-
         <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
 
-        <title>Reports Page</title>
+        <title>Reports and Analysis</title>
     </head>
 
     <body>
@@ -60,63 +68,62 @@
                 <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                 <li><a href="/CeylonGo/public/admin/promotions"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
                 <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
-                <li class="active"><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
-                <li><a href="/CeylonGo/public/admin/settings"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                <li class="active"><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports and Analysis</a></li>
                 </ul>
             </div>
 
             <div class="main-content">
                 <div class="reports-management">
                 
-                    <h2 class="page-title">Reports Page</h2>
+                    <h2 class="page-title">Reports and Analysis</h2>
                     <br>
 
                     <div class="filter-buttons">
-                        <button class="filter-btn active">Daily</button>
-                        <button class="filter-btn">Monthly</button>
-                        <button class="filter-btn">Custom</button>
+                        <button class="filter-btn <?= ($period === 'daily') ? 'active' : '' ?>" data-period="daily">Daily</button>
+                        <button class="filter-btn <?= ($period === 'monthly') ? 'active' : '' ?>" data-period="monthly">Monthly</button>
+                        <button class="filter-btn <?= ($period === 'yearly') ? 'active' : '' ?>" data-period="yearly">Yearly</button>
                     </div>
-                    <p class="sub-text">Choose the report type you want to generate.</p>
+                    <p class="sub-text">Choose the timeline.</p>
 
-                    <h3 class="section-title">Key Metrics</h3>
-                    <p class="sub-text">Overview of Performance</p>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <h4>Total Bookings</h4>
-                            <p class="metric-value">1500</p>
-                            <span class="metric-change positive">+20%</span>
+                    <div class="stats-section">
+                        <h4>Key Metrics</h4>
+                        <p class="sub-text">Overview of Performance</p>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong>Total Bookings</strong><br>
+                                <span><?= $totalBookings ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Total Revenue</strong><br>
+                                <span>$ 100,000</span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Cancellations</strong><br>
+                                <span><?= $totalCancellations ?></span>
+                            </div>
                         </div>
-                        <div class="metric-card">
-                            <h4>Total Revenue</h4>
-                            <p class="metric-value">$30,000</p>
-                            <span class="metric-change positive">+15%</span>
-                        </div>
-                        <div class="metric-card">
-                            <h4>Cancellations</h4>
-                            <p class="metric-value">50</p>
-                            <span class="metric-change negative">-5%</span>
-                        </div>
+                    </div>
+                    <br><br>
+
+                    <div class="chart-section">
+                        <h3 class="section-title">Number of Bookings</h3>
+                        <canvas id="bookingsChart" 
+                                data-labels='<?= json_encode($labels) ?>' 
+                                data-values='<?= json_encode($bookings) ?>'>
+                        </canvas>
                     </div>
 
                     <div class="chart-section">
-                        <h3 class="section-title">Bookings Over Time</h3>
-                        <canvas id="bookingsChart"></canvas>
-                    </div>
-
-                    <div class="chart-section">
-                        <h3 class="section-title">Revenue Trends</h3>
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-
-                    <div class="chart-section">
-                        <h3 class="section-title">Cancellations Distribution</h3>
-                        <canvas id="cancellationsChart"></canvas>
+                        <h3 class="section-title">Cancellations</h3>
+                        <canvas id="cancellationsChart" 
+                                data-labels='<?= json_encode($labels) ?>' 
+                                data-values='<?= json_encode($cancellations) ?>'>
+                        </canvas>
                     </div>
 
                     <div class="footer-buttons">
-                        <button class="footer-btn">Download PDF</button>
-                        <button class="footer-btn">Download Excel</button>
-                        <button class="footer-btn black">Export Report</button>
+                        <button class="footer-btn black">Download PDF</button>
+                        <button class="footer-btn black">Download Excel</button>
                     </div>
                 </div>
             </div>
@@ -126,8 +133,7 @@
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-                <li><a href="/CeylonGo/public/admin/settings">Update Settings</a></li>
-                <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
+                <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
                 <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
             </ul>
         </footer>
@@ -149,7 +155,9 @@
             });
         </script>
 
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="../../public/js/reports_charts.js"></script>
+        <script src="/CeylonGo/public/js/reports_charts.js"></script>
     </body>
 </html>

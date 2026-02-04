@@ -7,16 +7,14 @@
     <!-- Font Awesome (REQUIRED) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <!-- Optional admin-only overrides -->
+    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_inquiries.css">
+    
     <!-- Shared Transport Layout -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
-    <!-- Optional admin-only overrides -->
-    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_overrides.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_inquiries.css">
-    <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_common.css">
 
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
@@ -60,8 +58,7 @@
           <li class="active"><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
           <li><a href="/CeylonGo/public/admin/promotions"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
           <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
-          <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports</a></li>
-          <li><a href="/CeylonGo/public/admin/settings"><i class="fa-solid fa-gear"></i> Settings</a></li>
+          <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
         </ul>
       </div>
 
@@ -84,7 +81,7 @@
               </div>
 
               <div class="stats-section">
-                  <h4>Inquiry Statistics</h4>
+                  <h4>Inquiry Statistics</h4><br>
                   <div class="stats-grid">
                     <div class="stat-box">
                         <strong>Total Inquiries</strong><br>
@@ -164,7 +161,6 @@
     <footer>
       <ul>
         <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-        <li><a href="/CeylonGo/public/admin/settings">Update Settings</a></li>
         <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
         <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
       </ul>

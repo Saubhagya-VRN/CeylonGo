@@ -85,5 +85,43 @@ class Booking {
         $stmt->execute([':id' => $bookingId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    // Get aggregated bookings for chart
+    public function getAggregatedBookings($period = 'daily') {
+        // Determine date format based on period
+        switch (strtolower($period)) {
+            case 'monthly':
+                $dateFormat = "%Y-%M";
+                break;
+            case 'yearly':
+                $dateFormat = "%Y";
+                break;
+            case 'daily':
+            default:
+                $dateFormat = "%Y-%m-%d";
+                break;
+        }
+
+        $sql = "SELECT 
+                    DATE_FORMAT(created_at, :dateFormat) AS period,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+                FROM trip_bookings
+                GROUP BY period
+                ORDER BY period ASC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':dateFormat', $dateFormat, PDO::PARAM_STR);
+        $stmt->execute();
+        
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Debug: Check what data is being returned
+        error_log("Period: " . $period);
+        error_log("Date Format: " . $dateFormat);
+        error_log("Result: " . print_r($result, true));
+        
+        return $result;
+    }
 }
 ?>

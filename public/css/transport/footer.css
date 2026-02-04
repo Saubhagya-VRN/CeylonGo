@@ -6,7 +6,7 @@ footer {
   text-align: center;
   width: 100%;
   margin-top: auto;
-  margin-left: 0;
+  margin-left: 130px;
   position: relative;
   left: 0;
   right: 0;
@@ -19,23 +19,26 @@ footer ul {
   margin: 0 auto;
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 30px;
   flex-wrap: wrap;
   max-width: 100%;
 }
 
 footer ul li {
-  display: inline;
+   display: inline-block;
+  margin: 0;
 }
 
 footer ul li a {
   color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  font-size: 25px;
+  font-size: 18px;
   font-weight: 500;
   transition: all 0.3s ease;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 6px;
+  display: inline-block;
 }
 
 footer ul li a:hover {
@@ -47,10 +50,12 @@ footer ul li a:hover {
 @media (max-width: 768px) {
   footer {
     padding: 15px 10px;
+    margin-left: 0;
   }
 
   footer ul {
     gap: 15px;
+    justify-content: center;
   }
 
   footer ul li a {

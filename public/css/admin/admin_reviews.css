@@ -35,3 +35,9 @@
 .icon-btn.danger {
   color: red;
 }
+
+.reviews-management .sub-text {
+  font-size: 14px;
+  color: gray;
+  margin-bottom: 20px;
+}

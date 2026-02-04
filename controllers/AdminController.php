@@ -234,7 +234,31 @@ class AdminController {
     }
 
     public function reports() {
-        view('admin/admin_reports');
+        $bookingModel = new Booking($this->db);
+        $stats = $bookingModel->getBookingStats();
+
+        $totalBookings = $stats['total'] ?? 0;
+        $totalCancellations = $stats['cancelled'] ?? 0;
+
+        // Get period from URL, default to 'daily'
+        $period = $_GET['period'] ?? 'daily';
+
+        // Get aggregated data based on period
+        $chartData = $bookingModel->getAggregatedBookings($period);
+
+        // Extract arrays for Chart.js
+        $labels = array_column($chartData, 'period');
+        $bookings = array_column($chartData, 'total');
+        $cancellations = array_column($chartData, 'cancelled');
+
+        view('admin/admin_reports', [
+            'totalBookings' => $totalBookings,
+            'totalCancellations' => $totalCancellations,
+            'labels' => $labels,
+            'bookings' => $bookings,
+            'cancellations' => $cancellations,
+            'period' => $period
+        ]);
     }
 
     public function service() {

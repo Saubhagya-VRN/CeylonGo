@@ -91,34 +91,3 @@
   background: #ccc;
   color: #000;
 }
-
-/* Stats Section */
-.stats-section {
-  margin-top: 30px;
-}
-.subheading {
-  color: #777;
-  margin-bottom: 10px;
-}
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
-.stat-box {
-  border: 1px solid #ccc;
-  padding: 15px;
-  text-align: center;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.stat-box strong {
-  font-size: 13px;
-  color: #555;
-}
-.stat-box span {
-  font-size: 18px;
-  font-weight: bold;
-  color: #000;
-}

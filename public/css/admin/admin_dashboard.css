@@ -64,16 +64,6 @@
   border-bottom: 1px solid #ddd;
 }
 
-/* Remove underline and purple link color */
-.stat-link {
-  text-decoration: none;
-  color: black;
-}
-
-.stat-link:hover {
-  color: #39663e; /* Optional hover color (same green as header) */
-}
-
 /* Also fix the purple link in the button */
 .btn-black a {
   text-decoration: none;
@@ -82,6 +72,16 @@
 
 .btn-black a:hover {
   color: #dcdcdc; /* slight gray hover effect */
+}
+
+/* Remove underline and purple link color */
+.stat-link {
+  text-decoration: none;
+  color: black;
+}
+
+.stat-link:hover {
+  color: #39663e; /* Optional hover color (same green as header) */
 }
 
 /* --- Remove underline and purple color from dashboard links --- */
@@ -106,17 +106,4 @@
 
 .profile-link:hover {
   color: #e0e0e0 !important;
-}
-
-/* FORCE dashboard section titles to match Summary Overview */
-.recent h4,
-.reviews h4 {
-  color: #6b7280 !important;
-  font-weight: 600;
-}
-
-/* If h4 is inside a link */
-.recent a h4,
-.reviews a h4 {
-  color: #6b7280 !important;
 }

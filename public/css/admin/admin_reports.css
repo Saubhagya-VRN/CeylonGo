@@ -10,39 +10,6 @@
   margin-bottom: 20px;
 }
 
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-  margin-bottom: 30px;
-}
-
-.metric-card {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.metric-value {
-  font-size: 22px;
-  font-weight: bold;
-  margin: 10px 0;
-}
-
-.metric-change {
-  font-size: 14px;
-}
-
-.metric-change.positive {
-  color: green;
-}
-
-.metric-change.negative {
-  color: red;
-}
-
 .chart-section {
   margin-bottom: 30px;
   background: white;
