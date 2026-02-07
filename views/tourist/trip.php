@@ -4,8 +4,8 @@ $tourist_data = $tourist_data ?? null;
 $user_email = ($tourist_data['email'] ?? $_SESSION['user_email'] ?? '');
 $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
 $steps = [
-    'Destination & Dates',
     'Travel Group',
+    'Destination & Dates',
     'Accommodation',
     'Transport & Flights',
     'Budget & Add-ons',
@@ -110,108 +110,6 @@ $districts = [
       </div>
 
       <div class="trip-step-panel active" data-step="1">
-      <div class="trip-step-card trip-step-card--dest-dates">
-        <div class="step-icon step-icon--dest-dates"><i class="fa-solid fa-location-dot"></i></div>
-        <h2 class="step-heading">Where do you dream to go next?</h2>
-        <p class="step-subheading">Tell us your destination and travel dates.</p>
-
-        <form method="POST" action="#" id="trip-step-form">
-          <div class="dest-dates-destination-row">
-            <div class="form-group form-group--full">
-              <label for="dest_primary">Destination</label>
-              <div class="input-with-icon input-with-icon--dest">
-                <i class="fa-solid fa-location-dot input-icon input-icon--left"></i>
-                <select id="dest_primary" name="destinations[0][district]">
-                  <option value="">Select district</option>
-                  <?php foreach ($districts as $val => $label): ?>
-                    <option value="<?php echo htmlspecialchars($val); ?>"><?php echo htmlspecialchars($label); ?></option>
-                  <?php endforeach; ?>
-                </select>
-                <i class="fa-solid fa-chevron-down input-icon input-icon--right"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-row trip-dates-row dest-dates-row">
-            <div class="form-group">
-              <label for="start_date">Start Date</label>
-              <div class="input-with-icon input-with-icon--date">
-                <i class="fa-regular fa-calendar input-icon input-icon--left"></i>
-                <input type="date" id="start_date" name="start_date" value="2026-02-04" required>
-                <i class="fa-solid fa-chevron-right input-icon input-icon--right"></i>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="end_date">End Date</label>
-              <div class="input-with-icon input-with-icon--date">
-                <i class="fa-regular fa-calendar input-icon input-icon--left"></i>
-                <input type="date" id="end_date" name="end_date" value="2026-02-09" required>
-                <i class="fa-solid fa-chevron-right input-icon input-icon--right"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="trip-duration-banner" id="tripDuration">5 Nights Trip</div>
-
-          <div class="trip-destinations-heading">Add more destinations (optional)</div>
-          <div id="trip-destinations-list" class="trip-destinations-list"></div>
-          <template id="trip-destination-template">
-            <div class="trip-destination-block" data-index="">
-              <div class="trip-destination-row">
-                <div class="form-group trip-dest-district">
-                  <label>District</label>
-                  <div class="input-with-icon">
-                    <i class="fa-solid fa-location-dot input-icon"></i>
-                    <select name="">
-                      <option value="">Select district</option>
-                      <?php foreach ($districts as $val => $label): ?>
-                        <option value="<?php echo htmlspecialchars($val); ?>"><?php echo htmlspecialchars($label); ?></option>
-                      <?php endforeach; ?>
-                    </select>
-                  </div>
-                </div>
-                <div class="form-group trip-dest-days">
-                  <label>How many days here?</label>
-                  <input type="number" class="trip-days-input" value="1" min="1" max="90">
-                </div>
-                <div class="form-group trip-dest-hotel">
-                  <label>&nbsp;</label>
-                  <a href="/CeylonGo/public/tourist/choose-hotel" class="btn-choose-hotel" target="_blank">Choose Hotel</a>
-                </div>
-                <div class="form-group trip-dest-remove">
-                  <label>&nbsp;</label>
-                  <button type="button" class="btn-remove-dest" title="Remove destination" aria-label="Remove destination"><i class="fa-solid fa-trash-can"></i> Remove</button>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <button type="button" class="trip-add-more-btn" id="tripAddMoreBtn" aria-label="Add another destination"><i class="fa-solid fa-plus"></i> Add More</button>
-          <input type="hidden" name="destinations[0][days]" value="1">
-
-          <div class="trip-options-row">
-            <div class="trip-option-group">
-              <label>Do you want transport?</label>
-              <div class="trip-toggle-group">
-                <button type="button" class="trip-toggle-btn" data-option="transport" data-value="yes">Yes <i class="fa-solid fa-check"></i></button>
-                <button type="button" class="trip-toggle-btn selected" data-option="transport" data-value="no">No</button>
-              </div>
-              <input type="hidden" name="transport" id="transport" value="no">
-            </div>
-            <div class="trip-option-group">
-              <label>Add a tour guide?</label>
-              <div class="trip-toggle-group">
-                <button type="button" class="trip-toggle-btn selected" data-option="tour_guide" data-value="yes">Yes <i class="fa-solid fa-check"></i></button>
-                <button type="button" class="trip-toggle-btn" data-option="tour_guide" data-value="no">No</button>
-              </div>
-              <input type="hidden" name="tour_guide" id="tour_guide" value="yes">
-            </div>
-          </div>
-        </form>
-      </div>
-      </div>
-
-      <div class="trip-step-panel" data-step="2">
       <div class="trip-step-card trip-step-card--travel-group">
         <div class="step-icon step-icon--travel-group"><i class="fa-solid fa-people-group"></i></div>
         <h2 class="step-heading">Who's traveling with you?</h2>
@@ -266,6 +164,56 @@ $districts = [
             <input type="hidden" name="trip_type" id="trip_type" value="">
           </div>
         </div>
+      </div>
+      </div>
+
+      <div class="trip-step-panel" data-step="2">
+      <div class="trip-step-card trip-step-card--dest-dates">
+        <div class="step-icon step-icon--dest-dates"><i class="fa-solid fa-location-dot"></i></div>
+        <h2 class="step-heading">Where do you dream to go next?</h2>
+        <p class="step-subheading">Tell us your destination and travel dates.</p>
+
+        <form method="POST" action="#" id="trip-step-form">
+          <div class="dest-dates-destination-row">
+            <div class="form-group form-group--full">
+              <label for="dest_primary">Destination</label>
+              <div class="input-with-icon input-with-icon--dest">
+                <i class="fa-solid fa-location-dot input-icon input-icon--left"></i>
+                <select id="dest_primary" name="destinations[0][district]">
+                  <option value="">Select district</option>
+                  <?php foreach ($districts as $val => $label): ?>
+                    <option value="<?php echo htmlspecialchars($val); ?>"><?php echo htmlspecialchars($label); ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <i class="fa-solid fa-chevron-down input-icon input-icon--right"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row trip-dates-row dest-dates-row">
+            <div class="form-group">
+              <label for="start_date">Start Date</label>
+              <div class="input-with-icon input-with-icon--date">
+                <i class="fa-regular fa-calendar input-icon input-icon--left"></i>
+                <input type="date" id="start_date" name="start_date" value="2026-02-04" required>
+                <i class="fa-solid fa-chevron-right input-icon input-icon--right"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="end_date">End Date</label>
+              <div class="input-with-icon input-with-icon--date">
+                <i class="fa-regular fa-calendar input-icon input-icon--left"></i>
+                <input type="date" id="end_date" name="end_date" value="2026-02-09" required>
+                <i class="fa-solid fa-chevron-right input-icon input-icon--right"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="trip-duration-banner" id="tripDuration">5 Nights Trip</div>
+
+          <input type="hidden" name="destinations[0][days]" value="1">
+
+        </form>
       </div>
       </div>
     </main>
@@ -361,7 +309,6 @@ $districts = [
     });
 
     var durationEl = document.getElementById('tripDuration');
-    var destList = document.getElementById('trip-destinations-list');
     var startDateEl = document.getElementById('start_date');
     var endDateEl = document.getElementById('end_date');
     function updateDurationBanner() {
@@ -376,56 +323,6 @@ $districts = [
     if (startDateEl) startDateEl.addEventListener('change', updateDurationBanner);
     if (endDateEl) endDateEl.addEventListener('change', updateDurationBanner);
     updateDurationBanner();
-
-    function reindexDestinations() {
-      if (!destList) return;
-      var blocks = destList.querySelectorAll('.trip-destination-block');
-      blocks.forEach(function (block, i) {
-        var idx = i + 1;
-        block.setAttribute('data-index', idx);
-        var sel = block.querySelector('select');
-        var daysInp = block.querySelector('.trip-days-input');
-        if (sel) sel.name = 'destinations[' + idx + '][district]';
-        if (daysInp) daysInp.name = 'destinations[' + idx + '][days]';
-        var removeBtn = block.querySelector('.btn-remove-dest');
-        if (removeBtn) removeBtn.disabled = false;
-      });
-    }
-    if (destList) {
-      destList.addEventListener('click', function (e) {
-        var btn = e.target.closest('.btn-remove-dest');
-        if (!btn) return;
-        var block = btn.closest('.trip-destination-block');
-        if (block) { block.remove(); reindexDestinations(); }
-      });
-    }
-    var addMoreBtn = document.getElementById('tripAddMoreBtn');
-    var templateEl = document.getElementById('trip-destination-template');
-    if (addMoreBtn && destList && templateEl) {
-      addMoreBtn.addEventListener('click', function () {
-        var clone = templateEl.content.cloneNode(true);
-        var block = clone.querySelector('.trip-destination-block');
-        var blocks = destList.querySelectorAll('.trip-destination-block');
-        var idx = blocks.length + 1;
-        block.setAttribute('data-index', idx);
-        block.querySelector('select').name = 'destinations[' + idx + '][district]';
-        block.querySelector('.trip-days-input').name = 'destinations[' + idx + '][days]';
-        destList.appendChild(clone);
-      });
-    }
-
-    document.querySelectorAll('.trip-toggle-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var opt = this.getAttribute('data-option');
-        var val = this.getAttribute('data-value');
-        var group = this.closest('.trip-option-group');
-        if (!group) return;
-        group.querySelectorAll('.trip-toggle-btn').forEach(function (b) { b.classList.remove('selected'); });
-        this.classList.add('selected');
-        var hid = document.getElementById(opt === 'transport' ? 'transport' : 'tour_guide');
-        if (hid) hid.value = val;
-      });
-    });
   });
   </script>
 </body>
