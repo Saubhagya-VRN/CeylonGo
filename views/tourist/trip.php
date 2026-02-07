@@ -168,14 +168,13 @@ $districts = [
       </div>
 
       <div class="trip-step-panel" data-step="2">
-      <div class="trip-step-card trip-step-card--dest-dates">
+      <div class="trip-step-card trip-step-card--dest-dates trip-wireframe-card">
         <div class="step-icon step-icon--dest-dates"><i class="fa-solid fa-location-dot"></i></div>
-        <h2 class="step-heading">Where do you dream to go next?</h2>
-        <p class="step-subheading">Tell us your destination and travel dates.</p>
+        <h2 class="trip-section-heading">Select Destination</h2>
 
         <form method="POST" action="#" id="trip-step-form">
-          <div class="dest-dates-destination-row">
-            <div class="form-group form-group--full">
+          <div class="form-row trip-dates-row dest-dates-row trip-dest-row-single">
+            <div class="form-group trip-date-group trip-dest-group">
               <label for="dest_primary">Destination</label>
               <div class="input-with-icon input-with-icon--dest">
                 <i class="fa-solid fa-location-dot input-icon input-icon--left"></i>
@@ -191,28 +190,38 @@ $districts = [
           </div>
 
           <div class="form-row trip-dates-row dest-dates-row">
-            <div class="form-group">
+            <div class="form-group trip-date-group">
               <label for="start_date">Start Date</label>
               <div class="input-with-icon input-with-icon--date">
                 <i class="fa-regular fa-calendar input-icon input-icon--left"></i>
-                <input type="date" id="start_date" name="start_date" value="2026-02-04" required>
-                <i class="fa-solid fa-chevron-right input-icon input-icon--right"></i>
+                <input type="date" id="start_date" name="start_date" value="2026-02-04" required aria-describedby="tripDateError">
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group trip-date-group">
               <label for="end_date">End Date</label>
               <div class="input-with-icon input-with-icon--date">
                 <i class="fa-regular fa-calendar input-icon input-icon--left"></i>
-                <input type="date" id="end_date" name="end_date" value="2026-02-09" required>
-                <i class="fa-solid fa-chevron-right input-icon input-icon--right"></i>
+                <input type="date" id="end_date" name="end_date" value="2026-02-09" required aria-describedby="tripDateError">
               </div>
             </div>
           </div>
+          <p class="trip-date-error" id="tripDateError" role="alert" aria-live="polite"></p>
 
           <div class="trip-duration-banner" id="tripDuration">5 Nights Trip</div>
 
-          <input type="hidden" name="destinations[0][days]" value="1">
+          <div class="trip-stops-section">
+            <h3 class="trip-stops-heading">Stops in this area</h3>
+            <p class="trip-stops-desc">You can add many stops and request transport &amp; a tour guide if needed.</p>
+            <div id="tripStopsList" class="trip-stops-list"></div>
+            <button type="button" class="btn-add-more-stops" id="btnAddMoreStops"><i class="fa-solid fa-plus"></i> Add More Stops</button>
+          </div>
 
+          <div class="trip-dest-actions">
+            <button type="button" class="btn-add-another-dest" id="btnAddAnotherDest"><i class="fa-solid fa-plus"></i> Add Another Destination</button>
+            <button type="button" class="btn-end-trip" id="btnEndTrip">End Trip <i class="fa-solid fa-flag-checkered"></i></button>
+          </div>
+
+          <input type="hidden" name="destinations[0][days]" value="1">
         </form>
       </div>
       </div>
@@ -311,18 +320,122 @@ $districts = [
     var durationEl = document.getElementById('tripDuration');
     var startDateEl = document.getElementById('start_date');
     var endDateEl = document.getElementById('end_date');
+    var dateErrorEl = document.getElementById('tripDateError');
+
+    function todayStr() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function validateDates() {
+      if (!dateErrorEl) return true;
+      dateErrorEl.textContent = '';
+      dateErrorEl.classList.remove('trip-date-error--visible');
+      if (!startDateEl || !endDateEl) return true;
+      var startVal = startDateEl.value;
+      var endVal = endDateEl.value;
+      if (!startVal || !endVal) return true;
+      var start = new Date(startVal);
+      var end = new Date(endVal);
+      if (end < start) {
+        dateErrorEl.textContent = 'End date must be on or after start date.';
+        dateErrorEl.classList.add('trip-date-error--visible');
+        return false;
+      }
+      return true;
+    }
+
     function updateDurationBanner() {
       if (!durationEl || !startDateEl || !endDateEl) return;
+      if (!validateDates()) {
+        durationEl.textContent = '—';
+        return;
+      }
       var start = startDateEl.value ? new Date(startDateEl.value) : null;
       var end = endDateEl.value ? new Date(endDateEl.value) : null;
-      if (!start || !end || end < start) return;
+      if (!start || !end || end < start) {
+        durationEl.textContent = '—';
+        return;
+      }
       var nights = Math.round((end - start) / (24 * 60 * 60 * 1000));
       if (nights < 0) nights = 0;
       durationEl.textContent = nights + ' Night' + (nights !== 1 ? 's' : '') + ' Trip';
     }
-    if (startDateEl) startDateEl.addEventListener('change', updateDurationBanner);
-    if (endDateEl) endDateEl.addEventListener('change', updateDurationBanner);
+
+    if (startDateEl) {
+      startDateEl.setAttribute('min', todayStr());
+      startDateEl.addEventListener('change', function () {
+        if (endDateEl && startDateEl.value) endDateEl.setAttribute('min', startDateEl.value);
+        if (endDateEl && endDateEl.value && endDateEl.value < startDateEl.value) endDateEl.value = startDateEl.value;
+        updateDurationBanner();
+      });
+    }
+    if (endDateEl) {
+      if (startDateEl && startDateEl.value) endDateEl.setAttribute('min', startDateEl.value);
+      endDateEl.addEventListener('change', updateDurationBanner);
+    }
     updateDurationBanner();
+
+    var stopIndex = 0;
+    function addStopCard(data) {
+      data = data || { location: '', transportNeeded: 'no', tourGuideNeeded: 'no' };
+      var idx = stopIndex++;
+      var nameLoc = (data.location || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      var card = document.createElement('div');
+      card.className = 'trip-stop-card';
+      card.dataset.stopIndex = idx;
+      card.innerHTML =
+        '<div class="trip-stop-card-header">' +
+        '<h4 class="trip-stop-title">Stop ' + (document.getElementById('tripStopsList').children.length + 1) + '</h4>' +
+        '<button type="button" class="btn-remove-stop" aria-label="Remove this stop"><i class="fa-solid fa-trash-can"></i> Remove</button>' +
+        '</div>' +
+        '<div class="form-group trip-stop-location-group"><label>Stop location / attraction</label><input type="text" class="trip-stop-location" placeholder="Stop location / attraction" value="' + nameLoc + '"></div>' +
+        '<div class="trip-stop-options">' +
+        '<div class="trip-stop-option-group">' +
+        '<span class="trip-option-label">Transport Needed?</span>' +
+        '<div class="trip-toggle-btns">' +
+        '<button type="button" class="trip-toggle-btn' + (data.transportNeeded === 'yes' ? ' selected' : '') + '" data-value="yes">Yes</button>' +
+        '<button type="button" class="trip-toggle-btn' + (data.transportNeeded !== 'yes' ? ' selected' : '') + '" data-value="no">No</button>' +
+        '</div></div>' +
+        '<div class="trip-stop-option-group">' +
+        '<span class="trip-option-label">Tour Guide Needed?</span>' +
+        '<div class="trip-toggle-btns">' +
+        '<button type="button" class="trip-toggle-btn' + (data.tourGuideNeeded === 'yes' ? ' selected' : '') + '" data-value="yes">Yes</button>' +
+        '<button type="button" class="trip-toggle-btn' + (data.tourGuideNeeded !== 'yes' ? ' selected' : '') + '" data-value="no">No</button>' +
+        '</div></div>' +
+        '</div>';
+      document.getElementById('tripStopsList').appendChild(card);
+      renumberStops();
+    }
+    function renumberStops() {
+      var list = document.getElementById('tripStopsList');
+      if (!list) return;
+      var cards = list.querySelectorAll('.trip-stop-card');
+      cards.forEach(function (card, i) {
+        var title = card.querySelector('.trip-stop-title');
+        if (title) title.textContent = 'Stop ' + (i + 1);
+      });
+    }
+    document.getElementById('btnAddMoreStops').addEventListener('click', function () {
+      addStopCard();
+    });
+    document.getElementById('tripStopsList').addEventListener('click', function (e) {
+      var removeBtn = e.target.closest('.btn-remove-stop');
+      if (removeBtn) {
+        var card = removeBtn.closest('.trip-stop-card');
+        if (card) { card.remove(); renumberStops(); }
+        return;
+      }
+      var toggleBtn = e.target.closest('.trip-toggle-btn');
+      if (toggleBtn) {
+        var group = toggleBtn.closest('.trip-stop-option-group');
+        if (group) {
+          group.querySelectorAll('.trip-toggle-btn').forEach(function (b) { b.classList.remove('selected'); });
+          toggleBtn.classList.add('selected');
+        }
+      }
+    });
+    addStopCard();
   });
   </script>
 </body>

@@ -176,7 +176,7 @@
 
 /* Destination & Dates step – centered, blue accent, reference layout */
 .trip-step-card--dest-dates {
-  max-width: 720px;
+  max-width: 960px;
   margin-left: auto;
   margin-right: auto;
   padding: 36px 32px 40px;
@@ -226,7 +226,7 @@
 }
 
 .trip-step-card--dest-dates .dest-dates-destination-row label {
-  text-align: center;
+  text-align: left;
 }
 
 /* Destination: icon left, chevron right */
@@ -266,10 +266,21 @@
   pointer-events: none;
 }
 
-.input-with-icon--dest select,
-.input-with-icon--date input {
+.input-with-icon--dest select {
   width: 100%;
   padding: 12px 40px 12px 42px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-with-icon--date input {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   font-size: 14px;
@@ -306,12 +317,31 @@
   min-width: 0;
 }
 
+.trip-date-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.trip-date-error {
+  margin: 0 0 12px 0;
+  padding: 0;
+  font-size: 13px;
+  color: #c62828;
+  min-height: 0;
+  visibility: hidden;
+}
+
+.trip-date-error.trip-date-error--visible {
+  visibility: visible;
+}
+
 .trip-step-card--dest-dates .dest-dates-row label {
   font-size: 13px;
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
-  text-align: center;
+  text-align: left;
 }
 
 .trip-step-card--dest-dates .trip-duration-banner {
@@ -319,6 +349,260 @@
   margin-left: auto;
   margin-right: auto;
   margin-bottom: 28px;
+}
+
+/* Wireframe: Select Destination – dest + hotel same row */
+.trip-section-heading {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--trip-text, #1a1a1a);
+}
+.trip-dest-row-single .trip-dest-group {
+  flex: 0 1 calc((100% - 16px) / 2);
+  min-width: 0;
+}
+.trip-step-card--dest-dates .trip-dest-row-single .trip-dest-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.trip-dest-hotel-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.trip-dest-cell,
+.trip-hotel-cell {
+  flex: 1;
+  min-width: 200px;
+}
+
+.trip-dest-cell {
+  max-width: 380px;
+}
+.trip-dest-hotel-row label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+.trip-hotel-select-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.trip-hotel-name-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 12px 14px;
+  border: 1px solid var(--trip-border, #ddd);
+  border-radius: 10px;
+  font-size: 15px;
+}
+.btn-choose-hotel-inline {
+  padding: 10px 18px;
+  background: var(--trip-primary, #2c5530);
+  color: #fff;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.btn-choose-hotel-inline:hover { opacity: 0.9; }
+
+/* Stops in this area */
+.trip-stops-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--trip-border, #e0e0e0);
+  text-align: left;
+}
+.trip-stops-heading {
+  margin: 0 0 6px 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--trip-text);
+}
+.trip-stops-desc {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: var(--trip-text-light, #666);
+}
+.trip-stops-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.trip-stop-card {
+  max-width: 520px;
+  padding: 16px 18px;
+  border: 1px solid var(--trip-border, #e0e0e0);
+  border-radius: 10px;
+  background: var(--trip-bg-subtle, #f8f9fa);
+  text-align: left;
+}
+.trip-stop-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.trip-stop-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--trip-text);
+}
+.btn-remove-stop {
+  padding: 6px 12px;
+  border: 1px solid var(--trip-border, #ddd);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--trip-text-light, #666);
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-remove-stop:hover {
+  border-color: #c62828;
+  color: #c62828;
+}
+.trip-stop-card .form-group {
+  margin-bottom: 14px;
+}
+.trip-stop-card .form-group:last-of-type {
+  margin-bottom: 0;
+}
+.trip-stop-location-group {
+  max-width: 360px;
+}
+.trip-stop-card input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--trip-border, #ddd);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.trip-stop-options {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.trip-stop-option-group {
+  flex: 1;
+  min-width: 160px;
+  margin-bottom: 0;
+}
+.trip-option-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--trip-text);
+  margin-bottom: 8px;
+  text-align: left;
+}
+.trip-toggle-btns {
+  display: flex;
+  gap: 0;
+}
+.trip-stop-card .trip-toggle-btn {
+  flex: 1;
+  max-width: 120px;
+  padding: 10px 20px;
+  border: 1px solid var(--trip-border, #ddd);
+  background: #f5f5f5;
+  color: var(--trip-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.trip-stop-card .trip-toggle-btn:first-child {
+  border-radius: 8px 0 0 8px;
+  border-right: none;
+}
+.trip-stop-card .trip-toggle-btn:last-child {
+  border-radius: 0 8px 8px 0;
+  border-left: 1px solid var(--trip-border, #ddd);
+}
+.trip-stop-card .trip-toggle-btn:hover {
+  background: #eee;
+}
+.trip-stop-card .trip-toggle-btn.selected {
+  background: var(--trip-primary, #2c5530);
+  border-color: var(--trip-primary, #2c5530);
+  color: #fff;
+}
+.trip-stop-card .trip-toggle-btn.selected + .trip-toggle-btn {
+  border-left-color: var(--trip-border, #ddd);
+}
+.btn-add-more-stops {
+  padding: 10px 18px;
+  border: 1px solid var(--trip-border, #e0e0e0);
+  border-radius: 10px;
+  background: #f0f0f0;
+  color: var(--trip-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.btn-add-more-stops:hover {
+  background: #e8e8e8;
+  border-color: #ccc;
+}
+
+/* Trip actions: Add Another Destination, End Trip */
+.trip-dest-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+.btn-add-another-dest,
+.btn-end-trip {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+.btn-add-another-dest {
+  background: #fff;
+  border: 2px solid var(--trip-primary, #2c5530);
+  color: var(--trip-primary, #2c5530);
+}
+.btn-add-another-dest:hover {
+  background: rgba(44, 85, 48, 0.06);
+}
+.btn-end-trip {
+  background: var(--trip-primary, #2c5530);
+  border: none;
+  color: #fff;
+}
+.btn-end-trip:hover {
+  opacity: 0.9;
 }
 
 /* Full-width light blue nights banner – white bold text */
@@ -586,7 +870,7 @@
   text-align: center;
   padding: 36px 32px 40px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  max-width: 720px;
+  max-width: 960px;
   margin-left: auto;
   margin-right: auto;
 }
