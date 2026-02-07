@@ -124,12 +124,13 @@ class TouristController {
 
         $request = new TransportRequest($this->db);
         $request->customerName = $data['customerName'] ?? '';
+        $request->contactNumber = $data['contactNumber'] ?? '';
         $request->vehicleType = $data['vehicleType'] ?? '';
         $request->date = $data['date'] ?? '';
         $request->pickupTime = $data['pickupTime'] ?? '';
         $request->pickupLocation = $data['pickupLocation'] ?? '';
         $request->dropoffLocation = $data['dropoffLocation'] ?? '';
-        $request->numPeople = $data['numPeople'] ?? 1;
+        $request->numPeople = (int) ($data['numPeople'] ?? 1);
         $request->notes = $data['notes'] ?? '';
 
         if ($request->addRequest()) {

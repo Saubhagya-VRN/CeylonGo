@@ -34,6 +34,7 @@ $districts = [
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/trip_layout.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/sidebar.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/trip.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/tourist/accommodation_content.css">
 </head>
 <body class="trip-page-body">
 
@@ -216,17 +217,23 @@ $districts = [
             <button type="button" class="btn-add-more-stops" id="btnAddMoreStops"><i class="fa-solid fa-plus"></i> Add More Stops</button>
           </div>
 
-          <div class="trip-dest-actions">
-            <button type="button" class="btn-add-another-dest" id="btnAddAnotherDest"><i class="fa-solid fa-plus"></i> Add Another Destination</button>
-            <button type="button" class="btn-end-trip" id="btnEndTrip">End Trip <i class="fa-solid fa-flag-checkered"></i></button>
-          </div>
-
           <input type="hidden" name="destinations[0][days]" value="1">
         </form>
       </div>
       </div>
+
+      <div class="trip-step-panel" data-step="3">
+        <div class="trip-step-card trip-step-card--accommodation">
+          <h2 class="step-heading">Accommodation</h2>
+          <p class="step-subheading">Choose your hotel for this trip</p>
+          <?php include __DIR__ . '/_accommodation_content.php'; ?>
+        </div>
+      </div>
     </main>
   </div>
+
+  <?php include __DIR__ . '/transport_request_modal.php'; ?>
+  <?php include __DIR__ . '/tour_guide_request_modal.php'; ?>
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
@@ -432,9 +439,136 @@ $districts = [
         if (group) {
           group.querySelectorAll('.trip-toggle-btn').forEach(function (b) { b.classList.remove('selected'); });
           toggleBtn.classList.add('selected');
+          var labelEl = group.querySelector('.trip-option-label');
+          var labelText = labelEl ? labelEl.textContent : '';
+          if (toggleBtn.getAttribute('data-value') === 'yes' && labelText) {
+            if (labelText.indexOf('Transport') !== -1) {
+              var overlay = document.getElementById('transportRequestModalOverlay');
+              if (overlay) {
+                overlay.classList.add('trip-modal-open');
+                overlay.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+              }
+            } else if (labelText.indexOf('Tour Guide') !== -1) {
+              var guideOverlay = document.getElementById('tourGuideRequestModalOverlay');
+              if (guideOverlay) {
+                guideOverlay.classList.add('trip-modal-open');
+                guideOverlay.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+              }
+            }
+          }
         }
       }
     });
+
+    var transportModalOverlay = document.getElementById('transportRequestModalOverlay');
+    function closeTransportModal() {
+      if (transportModalOverlay) {
+        transportModalOverlay.classList.remove('trip-modal-open');
+        transportModalOverlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    }
+    if (document.getElementById('transportRequestModalClose')) {
+      document.getElementById('transportRequestModalClose').addEventListener('click', closeTransportModal);
+    }
+    if (document.getElementById('transportRequestModalCancel')) {
+      document.getElementById('transportRequestModalCancel').addEventListener('click', closeTransportModal);
+    }
+    if (transportModalOverlay) {
+      transportModalOverlay.addEventListener('click', function (e) {
+        if (e.target === transportModalOverlay) closeTransportModal();
+      });
+    }
+
+    var tourGuideModalOverlay = document.getElementById('tourGuideRequestModalOverlay');
+    function closeTourGuideModal() {
+      if (tourGuideModalOverlay) {
+        tourGuideModalOverlay.classList.remove('trip-modal-open');
+        tourGuideModalOverlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+    }
+    if (document.getElementById('tourGuideRequestModalClose')) {
+      document.getElementById('tourGuideRequestModalClose').addEventListener('click', closeTourGuideModal);
+    }
+    if (document.getElementById('tourGuideRequestModalCancel')) {
+      document.getElementById('tourGuideRequestModalCancel').addEventListener('click', closeTourGuideModal);
+    }
+    if (tourGuideModalOverlay) {
+      tourGuideModalOverlay.addEventListener('click', function (e) {
+        if (e.target === tourGuideModalOverlay) closeTourGuideModal();
+      });
+    }
+
+    function tripAccommodationSearch(e) {
+      e.preventDefault();
+      var term = (document.getElementById('tripAccommodationSearchInput') || {}).value.toLowerCase();
+      var grid = document.getElementById('tripAccommodationHotelsGrid');
+      if (!grid) return;
+      grid.querySelectorAll('.hotel-card').forEach(function (card) {
+        var name = (card.querySelector('.hotel-name') || {}).textContent || '';
+        var loc = (card.querySelector('.hotel-location') || {}).textContent || '';
+        card.style.display = (name.toLowerCase().indexOf(term) !== -1 || loc.toLowerCase().indexOf(term) !== -1) ? '' : 'none';
+      });
+    }
+    function tripAccommodationApplyFilters() {
+      var price = (document.getElementById('tripAccommodationPriceFilter') || {}).value;
+      var rating = (document.getElementById('tripAccommodationRatingFilter') || {}).value;
+      var location = (document.getElementById('tripAccommodationLocationFilter') || {}).value;
+      var grid = document.getElementById('tripAccommodationHotelsGrid');
+      if (!grid) return;
+      grid.querySelectorAll('.hotel-card').forEach(function (card) {
+        var show = true;
+        if (price && card.dataset.price !== price) show = false;
+        if (rating && card.dataset.rating !== rating) show = false;
+        if (location && card.dataset.location.indexOf(location) === -1) show = false;
+        card.style.display = show ? '' : 'none';
+      });
+    }
+    function tripAccommodationCloseModal() {
+      var modal = document.getElementById('tripAccommodationBookingModal');
+      if (modal) { modal.classList.remove('active'); document.body.style.overflow = ''; }
+    }
+    function tripAccommodationConfirmBooking() {
+      var nameEl = document.getElementById('tripAccommodationHotelName');
+      var checkIn = document.getElementById('tripAccommodationCheckIn');
+      var roomType = document.getElementById('tripAccommodationRoomType');
+      if (!checkIn || !checkIn.value || !roomType || !roomType.value) { alert('Please fill in all required fields.'); return; }
+      sessionStorage.setItem('selectedHotel', nameEl ? nameEl.value : '');
+      sessionStorage.setItem('hotelBookingData', JSON.stringify({ hotelName: nameEl ? nameEl.value : '', checkInDate: checkIn.value, roomType: roomType.value }));
+      tripAccommodationCloseModal();
+    }
+    var accContent = document.querySelector('.trip-accommodation-content');
+    if (accContent) {
+      ['tripAccommodationPriceFilter', 'tripAccommodationRatingFilter', 'tripAccommodationLocationFilter'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', tripAccommodationApplyFilters);
+      });
+      accContent.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-book');
+        if (btn && btn.href) {
+          e.preventDefault();
+          var card = btn.closest('.hotel-card');
+          var nameEl = card ? card.querySelector('.hotel-name') : null;
+          var hotelName = nameEl ? nameEl.textContent.trim() : '';
+          var hid = document.getElementById('tripAccommodationHotelName');
+          if (hid) hid.value = hotelName;
+          var modal = document.getElementById('tripAccommodationBookingModal');
+          var checkIn = document.getElementById('tripAccommodationCheckIn');
+          if (modal) { modal.classList.add('active'); document.body.style.overflow = 'hidden'; }
+          if (checkIn) {
+            var d = new Date(); d.setDate(d.getDate() + 1);
+            checkIn.value = d.toISOString().split('T')[0];
+            checkIn.min = checkIn.value;
+          }
+        }
+      });
+      var accModal = document.getElementById('tripAccommodationBookingModal');
+      if (accModal) accModal.addEventListener('click', function (e) { if (e.target === accModal) tripAccommodationCloseModal(); });
+    }
+
     addStopCard();
   });
   </script>
