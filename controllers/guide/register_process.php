@@ -112,15 +112,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     );
 
     if ($stmt->execute()) {
-    // Insert into shared users table
-    $sql2 = "INSERT INTO users (email, password, role) VALUES (?, ?, ?)";
+    // Get the newly inserted guide's ID
+    $guide_id = $conn->insert_id;
+    
+    // Insert into shared users table with ref_id for login authentication
+    $sql2 = "INSERT INTO users (ref_id, email, password, role) VALUES (?, ?, ?, ?)";
     $stmt2 = $conn->prepare($sql2);
     
     if (!$stmt2) {
         die("Error preparing users insert: " . $conn->error);
     }
     
-    $stmt2->bind_param("sss", $email, $password_hashed, $user_type);
+    $stmt2->bind_param("isss", $guide_id, $email, $password_hashed, $user_type);
     
     if ($stmt2->execute()) {
         // Redirect to login after successful registration

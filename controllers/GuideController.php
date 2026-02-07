@@ -97,13 +97,27 @@ class GuideController {
         $guide->password = password_hash($data['password'], PASSWORD_BCRYPT);
 
         if ($guide->register()) {
-            // Add to users table
+            // Add to users table for login authentication
             $authUser = new AuthUser($this->db);
             $authUser->ref_id = $guide->id;
             $authUser->email = $guide->email;
             $authUser->password = $guide->password;
             $authUser->role = 'guide';
-            $authUser->addUser();
+            
+            if (!$authUser->addUser()) {
+                // If user table insertion fails, show error
+                echo "<h2>Registration Error:</h2><p>Failed to create login credentials. Please contact support.</p>";
+                exit;
+            }
+
+            // Start session and set login state
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['user_id'] = $guide->id;
+            $_SESSION['user_role'] = 'guide';
+            $_SESSION['user_type'] = 'guide';
+            $_SESSION['user_email'] = $guide->email;
 
             header("Location: /CeylonGo/public/guide/dashboard");
             exit();
