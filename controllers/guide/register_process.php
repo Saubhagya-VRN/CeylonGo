@@ -126,8 +126,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt2->bind_param("isss", $guide_id, $email, $password_hashed, $user_type);
     
     if ($stmt2->execute()) {
-        // Redirect to login after successful registration
-        header("Location: ../../views/guide/guide_dashboard.php");
+        // Redirect to login page after successful registration
+        header("Location: /CeylonGo/public/login");
         exit;
     } else {
         die("Error inserting into users table: " . $stmt2->error);
