@@ -115,6 +115,7 @@
                                     <th>Rating</th>
                                     <th>Status</th>
                                     <th>Actions</th>
+                                    <th>Admin Reply</th>
                                 </tr>
                             </thead>
                             <tbody id="reviewTableBody">
@@ -133,7 +134,6 @@
                                                     }
                                                 ?>
                                             </td>
-
                                             <td>
                                                 <?php if ($review['status'] === 'approved'): ?>
                                                     <span style="color:green;font-weight:bold">Approved</span>
@@ -147,6 +147,13 @@
                                             <td class="actions">
                                                 <button class="icon-btn reply-btn">💬</button>
                                                 <button class="icon-btn danger delete-btn">❌</button>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($review['admin_reply'])): ?>
+                                                    <?= htmlspecialchars($review['admin_reply']) ?>
+                                                <?php else: ?>
+                                                    <span style="color:#aaa;font-style:italic;">—</span>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -220,9 +227,28 @@
                     });
                 }
 
-                // Reply (placeholder)
+                // Reply to review
                 if (button.classList.contains("reply-btn")) {
-                    alert("Reply feature coming soon 🚀");
+
+                    const existingReply = row.dataset.reply || "";
+                    const reply = prompt("Enter admin reply:", existingReply);
+
+                    if (reply === null || reply.trim() === "") return;
+
+                    fetch("/CeylonGo/public/admin/review/reply", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `review_id=${reviewId}&reply=${encodeURIComponent(reply)}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            row.dataset.reply = reply;
+                            alert("Reply saved ✅");
+                        } else {
+                            alert("Failed to save reply ❌");
+                        }
+                    });
                 }
             });
 

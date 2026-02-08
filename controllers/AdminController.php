@@ -143,6 +143,69 @@ class AdminController {
         ]);
     }
 
+    public function toggleProviderStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+        exit();
+        }
+
+        $providerId = intval($_POST['provider_id'] ?? 0);
+        $status = intval($_POST['status'] ?? 1);
+
+        if (!$providerId) {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        // Determine which table to update based on role
+        $conn = Database::getMysqliConnection();
+
+        // Fetch provider's role from users table
+        $stmt = $conn->prepare("SELECT role FROM users WHERE ref_id=?");
+        $stmt->bind_param("i", $providerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        if (!$row) {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $role = $row['role'];
+        $table = '';
+        $idField = '';
+
+        switch($role){
+            case 'guide':
+                $table = 'guide_users';
+                $idField = 'id';
+                break;
+            case 'hotel':
+                $table = 'hotel_users';
+                $idField = 'id';
+                break;
+            case 'transport':
+                $table = 'transport_users';
+                $idField = 'user_id';
+                break;
+            default:
+                echo json_encode(['success' => false]);
+                exit();
+        }
+
+        $stmt = $conn->prepare("UPDATE $table SET is_active=? WHERE $idField=?");
+        $stmt->bind_param("ii", $status, $providerId);
+        $success = $stmt->execute();
+
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
     public function bookings() {
         $status = $_GET['status'] ?? 'all';      // from filter button
         $searchId = $_GET['search'] ?? null;    // from search input
@@ -192,6 +255,28 @@ class AdminController {
         exit;
     }
 
+    public function flagBooking() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $bookingId = intval($data['booking_id'] ?? 0);
+        $reason = trim($data['reason'] ?? '');
+
+        if(!$bookingId || !$reason){
+            echo json_encode(['success'=>false, 'message'=>'Invalid input']);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("UPDATE trip_bookings SET is_flagged=1, flag_reason=:reason WHERE id=:id");
+        $success = $stmt->execute([':reason'=>$reason, ':id'=>$bookingId]);
+
+        echo json_encode(['success'=>$success]);
+        exit;
+    }
+
     public function payments() {
         view('admin/admin_payments');
     }
@@ -219,6 +304,34 @@ class AdminController {
         $reviewId = intval($_POST['review_id'] ?? 0);
         $reviewModel = new Review($this->db);
         $success = $reviewModel->deleteReview($reviewId);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
+    public function replyToReview()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        $reply = trim($_POST['reply'] ?? '');
+
+        if ($reviewId === 0 || $reply === '') {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->saveAdminReply($reviewId, $reply);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => $success]);
@@ -266,30 +379,33 @@ class AdminController {
 
         // Fetch all providers (union guides, hotels, transport)
         $sql = "
-            SELECT 
+            SELECT g.id AS id,
                 CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
                 u.email,
-                u.role
+                u.role,
+                g.is_active
             FROM users u
             JOIN guide_users g ON u.ref_id = g.id
             WHERE u.role = 'guide'
 
             UNION ALL
 
-            SELECT 
+            SELECT t.user_id AS id,
                 t.full_name AS provider_name,
                 u.email,
-                u.role
+                u.role,
+                t.is_active
             FROM users u
             JOIN transport_users t ON u.ref_id = t.user_id
             WHERE u.role = 'transport'
 
             UNION ALL
 
-            SELECT 
+            SELECT h.id AS id,
                 h.hotel_name AS provider_name,
                 u.email,
-                u.role
+                u.role,
+                h.is_active
             FROM users u
             JOIN hotel_users h ON u.ref_id = h.id
             WHERE u.role = 'hotel'

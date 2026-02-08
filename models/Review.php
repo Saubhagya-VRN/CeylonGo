@@ -15,6 +15,7 @@ class Review {
                     r.id,
                     r.user_id,
                     r.review_text,
+                    r.admin_reply,
                     r.rating,
                     r.status,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
@@ -52,5 +53,21 @@ class Review {
         $sql = "DELETE FROM reviews WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$id]);
+    }
+
+    public function saveAdminReply($reviewId, $reply)
+    {
+        $sql = "
+            UPDATE reviews 
+            SET admin_reply = :reply,
+                replied_at = NOW()
+            WHERE id = :id
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':reply' => $reply,
+            ':id' => $reviewId
+        ]);
     }
 }

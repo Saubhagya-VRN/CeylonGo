@@ -146,7 +146,7 @@
                                     <td><?= date('Y-m-d', strtotime($b['created_at'])) ?></td>
                                     <td>
                                         <button class="icon-btn view-btn" data-booking-id="<?= $b['booking_id'] ?>">👁️</button>
-                                        <button class="icon-btn danger">❌</button>
+                                        <button class="icon-btn flag-btn" data-booking-id="<?= $b['booking_id'] ?>">🚩</button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -251,6 +251,31 @@
             // Close modal
             spanClose.onclick = () => modal.style.display = "none";
             window.onclick = e => { if(e.target == modal) modal.style.display = "none"; };
+
+            // Flag booking
+            document.querySelectorAll(".flag-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const bookingId = btn.dataset.bookingId;
+                    const reason = prompt("Enter reason for flagging this booking:");
+                    if (!reason) return;
+
+                    fetch('/CeylonGo/public/admin/flag-booking', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({booking_id: bookingId, reason})
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success){
+                            alert("Booking flagged successfully!");
+                            btn.disabled = true; // prevent double-flagging
+                        } else {
+                            alert("Failed to flag booking: " + data.message);
+                        }
+                    })
+                    .catch(err => console.error(err));
+                });
+            });
 
             // Export table
             document.getElementById("exportBtn").addEventListener("click", () => {

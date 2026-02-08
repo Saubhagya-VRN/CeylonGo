@@ -125,15 +125,30 @@
                                     <th>Service Provider Role</th>
                                     <th>Name</th>
                                     <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="providerTableBody">
                                 <?php if (!empty($providers)): ?>
                                     <?php foreach ($providers as $provider): ?>
-                                        <tr>
+                                        <tr data-id="<?= $provider['id'] ?>">
                                             <td><?= $roleLabels[$provider['role']] ?? ucfirst($provider['role']) ?></td>
                                             <td><?= htmlspecialchars($provider['provider_name']) ?></td>
                                             <td><?= htmlspecialchars($provider['email']) ?></td>
+                                            <td>
+                                                <?= $provider['is_active']
+                                                    ? "<span style='color:green;font-weight:bold'>Active</span>"
+                                                    : "<span style='color:red;font-weight:bold'>Inactive</span>" ?>
+                                            </td>
+                                            <td class="actions">
+                                                <button class="icon-btn edit-btn">✏️</button>
+                                                <?php if ($provider['is_active']): ?>
+                                                    <button class="icon-btn danger deactivate-btn">🚩</button>
+                                                <?php else: ?>
+                                                    <button class="icon-btn activate-btn">✅</button>
+                                                <?php endif; ?>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>
@@ -224,6 +239,36 @@
                     }
                 });
             }
+
+            // Activate / Deactivate providers
+                document.getElementById("providerTableBody").addEventListener("click", function(e) {
+                    const button = e.target.closest("button");
+                    if (!button) return;
+
+                    if (!button.classList.contains("deactivate-btn") &&
+                        !button.classList.contains("activate-btn")) return;
+
+                    const row = button.closest("tr");
+                    const providerId = row.dataset.id;
+                    const status = button.classList.contains("deactivate-btn") ? 0 : 1;
+
+                    if (!confirm("Are you sure you want to change this provider's status?")) return;
+
+                    fetch("/CeylonGo/public/admin/provider/status", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `provider_id=${providerId}&status=${status}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload(); // simple way to refresh table
+                        } else {
+                            alert("Failed to update provider status");
+                        }
+                    })
+                    .catch(() => alert("Server error"));
+                });
 
             // Export Service Providers table
             document.getElementById("exportBtn").addEventListener("click", () => {

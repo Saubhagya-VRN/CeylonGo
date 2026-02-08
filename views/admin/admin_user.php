@@ -136,7 +136,6 @@
                                         </td>
                                         <td class="actions">
                                             <button class="icon-btn edit-btn">✏️</button>
-
                                             <?php if ($user['is_active']): ?>
                                                 <button class="icon-btn danger deactivate-btn">🚩</button>
                                             <?php else: ?>
