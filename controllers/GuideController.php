@@ -110,16 +110,8 @@ class GuideController {
                 exit;
             }
 
-            // Start session and set login state
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            $_SESSION['user_id'] = $guide->id;
-            $_SESSION['user_role'] = 'guide';
-            $_SESSION['user_type'] = 'guide';
-            $_SESSION['user_email'] = $guide->email;
-
-            header("Location: /CeylonGo/public/guide/dashboard");
+            // Redirect to login page after successful registration
+            header("Location: /CeylonGo/public/login");
             exit();
         } else {
             echo "<h2>Registration failed:</h2><p>Please try again.</p>";
