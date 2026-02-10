@@ -13,63 +13,8 @@
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/buttons.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <style>
-    /* Page Header */
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-
-    .page-header h1 {
-      font-size: 28px;
-      color: #1a1a2e;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .page-header h1 i {
-      color: #ffc107;
-    }
-
-    .back-btn {
-      padding: 10px 20px;
-      background: #6c757d;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s ease;
-      text-decoration: none;
-    }
-
-    .back-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      background: #5a6268;
-    }
-
-    /* Status Banner - Pending */
-    .status-banner {
-      background: #ffc107;
-      color: #333;
-      padding: 15px 25px;
-      border-radius: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
-    }
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/pending_info.css">
+</head>
 
     .status-info {
       display: flex;
