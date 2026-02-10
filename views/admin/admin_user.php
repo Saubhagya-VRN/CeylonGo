@@ -76,16 +76,27 @@
                     <h2 class="page-title">User Management</h2>
                     <br>
 
-                    <form method="GET" action="/CeylonGo/public/admin/users">
+                    <form method="GET" action="/CeylonGo/public/admin/service">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" placeholder="Search by name or email" id="searchInput" class="search-input">
+                                <input type="text" placeholder="Search by role, name or email" id="searchInput" class="search-input">
                                 <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
                             </div>
+
                             <div class="filter-buttons">
-                                    <button type="submit" name="status" value="all" class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
-                                    <button type="submit" name="status" value="active" class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active</button>
-                                    <button type="submit" name="status" value="inactive" class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive</button>
+                                <button type="submit" name="status" value="all"
+                                    class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
+
+                                <button type="submit" name="status" value="active"
+                                    class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active</button>
+
+                                <button type="submit" name="status" value="inactive"
+                                    class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive</button>
+
+                                <!-- role filters can stay JS-based -->
+                                <button type="button" class="filter-btn" onclick="filterProviders('guide')">Tour Guides</button>
+                                <button type="button" class="filter-btn" onclick="filterProviders('hotel')">Hotels</button>
+                                <button type="button" class="filter-btn" onclick="filterProviders('transport')">Transport Providers</button>
                             </div>
                         </div>
                     </form>
@@ -187,7 +198,7 @@
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-                <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
+                <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
                 <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
             </ul>
         </footer>

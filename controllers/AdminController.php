@@ -281,17 +281,21 @@ class AdminController {
         view('admin/admin_payments');
     }
 
-    public function reviews() {
+    public function reviews()
+    {
         $reviewModel = new Review($this->db);
 
-        // GET filter (same logic as users)
+        // Filter
         $rating = $_GET['rating'] ?? 'all';
 
+        // Data
         $reviews = $reviewModel->getAllReviews($rating);
+        $metrics = $reviewModel->getReviewMetrics();
 
         view('admin/admin_reviews', [
             'reviews' => $reviews,
-            'selectedRating' => $rating
+            'selectedRating' => $rating,
+            'metrics' => $metrics
         ]);
     }
 
@@ -338,6 +342,33 @@ class AdminController {
         exit();
     }
 
+    public function approveReview()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        if (!$reviewId) {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $stmt = $this->db->prepare(
+            "UPDATE reviews SET status = 'approved', approved_at = NOW() WHERE id = :id"
+        );
+        $success = $stmt->execute([':id' => $reviewId]);
+
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
     public function inquiries() {
         view('admin/admin_inquiries');
     }
@@ -375,9 +406,16 @@ class AdminController {
     }
 
     public function service() {
+        $status = $_GET['status'] ?? 'all';
         $conn = Database::getMysqliConnection();
 
-        // Fetch all providers (union guides, hotels, transport)
+        $whereStatus = "";
+        if ($status === 'active') {
+            $whereStatus = " AND is_active = 1 ";
+        } elseif ($status === 'inactive') {
+            $whereStatus = " AND is_active = 0 ";
+        }
+
         $sql = "
             SELECT g.id AS id,
                 CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
@@ -386,7 +424,7 @@ class AdminController {
                 g.is_active
             FROM users u
             JOIN guide_users g ON u.ref_id = g.id
-            WHERE u.role = 'guide'
+            WHERE u.role = 'guide' $whereStatus
 
             UNION ALL
 
@@ -397,7 +435,7 @@ class AdminController {
                 t.is_active
             FROM users u
             JOIN transport_users t ON u.ref_id = t.user_id
-            WHERE u.role = 'transport'
+            WHERE u.role = 'transport' $whereStatus
 
             UNION ALL
 
@@ -408,7 +446,7 @@ class AdminController {
                 h.is_active
             FROM users u
             JOIN hotel_users h ON u.ref_id = h.id
-            WHERE u.role = 'hotel'
+            WHERE u.role = 'hotel' $whereStatus
         ";
 
         $result = $conn->query($sql);
@@ -447,7 +485,8 @@ class AdminController {
         view('admin/admin_service', [
             'providers' => $providers,
             'stats' => $stats,
-            'roleLabels' => $roleLabels
+            'roleLabels' => $roleLabels,
+            'selectedStatus' => $status
         ]);
     }
 

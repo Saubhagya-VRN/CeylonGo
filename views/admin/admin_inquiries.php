@@ -161,7 +161,7 @@
     <footer>
       <ul>
         <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-        <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
+        <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
         <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
       </ul>
     </footer>

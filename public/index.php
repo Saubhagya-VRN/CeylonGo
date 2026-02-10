@@ -111,6 +111,7 @@ $router->post('admin/users', 'AdminController@users');
 $router->get('admin/booking-details', 'AdminController@getBookingDetails');
 $router->post('admin/review/delete', 'AdminController@deleteReview');
 $router->post('admin/review/reply', 'AdminController@replyToReview');
+$router->post('admin/review/approve', 'AdminController@approveReview');
 $router->post('admin/flag-booking', 'AdminController@flagBooking');
 
 // Dispatch the request

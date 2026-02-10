@@ -80,9 +80,25 @@
                     <p class="sub-text">Service Performance Metrics</p>
 
                     <div class="footer-buttons">
-                        <button class="footer-btn">Average Rating: <b>4.6</b></button>
-                        <button class="footer-btn">Total Reviews: <b>350 (+20%)</b></button>
-                        <button class="footer-btn">Positive Feedback: <b>85% (+5%)</b></button>
+                        <button class="footer-btn">
+                            Average Rating:
+                            <b><?= number_format($metrics['average'], 1) ?></b>
+                        </button>
+
+                        <button class="footer-btn">
+                            Total Reviews:
+                            <b><?= $metrics['total'] ?></b>
+                            <?php if ($metrics['pending'] > 0): ?>
+                                <span style="color:orange;font-size:12px;">
+                                    (<?= $metrics['pending'] ?> pending)
+                                </span>
+                            <?php endif; ?>
+                        </button>
+
+                        <button class="footer-btn">
+                            Positive Feedback:
+                            <b><?= $metrics['positive_percentage'] ?>%</b>
+                        </button>
                     </div>
                     <br><br>
 
@@ -145,8 +161,11 @@
                                             </td>
 
                                             <td class="actions">
-                                                <button class="icon-btn reply-btn">💬</button>
+                                                <?php if ($review['status'] === 'pending'): ?>
+                                                    <button class="icon-btn approve-btn" title="Approve">✅</button>
+                                                <?php endif; ?>
                                                 <button class="icon-btn danger delete-btn">❌</button>
+                                                <button class="icon-btn reply-btn">💬</button>
                                             </td>
                                             <td>
                                                 <?php if (!empty($review['admin_reply'])): ?>
@@ -179,7 +198,7 @@
         <footer>
         <ul>
             <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-            <li><a href="/CeylonGo/public/admin/reports">Generate Report</a></li>
+            <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
             <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
         </ul>
         </footer>
@@ -247,6 +266,25 @@
                             alert("Reply saved ✅");
                         } else {
                             alert("Failed to save reply ❌");
+                        }
+                    });
+                }
+
+                // Approve review
+                if (button.classList.contains("approve-btn")) {
+                    if (!confirm("Approve this review?")) return;
+
+                    fetch("/CeylonGo/public/admin/review/approve", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `review_id=${reviewId}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload(); // refresh metrics + table safely
+                        } else {
+                            alert("Failed to approve review");
                         }
                     });
                 }
