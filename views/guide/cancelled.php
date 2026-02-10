@@ -14,16 +14,7 @@
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    .status-badge.cancelled {
-      background: #dc3545;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-  </style>
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/cancelled.css">
 </head>
 <body>
   <!-- Navbar -->

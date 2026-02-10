@@ -273,10 +273,9 @@ $specializations = [
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   
-  <style>
-    /* Profile Page Specific Styles */
-    .profile-card {
-      background: #fff;
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/profile.css">
+</head>
+
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       padding: 25px;
