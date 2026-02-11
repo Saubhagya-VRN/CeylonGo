@@ -46,6 +46,10 @@ if ($is_logged_in && empty($_SESSION['csrf_token'])) {
 $success_message = '';
 $error_message = '';
 
+// Packages list and selected package (from controller or GET)
+$packages = $packages ?? [];
+$selected_package_id = $selected_package_id ?? (isset($_GET['package']) ? (int) $_GET['package'] : null);
+
 // Initialize form variables
 $name = '';
 $email = '';
@@ -168,20 +172,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
 
       <div class="form-group">
-        <label for="destination">Destination Visited</label>
+        <label for="destination">Package Selected</label>
         <select id="destination" name="destination" <?= !$is_logged_in ? 'disabled' : '' ?>>
-          <option value="">Select a destination</option>
-          <option value="Colombo" <?= isset($destination) && $destination === 'Colombo' ? 'selected' : '' ?>>Colombo</option>
-          <option value="Kandy" <?= isset($destination) && $destination === 'Kandy' ? 'selected' : '' ?>>Kandy</option>
-          <option value="Galle" <?= isset($destination) && $destination === 'Galle' ? 'selected' : '' ?>>Galle</option>
-          <option value="Nuwara Eliya" <?= isset($destination) && $destination === 'Nuwara Eliya' ? 'selected' : '' ?>>Nuwara Eliya</option>
-          <option value="Sigiriya" <?= isset($destination) && $destination === 'Sigiriya' ? 'selected' : '' ?>>Sigiriya</option>
-          <option value="Unawatuna" <?= isset($destination) && $destination === 'Unawatuna' ? 'selected' : '' ?>>Unawatuna</option>
-          <option value="Ella" <?= isset($destination) && $destination === 'Ella' ? 'selected' : '' ?>>Ella</option>
-          <option value="Mirissa" <?= isset($destination) && $destination === 'Mirissa' ? 'selected' : '' ?>>Mirissa</option>
-          <option value="Bentota" <?= isset($destination) && $destination === 'Bentota' ? 'selected' : '' ?>>Bentota</option>
-          <option value="Anuradhapura" <?= isset($destination) && $destination === 'Anuradhapura' ? 'selected' : '' ?>>Anuradhapura</option>
-          <option value="Other" <?= isset($destination) && $destination === 'Other' ? 'selected' : '' ?>>Other</option>
+          <option value="">Select a package</option>
+          <?php foreach ($packages as $pkg): ?>
+          <option value="<?= htmlspecialchars($pkg['title']) ?>" <?= ($selected_package_id && (int)$pkg['id'] === (int)$selected_package_id) || $destination === $pkg['title'] ? 'selected' : '' ?>><?= htmlspecialchars($pkg['title']) ?></option>
+          <?php endforeach; ?>
         </select>
       </div>
 
@@ -213,7 +209,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
 
       <div class="form-actions">
-        <a href="tourist_dashboard" class="btn-secondary">Cancel</a>
+        <a href="javascript:history.back()" class="btn-secondary">Cancel</a>
         <?php if ($is_logged_in): ?>
           <button type="submit" class="btn-primary">Submit Review</button>
         <?php else: ?>

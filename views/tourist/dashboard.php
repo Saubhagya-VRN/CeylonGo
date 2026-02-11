@@ -50,7 +50,7 @@ $user_name = $is_logged_in ? ($_SESSION['user_name'] ?? 'Tourist') : '';
                     <?php else: ?>
                         <a href="#" class="btn-hero-secondary" id="customise-trip-btn" aria-label="Customise Your Trip"> Customise Your Trip</a>
                     <?php endif; ?>
-                    <a href="/CeylonGo/public/tourist/recommended-packages" class="btn-hero-secondary"> Browse Popular Packages</a>
+                    <a href="/CeylonGo/public/tourist/packages" class="btn-hero-secondary"> Browse Popular Packages</a>
                 </div>
             </div>
             <div class="dashboard-hero-get-started">
