@@ -5,6 +5,29 @@ if (session_status() === PHP_SESSION_NONE) {
 // Check if user is logged in
 $is_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist';
 $user_name = $is_logged_in ? ($_SESSION['user_name'] ?? 'Tourist') : '';
+
+// Full package data for dashboard dropdowns (with image, location, duration, rating)
+$package_cards = [
+    1 => ['id' => 1, 'title' => 'Cultural Triangle', 'image' => '/CeylonGo/public/images/kandy.jpeg', 'location' => 'Kandy', 'duration' => '5D/4N', 'rating' => 4.5],
+    2 => ['id' => 2, 'title' => 'Southern Coast Honeymoon', 'image' => '/CeylonGo/public/images/beach.jpg', 'location' => 'Galle', 'duration' => '5D/4N', 'rating' => 4.5],
+    3 => ['id' => 3, 'title' => 'Hill Country Escape', 'image' => '/CeylonGo/public/images/greenary.jpg', 'location' => 'Nuwara Eliya', 'duration' => '6D/5N', 'rating' => 4.8],
+    4 => ['id' => 4, 'title' => 'Ancient Heritage Trail', 'image' => '/CeylonGo/public/images/perehara.jpeg', 'location' => 'Anuradhapura', 'duration' => '4D/3N', 'rating' => 4.6],
+    5 => ['id' => 5, 'title' => 'Wildlife Safari', 'image' => '/CeylonGo/public/images/elephant.jpg', 'location' => 'Yala', 'duration' => '4D/3N', 'rating' => 4.7],
+    6 => ['id' => 6, 'title' => 'Solo Explorer', 'image' => '/CeylonGo/public/images/train.jpg', 'location' => 'Ella', 'duration' => '6D/5N', 'rating' => 4.4],
+    7 => ['id' => 7, 'title' => 'Family Fun', 'image' => '/CeylonGo/public/images/resort.jpg', 'location' => 'Bentota', 'duration' => '5D/4N', 'rating' => 4.5],
+    8 => ['id' => 8, 'title' => 'Beach Getaway', 'image' => '/CeylonGo/public/images/sunset.jpg', 'location' => 'Hikkaduwa', 'duration' => '3D/2N', 'rating' => 4.3],
+];
+$packages_by_cat = [
+    'solo'      => [ 6 ],
+    'honeymoon' => [ 2 ],
+    'family'    => [ 7 ],
+    'cultural'  => [ 1 ],
+    'adventure' => [ 3 ],
+    'heritage'  => [ 4 ],
+    'safari'    => [ 5 ],
+    'beach'     => [ 8 ],
+];
+$trending_packages = [ 1, 2, 6 ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,13 +44,79 @@ $user_name = $is_logged_in ? ($_SESSION['user_name'] ?? 'Tourist') : '';
 <body class="dashboard-page">
     <?php include __DIR__ . '/header.php'; ?>
 
-    <nav class="dashboard-package-bar">
-        <a href="/CeylonGo/public/tourist/recommended-packages?category=region" class="package-bar-item">Region <i class="fa-solid fa-chevron-down"></i></a>
-        <a href="/CeylonGo/public/tourist/recommended-packages?category=solo" class="package-bar-item">Solo <i class="fa-solid fa-chevron-down"></i></a>
-        <a href="/CeylonGo/public/tourist/recommended-packages?category=honeymoon" class="package-bar-item">Honeymoon <i class="fa-solid fa-chevron-down"></i></a>
-        <a href="/CeylonGo/public/tourist/recommended-packages?category=family" class="package-bar-item">Family <i class="fa-solid fa-chevron-down"></i></a>
-        <a href="/CeylonGo/public/tourist/recommended-packages?category=group" class="package-bar-item">Group Departure <i class="fa-solid fa-chevron-down"></i></a>
-        <a href="/CeylonGo/public/tourist/recommended-packages?category=one-day" class="package-bar-item">One Day <i class="fa-solid fa-chevron-down"></i></a>
+    <nav class="dashboard-package-bar" aria-label="Package options">
+        <div class="package-bar-dropdown">
+            <span class="package-bar-trigger">Popular <i class="fa-solid fa-chevron-down"></i></span>
+            <div class="package-bar-panel package-bar-panel--cards">
+                <?php foreach ($trending_packages as $id): $p = $package_cards[$id] ?? null; if (!$p) continue; ?>
+                <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="package-bar-card">
+                    <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="" class="package-bar-card-img">
+                    <div class="package-bar-card-body">
+                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title']); ?></span>
+                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location']); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration']); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars($p['rating']); ?></span></span>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+                <a href="/CeylonGo/public/tourist/packages?trending=1" class="package-bar-explore">Explore trending packages</a>
+            </div>
+        </div>
+        <div class="package-bar-dropdown">
+            <span class="package-bar-trigger">Solo <i class="fa-solid fa-chevron-down"></i></span>
+            <div class="package-bar-panel package-bar-panel--cards">
+                <?php foreach ($packages_by_cat['solo'] ?? [] as $id): $p = $package_cards[$id] ?? null; if (!$p) continue; ?>
+                <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="package-bar-card">
+                    <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="" class="package-bar-card-img">
+                    <div class="package-bar-card-body">
+                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title']); ?></span>
+                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location']); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration']); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars($p['rating']); ?></span></span>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+                <a href="/CeylonGo/public/tourist/packages?category=solo" class="package-bar-explore">Explore all Solo packages</a>
+            </div>
+        </div>
+        <div class="package-bar-dropdown">
+            <span class="package-bar-trigger">Honeymoon <i class="fa-solid fa-chevron-down"></i></span>
+            <div class="package-bar-panel package-bar-panel--cards">
+                <?php foreach ($packages_by_cat['honeymoon'] ?? [] as $id): $p = $package_cards[$id] ?? null; if (!$p) continue; ?>
+                <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="package-bar-card">
+                    <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="" class="package-bar-card-img">
+                    <div class="package-bar-card-body">
+                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title']); ?></span>
+                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location']); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration']); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars($p['rating']); ?></span></span>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+                <a href="/CeylonGo/public/tourist/packages?category=honeymoon" class="package-bar-explore">Explore all Honeymoon packages</a>
+            </div>
+        </div>
+        <div class="package-bar-dropdown">
+            <span class="package-bar-trigger">Family <i class="fa-solid fa-chevron-down"></i></span>
+            <div class="package-bar-panel package-bar-panel--cards">
+                <?php foreach ($packages_by_cat['family'] ?? [] as $id): $p = $package_cards[$id] ?? null; if (!$p) continue; ?>
+                <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="package-bar-card">
+                    <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="" class="package-bar-card-img">
+                    <div class="package-bar-card-body">
+                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title']); ?></span>
+                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location']); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration']); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars($p['rating']); ?></span></span>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+                <a href="/CeylonGo/public/tourist/packages?category=family" class="package-bar-explore">Explore all Family packages</a>
+            </div>
+        </div>
+        <div class="package-bar-dropdown">
+            <span class="package-bar-trigger">Group Departure <i class="fa-solid fa-chevron-down"></i></span>
+            <div class="package-bar-panel">
+                <a href="/CeylonGo/public/tourist/packages?category=group" class="package-bar-explore">Explore all Group Departure packages</a>
+            </div>
+        </div>
+        <div class="package-bar-dropdown">
+            <span class="package-bar-trigger">One Day <i class="fa-solid fa-chevron-down"></i></span>
+            <div class="package-bar-panel">
+                <a href="/CeylonGo/public/tourist/packages?category=one-day" class="package-bar-explore">Explore all One Day packages</a>
+            </div>
+        </div>
     </nav>
 
     <main class="dashboard-main">

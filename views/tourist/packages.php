@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $packages = $packages ?? [];
 $package_count = count($packages);
+$filter_category = $filter_category ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -67,14 +68,14 @@ $package_count = count($packages);
             <div class="sidebar-block">
                 <label class="sidebar-label">Categories</label>
                 <div class="sidebar-categories">
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="cultural"> Cultural</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="honeymoon"> Honeymoon</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="family"> Family</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="solo"> Solo</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="safari"> Safari</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="beach"> Beach</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="heritage"> Heritage</label>
-                    <label class="sidebar-check"><input type="checkbox" name="cat" value="adventure"> Adventure</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="cultural"<?php echo ($filter_category === 'cultural') ? ' checked' : ''; ?>> Cultural</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="honeymoon"<?php echo ($filter_category === 'honeymoon') ? ' checked' : ''; ?>> Honeymoon</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="family"<?php echo ($filter_category === 'family') ? ' checked' : ''; ?>> Family</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="solo"<?php echo ($filter_category === 'solo') ? ' checked' : ''; ?>> Solo</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="safari"<?php echo ($filter_category === 'safari') ? ' checked' : ''; ?>> Safari</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="beach"<?php echo ($filter_category === 'beach') ? ' checked' : ''; ?>> Beach</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="heritage"<?php echo ($filter_category === 'heritage') ? ' checked' : ''; ?>> Heritage</label>
+                    <label class="sidebar-check"><input type="checkbox" name="cat" value="adventure"<?php echo ($filter_category === 'adventure') ? ' checked' : ''; ?>> Adventure</label>
                 </div>
             </div>
         </aside>
@@ -103,7 +104,7 @@ $package_count = count($packages);
                     }
                     $locStr = isset($p['locations']) ? $p['locations'] : $p['location'];
                 ?>
-                <article class="package-card" data-id="<?php echo (int)$p['id']; ?>" data-index="<?php echo $idx; ?>" data-location="<?php echo htmlspecialchars(strtolower($p['location'])); ?>" data-locations="<?php echo htmlspecialchars(strtolower($locStr)); ?>" data-category="<?php echo htmlspecialchars($p['category']); ?>" data-price="<?php echo (int)(isset($p['price']) ? $p['price'] : 0); ?>" data-rating="<?php echo htmlspecialchars((string)(isset($p['rating']) ? $p['rating'] : 0)); ?>" data-nights="<?php echo $nights; ?>">
+                <article class="package-card" data-id="<?php echo (int)$p['id']; ?>" data-index="<?php echo $idx; ?>" data-location="<?php echo htmlspecialchars(strtolower($p['location'])); ?>" data-locations="<?php echo htmlspecialchars(strtolower($locStr)); ?>" data-category="<?php echo htmlspecialchars($p['category']); ?>" data-trending="<?php echo !empty($p['trending']) ? '1' : '0'; ?>" data-price="<?php echo (int)(isset($p['price']) ? $p['price'] : 0); ?>" data-rating="<?php echo htmlspecialchars((string)(isset($p['rating']) ? $p['rating'] : 0)); ?>" data-nights="<?php echo $nights; ?>">
                     <div class="package-card-image-wrap">
                         <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="" class="package-card-image">
                         <?php if (!empty($p['trending'])): ?>
@@ -142,7 +143,7 @@ $package_count = count($packages);
                             <span class="package-reviews">(<?php echo (int)$p['reviews']; ?> reviews)</span>
                         </div>
                         <div class="package-card-cta">
-                            <a href="/CeylonGo/public/contact" class="package-link">Contact for best rates</a>
+                            <span class="package-cta-spacer" aria-hidden="true"></span>
                             <a href="/CeylonGo/public/tourist/booking-form?package=<?php echo (int)$p['id']; ?>" class="btn btn-outline-pkg">Book Now</a>
                             <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="btn btn-primary-pkg">View Details</a>
                         </div>
@@ -198,15 +199,21 @@ $package_count = count($packages);
             var pMin = priceMin ? parseInt(priceMin.value, 10) : 0;
             var pMax = priceMax ? parseInt(priceMax.value, 10) : 999999999;
             var cats = [];
-            if (catCheckboxes.length) {
+            var catFromUrl = /[?&]category=([^&]+)/.exec(window.location.search);
+            var urlCategory = catFromUrl ? decodeURIComponent(catFromUrl[1]).toLowerCase() : '';
+            if (urlCategory) {
+                cats = [urlCategory];
+            } else if (catCheckboxes.length) {
                 for (var i = 0; i < catCheckboxes.length; i++) {
                     if (catCheckboxes[i].checked) cats.push(catCheckboxes[i].value);
                 }
             }
             var sort = sortBy ? sortBy.value : 'featured';
+            var isTrending = /[?&]trending=1(?=&|$)/.test(window.location.search);
 
             var cards = Array.prototype.slice.call(list.querySelectorAll('.package-card'));
             var visible = cards.filter(function(card) {
+                if (isTrending && card.getAttribute('data-trending') !== '1') return false;
                 var locs = (card.getAttribute('data-locations') || '') + ' ' + (card.getAttribute('data-location') || '');
                 var title = (card.querySelector('.package-card-title') && card.querySelector('.package-card-title').textContent) || '';
                 if (search && locs.indexOf(search) === -1 && title.toLowerCase().indexOf(search) === -1) return false;
@@ -352,6 +359,24 @@ $package_count = count($packages);
                 viewList.setAttribute('aria-pressed', 'false');
                 list.classList.add('packages-list--grid');
             });
+        }
+
+        function applyCategoryFromUrl() {
+            var trending = /[?&]trending=1(?=&|$)/.test(window.location.search);
+            var match = /[?&]category=([^&]+)/.exec(window.location.search);
+            var cat = match ? decodeURIComponent(match[1]).toLowerCase() : '';
+            for (var c = 0; c < catCheckboxes.length; c++) {
+                catCheckboxes[c].checked = (!trending && cat && catCheckboxes[c].value === cat);
+            }
+            if (trending || cat) {
+                updateFilterBarActive();
+                applyFilters();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyCategoryFromUrl);
+        } else {
+            applyCategoryFromUrl();
         }
     })();
     </script>

@@ -44,6 +44,27 @@ if ($asset_base === '' || $asset_base === '/') {
           <p class="booking-package-name"><?php echo htmlspecialchars($p['title']); ?></p>
           <p class="booking-package-meta"><?php echo htmlspecialchars($p['duration_short'] ?? $p['duration']); ?> · <?php echo isset($p['price']) ? 'LKR ' . number_format((int)$p['price']) : 'Price on request'; ?></p>
         </div>
+        <?php
+        $acc_list = $p['accommodation'] ?? [];
+        if (!empty($acc_list)):
+          $day_start = 1;
+        ?>
+        <h3 class="booking-itinerary-heading">Accommodation</h3>
+        <ul class="booking-accommodation-list">
+          <?php foreach ($acc_list as $acc):
+            $nights = (int)($acc['nights'] ?? 1);
+            $day_end = $day_start + $nights - 1;
+            $day_range = ($day_start === $day_end) ? 'Day ' . $day_start : 'Day ' . $day_start . ' to Day ' . $day_end;
+            $day_start = $day_end + 1;
+            $hotel = $acc['hotel'] ?? 'Accommodation';
+            $loc = $acc['location'] ?? '';
+          ?>
+          <li class="booking-accommodation-item">
+            <strong><?php echo htmlspecialchars($hotel); ?></strong><?php if ($loc !== ''): ?> <span class="booking-acc-location">(<?php echo htmlspecialchars($loc); ?>)</span><?php endif; ?> — <?php echo $day_range; ?>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
         <h3 class="booking-itinerary-heading">Detailed Itinerary</h3>
         <div class="booking-itinerary-days">
           <?php foreach ($itinerary as $day): ?>

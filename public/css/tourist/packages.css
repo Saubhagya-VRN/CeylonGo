@@ -455,6 +455,11 @@
     gap: 10px;
 }
 
+.package-cta-spacer {
+    display: inline-block;
+    min-width: 140px;
+}
+
 .package-link {
     color: #2c5530;
     font-size: 14px;

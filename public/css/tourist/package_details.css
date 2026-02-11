@@ -113,7 +113,7 @@ body.pkg-detail-page {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 380px;
+    max-height: 280px;
     object-fit: cover;
 }
 

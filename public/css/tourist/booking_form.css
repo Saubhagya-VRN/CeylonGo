@@ -87,6 +87,28 @@ body.booking-page {
   margin: 0 0 12px;
 }
 
+.booking-accommodation-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+.booking-accommodation-item {
+  padding: 8px 0;
+  font-size: 0.95rem;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.booking-accommodation-item:last-child {
+  border-bottom: none;
+}
+
+.booking-acc-location {
+  font-weight: 400;
+  color: #6b7280;
+}
+
 .booking-itinerary-days {
   display: flex;
   flex-direction: column;

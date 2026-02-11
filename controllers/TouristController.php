@@ -285,7 +285,18 @@ class TouristController {
             ['id' => 7, 'title' => 'Family Fun', 'location' => 'Bentota', 'locations' => 'Bentota, Colombo', 'duration' => '5 Days 4 Nights', 'image' => '/CeylonGo/public/images/resort.jpg', 'trending' => false, 'rating' => 4.5, 'reviews' => 124, 'meals' => true, 'category' => 'family', 'price' => 195000],
             ['id' => 8, 'title' => 'Beach Getaway', 'location' => 'Hikkaduwa', 'locations' => 'Hikkaduwa, Unawatuna', 'duration' => '3 Days 2 Nights', 'image' => '/CeylonGo/public/images/sunset.jpg', 'trending' => false, 'rating' => 4.3, 'reviews' => 67, 'meals' => true, 'category' => 'beach', 'price' => 65000],
         ];
-        view('tourist/packages', ['packages' => $packages]);
+        $category = isset($_GET['category']) ? trim(strtolower($_GET['category'])) : '';
+        $trending = isset($_GET['trending']) && $_GET['trending'] === '1';
+        if ($trending) {
+            $packages = array_values(array_filter($packages, function ($p) { return !empty($p['trending']); }));
+        } elseif ($category !== '') {
+            $packages = array_values(array_filter($packages, function ($p) use ($category) { return isset($p['category']) && strtolower($p['category']) === $category; }));
+        }
+        view('tourist/packages', [
+            'packages' => $packages,
+            'filter_category' => $category,
+            'filter_trending' => $trending,
+        ]);
     }
 
     public function packageDetails($id) {
