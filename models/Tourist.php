@@ -76,6 +76,7 @@ class Tourist {
             "UPDATE users SET is_active = ? WHERE ref_id = ? AND role = 'tourist'"
         );
         return $stmt2->execute([$status, $touristId]);
+    }
 
     public function updateProfile() {
         if (!empty($this->password)) {
