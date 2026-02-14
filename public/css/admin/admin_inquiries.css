@@ -1,26 +1,4 @@
-@import url("common.css");
-
-.stats-section {
-  margin-bottom: 20px;
-}
-
-.stats-section h4 {
-  margin-bottom: 10px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
-
-.stat-box {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  text-align: center;
-}
+@import url("admin_common.css");
 
 .inquiry-table {
   width: 100%;
