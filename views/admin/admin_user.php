@@ -76,7 +76,7 @@
                     <h2 class="page-title">User Management</h2>
                     <br>
 
-                    <form method="GET" action="/CeylonGo/public/admin/service">
+                    <form method="GET" action="/CeylonGo/public/admin/users">
                         <div class="toolbar">
                             <div class="search-section">
                                 <input type="text" placeholder="Search by role, name or email" id="searchInput" class="search-input">
@@ -92,11 +92,6 @@
 
                                 <button type="submit" name="status" value="inactive"
                                     class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive</button>
-
-                                <!-- role filters can stay JS-based -->
-                                <button type="button" class="filter-btn" onclick="filterProviders('guide')">Tour Guides</button>
-                                <button type="button" class="filter-btn" onclick="filterProviders('hotel')">Hotels</button>
-                                <button type="button" class="filter-btn" onclick="filterProviders('transport')">Transport Providers</button>
                             </div>
                         </div>
                     </form>
