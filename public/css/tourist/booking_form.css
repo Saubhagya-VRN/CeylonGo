@@ -80,6 +80,29 @@ body.booking-page {
   margin: 0;
 }
 
+.booking-summary-prices {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.booking-summary-price-line {
+  font-size: 0.85rem;
+  color: #374151;
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.booking-summary-total-line {
+  font-size: 0.95rem;
+  color: #111;
+  margin: 0;
+}
+
+.booking-summary-total-line strong {
+  color: #2c5530;
+}
+
 .booking-itinerary-heading {
   font-size: 1.1rem;
   font-weight: 700;
@@ -215,6 +238,114 @@ body.booking-page {
   font-size: 0.8rem;
   color: #6b7280;
   margin: 4px 0 0;
+}
+
+.travelers-by-type {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.travelers-by-type.travelers-row {
+  flex-wrap: nowrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+@media (max-width: 520px) {
+  .travelers-by-type.travelers-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+.travelers-by-type .form-group-inline,
+.travelers-by-type .stepper-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.travelers-by-type .form-group-inline label,
+.travelers-by-type .stepper-cell > label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.travelers-by-type .form-group-inline select {
+  min-width: 72px;
+}
+
+/* Number stepper: one row, minus | number | plus */
+.number-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.number-stepper .stepper-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.number-stepper .stepper-btn:hover {
+  background: #e5e7eb;
+  color: #111;
+}
+
+.number-stepper .stepper-btn:active {
+  background: #d1d5db;
+}
+
+.number-stepper input[type="number"] {
+  width: 42px;
+  min-width: 42px;
+  height: 30px;
+  border: none;
+  border-left: 1px solid #d1d5db;
+  border-right: 1px solid #d1d5db;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.number-stepper input[type="number"]::-webkit-outer-spin-button,
+.number-stepper input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.booking-price-hint {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 6px 0 0;
+}
+
+.booking-form .required-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  display: block;
 }
 
 .booking-total-amount {

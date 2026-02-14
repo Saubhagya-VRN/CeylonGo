@@ -151,7 +151,7 @@ if ($asset_base === '' || $asset_base === '/') {
         </div>
         <div class="summary-item">
           <span>Number of Travelers:</span>
-          <span><?php echo (int)($booking['travelers'] ?? 0); ?></span>
+          <span><?php echo (int)($booking['travelers'] ?? 0); ?><?php if (isset($booking['adults']) || isset($booking['children']) || isset($booking['infants'])): ?> (<?php echo (int)($booking['adults'] ?? 0); ?> adult<?php echo ((int)($booking['adults'] ?? 0)) !== 1 ? 's' : ''; ?><?php if (!empty($booking['children'])): ?>, <?php echo (int)$booking['children']; ?> child<?php echo (int)$booking['children'] !== 1 ? 'ren' : ''; ?><?php endif; ?><?php if (!empty($booking['infants'])): ?>, <?php echo (int)$booking['infants']; ?> infant<?php echo (int)$booking['infants'] !== 1 ? 's' : ''; ?><?php endif; ?>)<?php endif; ?></span>
         </div>
         <div class="summary-item">
           <span>Travel Date:</span>

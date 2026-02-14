@@ -163,6 +163,12 @@ class TouristController {
     }
 
     public function bookingForm() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            $package_id = isset($_GET['package']) ? (int) $_GET['package'] : 1;
+            $redirect = '/CeylonGo/public/tourist/booking-form?package=' . $package_id;
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode($redirect));
+            exit;
+        }
         $package_id = isset($_GET['package']) ? (int) $_GET['package'] : 1;
         $package = $this->getPackageDetailById($package_id);
         if (!$package) {
@@ -197,6 +203,12 @@ class TouristController {
     }
 
     public function bookingFormSubmit() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            $package_id = isset($_POST['package_id']) ? (int) $_POST['package_id'] : 0;
+            $redirect = '/CeylonGo/public/tourist/booking-form?package=' . ($package_id ?: 1);
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode($redirect) . '&msg=' . urlencode('Please log in to book a package.'));
+            exit;
+        }
         $package_id = isset($_POST['package_id']) ? (int) $_POST['package_id'] : 0;
         $travel_date = isset($_POST['travel_date']) ? trim($_POST['travel_date']) : '';
         $min_date = date('Y-m-d', strtotime('+21 days'));
@@ -205,14 +217,52 @@ class TouristController {
             exit;
         }
         $package = $this->getPackageDetailById($package_id);
-        $price_per = isset($package['price']) ? (int) $package['price'] : 0;
-        $travelers = isset($_POST['travelers']) ? (int) $_POST['travelers'] : 1;
-        $total = $travelers * $price_per;
+        if (!$package) {
+            header('Location: /CeylonGo/public/tourist/packages');
+            exit;
+        }
+        $price_adult = isset($package['price']) ? (int) $package['price'] : 0;
+        $pkg_category = isset($package['category']) ? strtolower(trim($package['category'])) : '';
+        $child_ratio = isset($package['price_child_ratio']) ? (float) $package['price_child_ratio'] : 0.5;
+        $infant_ratio = isset($package['price_infant_ratio']) ? (float) $package['price_infant_ratio'] : 0.0;
+
+        if ($pkg_category === 'solo') {
+            $travelers = 1;
+            $total = $price_adult;
+            $adults = 1;
+            $children = 0;
+            $infants = 0;
+        } elseif ($pkg_category === 'honeymoon') {
+            $travelers = 2;
+            if ((int) ($_POST['travelers'] ?? 0) !== 2) {
+                header('Location: /CeylonGo/public/tourist/booking-form?package=' . $package_id . '&error=' . urlencode('Honeymoon packages are for 2 travelers only.'));
+                exit;
+            }
+            $total = 2 * $price_adult;
+            $adults = 2;
+            $children = 0;
+            $infants = 0;
+        } else {
+            $adults = isset($_POST['adults']) ? (int) $_POST['adults'] : 1;
+            $children = isset($_POST['children']) ? (int) $_POST['children'] : 0;
+            $infants = isset($_POST['infants']) ? (int) $_POST['infants'] : 0;
+            if ($adults < 1) {
+                header('Location: /CeylonGo/public/tourist/booking-form?package=' . $package_id . '&error=' . urlencode('At least 1 adult is required.'));
+                exit;
+            }
+            $travelers = $adults + $children + $infants;
+            $total = (int) round(($adults * $price_adult) + ($children * $price_adult * $child_ratio) + ($infants * $price_adult * $infant_ratio));
+        }
+
         $booking = [
             'id' => uniqid('b', true),
+            'user_id' => (int) $_SESSION['user_id'],
             'package_id' => $package_id,
             'package_name' => isset($_POST['package_name']) ? trim($_POST['package_name']) : ($package['title'] ?? ''),
             'travelers' => $travelers,
+            'adults' => $adults,
+            'children' => $children,
+            'infants' => $infants,
             'travel_date' => $travel_date,
             'fullname' => isset($_POST['fullname']) ? trim($_POST['fullname']) : '',
             'email' => isset($_POST['email']) ? trim($_POST['email']) : '',
@@ -231,18 +281,76 @@ class TouristController {
     }
 
     public function myBookings() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
+            exit;
+        }
+        $current_user_id = (int) $_SESSION['user_id'];
         $bookings = isset($_SESSION['pending_bookings']) && is_array($_SESSION['pending_bookings']) ? $_SESSION['pending_bookings'] : [];
+        // Only show bookings that belong to the logged-in user (avoid one user seeing another's bookings)
+        $bookings = array_values(array_filter($bookings, function ($b) use ($current_user_id) {
+            return isset($b['user_id']) && (int) $b['user_id'] === $current_user_id;
+        }));
+        // Demo bookings for user "dee gagan": only add and tag with current user so they see only their own
+        $userName = isset($_SESSION['user_name']) ? trim((string) $_SESSION['user_name']) : '';
+        $userEmail = isset($_SESSION['user_email']) ? trim((string) $_SESSION['user_email']) : '';
+        if (stripos($userName, 'dee gagan') !== false || stripos($userEmail, 'dee gagan') !== false) {
+            $demoBookings = [
+                [
+                    'id' => 'b-demo-pending',
+                    'user_id' => $current_user_id,
+                    'package_id' => 1,
+                    'package_name' => 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla',
+                    'travelers' => 2,
+                    'adults' => 2,
+                    'children' => 0,
+                    'infants' => 0,
+                    'travel_date' => date('Y-m-d', strtotime('+5 weeks')),
+                    'fullname' => 'Dee Gagan',
+                    'email' => $userEmail ?: 'deegagan@example.com',
+                    'phone' => '0771234567',
+                    'special_requests' => '',
+                    'total_amount' => 250000,
+                    'status' => 'pending',
+                    'created_at' => date('Y-m-d H:i:s'),
+                ],
+                [
+                    'id' => 'b-demo-approved',
+                    'user_id' => $current_user_id,
+                    'package_id' => 2,
+                    'package_name' => 'Southern Coast Honeymoon: Galle, Mirissa & Unawatuna 4N/5D',
+                    'travelers' => 2,
+                    'adults' => 2,
+                    'children' => 0,
+                    'infants' => 0,
+                    'travel_date' => date('Y-m-d', strtotime('+6 weeks')),
+                    'fullname' => 'Dee Gagan',
+                    'email' => $userEmail ?: 'deegagan@example.com',
+                    'phone' => '0771234567',
+                    'special_requests' => 'Honeymoon trip',
+                    'total_amount' => 370000,
+                    'status' => 'approved',
+                    'created_at' => date('Y-m-d H:i:s'),
+                ],
+            ];
+            $bookings = array_merge($demoBookings, $bookings);
+        }
         view('tourist/my_bookings', ['bookings' => $bookings]);
     }
 
     public function bookingApprove() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
         $id = isset($_GET['id']) ? trim($_GET['id']) : '';
         if ($id === '' || !isset($_SESSION['pending_bookings']) || !is_array($_SESSION['pending_bookings'])) {
             header('Location: /CeylonGo/public/tourist/my-bookings');
             exit;
         }
+        $current_user_id = (int) $_SESSION['user_id'];
         foreach ($_SESSION['pending_bookings'] as &$b) {
-            if (isset($b['id']) && $b['id'] === $id) {
+            if (isset($b['id']) && $b['id'] === $id && isset($b['user_id']) && (int) $b['user_id'] === $current_user_id) {
                 $b['status'] = 'approved';
                 break;
             }
@@ -253,11 +361,17 @@ class TouristController {
     }
 
     public function payment() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
+            exit;
+        }
         $booking = null;
         $booking_id = isset($_GET['booking_id']) ? trim($_GET['booking_id']) : '';
+        $current_user_id = (int) $_SESSION['user_id'];
         if ($booking_id !== '' && isset($_SESSION['pending_bookings']) && is_array($_SESSION['pending_bookings'])) {
             foreach ($_SESSION['pending_bookings'] as $b) {
-                if (isset($b['id']) && $b['id'] === $booking_id && ($b['status'] ?? '') === 'approved') {
+                if (isset($b['id']) && $b['id'] === $booking_id && ($b['status'] ?? '') === 'approved'
+                    && isset($b['user_id']) && (int) $b['user_id'] === $current_user_id) {
                     $booking = $b;
                     break;
                 }
@@ -275,23 +389,13 @@ class TouristController {
     }
 
     public function packages() {
-        $packages = [
-            ['id' => 1, 'title' => 'Cultural Triangle', 'location' => 'Kandy', 'locations' => 'Kandy, Sigiriya, Dambulla', 'duration' => '5 Days 4 Nights', 'image' => '/CeylonGo/public/images/kandy.jpeg', 'trending' => true, 'rating' => 4.5, 'reviews' => 203, 'meals' => true, 'category' => 'cultural', 'price' => 125000],
-            ['id' => 2, 'title' => 'Southern Coast Honeymoon', 'location' => 'Galle', 'locations' => 'Galle, Mirissa, Unawatuna', 'duration' => '5 Days 4 Nights', 'image' => '/CeylonGo/public/images/beach.jpg', 'trending' => true, 'rating' => 4.5, 'reviews' => 65, 'meals' => true, 'category' => 'honeymoon', 'price' => 185000],
-            ['id' => 3, 'title' => 'Hill Country Escape', 'location' => 'Nuwara Eliya', 'locations' => 'Nuwara Eliya, Ella, Horton Plains', 'duration' => '6 Days 5 Nights', 'image' => '/CeylonGo/public/images/greenary.jpg', 'trending' => false, 'rating' => 4.8, 'reviews' => 142, 'meals' => true, 'category' => 'adventure', 'price' => 145000],
-            ['id' => 4, 'title' => 'Ancient Heritage Trail', 'location' => 'Anuradhapura', 'locations' => 'Anuradhapura, Dambulla, Sigiriya', 'duration' => '4 Days 3 Nights', 'image' => '/CeylonGo/public/images/perehara.jpeg', 'trending' => true, 'rating' => 4.6, 'reviews' => 98, 'meals' => true, 'category' => 'heritage', 'price' => 95000],
-            ['id' => 5, 'title' => 'Wildlife Safari', 'location' => 'Yala', 'locations' => 'Yala, Udawalawe', 'duration' => '4 Days 3 Nights', 'image' => '/CeylonGo/public/images/elephant.jpg', 'trending' => false, 'rating' => 4.7, 'reviews' => 176, 'meals' => true, 'category' => 'safari', 'price' => 165000],
-            ['id' => 6, 'title' => 'Solo Explorer', 'location' => 'Ella', 'locations' => 'Colombo, Nuwara Eliya, Ella', 'duration' => '6 Days 5 Nights', 'image' => '/CeylonGo/public/images/train.jpg', 'trending' => true, 'rating' => 4.4, 'reviews' => 89, 'meals' => true, 'category' => 'solo', 'price' => 78000],
-            ['id' => 7, 'title' => 'Family Fun', 'location' => 'Bentota', 'locations' => 'Bentota, Colombo', 'duration' => '5 Days 4 Nights', 'image' => '/CeylonGo/public/images/resort.jpg', 'trending' => false, 'rating' => 4.5, 'reviews' => 124, 'meals' => true, 'category' => 'family', 'price' => 195000],
-            ['id' => 8, 'title' => 'Beach Getaway', 'location' => 'Hikkaduwa', 'locations' => 'Hikkaduwa, Unawatuna', 'duration' => '3 Days 2 Nights', 'image' => '/CeylonGo/public/images/sunset.jpg', 'trending' => false, 'rating' => 4.3, 'reviews' => 67, 'meals' => true, 'category' => 'beach', 'price' => 65000],
-        ];
-        $category = isset($_GET['category']) ? trim(strtolower($_GET['category'])) : '';
+        $packageModel = new Package($this->db);
+        $category = isset($_GET['category']) ? trim($_GET['category']) : '';
         $trending = isset($_GET['trending']) && $_GET['trending'] === '1';
-        if ($trending) {
-            $packages = array_values(array_filter($packages, function ($p) { return !empty($p['trending']); }));
-        } elseif ($category !== '') {
-            $packages = array_values(array_filter($packages, function ($p) use ($category) { return isset($p['category']) && strtolower($p['category']) === $category; }));
-        }
+        $filters = [];
+        if ($trending) $filters['trending'] = true;
+        if ($category !== '') $filters['category'] = $category;
+        $packages = $packageModel->getAll($filters);
         view('tourist/packages', [
             'packages' => $packages,
             'filter_category' => $category,
@@ -301,291 +405,37 @@ class TouristController {
 
     public function packageDetails($id) {
         $package = $this->getPackageDetailById((int) $id);
+        if (!$package) {
+            header('Location: /CeylonGo/public/tourist/packages');
+            exit;
+        }
         view('tourist/package_details', ['package' => $package]);
     }
 
     public function packageDetailsQuery() {
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 1;
         $package = $this->getPackageDetailById($id);
+        if (!$package) {
+            header('Location: /CeylonGo/public/tourist/packages');
+            exit;
+        }
         view('tourist/package_details', ['package' => $package]);
     }
 
     /**
-     * Full package detail for package details page (Sri Lankan content).
+     * Full package detail for package details page and booking form. Loads from DB via Package model.
      */
     private function getPackageDetailById($id) {
-        $list = [
-            1 => [
-                'id' => 1, 'title' => 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla', 'location' => 'Kandy',
-                'duration' => '5 Days 4 Nights', 'duration_short' => '5 Days / 4 Nights', 'image' => '/CeylonGo/public/images/kandy.jpeg',
-                'trending' => true, 'rating' => 4.5, 'reviews' => 203, 'category' => 'Cultural', 'price' => 125000,
-                'overview' => [
-                    'Arrival at Colombo and transfer to Kandy, the royal and cultural heart of Sri Lanka.',
-                    'Explore Kandy: Temple of the Tooth, evening cultural dance show; optional Botanical Gardens.',
-                    'Full day to Sigiriya Rock Fortress and Dambulla Cave Temple; return to Kandy.',
-                    'Kandy to Nuwara Eliya — scenic hill country, tea factory visit.',
-                    'Departure to Colombo as per schedule.',
-                ],
-                'highlights' => [
-                    ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '4 nights stay'],
-                    ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                    ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Kandy, Sigiriya, Dambulla covered'],
-                    ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Daily breakfast & dinner included'],
-                    ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Temple of the Tooth, cultural show'],
-                    ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-                ],
-                'itinerary' => [
-                    ['day' => 1, 'title' => 'Arrival – Colombo to Kandy', 'activities' => ['Airport pick-up and transfer to Kandy', 'Check-in and visit Temple of the Tooth', 'Evening cultural dance show']],
-                    ['day' => 2, 'title' => 'Sigiriya Rock Fortress (Full Day)', 'activities' => ['Full day at Sigiriya Rock and gardens', 'Dambulla Cave Temple en route', 'Return to Kandy']],
-                    ['day' => 3, 'title' => 'Kandy – City & Spice Garden', 'activities' => ['Botanical Gardens (optional)', 'Spice garden tour', 'Leisure in Kandy']],
-                    ['day' => 4, 'title' => 'Kandy – Nuwara Eliya (Scenic)', 'activities' => ['Scenic drive to hill country', 'Tea factory visit', 'Overnight in Nuwara Eliya']],
-                    ['day' => 5, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-                ],
-                'included' => ['4 nights accommodation', 'Half Board (Breakfast + Dinner)', 'All entrance fees (Sigiriya, Dambulla, Temple of the Tooth)', 'Cultural show ticket', 'Private cab for sightseeing'],
-                'excluded' => ['International flights', 'Lunches and beverages unless specified', 'Personal expenses and tips', 'Visa (if applicable)', 'Travel insurance'],
-                'accommodation' => [
-                    ['nights' => 3, 'location' => 'Kandy', 'hotel' => 'Earl\'s Regent Hotel'],
-                    ['nights' => 1, 'location' => 'Nuwara Eliya', 'hotel' => 'Araliya Green City Hotel'],
-                ],
-            ],
-            2 => [
-                'id' => 2, 'title' => 'Southern Coast Honeymoon: Galle, Mirissa & Unawatuna 4N/5D', 'location' => 'Galle',
-                'duration' => '5 Days 4 Nights', 'duration_short' => '5 Days / 4 Nights', 'image' => '/CeylonGo/public/images/beach.jpg',
-                'trending' => true, 'rating' => 4.5, 'reviews' => 65, 'category' => 'Honeymoon', 'price' => 185000,
-                'overview' => [
-                    'Arrival at Colombo and transfer to Galle, the historic fort city by the sea.',
-                    'Explore Galle Fort & Unawatuna — walking tour, beach time, sunset at the fort.',
-                    'Head to Mirissa — whale watching (seasonal), beach time.',
-                    'Leisure & spa — beach relaxation, optional spa; candlelit dinner.',
-                    'Departure to Colombo as per schedule.',
-                ],
-                'highlights' => [
-                    ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '4 nights beachfront stay'],
-                    ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                    ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Galle Fort, Mirissa, Unawatuna'],
-                    ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                    ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Whale watching, beach experiences'],
-                    ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-                ],
-                'itinerary' => [
-                    ['day' => 1, 'title' => 'Arrival – Airport to Galle', 'activities' => ['Airport pick-up and transfer to Galle', 'Check-in and leisure at resort']],
-                    ['day' => 2, 'title' => 'Galle Fort & Unawatuna', 'activities' => ['Galle Fort walking tour', 'Unawatuna beach', 'Sunset at the fort']],
-                    ['day' => 3, 'title' => 'Mirissa Whale Watching', 'activities' => ['Whale watching tour (seasonal)', 'Beach time at Mirissa']],
-                    ['day' => 4, 'title' => 'Leisure & Spa', 'activities' => ['Beach relaxation', 'Optional spa (discount for honeymooners)', 'Candlelit dinner']],
-                    ['day' => 5, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-                ],
-                'included' => ['Airport transfers', '4 nights beachfront accommodation', 'Half Board', 'Whale watching (seasonal)', 'Honeymoon freebies as listed'],
-                'excluded' => ['International flights', 'Lunches and beverages', 'Water sports (optional)', 'Personal expenses and tips', 'Visa', 'Travel insurance'],
-                'accommodation' => [
-                    ['nights' => 4, 'location' => 'Galle / Unawatuna', 'hotel' => 'Jetwing Lighthouse, Galle'],
-                ],
-            ],
-        ];
-        $list[3] = [
-            'id' => 3, 'title' => 'Hill Country Escape', 'location' => 'Nuwara Eliya',
-            'duration' => '6 Days 5 Nights', 'duration_short' => '6 Days / 5 Nights', 'image' => '/CeylonGo/public/images/greenary.jpg',
-            'trending' => false, 'rating' => 4.8, 'reviews' => 142, 'category' => 'Adventure', 'price' => 145000,
-            'overview' => [
-                'Arrival at Colombo and transfer to Nuwara Eliya, the misty tea-country highlands.',
-                'Explore Nuwara Eliya: tea estates, Gregory Lake; optional Horton Plains.',
-                'Drive to Ella — Nine Arch Bridge, Little Adam\'s Peak, scenic train stretch.',
-                'Hill country exploration — tea factory, cool climate, mountain views.',
-                'Departure to Colombo as per schedule.',
-            ],
-            'highlights' => [
-                ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '5 nights in hill country'],
-                ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Nuwara Eliya, Ella, Horton Plains'],
-                ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Tea factory, Nine Arch Bridge, Little Adam\'s Peak'],
-                ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-            ],
-            'itinerary' => [
-                ['day' => 1, 'title' => 'Arrival – Colombo to Nuwara Eliya', 'activities' => ['Airport pick-up and transfer to Nuwara Eliya', 'Check-in', 'Evening at Gregory Lake']],
-                ['day' => 2, 'title' => 'Nuwara Eliya – Horton Plains (optional)', 'activities' => ['Horton Plains National Park (optional)', 'Tea estate visit', 'Leisure in Nuwara Eliya']],
-                ['day' => 3, 'title' => 'Nuwara Eliya to Ella', 'activities' => ['Scenic drive to Ella', 'Nine Arch Bridge', 'Check-in at Ella']],
-                ['day' => 4, 'title' => 'Ella – Little Adam\'s Peak & viewpoints', 'activities' => ['Little Adam\'s Peak hike', 'Ella Rock or viewpoints', 'Relax in Ella']],
-                ['day' => 5, 'title' => 'Ella – Tea country & train experience', 'activities' => ['Tea factory tour', 'Scenic train stretch (optional)', 'Leisure in Ella']],
-                ['day' => 6, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-            ],
-            'included' => ['Airport transfers', '5 nights accommodation', 'Half Board', 'Tea factory visit', 'Private cab for sightseeing'],
-            'excluded' => ['International flights', 'Lunches and beverages', 'Horton Plains entry (optional)', 'Personal expenses', 'Visa', 'Travel insurance'],
-            'accommodation' => [
-                ['nights' => 2, 'location' => 'Nuwara Eliya', 'hotel' => 'St. Andrew\'s Hotel, Nuwara Eliya'],
-                ['nights' => 3, 'location' => 'Ella', 'hotel' => '98 Acres Resort & Spa, Ella'],
-            ],
-        ];
-        $list[4] = [
-            'id' => 4, 'title' => 'Ancient Heritage Trail', 'location' => 'Anuradhapura',
-            'duration' => '4 Days 3 Nights', 'duration_short' => '4 Days / 3 Nights', 'image' => '/CeylonGo/public/images/perehara.jpeg',
-            'trending' => true, 'rating' => 4.6, 'reviews' => 98, 'category' => 'Heritage', 'price' => 95000,
-            'overview' => [
-                'Arrival at Colombo and transfer to Anuradhapura or the Cultural Triangle.',
-                'Explore ancient capitals — temples, stupas, and sacred sites.',
-                'Dambulla Cave Temple and Sigiriya or Polonnaruwa.',
-                'Departure to Colombo as per schedule.',
-            ],
-            'highlights' => [
-                ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '3 nights stay'],
-                ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Anuradhapura, Dambulla, Sigiriya/Polonnaruwa'],
-                ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Temples, stupas, heritage sites'],
-                ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-            ],
-            'itinerary' => [
-                ['day' => 1, 'title' => 'Arrival – Colombo to Anuradhapura', 'activities' => ['Airport pick-up and transfer to Anuradhapura', 'Check-in', 'Evening visit to sacred city or rest']],
-                ['day' => 2, 'title' => 'Anuradhapura – Ancient capital', 'activities' => ['Anuradhapura sacred city – temples and stupas', 'Sri Maha Bodhi, Ruwanwelisaya', 'Return to hotel']],
-                ['day' => 3, 'title' => 'Dambulla & Sigiriya or Polonnaruwa', 'activities' => ['Dambulla Cave Temple', 'Sigiriya Rock Fortress or Polonnaruwa ancient city', 'Return to Anuradhapura']],
-                ['day' => 4, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-            ],
-            'included' => ['Airport transfers', '3 nights accommodation', 'Half Board', 'Entrance fees to heritage sites', 'Private cab'],
-            'excluded' => ['International flights', 'Lunches and beverages', 'Personal expenses', 'Visa', 'Travel insurance'],
-            'accommodation' => [
-                ['nights' => 2, 'location' => 'Anuradhapura', 'hotel' => 'Rajarata Hotel, Anuradhapura'],
-                ['nights' => 1, 'location' => 'Dambulla / Sigiriya', 'hotel' => 'Heritage Hotel, Sigiriya'],
-            ],
-        ];
-        $list[5] = [
-            'id' => 5, 'title' => 'Wildlife Safari', 'location' => 'Yala',
-            'duration' => '4 Days 3 Nights', 'duration_short' => '4 Days / 3 Nights', 'image' => '/CeylonGo/public/images/elephant.jpg',
-            'trending' => false, 'rating' => 4.7, 'reviews' => 176, 'category' => 'Safari', 'price' => 165000,
-            'overview' => [
-                'Arrival at Colombo and transfer to Yala or the safari region.',
-                'Safari in Yala National Park — leopards, elephants, birdlife.',
-                'Udawalawe or second safari — wildlife and nature.',
-                'Departure to Colombo as per schedule.',
-            ],
-            'highlights' => [
-                ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '3 nights near parks'],
-                ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                ['icon' => 'sightseeing', 'title' => 'Safari', 'desc' => 'Yala and Udawalawe National Parks'],
-                ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Game drives, wildlife viewing'],
-                ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-            ],
-            'itinerary' => [
-                ['day' => 1, 'title' => 'Arrival – Colombo to Yala / Tissamaharama', 'activities' => ['Airport pick-up and transfer to Yala or Tissamaharama', 'Check-in', 'Evening at leisure']],
-                ['day' => 2, 'title' => 'Yala National Park – Safari', 'activities' => ['Early morning or afternoon game drive in Yala', 'Leopards, elephants, birdlife', 'Return to hotel']],
-                ['day' => 3, 'title' => 'Udawalawe National Park – Safari', 'activities' => ['Transfer to Udawalawe', 'Safari in Udawalawe – elephants and wildlife', 'Overnight near Udawalawe or return to Yala']],
-                ['day' => 4, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-            ],
-            'included' => ['Airport transfers', '3 nights accommodation', 'Half Board', 'Safari jeep and park fees (as per itinerary)', 'Private cab'],
-            'excluded' => ['International flights', 'Lunches and beverages', 'Personal expenses', 'Visa', 'Travel insurance'],
-            'accommodation' => [
-                ['nights' => 2, 'location' => 'Yala / Tissamaharama', 'hotel' => 'Cinnamon Wild Yala'],
-                ['nights' => 1, 'location' => 'Udawalawe', 'hotel' => 'Elephant Reach, Udawalawe'],
-            ],
-        ];
-        $list[6] = [
-            'id' => 6, 'title' => 'Solo Explorer', 'location' => 'Ella',
-            'duration' => '6 Days 5 Nights', 'duration_short' => '6 Days / 5 Nights', 'image' => '/CeylonGo/public/images/train.jpg',
-            'trending' => true, 'rating' => 4.4, 'reviews' => 89, 'category' => 'Solo', 'price' => 78000,
-            'overview' => [
-                'Arrival at Colombo; begin journey to hill country by train or road.',
-                'Scenic train to Ella — tea country, Nine Arch Bridge, Little Adam\'s Peak.',
-                'Explore Ella and surrounds — hiking, viewpoints, relaxed pace.',
-                'Hill country discovery — Nuwara Eliya or Kandy option.',
-                'Departure to Colombo as per schedule.',
-            ],
-            'highlights' => [
-                ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '5 nights in hill country'],
-                ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Train + cab as per itinerary'],
-                ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Ella, Nine Arch Bridge, Little Adam\'s Peak'],
-                ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Scenic train, hiking, tea country'],
-                ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-            ],
-            'itinerary' => [
-                ['day' => 1, 'title' => 'Arrival – Colombo to Kandy / Nuwara Eliya by train or road', 'activities' => ['Airport pick-up', 'Scenic train from Colombo to Kandy or transfer by road', 'Check-in at Kandy or Nuwara Eliya']],
-                ['day' => 2, 'title' => 'Train / road to Ella', 'activities' => ['Scenic train to Ella (or drive)', 'Check-in at Ella', 'Evening at leisure']],
-                ['day' => 3, 'title' => 'Ella – Nine Arch Bridge & Little Adam\'s Peak', 'activities' => ['Nine Arch Bridge', 'Little Adam\'s Peak hike', 'Relax in Ella']],
-                ['day' => 4, 'title' => 'Ella – Tea country & viewpoints', 'activities' => ['Tea factory or plantation visit', 'Ella Rock or viewpoints', 'Leisure in Ella']],
-                ['day' => 5, 'title' => 'Ella – Extra day or Nuwara Eliya', 'activities' => ['Optional day trip to Nuwara Eliya or rest in Ella', 'Last evening in hill country']],
-                ['day' => 6, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-            ],
-            'included' => ['Airport transfers', '5 nights accommodation', 'Half Board', 'Train ticket (as per itinerary)', 'Private cab where needed'],
-            'excluded' => ['International flights', 'Lunches and beverages', 'Personal expenses', 'Visa', 'Travel insurance'],
-            'accommodation' => [
-                ['nights' => 2, 'location' => 'Nuwara Eliya', 'hotel' => 'Tea Factory Hotel, Nuwara Eliya'],
-                ['nights' => 3, 'location' => 'Ella', 'hotel' => 'Mountain Heavens, Ella'],
-            ],
-        ];
-        $list[7] = [
-            'id' => 7, 'title' => 'Family Fun', 'location' => 'Bentota',
-            'duration' => '5 Days 4 Nights', 'duration_short' => '5 Days / 4 Nights', 'image' => '/CeylonGo/public/images/resort.jpg',
-            'trending' => false, 'rating' => 4.5, 'reviews' => 124, 'category' => 'Family', 'price' => 195000,
-            'overview' => [
-                'Arrival at Colombo and transfer to Bentota, the family-friendly beach strip.',
-                'Explore Bentota — beach, water sports (optional), turtle hatchery.',
-                'Colombo day — city sights, markets, or leisure.',
-                'Family time — beach and resort activities.',
-                'Departure to Colombo as per schedule.',
-            ],
-            'highlights' => [
-                ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '4 nights (Bentota + Colombo)'],
-                ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Bentota beach, Colombo city'],
-                ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Beach, turtle hatchery, family activities'],
-                ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-            ],
-            'itinerary' => [
-                ['day' => 1, 'title' => 'Arrival – Colombo to Bentota', 'activities' => ['Airport pick-up and transfer to Bentota', 'Check-in at resort', 'Beach time']],
-                ['day' => 2, 'title' => 'Bentota – Beach & turtle hatchery', 'activities' => ['Beach activities', 'Turtle hatchery visit', 'Optional water sports', 'Resort leisure']],
-                ['day' => 3, 'title' => 'Bentota – Family day', 'activities' => ['Resort activities', 'Beach or pool', 'Optional boat ride on Madu Ganga']],
-                ['day' => 4, 'title' => 'Bentota to Colombo', 'activities' => ['Transfer to Colombo', 'Colombo city tour – markets, Galle Face, or shopping', 'Overnight in Colombo']],
-                ['day' => 5, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-            ],
-            'included' => ['Airport transfers', '4 nights accommodation', 'Half Board', 'Turtle hatchery visit', 'Private cab'],
-            'excluded' => ['International flights', 'Lunches and beverages', 'Water sports (optional)', 'Personal expenses', 'Visa', 'Travel insurance'],
-            'accommodation' => [
-                ['nights' => 3, 'location' => 'Bentota', 'hotel' => 'Avani Bentota Resort & Spa'],
-                ['nights' => 1, 'location' => 'Colombo', 'hotel' => 'Marino Beach Colombo'],
-            ],
-        ];
-        $list[8] = [
-            'id' => 8, 'title' => 'Beach Getaway', 'location' => 'Hikkaduwa',
-            'duration' => '3 Days 2 Nights', 'duration_short' => '3 Days / 2 Nights', 'image' => '/CeylonGo/public/images/sunset.jpg',
-            'trending' => false, 'rating' => 4.3, 'reviews' => 67, 'category' => 'Beach', 'price' => 65000,
-            'overview' => [
-                'Arrival at Colombo and transfer to Hikkaduwa or Unawatuna.',
-                'Beach time at Hikkaduwa — coral, beach, optional water sports.',
-                'Unawatuna — beach, diving or relaxation. Departure to Colombo.',
-            ],
-            'highlights' => [
-                ['icon' => 'hotel', 'title' => 'Accommodation', 'desc' => '2 nights beach stay'],
-                ['icon' => 'transfer', 'title' => 'Transfers', 'desc' => 'Private cab for all transfers'],
-                ['icon' => 'sightseeing', 'title' => 'Sightseeing', 'desc' => 'Hikkaduwa, Unawatuna beaches'],
-                ['icon' => 'meals', 'title' => 'Meals', 'desc' => 'Breakfast & dinner included'],
-                ['icon' => 'activities', 'title' => 'Activities', 'desc' => 'Beach, snorkelling (optional)'],
-                ['icon' => 'support', 'title' => 'Support', 'desc' => '24x7 travel assistance'],
-            ],
-            'itinerary' => [
-                ['day' => 1, 'title' => 'Arrival – Colombo to Hikkaduwa', 'activities' => ['Airport pick-up and transfer to Hikkaduwa', 'Check-in', 'Beach time and coral viewing']],
-                ['day' => 2, 'title' => 'Hikkaduwa to Unawatuna (or stay Hikkaduwa)', 'activities' => ['Transfer to Unawatuna or full day at Hikkaduwa', 'Beach, optional snorkelling or diving', 'Sunset at beach']],
-                ['day' => 3, 'title' => 'Departure', 'activities' => ['Transfer to Colombo airport', 'Departure']],
-            ],
-            'included' => ['Airport transfers', '2 nights accommodation', 'Half Board', 'Private cab'],
-            'excluded' => ['International flights', 'Lunches and beverages', 'Water sports and diving (optional)', 'Personal expenses', 'Visa', 'Travel insurance'],
-            'accommodation' => [
-                ['nights' => 2, 'location' => 'Hikkaduwa', 'hotel' => 'Coral Sands Hotel, Hikkaduwa'],
-            ],
-        ];
-        return isset($list[$id]) ? $list[$id] : $list[1];
+        $packageModel = new Package($this->db);
+        $package = $packageModel->getById((int) $id);
+        if ($package) return $package;
+        $all = $packageModel->getAll();
+        return $all[0] ?? null;
     }
 
     public function addReview() {
-        $packagesList = [
-            ['id' => 1, 'title' => 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla'],
-            ['id' => 2, 'title' => 'Southern Coast Honeymoon: Galle, Mirissa & Unawatuna 4N/5D'],
-            ['id' => 3, 'title' => 'Hill Country Escape — Nuwara Eliya, Ella & Horton Plains 5N/6D'],
-            ['id' => 4, 'title' => 'Ancient Heritage Trail — Temples & Forts 3N/4D'],
-            ['id' => 5, 'title' => 'Wildlife Safari — Yala & Udawalawe 3N/4D'],
-            ['id' => 6, 'title' => 'Solo Explorer — Colombo to Ella by Train 5N/6D'],
-            ['id' => 7, 'title' => 'Family Fun — Bentota & Colombo 4N/5D'],
-            ['id' => 8, 'title' => 'Beach Getaway — Hikkaduwa & Unawatuna 2N/3D'],
-        ];
+        $packageModel = new Package($this->db);
+        $packagesList = $packageModel->getListForDropdown();
         $selected_package_id = isset($_GET['package']) ? (int) $_GET['package'] : null;
         view('tourist/add_review', ['packages' => $packagesList, 'selected_package_id' => $selected_package_id]);
     }

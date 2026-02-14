@@ -1,6 +1,8 @@
 <?php
 // Login view - processing is handled by AuthController
 $error = $error ?? '';
+$redirect = isset($_GET['redirect']) ? trim($_GET['redirect']) : '';
+$msg = isset($_GET['msg']) ? trim($_GET['msg']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,8 +36,16 @@ $error = $error ?? '';
             <?php echo htmlspecialchars($error); ?>
           </div>
         <?php } ?>
+        <?php if (!empty($msg)) { ?>
+          <div style="color: #0a0; text-align: center; margin-bottom: 15px;">
+            <?php echo htmlspecialchars($msg); ?>
+          </div>
+        <?php } ?>
 
         <form class="login-form" method="POST" action="/CeylonGo/public/login">
+          <?php if (!empty($redirect) && strpos($redirect, '/CeylonGo/public/') === 0 && strpos($redirect, '//') === false) { ?>
+          <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
+          <?php } ?>
           <div class="form-group">
             <label for="email">Email Address</label>
             <input type="email" id="email" name="email" placeholder="Enter your email address" required>

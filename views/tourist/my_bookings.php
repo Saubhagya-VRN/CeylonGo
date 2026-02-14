@@ -48,7 +48,7 @@ if ($asset_base === '' || $asset_base === '/') {
           </div>
           <h2 class="my-booking-package"><?php echo htmlspecialchars($b['package_name'] ?? 'Package'); ?></h2>
           <ul class="my-booking-details">
-            <li><strong>Travelers:</strong> <?php echo (int)($b['travelers'] ?? 0); ?></li>
+            <li><strong>Travelers:</strong> <?php echo (int)($b['travelers'] ?? 0); ?><?php if (isset($b['adults']) || isset($b['children']) || isset($b['infants'])): ?> (<?php echo (int)($b['adults'] ?? 0); ?> adult<?php echo ((int)($b['adults'] ?? 0)) !== 1 ? 's' : ''; ?><?php if (!empty($b['children'])): ?>, <?php echo (int)$b['children']; ?> child<?php echo (int)$b['children'] !== 1 ? 'ren' : ''; ?><?php endif; ?><?php if (!empty($b['infants'])): ?>, <?php echo (int)$b['infants']; ?> infant<?php echo (int)$b['infants'] !== 1 ? 's' : ''; ?><?php endif; ?>)<?php endif; ?></li>
             <li><strong>Total:</strong> LKR <?php echo number_format((int)($b['total_amount'] ?? 0)); ?></li>
             <li><strong>Contact:</strong> <?php echo htmlspecialchars($b['fullname'] ?? ''); ?> · <?php echo htmlspecialchars($b['email'] ?? ''); ?></li>
             <?php if (!empty($b['special_requests'])): ?>

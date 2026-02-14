@@ -42,7 +42,21 @@ if ($asset_base === '' || $asset_base === '/') {
         <h2 class="booking-summary-title">Trip Summary</h2>
         <div class="booking-package-head">
           <p class="booking-package-name"><?php echo htmlspecialchars($p['title']); ?></p>
-          <p class="booking-package-meta"><?php echo htmlspecialchars($p['duration_short'] ?? $p['duration']); ?> · <?php echo isset($p['price']) ? 'LKR ' . number_format((int)$p['price']) : 'Price on request'; ?></p>
+          <p class="booking-package-meta"><?php echo htmlspecialchars($p['duration_short'] ?? $p['duration']); ?><?php echo isset($p['price']) ? ' · LKR ' . number_format((int)$p['price']) . ' (adult)' : ''; ?></p>
+          <?php
+          $pkg_cat = isset($p['category']) ? strtolower(trim($p['category'])) : '';
+          if ($pkg_cat !== 'solo' && $pkg_cat !== 'honeymoon'):
+            $pa = (int)($p['price'] ?? 0);
+            $pc_ratio = isset($p['price_child_ratio']) ? (float)$p['price_child_ratio'] : 0.5;
+            $pi_ratio = isset($p['price_infant_ratio']) ? (float)$p['price_infant_ratio'] : 0;
+            $pc = (int)round($pa * $pc_ratio);
+            $pinf = (int)round($pa * $pi_ratio);
+          ?>
+          <div class="booking-summary-prices" id="trip-summary-prices">
+            <p class="booking-summary-price-line"><strong>Adult:</strong> LKR <?php echo number_format($pa); ?> · <strong>Child:</strong> LKR <?php echo number_format($pc); ?> · <strong>Infant:</strong> LKR <?php echo number_format($pinf); ?></p>
+            <p class="booking-summary-total-line">Total: <strong id="trip-summary-total">LKR 0</strong></p>
+          </div>
+          <?php endif; ?>
         </div>
         <?php
         $acc_list = $p['accommodation'] ?? [];
@@ -113,15 +127,64 @@ if ($asset_base === '' || $asset_base === '/') {
             <label for="phone">Phone Number <span class="required">*</span></label>
             <input type="tel" id="phone" name="phone" value="<?php echo htmlspecialchars($phone); ?>" placeholder="e.g. +94 77 123 4567" required>
           </div>
-          <div class="form-group" id="travelers-wrap" data-price-per-person="<?php echo (int)($p['price'] ?? 0); ?>">
+          <?php
+          $pkg_category = isset($p['category']) ? strtolower(trim($p['category'])) : '';
+          $is_solo_or_honeymoon = ($pkg_category === 'solo' || $pkg_category === 'honeymoon');
+          $travelers_min = 1;
+          $travelers_max = 10;
+          $travelers_default = 1;
+          if ($pkg_category === 'solo') {
+              $travelers_min = 1;
+              $travelers_max = 1;
+              $travelers_default = 1;
+          } elseif ($pkg_category === 'honeymoon') {
+              $travelers_min = 2;
+              $travelers_max = 2;
+              $travelers_default = 2;
+          }
+          $price_adult = (int)($p['price'] ?? 0);
+          $price_child_ratio = isset($p['price_child_ratio']) ? (float)$p['price_child_ratio'] : 0.5;
+          $price_infant_ratio = isset($p['price_infant_ratio']) ? (float)$p['price_infant_ratio'] : 0;
+          ?>
+          <?php if ($is_solo_or_honeymoon): ?>
+          <div class="form-group" id="travelers-wrap" data-price-per-person="<?php echo $price_adult; ?>">
             <label for="travelers">Number of Travelers <span class="required">*</span></label>
             <select id="travelers" name="travelers" required>
-              <option value="">Select</option>
-              <?php for ($i = 1; $i <= 10; $i++): ?>
-              <option value="<?php echo $i; ?>"><?php echo $i; ?> <?php echo $i === 1 ? 'Traveler' : 'Travelers'; ?></option>
-              <?php endfor; ?>
+              <option value="<?php echo $travelers_default; ?>" selected><?php echo $travelers_default; ?> <?php echo $travelers_default === 1 ? 'Traveler' : 'Travelers'; ?></option>
             </select>
+          </div>
+          <?php else: ?>
+          <div class="form-group" id="travelers-wrap-by-type" data-price-adult="<?php echo $price_adult; ?>" data-price-child-ratio="<?php echo htmlspecialchars($price_child_ratio); ?>" data-price-infant-ratio="<?php echo htmlspecialchars($price_infant_ratio); ?>">
+            <label class="required-label">Travelers <span class="required">*</span></label>
+            <div class="travelers-by-type travelers-row">
+              <div class="stepper-cell">
+                <label for="adults">Adults</label>
+                <div class="number-stepper">
+                  <button type="button" class="stepper-btn" aria-label="Decrease adults" data-stepper="adults" data-delta="-1">−</button>
+                  <input type="number" id="adults" name="adults" value="1" min="1" max="10" required>
+                  <button type="button" class="stepper-btn" aria-label="Increase adults" data-stepper="adults" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="stepper-cell">
+                <label for="children">Children</label>
+                <div class="number-stepper">
+                  <button type="button" class="stepper-btn" aria-label="Decrease children" data-stepper="children" data-delta="-1">−</button>
+                  <input type="number" id="children" name="children" value="0" min="0" max="10">
+                  <button type="button" class="stepper-btn" aria-label="Increase children" data-stepper="children" data-delta="1">+</button>
+                </div>
+              </div>
+              <div class="stepper-cell">
+                <label for="infants">Infants</label>
+                <div class="number-stepper">
+                  <button type="button" class="stepper-btn" aria-label="Decrease infants" data-stepper="infants" data-delta="-1">−</button>
+                  <input type="number" id="infants" name="infants" value="0" min="0" max="10">
+                  <button type="button" class="stepper-btn" aria-label="Increase infants" data-stepper="infants" data-delta="1">+</button>
+                </div>
+              </div>
             </div>
+            <p class="booking-price-hint">Adult: LKR <?php echo number_format($price_adult); ?> · Child: LKR <?php echo number_format((int)round($price_adult * $price_child_ratio)); ?> · Infant: LKR <?php echo number_format((int)round($price_adult * $price_infant_ratio)); ?></p>
+          </div>
+          <?php endif; ?>
           <div class="form-group">
             <label for="travel-date">Preferred Travel Date <span class="required">*</span></label>
             <input type="date" id="travel-date" name="travel_date" min="<?php echo date('Y-m-d', strtotime('+21 days')); ?>" required>
@@ -166,19 +229,64 @@ if ($asset_base === '' || $asset_base === '/') {
       var wrap = document.getElementById('travelers-wrap');
       var travelersSelect = document.getElementById('travelers');
       var totalByButtons = document.getElementById('booking-total-buttons');
-      if (!wrap || !travelersSelect) return;
-      var pricePerPerson = parseInt(wrap.getAttribute('data-price-per-person') || '0', 10);
+      if (!totalByButtons) return;
       function formatNum(n) {
         return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       }
-      function updateTotal() {
-        var n = parseInt(travelersSelect.value || '0', 10);
-        var total = n * pricePerPerson;
-        var text = 'LKR ' + formatNum(total);
-        if (totalByButtons) totalByButtons.textContent = text;
+      if (wrap && travelersSelect) {
+        var pricePerPerson = parseInt(wrap.getAttribute('data-price-per-person') || '0', 10);
+        function updateTotal() {
+          var n = parseInt(travelersSelect.value || '0', 10);
+          totalByButtons.textContent = 'LKR ' + formatNum(n * pricePerPerson);
+        }
+        travelersSelect.addEventListener('change', updateTotal);
+        updateTotal();
+        return;
       }
-      travelersSelect.addEventListener('change', updateTotal);
-      updateTotal();
+      var wrapByType = document.getElementById('travelers-wrap-by-type');
+      var adultsInput = document.getElementById('adults');
+      var childrenInput = document.getElementById('children');
+      var infantsInput = document.getElementById('infants');
+      if (wrapByType && adultsInput && childrenInput && infantsInput) {
+        var priceAdult = parseInt(wrapByType.getAttribute('data-price-adult') || '0', 10);
+        var childRatio = parseFloat(wrapByType.getAttribute('data-price-child-ratio') || '0.5');
+        var infantRatio = parseFloat(wrapByType.getAttribute('data-price-infant-ratio') || '0');
+        function updateTotalByType() {
+          var a = parseInt(adultsInput.value || '0', 10) || 0;
+          var c = parseInt(childrenInput.value || '0', 10) || 0;
+          var i = parseInt(infantsInput.value || '0', 10) || 0;
+          var total = (a * priceAdult) + (c * priceAdult * childRatio) + (i * priceAdult * infantRatio);
+          var totalStr = 'LKR ' + formatNum(Math.round(total));
+          totalByButtons.textContent = totalStr;
+          var tripSummaryTotal = document.getElementById('trip-summary-total');
+          if (tripSummaryTotal) tripSummaryTotal.textContent = totalStr;
+        }
+        function clamp(el, min, max) {
+          var v = parseInt(el.value || '0', 10);
+          if (v < min) el.value = min;
+          else if (v > max) el.value = max;
+        }
+        adultsInput.addEventListener('input', updateTotalByType);
+        adultsInput.addEventListener('change', function() { clamp(adultsInput, 1, 10); updateTotalByType(); });
+        childrenInput.addEventListener('input', updateTotalByType);
+        childrenInput.addEventListener('change', function() { clamp(childrenInput, 0, 10); updateTotalByType(); });
+        infantsInput.addEventListener('input', updateTotalByType);
+        infantsInput.addEventListener('change', function() { clamp(infantsInput, 0, 10); updateTotalByType(); });
+        document.querySelectorAll('#travelers-wrap-by-type .stepper-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var id = btn.getAttribute('data-stepper');
+            var delta = parseInt(btn.getAttribute('data-delta') || '0', 10);
+            var el = document.getElementById(id);
+            if (!el) return;
+            var min = parseInt(el.getAttribute('min') || '0', 10);
+            var max = parseInt(el.getAttribute('max') || '10', 10);
+            var v = (parseInt(el.value || '0', 10) || 0) + delta;
+            el.value = Math.min(max, Math.max(min, v));
+            updateTotalByType();
+          });
+        });
+        updateTotalByType();
+      }
     })();
   </script>
 </body>
