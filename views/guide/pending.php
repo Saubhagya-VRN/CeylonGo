@@ -14,39 +14,7 @@
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    .btn-accept, .btn-reject {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-right: 5px;
-      transition: all 0.3s ease;
-    }
-    .btn-accept {
-      background: #28a745;
-      color: white;
-    }
-    .btn-accept:hover {
-      background: #218838;
-    }
-    .btn-reject {
-      background: #dc3545;
-      color: white;
-    }
-    .btn-reject:hover {
-      background: #c82333;
-    }
-    .status-badge.pending {
-      background: #ffc107;
-      color: #333;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-  </style>
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/pending.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -83,7 +51,7 @@
         <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
         <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="/CeylonGo/public/guide/places"><i class="fa-solid fa-map-location-dot"></i> My Places</a></li>
+        <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </div>
 

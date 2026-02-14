@@ -8,15 +8,15 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once 'session_init.php';
 
 // Include database and model
-require_once "../config/config.php";
-require_once "../core/Database.php";
-require_once "../models/BankDetails.php";
+require_once dirname(__DIR__, 2) . "/config/config.php";
+require_once dirname(__DIR__, 2) . "/core/Database.php";
+require_once dirname(__DIR__, 2) . "/models/GuideBankDetails.php";
 
 // Check if user is logged in
-if(isset($_SESSION['transporter_id'])){
-    $user_id = trim($_SESSION['transporter_id']);
+if(isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'guide'){
+    $user_id = trim($_SESSION['user_id']);
 } else {
-    header('Location: /CeylonGo/views/transport/login.php');
+    header('Location: /CeylonGo/public/login');
     exit();
 }
 
@@ -34,12 +34,36 @@ if (isset($_SESSION['payment_error'])) {
     unset($_SESSION['payment_error']);
 }
 
+// Handle form submission for bank details
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_bank_details') {
+    try {
+        $db = Database::getConnection();
+        $bankModel = new GuideBankDetails($db);
+        
+        $bankModel->id = $user_id;
+        $bankModel->bank_name = trim($_POST['bank_name']);
+        $bankModel->acc_no = trim($_POST['acc_no']);
+        $bankModel->acc_holder_name = trim($_POST['acc_holder_name']);
+        $bankModel->branch_name = trim($_POST['branch_name']);
+        
+        if ($bankModel->saveBankDetails()) {
+            $_SESSION['payment_message'] = "Bank details saved successfully!";
+        } else {
+            $_SESSION['payment_error'] = "Failed to save bank details.";
+        }
+    } catch (Exception $e) {
+        $_SESSION['payment_error'] = "Error: " . $e->getMessage();
+    }
+    
+    header("Location: /CeylonGo/public/guide/payment");
+    exit();
+}
 
 // Fetch bank details from database
 try {
     $db = Database::getConnection();
-    $bankModel = new BankDetails($db);
-    $bankData = $bankModel->getBankDetailsByRefId($user_id);
+    $bankModel = new GuideBankDetails($db);
+    $bankData = $bankModel->getBankDetailsById($user_id);
 } catch (Exception $e) {
     $bankData = null;
 }
@@ -56,49 +80,49 @@ $bankAccount = [
 // Sample payment data - Replace with database queries
 $payments = [
     [
-        'booking_id' => '#12345',
+        'booking_id' => '#G12345',
         'customer_name' => 'John Silva',
-        'booking_date' => '2025-03-15',
-        'payment_date' => '2025-03-16',
-        'amount' => 10000,
-        'status' => 'paid',
-        'method' => 'Online'
-    ],
-    [
-        'booking_id' => '#77889',
-        'customer_name' => 'Sarah Fernando',
-        'booking_date' => '2025-03-18',
-        'payment_date' => '2025-03-19',
+        'tour_date' => '2026-01-20',
+        'payment_date' => '2026-01-21',
         'amount' => 15000,
         'status' => 'paid',
-        'method' => 'Cash'
+        'tour_type' => 'Historical Tour'
     ],
     [
-        'booking_id' => '#45678',
-        'customer_name' => 'David Perera',
-        'booking_date' => '2025-03-20',
-        'payment_date' => null,
-        'amount' => 8500,
-        'status' => 'pending',
-        'method' => 'Online'
-    ],
-    [
-        'booking_id' => '#99123',
-        'customer_name' => 'Nimal Rajapaksa',
-        'booking_date' => '2025-03-22',
-        'payment_date' => '2025-03-23',
-        'amount' => 12000,
+        'booking_id' => '#G77889',
+        'customer_name' => 'Sarah Fernando',
+        'tour_date' => '2026-01-25',
+        'payment_date' => '2026-01-26',
+        'amount' => 20000,
         'status' => 'paid',
-        'method' => 'Card'
+        'tour_type' => 'Cultural Tour'
     ],
     [
-        'booking_id' => '#55667',
-        'customer_name' => 'Amara Wijesinghe',
-        'booking_date' => '2025-03-25',
+        'booking_id' => '#G45678',
+        'customer_name' => 'David Perera',
+        'tour_date' => '2026-02-01',
         'payment_date' => null,
-        'amount' => 9500,
+        'amount' => 12500,
         'status' => 'pending',
-        'method' => 'Cash'
+        'tour_type' => 'Beach Tour'
+    ],
+    [
+        'booking_id' => '#G99123',
+        'customer_name' => 'Nimal Rajapaksa',
+        'tour_date' => '2026-02-05',
+        'payment_date' => '2026-02-06',
+        'amount' => 18000,
+        'status' => 'paid',
+        'tour_type' => 'Wildlife Safari'
+    ],
+    [
+        'booking_id' => '#G55667',
+        'customer_name' => 'Amara Wijesinghe',
+        'tour_date' => '2026-02-10',
+        'payment_date' => null,
+        'amount' => 14500,
+        'status' => 'pending',
+        'tour_type' => 'Adventure Tour'
     ]
 ];
 
@@ -108,7 +132,7 @@ $paidPayments = array_filter($payments, fn($p) => $p['status'] === 'paid');
 $pendingPayments = array_filter($payments, fn($p) => $p['status'] === 'pending');
 $completedAmount = array_sum(array_column($paidPayments, 'amount'));
 $pendingAmount = array_sum(array_column($pendingPayments, 'amount'));
-$averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
+$averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -116,24 +140,21 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ceylon Go - My Payments</title>
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/base.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/navbar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
     
     <!-- Component styles -->
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/cards.css">
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
-    
-    <!-- Page-specific styles -->
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/tables.css">
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/charts.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/cards.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/buttons.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/forms.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
 
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     
-    <link rel="stylesheet" href="/CeylonGo/public/css/transport/payment.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/guide/payment.css">
 </head>
 <body>
 
@@ -149,11 +170,11 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
             <div class="logo-text">Ceylon Go</div>
         </div>
         <nav class="nav-links">
-            <a href="/CeylonGo/public/transporter/dashboard">Home</a>
+            <a href="/CeylonGo/public/guide/dashboard">Home</a>
             <div class="profile-dropdown">
                 <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
                 <div class="profile-dropdown-menu" id="profileDropdown">
-                    <a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+                    <a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a>
                     <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                 </div>
             </div>
@@ -168,13 +189,13 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <ul>
-                <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-                <li><a href="/CeylonGo/public/transporter/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Bookings</a></li>
-                <li><a href="/CeylonGo/public/transporter/pending"><i class="fa-regular fa-clock"></i> Pending Bookings</a></li>
-                <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
-                <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
-                <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-                <li class="active"><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+                <li><a href="/CeylonGo/public/guide/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+                <li><a href="/CeylonGo/public/guide/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Tours</a></li>
+                <li><a href="/CeylonGo/public/guide/pending"><i class="fa-regular fa-clock"></i> Pending Requests</a></li>
+                <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
+                <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
+                <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
+                <li class="active"><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
             </ul>
         </div>
 
@@ -231,8 +252,8 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                     <div class="summary-card-icon">
                         <i class="fa-solid fa-chart-line"></i>
                     </div>
-                    <h3>Average Booking</h3>
-                    <p class="amount">Rs. <?= number_format($averageBooking) ?></p>
+                    <h3>Average Per Tour</h3>
+                    <p class="amount">Rs. <?= number_format($averageTour) ?></p>
                 </div>
             </div>
 
@@ -282,7 +303,8 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                         <tr>
                             <th>Booking ID</th>
                             <th>Customer Name</th>
-                            <th>Booking Date</th>
+                            <th>Tour Type</th>
+                            <th>Tour Date</th>
                             <th>Payment Date</th>
                             <th>Amount</th>
                             <th>Status</th>
@@ -295,7 +317,8 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                         <tr data-status="<?= $payment['status'] ?>">
                             <td><?= $payment['booking_id'] ?></td>
                             <td><?= $payment['customer_name'] ?></td>
-                            <td><?= date('M d, Y', strtotime($payment['booking_date'])) ?></td>
+                            <td><?= $payment['tour_type'] ?></td>
+                            <td><?= date('M d, Y', strtotime($payment['tour_date'])) ?></td>
                             <td><?= $payment['payment_date'] ? date('M d, Y', strtotime($payment['payment_date'])) : '-' ?></td>
                             <td>Rs. <?= number_format($payment['amount']) ?></td>
                             <td>
