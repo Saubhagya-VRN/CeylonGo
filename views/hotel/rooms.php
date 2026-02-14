@@ -73,8 +73,8 @@ if (!isset($conn) || $conn->connect_error) {
             <div class="logo-text">Ceylon Go</div>
         </div>
         <nav class="nav-links">
-            <a href="dashboard.php">Home</a>
-            <a href="../tourist/tourist_dashboard.php" class="btn-login">Logout</a>
+            <a href="/CeylonGo/public/hotel/dashboard">Home</a>
+            <a href="/CeylonGo/public/logout" class="btn-login">Logout</a>
         </nav>
     </header>
 
@@ -83,15 +83,15 @@ if (!isset($conn) || $conn->connect_error) {
             <div class="brand-text">Ceylon Go</div>
         </div>
         <nav class="nav">
-            <a class="nav-link" href="dashboard.php">Dashboard</a>
-            <a class="nav-link" href="availability.php">Availability</a>
-            <a class="nav-link" href="bookings.php">Bookings</a>
-            <a class="nav-link" href="add_room.php">Booking Management</a>
-            <a class="nav-link" href="payments.php">Payments</a>
-            <a class="nav-link" href="reviews.php">Reviews</a>
-            <a class="nav-link" href="inquiries.php">Inquiries</a>
-            <a class="nav-link" href="report_issue.php">Report Issue</a>
-            <a class="nav-link" href="notifications.php">Notifications</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/dashboard">Dashboard</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/availability">Availability</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/bookings">Bookings</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/add-room">Booking Management</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/payments">Payments</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/reviews">Reviews</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/inquiries">Inquiries</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/report-issue">Report Issue</a>
+            <a class="nav-link" href="/CeylonGo/public/hotel/notifications">Notifications</a>
         </nav>
     </aside>
 
@@ -109,7 +109,7 @@ if (!isset($conn) || $conn->connect_error) {
         <section class="content">
             <div class="profile-actions">
                 <div style="margin-right:auto" class="muted">Manage your hotel rooms</div>
-                <a href="add_room.php" class="btn btn-primary">
+                <a href="/CeylonGo/public/hotel/add-room" class="btn btn-primary">
                     + Add New Room
                 </a>
             </div>
@@ -130,7 +130,7 @@ if (!isset($conn) || $conn->connect_error) {
                     <?php if (empty($rooms)): ?>
                         <div class="empty-state">
                             <p>No rooms found for this hotel.</p>
-                            <a href="add_room.php" class="btn btn-primary">Add Your First Room</a>
+                            <a href="/CeylonGo/public/hotel/add-room" class="btn btn-primary">Add Your First Room</a>
                         </div>
                     <?php else: ?>
                         <div class="table-wrap">
@@ -183,10 +183,10 @@ if (!isset($conn) || $conn->connect_error) {
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="edit_room.php?id=<?php echo $room['id']; ?>" class="btn btn-sm btn-secondary">
+                                                <a href="/CeylonGo/public/hotel/edit-room/<?php echo $room['id']; ?>" class="btn btn-sm btn-secondary">
                                                     ✏ Edit
                                                 </a>
-                                                <a href="delete_room.php?id=<?php echo $room['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this room?');">
+                                                <a href="/CeylonGo/public/hotel/delete-room/<?php echo $room['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this room?');">
                                                     🗑 Delete
                                                 </a>
                                             </td>

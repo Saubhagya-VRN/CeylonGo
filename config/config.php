@@ -13,3 +13,6 @@ define('PUBLIC_PATH', BASE_PATH . '/public');
 define('VIEW_PATH', BASE_PATH . '/views');
 // Absolute path to uploads directory (served from public)
 define('UPLOADS_PATH', PUBLIC_PATH . '/uploads');
+
+// Google Maps API Key (server-side only)
+define('GOOGLE_MAPS_API_KEY', 'AIzaSyAcuxrNlQgmK79qliHORas-sKGhU9OXPIo');

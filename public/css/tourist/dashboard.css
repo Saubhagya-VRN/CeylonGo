@@ -1,0 +1,692 @@
+/**
+ * Tourist Dashboard – video hero (lanka.mp4), overlay, CTAs, FABs
+ */
+
+.dashboard-page {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+}
+
+/* Header and footer use original green from navbar.css / footer.css */
+
+/* Package options bar under header – white strip, dark green links with chevron (like packages filter bar) */
+.dashboard-package-bar {
+    position: sticky;
+    top: 60px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 8px 0;
+    background: #ffffff;
+    padding: 16px 40px;
+    border-bottom: 1px solid #e5e5e5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 999;
+}
+
+.dashboard-package-bar .package-bar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #2c5530;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 8px 4px;
+    transition: color 0.2s ease;
+}
+
+.dashboard-package-bar .package-bar-item:hover {
+    color: #1e3d21;
+}
+
+.dashboard-package-bar .package-bar-item i,
+.dashboard-package-bar .package-bar-trigger i {
+    font-size: 11px;
+    opacity: 0.9;
+    color: inherit;
+}
+
+/* Hover dropdown for package options */
+.package-bar-dropdown {
+    position: relative;
+}
+
+.package-bar-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #2c5530;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 8px 4px;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    font-family: inherit;
+    background: none;
+    border: none;
+}
+
+.package-bar-trigger:hover {
+    color: #1e3d21;
+}
+
+.package-bar-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    margin-top: -2px;
+    padding: 14px 0 12px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e5e5e5;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 1000;
+}
+
+.package-bar-panel--cards {
+    min-width: 320px;
+    padding: 10px 0 12px;
+}
+
+.package-bar-dropdown:hover .package-bar-panel {
+    opacity: 1;
+    visibility: visible;
+}
+
+.package-bar-panel .package-bar-package {
+    display: block;
+    padding: 8px 16px;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.package-bar-panel .package-bar-package:hover {
+    background: #f5f5f5;
+    color: #2c5530;
+}
+
+/* Package card inside dropdown (image + title, location, duration, rating) */
+.package-bar-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: inherit;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.15s ease;
+}
+
+.package-bar-card:last-of-type {
+    border-bottom: none;
+}
+
+.package-bar-card:hover {
+    background: #f8faf8;
+}
+
+.package-bar-card-img {
+    width: 72px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.package-bar-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.package-bar-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.25;
+}
+
+.package-bar-card-meta {
+    font-size: 12px;
+    color: #666;
+}
+
+.package-bar-card-star {
+    color: #d97706;
+}
+
+.package-bar-panel .package-bar-explore {
+    display: block;
+    margin-top: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid #eee;
+    color: #2c5530;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+
+.package-bar-panel .package-bar-explore:hover {
+    background: #f0fdf4;
+}
+
+@media (max-width: 768px) {
+    .dashboard-package-bar {
+        gap: 8px 24px;
+        padding: 10px 16px;
+    }
+    .dashboard-package-bar .package-bar-item {
+        font-size: 13px;
+    }
+}
+
+.dashboard-main {
+    flex: 1;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+}
+
+/* Hero – full viewport, video background */
+.dashboard-hero {
+    position: relative;
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+}
+
+.dashboard-hero-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+    z-index: 0;
+}
+
+.dashboard-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.dashboard-hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    padding: 40px 24px;
+    transform: translateY(-50px);
+}
+
+.dashboard-hero-title {
+    margin: 0 0 20px 0;
+    font-size: clamp(28px, 5vw, 42px);
+    font-weight: 700;
+    line-height: 1.2;
+    color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.dashboard-hero-tagline {
+    margin: 0 0 32px 0;
+    font-size: clamp(15px, 2vw, 18px);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-hero-btns {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Get Started button – fixed at bottom of hero */
+.dashboard-hero-get-started {
+    position: absolute;
+    bottom: 72px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 2;
+}
+
+/* Primary & secondary buttons – override any global link styles */
+.dashboard-page .btn-hero-primary,
+.dashboard-page .btn-hero-secondary {
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.btn-hero-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #4a7c59, #5a8c69);
+    color: #fff !important;
+    padding: 14px 28px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-hero-primary:hover {
+    color: #fff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(74, 124, 89, 0.4);
+}
+
+.btn-hero-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff !important;
+    padding: 14px 28px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-hero-secondary:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+}
+
+/* Scroll indicator */
+.dashboard-hero-scroll {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.7);
+    z-index: 2;
+    animation: heroBounce 2s infinite;
+}
+
+@keyframes heroBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(8px); }
+}
+
+/* Floating action buttons – right side, vertical stack */
+.dashboard-hero-fab {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 2;
+}
+
+.dashboard-page .fab-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: #fff !important;
+    text-decoration: none !important;
+    font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.9;
+}
+
+.dashboard-page .fab-btn:hover {
+    transform: scale(1.08);
+    opacity: 1;
+    color: #fff !important;
+}
+
+.dashboard-page .fab-phone     { background: rgba(37, 99, 235, 0.8); }
+.dashboard-page .fab-instagram { background: rgba(14, 165, 233, 0.8); }
+.dashboard-page .fab-whatsapp  { background: rgba(34, 197, 94, 0.8); }
+.dashboard-page .fab-chat      { background: rgba(30, 64, 175, 0.8); }
+
+@media (max-width: 768px) {
+    .dashboard-hero-fab {
+        right: 12px;
+        gap: 8px;
+    }
+
+    .dashboard-page .fab-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-hero-content {
+        padding: 24px 16px;
+    }
+
+    .dashboard-hero-title {
+        font-size: 24px;
+    }
+
+    .dashboard-hero-btns {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* How It Works – booking steps section */
+.dashboard-how-it-works {
+    background: #ffffff;
+    padding: 64px 32px 80px;
+    text-align: center;
+}
+
+.how-it-works-title {
+    margin: 0 0 20px 0;
+    font-size: clamp(32px, 5vw, 44px);
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.how-it-works-accent {
+    color: #4a7c59;
+}
+
+.how-it-works-subtitle {
+    margin: 0 auto 56px;
+    max-width: 560px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #4a5568;
+}
+
+.how-it-works-steps {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 32px;
+    max-width: 1140px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.how-step {
+    flex: 1;
+    min-width: 240px;
+    max-width: 320px;
+    padding: 0 24px;
+}
+
+.how-step-icon-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 88px;
+    height: 88px;
+    border-radius: 18px;
+    margin-bottom: 28px;
+}
+
+.how-step-icon-wrap i {
+    font-size: 32px;
+    color: #fff;
+}
+
+.how-step-icon-1 { background: linear-gradient(135deg, #4a7c59, #5a8c69); }
+.how-step-icon-2 { background: linear-gradient(135deg, #f59e0b, #f97316); }
+.how-step-icon-3 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+
+.how-step-num {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #4a7c59;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.how-step-title {
+    margin: 0 0 14px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.how-step-desc {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    color: #4a5568;
+}
+
+.how-step-connector {
+    width: 24px;
+    min-width: 24px;
+    height: 3px;
+    margin-top: 48px;
+    background: linear-gradient(90deg, #4a7c59, #f59e0b, #14b8a6);
+    border-radius: 2px;
+    opacity: 0.6;
+}
+
+/* Login popup modal */
+.login-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    padding: 20px;
+}
+
+.login-modal-overlay.login-modal-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.login-modal-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 40px;
+    max-width: 420px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.95);
+    transition: transform 0.25s ease;
+}
+
+.login-modal-open .login-modal-box {
+    transform: scale(1);
+}
+
+.login-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.login-modal-close:hover {
+    color: #2c5530;
+}
+
+.login-modal-title {
+    margin: 0 0 24px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #2c5530;
+    text-align: center;
+}
+
+.login-modal-error {
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.login-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.login-modal-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.login-modal-form .form-group label {
+    font-weight: 600;
+    color: #2c5530;
+    font-size: 14px;
+}
+
+.login-modal-form .form-group input {
+    padding: 12px 14px;
+    border: 2px solid #d0ddd0;
+    border-radius: 8px;
+    font-size: 16px;
+    background: #fff;
+}
+
+.login-modal-form .form-group input:focus {
+    outline: none;
+    border-color: #4a7c59;
+    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.15);
+}
+
+.login-modal-btn {
+    background: #4a7c59;
+    color: #fff;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.login-modal-btn:hover {
+    background: #3d6b4a;
+    transform: translateY(-1px);
+}
+
+.login-modal-register {
+    text-align: center;
+    margin: 20px 0 0 0;
+    padding-top: 20px;
+    border-top: 1px solid #e0e8e0;
+    font-size: 14px;
+    color: #666;
+}
+
+.login-modal-register a {
+    color: #4a7c59;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-modal-register a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .dashboard-how-it-works {
+        padding: 48px 20px 64px;
+    }
+
+    .how-it-works-subtitle {
+        margin-bottom: 48px;
+    }
+
+    .how-it-works-steps {
+        flex-direction: column;
+        align-items: center;
+        gap: 40px;
+    }
+
+    .how-step-connector {
+        width: 3px;
+        min-width: 3px;
+        height: 40px;
+        margin: 0;
+        background: linear-gradient(180deg, #4a7c59, #f59e0b, #14b8a6);
+    }
+
+    .how-step {
+        max-width: 320px;
+    }
+}

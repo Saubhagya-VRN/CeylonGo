@@ -22,6 +22,14 @@ class AuthController {
         $authUser = new AuthUser($this->db);
         $user = $authUser->getUserByEmail($email);
 
+        // Debug: Log what we found
+        error_log("Login attempt for: $email");
+        error_log("User found: " . ($user ? 'YES' : 'NO'));
+        if ($user) {
+            error_log("User role: " . $user['role']);
+            error_log("User ref_id: " . ($user['ref_id'] ?? 'NULL'));
+        }
+
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['ref_id'];
             $_SESSION['user_role'] = $user['role'];
@@ -37,9 +45,24 @@ class AuthController {
                 }
             }
 
+            $redirect = trim($_POST['redirect'] ?? '');
+            if (!empty($redirect) && strpos($redirect, '/CeylonGo/public/') === 0 && strpos($redirect, '//') === false) {
+                // Allow same-site redirect from login (e.g. customise trip → old-dashboard)
+                $redirectTo = $redirect;
+            } else {
+                $redirectTo = null;
+            // Get user name for guides
+            if ($user['role'] === 'guide') {
+                $guideModel = new Guide($this->db);
+                $guide = $guideModel->getGuideById($user['ref_id']);
+                if ($guide) {
+                    $_SESSION['user_name'] = trim($guide['first_name'] . ' ' . $guide['last_name']);
+                }
+            }
+
             switch ($user['role']) {
                 case 'tourist':
-                    header("Location: /CeylonGo/public/tourist/dashboard");
+                    header("Location: " . ($redirectTo ?: "/CeylonGo/public/tourist/dashboard"));
                     break;
                 case 'hotel':
                     header("Location: /CeylonGo/public/hotel/dashboard");
@@ -67,7 +90,7 @@ class AuthController {
 
     public function logout() {
         session_destroy();
-        header("Location: /CeylonGo/public/login");
+        header("Location: /CeylonGo/public/tourist/dashboard");
         exit();
     }
 
