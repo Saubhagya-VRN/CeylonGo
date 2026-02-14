@@ -1,35 +1,46 @@
 <?php
 require_once('../../config/database.php');
-$id = $_GET['id'];
-
-// Update if form submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $customerName = $_POST['customerName'];
-    $vehicleType = $_POST['vehicleType'];
-    $date = $_POST['date'];
-    $pickupTime = $_POST['pickupTime'];
-    $pickupLocation = $_POST['pickupLocation'];
-    $dropoffLocation = $_POST['dropoffLocation'];
-    $numPeople = $_POST['numPeople'];
-    $notes = $_POST['notes'];
-
-    $conn->query("UPDATE tourist_transport_requests SET
-        customerName='$customerName',
-        vehicleType='$vehicleType',
-        date='$date',
-        pickupTime='$pickupTime',
-        pickupLocation='$pickupLocation',
-        dropoffLocation='$dropoffLocation',
-        numPeople='$numPeople',
-        notes='$notes'
-        WHERE id=$id");
-
-    header("Location: transport_report.php");
+$id = (int) ($_GET['id'] ?? 0);
+if (!$id) {
+    header("Location: /CeylonGo/public/tourist/transport-report");
     exit();
 }
 
-// Fetch existing data
-$row = $conn->query("SELECT * FROM tourist_transport_requests WHERE id=$id")->fetch_assoc();
+// Update if form submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $customerName = $conn->real_escape_string($_POST['customerName'] ?? '');
+    $contactNumber = $conn->real_escape_string($_POST['contactNumber'] ?? '');
+    $vehicleType = $conn->real_escape_string($_POST['vehicleType'] ?? '');
+    $date = $conn->real_escape_string($_POST['date'] ?? '');
+    $pickupTime = $conn->real_escape_string($_POST['pickupTime'] ?? '');
+    $pickupLocation = $conn->real_escape_string($_POST['pickupLocation'] ?? '');
+    $dropoffLocation = $conn->real_escape_string($_POST['dropoffLocation'] ?? '');
+    $numPeople = (int) ($_POST['numPeople'] ?? 0);
+    $notes = $conn->real_escape_string($_POST['notes'] ?? '');
+
+    $stmt = $conn->prepare("UPDATE transport_requests SET
+        customer_name=?, contact_number=?, vehicle_type=?, date=?, pickup_time=?,
+        pickup_location=?, dropoff_location=?, num_people=?, notes=?
+        WHERE id=?");
+    $stmt->bind_param("sssssssisi", $customerName, $contactNumber, $vehicleType, $date, $pickupTime, $pickupLocation, $dropoffLocation, $numPeople, $notes, $id);
+    $stmt->execute();
+    $stmt->close();
+
+    header("Location: /CeylonGo/public/tourist/transport-report");
+    exit();
+}
+
+// Fetch existing data from transport_requests
+$stmt = $conn->prepare("SELECT * FROM transport_requests WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$stmt->close();
+if (!$row) {
+    header("Location: /CeylonGo/public/tourist/transport-report");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -56,11 +67,22 @@ $row = $conn->query("SELECT * FROM tourist_transport_requests WHERE id=$id")->fe
       <div class="form-row">
         <div class="form-group">
           <label for="customerName">Customer Name</label>
-          <input id="customerName" name="customerName" value="<?php echo htmlspecialchars($row['customerName']); ?>" required>
+          <input id="customerName" name="customerName" value="<?php echo htmlspecialchars($row['customer_name']); ?>" required>
         </div>
         <div class="form-group">
+          <label for="contactNumber">Contact Number</label>
+          <input type="tel" id="contactNumber" name="contactNumber" value="<?php echo htmlspecialchars($row['contact_number']); ?>" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
           <label for="vehicleType">Vehicle Type</label>
-          <input id="vehicleType" name="vehicleType" value="<?php echo htmlspecialchars($row['vehicleType']); ?>" required>
+          <input id="vehicleType" name="vehicleType" value="<?php echo htmlspecialchars($row['vehicle_type']); ?>" required>
+        </div>
+        <div class="form-group">
+          <label for="numPeople">No. of People</label>
+          <input type="number" id="numPeople" name="numPeople" value="<?php echo (int) $row['num_people']; ?>" required>
         </div>
       </div>
 
@@ -71,35 +93,31 @@ $row = $conn->query("SELECT * FROM tourist_transport_requests WHERE id=$id")->fe
         </div>
         <div class="form-group">
           <label for="pickupTime">Pickup Time</label>
-          <input type="time" id="pickupTime" name="pickupTime" value="<?php echo htmlspecialchars($row['pickupTime']); ?>" required>
+          <input type="time" id="pickupTime" name="pickupTime" value="<?php echo htmlspecialchars($row['pickup_time']); ?>" required>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label for="pickupLocation">Pickup Location</label>
-          <input id="pickupLocation" name="pickupLocation" value="<?php echo htmlspecialchars($row['pickupLocation']); ?>" required>
+          <input id="pickupLocation" name="pickupLocation" value="<?php echo htmlspecialchars($row['pickup_location']); ?>" required>
         </div>
         <div class="form-group">
           <label for="dropoffLocation">Dropoff Location</label>
-          <input id="dropoffLocation" name="dropoffLocation" value="<?php echo htmlspecialchars($row['dropoffLocation']); ?>" required>
+          <input id="dropoffLocation" name="dropoffLocation" value="<?php echo htmlspecialchars($row['dropoff_location']); ?>" required>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="numPeople">No. of People</label>
-          <input type="number" id="numPeople" name="numPeople" value="<?php echo htmlspecialchars($row['numPeople']); ?>" required>
-        </div>
-        <div class="form-group">
           <label for="notes">Notes (optional)</label>
-          <input id="notes" name="notes" value="<?php echo htmlspecialchars($row['notes']); ?>">
+          <input id="notes" name="notes" value="<?php echo htmlspecialchars($row['notes'] ?? ''); ?>">
         </div>
       </div>
 
       <div class="actions" style="display:flex; gap:12px;">
         <button type="submit" class="btn btn-black">Update Request</button>
-        <a href="transport_report.php" class="btn">Cancel</a>
+        <a href="/CeylonGo/public/tourist/transport-report" class="btn">Cancel</a>
       </div>
     </form>
   </section>

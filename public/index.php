@@ -1,9 +1,12 @@
 <?php
-session_start();
+/**
+ * Web Application Entry Point
+ */
 
-require_once '../config/config.php';
-require_once '../core/autoload.php';
-require_once '../core/helpers.php';
+// Load bootstrap
+require_once '../core/bootstrap.php';
+
+// Load router
 require_once '../core/Router.php';
 
 $router = new Router();
@@ -53,7 +56,9 @@ $router->get('admin/forgot-password', 'AdminController@forgotPassword');
 // ========== TOURIST ROUTES ==========
 $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
-$router->get('tourist/dashboard', 'TouristController@dashboard');
+$router->get('tourist/dashboard', 'TouristController@dashboardNew');
+$router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
+$router->get('tourist/customize-trip', 'TouristController@trip');
 $router->get('tourist/transport-services', 'TouristController@transportRequestView');
 $router->post('tourist/transport-services', 'TouristController@transportRequest');
 $router->get('tourist/transport-report', 'TouristController@transportReport');
@@ -61,15 +66,27 @@ $router->get('tourist/tour-guides', 'TouristController@tourGuides');
 $router->get('tourist/choose-hotel', 'TouristController@chooseHotel');
 $router->get('tourist/hotel-details/{id}', 'TouristController@hotelDetails');
 $router->get('tourist/booking-form', 'TouristController@bookingForm');
+$router->post('tourist/booking-form', 'TouristController@bookingFormSubmit');
+$router->get('tourist/my-bookings', 'TouristController@myBookings');
+$router->get('tourist/booking-approve', 'TouristController@bookingApprove');
 $router->get('tourist/payment', 'TouristController@payment');
 $router->get('tourist/trip-summary', 'TouristController@tripSummary');
 $router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
+$router->get('tourist/packages', 'TouristController@packages');
 $router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
+$router->get('tourist/package_details', 'TouristController@packageDetailsQuery');
 $router->get('tourist/add-review', 'TouristController@addReview');
 $router->get('tourist/transport-providers', 'TouristController@transportProviders');
 $router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
 $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
+$router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSubmit');
+$router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
+$router->get('tourist/public-diaries', 'TouristController@publicDiaries');
+
+// ========== API ROUTES ==========
+$router->get('api/geocode', 'GeocodeController@geocode');
+$router->get('api/calculate-fare', 'GeocodeController@calculateFare');
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');

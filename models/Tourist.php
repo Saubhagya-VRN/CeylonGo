@@ -47,6 +47,39 @@ class Tourist {
         $stmt->execute([$email]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function updateProfile() {
+        if (!empty($this->password)) {
+            $query = "UPDATE " . $this->table . " SET
+                      first_name = :first_name,
+                      last_name = :last_name,
+                      contact_number = :contact_number,
+                      email = :email,
+                      password = :password
+                      WHERE id = :id";
+        } else {
+            $query = "UPDATE " . $this->table . " SET
+                      first_name = :first_name,
+                      last_name = :last_name,
+                      contact_number = :contact_number,
+                      email = :email
+                      WHERE id = :id";
+        }
+        
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(":id", $this->id);
+        $stmt->bindParam(":first_name", $this->first_name);
+        $stmt->bindParam(":last_name", $this->last_name);
+        $stmt->bindParam(":contact_number", $this->contact_number);
+        $stmt->bindParam(":email", $this->email);
+        
+        if (!empty($this->password)) {
+            $stmt->bindParam(":password", $this->password);
+        }
+
+        return $stmt->execute();
+    }
 }
 ?>
 

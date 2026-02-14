@@ -1,0 +1,264 @@
+<?php
+class GeocodeController {
+    // Sri Lankan cities database with coordinates
+    private static $cities = [
+        'colombo' => ['lat' => 6.9271, 'lon' => 79.8612, 'name' => 'Colombo'],
+        'kandy' => ['lat' => 7.2906, 'lon' => 80.6337, 'name' => 'Kandy'],
+        'galle' => ['lat' => 6.0535, 'lon' => 80.2210, 'name' => 'Galle'],
+        'galle fort' => ['lat' => 6.0267, 'lon' => 80.2170, 'name' => 'Galle Fort'],
+        'negombo' => ['lat' => 7.2008, 'lon' => 79.8358, 'name' => 'Negombo'],
+        'negombo beach' => ['lat' => 7.2094, 'lon' => 79.8358, 'name' => 'Negombo Beach'],
+        'jaffna' => ['lat' => 9.6615, 'lon' => 80.0255, 'name' => 'Jaffna'],
+        'trincomalee' => ['lat' => 8.5874, 'lon' => 81.2152, 'name' => 'Trincomalee'],
+        'batticaloa' => ['lat' => 7.7310, 'lon' => 81.6747, 'name' => 'Batticaloa'],
+        'matara' => ['lat' => 5.9549, 'lon' => 80.5550, 'name' => 'Matara'],
+        'anuradhapura' => ['lat' => 8.3114, 'lon' => 80.4037, 'name' => 'Anuradhapura'],
+        'polonnaruwa' => ['lat' => 7.9403, 'lon' => 81.0188, 'name' => 'Polonnaruwa'],
+        'badulla' => ['lat' => 6.9934, 'lon' => 81.0550, 'name' => 'Badulla'],
+        'ratnapura' => ['lat' => 6.7056, 'lon' => 80.3847, 'name' => 'Ratnapura'],
+        'nuwara eliya' => ['lat' => 6.9497, 'lon' => 80.7891, 'name' => 'Nuwara Eliya'],
+        'ella' => ['lat' => 6.8667, 'lon' => 81.0467, 'name' => 'Ella'],
+        'sigiriya' => ['lat' => 7.9569, 'lon' => 80.7603, 'name' => 'Sigiriya'],
+        'dambulla' => ['lat' => 7.8742, 'lon' => 80.6517, 'name' => 'Dambulla'],
+        'bentota' => ['lat' => 6.4218, 'lon' => 79.9951, 'name' => 'Bentota'],
+        'hikkaduwa' => ['lat' => 6.1408, 'lon' => 80.1034, 'name' => 'Hikkaduwa'],
+        'mirissa' => ['lat' => 5.9467, 'lon' => 80.4517, 'name' => 'Mirissa'],
+        'arugam bay' => ['lat' => 6.8406, 'lon' => 81.8364, 'name' => 'Arugam Bay'],
+        'unawatuna' => ['lat' => 6.0100, 'lon' => 80.2497, 'name' => 'Unawatuna'],
+        'mount lavinia' => ['lat' => 6.8406, 'lon' => 79.8628, 'name' => 'Mount Lavinia'],
+        'kalutara' => ['lat' => 6.5854, 'lon' => 79.9607, 'name' => 'Kalutara'],
+        'kurunegala' => ['lat' => 7.4863, 'lon' => 80.3623, 'name' => 'Kurunegala'],
+        'hambantota' => ['lat' => 6.1429, 'lon' => 81.1212, 'name' => 'Hambantota'],
+        'katunayake' => ['lat' => 7.1696, 'lon' => 79.8842, 'name' => 'Katunayake'],
+        'airport' => ['lat' => 7.1808, 'lon' => 79.8841, 'name' => 'Colombo Airport'],
+        'cia' => ['lat' => 7.1808, 'lon' => 79.8841, 'name' => 'Colombo Airport'],
+        'bandaranaike airport' => ['lat' => 7.1808, 'lon' => 79.8841, 'name' => 'Bandaranaike Airport'],
+        'mount lavinia beach' => ['lat' => 6.8328, 'lon' => 79.8631, 'name' => 'Mount Lavinia Beach'],
+        'bentota beach' => ['lat' => 6.4257, 'lon' => 79.9974, 'name' => 'Bentota Beach'],
+        'yala' => ['lat' => 6.3725, 'lon' => 81.5185, 'name' => 'Yala National Park'],
+        'yala national park' => ['lat' => 6.3725, 'lon' => 81.5185, 'name' => 'Yala National Park'],
+        'udawalawe' => ['lat' => 6.4425, 'lon' => 80.8864, 'name' => 'Udawalawe'],
+        'wilpattu' => ['lat' => 8.4833, 'lon' => 80.0333, 'name' => 'Wilpattu National Park'],
+        'horton plains' => ['lat' => 6.8097, 'lon' => 80.7988, 'name' => 'Horton Plains'],
+        'adams peak' => ['lat' => 6.8094, 'lon' => 80.4994, 'name' => 'Adams Peak'],
+        'sri pada' => ['lat' => 6.8094, 'lon' => 80.4994, 'name' => 'Sri Pada'],
+        'pidurangala' => ['lat' => 7.9617, 'lon' => 80.7550, 'name' => 'Pidurangala Rock'],
+        'temple of tooth' => ['lat' => 7.2937, 'lon' => 80.6408, 'name' => 'Temple of the Tooth'],
+        'botanical garden' => ['lat' => 7.2733, 'lon' => 80.5967, 'name' => 'Peradeniya Botanical Garden'],
+        'peradeniya' => ['lat' => 7.2667, 'lon' => 80.6000, 'name' => 'Peradeniya']
+    ];
+
+    public function geocode() {
+        header('Content-Type: application/json');
+        
+        // Get location from query parameter
+        $location = isset($_GET['location']) ? trim($_GET['location']) : '';
+        
+        if (empty($location)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Location parameter is required']);
+            return;
+        }
+
+        // Normalize the location
+        $normalized = strtolower($location);
+        $normalized = str_replace(', sri lanka', '', $normalized);
+        $normalized = str_replace(' sri lanka', '', $normalized);
+        $normalized = trim($normalized);
+
+        // Check exact match in our database
+        if (isset(self::$cities[$normalized])) {
+            echo json_encode([
+                'success' => true,
+                'source' => 'local_database',
+                'location' => $location,
+                'lat' => self::$cities[$normalized]['lat'],
+                'lon' => self::$cities[$normalized]['lon'],
+                'name' => self::$cities[$normalized]['name']
+            ]);
+            return;
+        }
+
+        // Try partial match
+        foreach (self::$cities as $key => $value) {
+            if (strpos($normalized, $key) !== false || strpos($key, $normalized) !== false) {
+                echo json_encode([
+                    'success' => true,
+                    'source' => 'local_database_partial',
+                    'location' => $location,
+                    'lat' => $value['lat'],
+                    'lon' => $value['lon'],
+                    'name' => $value['name']
+                ]);
+                return;
+            }
+        }
+
+        // Fallback to Nominatim API (server-side, no CORS issues)
+        $result = $this->geocodeWithNominatim($location);
+        
+        if ($result) {
+            echo json_encode($result);
+        } else {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Location not found',
+                'location' => $location,
+                'suggestion' => 'Try using city names like: Colombo, Kandy, Galle, Negombo, Ella, Sigiriya, Nuwara Eliya'
+            ]);
+        }
+    }
+
+    private function geocodeWithNominatim($location) {
+        $query = urlencode($location . ', Sri Lanka');
+        $url = "https://nominatim.openstreetmap.org/search?format=json&q={$query}&limit=1";
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'CeylonGo/1.0 (Travel Planning App)');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For local development
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($httpCode === 200 && $response) {
+            $data = json_decode($response, true);
+            
+            if (!empty($data) && isset($data[0])) {
+                return [
+                    'success' => true,
+                    'source' => 'nominatim_api',
+                    'location' => $location,
+                    'lat' => floatval($data[0]['lat']),
+                    'lon' => floatval($data[0]['lon']),
+                    'name' => $data[0]['display_name']
+                ];
+            }
+        }
+        
+        return null;
+    }
+
+    public function calculateFare() {
+        header('Content-Type: application/json');
+        
+        // Get parameters
+        $pickup = isset($_GET['pickup']) ? trim($_GET['pickup']) : '';
+        $dropoff = isset($_GET['dropoff']) ? trim($_GET['dropoff']) : '';
+        $vehicleType = isset($_GET['vehicleType']) ? trim($_GET['vehicleType']) : '';
+        
+        if (empty($pickup) || empty($dropoff) || empty($vehicleType)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Missing required parameters: pickup, dropoff, vehicleType']);
+            return;
+        }
+
+        // Geocode both locations
+        $pickupCoords = $this->geocodeLocation($pickup);
+        $dropoffCoords = $this->geocodeLocation($dropoff);
+        
+        if (!$pickupCoords) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Pickup location not found', 'location' => $pickup]);
+            return;
+        }
+        
+        if (!$dropoffCoords) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Dropoff location not found', 'location' => $dropoff]);
+            return;
+        }
+
+        // Calculate distance
+        $distance = $this->calculateDistance(
+            $pickupCoords['lat'], $pickupCoords['lon'],
+            $dropoffCoords['lat'], $dropoffCoords['lon']
+        );
+
+        // Define fare rates per km
+        $fareRates = [
+            'Car' => 120,
+            'Van' => 150,
+            'Bus' => 200,
+            'Three-Wheeler' => 80,
+            'Bike' => 60,
+            'Tuk (3 People)' => 80,
+            'Car (4 People)' => 120,
+            'Van (8 People)' => 150,
+            'Mini Bus (15 People)' => 180
+        ];
+
+        $baseRate = isset($fareRates[$vehicleType]) ? $fareRates[$vehicleType] : 100;
+        $totalFare = round($distance * $baseRate, 2);
+
+        echo json_encode([
+            'success' => true,
+            'pickup' => [
+                'location' => $pickup,
+                'name' => $pickupCoords['name'],
+                'lat' => $pickupCoords['lat'],
+                'lon' => $pickupCoords['lon']
+            ],
+            'dropoff' => [
+                'location' => $dropoff,
+                'name' => $dropoffCoords['name'],
+                'lat' => $dropoffCoords['lat'],
+                'lon' => $dropoffCoords['lon']
+            ],
+            'distance' => round($distance, 2),
+            'vehicleType' => $vehicleType,
+            'baseRate' => $baseRate,
+            'totalFare' => $totalFare,
+            'currency' => 'LKR'
+        ]);
+    }
+
+    private function geocodeLocation($location) {
+        $normalized = strtolower(trim($location));
+        $normalized = str_replace([', sri lanka', ' sri lanka'], '', $normalized);
+        $normalized = trim($normalized);
+
+        // Check exact match
+        if (isset(self::$cities[$normalized])) {
+            return self::$cities[$normalized];
+        }
+
+        // Try partial match
+        foreach (self::$cities as $key => $value) {
+            if (strpos($normalized, $key) !== false || strpos($key, $normalized) !== false) {
+                return $value;
+            }
+        }
+
+        // Try Nominatim API
+        $result = $this->geocodeWithNominatim($location);
+        if ($result && $result['success']) {
+            return [
+                'lat' => $result['lat'],
+                'lon' => $result['lon'],
+                'name' => $result['name']
+            ];
+        }
+
+        return null;
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2) {
+        $R = 6371; // Earth's radius in kilometers
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+        
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $distance = $R * $c;
+        
+        return $distance;
+    }
+}

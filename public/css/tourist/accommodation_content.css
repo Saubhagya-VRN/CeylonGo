@@ -1,0 +1,339 @@
+/**
+ * Accommodation (choose hotel) content – used in trip step 3 and choose_hotel page
+ */
+.trip-accommodation-content .hotel-search {
+  background: linear-gradient(135deg, rgba(44, 85, 48, 0.8), rgba(74, 124, 89, 0.8)), url('/CeylonGo/public/images/beach_hotel.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.trip-accommodation-content .search-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.trip-accommodation-content .trip-accommodation-heading {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+.trip-accommodation-content .search-form {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.trip-accommodation-content .search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 25px;
+  font-size: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.trip-accommodation-content .search-btn {
+  padding: 12px 24px;
+  background: #fff;
+  color: #2c5530;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.trip-accommodation-content .search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+.trip-accommodation-content .hotels-container {
+  padding: 24px 0;
+  background: #f0f8f0;
+  border-radius: 12px;
+  padding: 24px;
+}
+.trip-accommodation-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.trip-accommodation-content .filters {
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(74, 124, 89, 0.1);
+}
+.trip-accommodation-content .filter-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.trip-accommodation-content .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.trip-accommodation-content .filter-group label {
+  font-weight: 600;
+  color: #2c5530;
+  font-size: 14px;
+}
+.trip-accommodation-content .filter-group select {
+  padding: 10px 15px;
+  border: 2px solid #e0e8e0;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+}
+.trip-accommodation-content .hotels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+.trip-accommodation-content .hotel-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(74, 124, 89, 0.15);
+  border: 1px solid rgba(74, 124, 89, 0.1);
+  transition: all 0.3s ease;
+}
+.trip-accommodation-content .hotel-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 35px rgba(74, 124, 89, 0.25);
+}
+.trip-accommodation-content .hotel-image {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.trip-accommodation-content .hotel-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(44, 85, 48, 0.9);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.trip-accommodation-content .hotel-content {
+  padding: 20px;
+}
+.trip-accommodation-content .hotel-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.trip-accommodation-content .stars {
+  color: #f1b400;
+  font-size: 14px;
+}
+.trip-accommodation-content .rating-text {
+  color: #666;
+  font-size: 13px;
+}
+.trip-accommodation-content .hotel-name {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #2c5530;
+  margin: 0 0 6px 0;
+}
+.trip-accommodation-content .hotel-location {
+  color: #666;
+  margin: 0 0 12px 0;
+  font-size: 14px;
+}
+.trip-accommodation-content .hotel-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.trip-accommodation-content .amenity {
+  background: #f0f8f0;
+  color: #2c5530;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.trip-accommodation-content .hotel-price {
+  margin-bottom: 16px;
+}
+.trip-accommodation-content .price {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #2c5530;
+}
+.trip-accommodation-content .price-period {
+  color: #666;
+  font-size: 14px;
+}
+.trip-accommodation-content .hotel-actions {
+  display: flex;
+  gap: 10px;
+}
+.trip-accommodation-content .hotel-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+.trip-accommodation-content .btn-details {
+  background: #fff;
+  color: #2c5530;
+  border: 2px solid #2c5530;
+}
+.trip-accommodation-content .btn-details:hover {
+  background: #2c5530;
+  color: #fff;
+}
+.trip-accommodation-content .btn-book {
+  background: #2c5530;
+  color: #fff;
+  border: 2px solid #2c5530;
+}
+.trip-accommodation-content .btn-book:hover {
+  background: #4a7c59;
+  border-color: #4a7c59;
+  color: #fff;
+}
+.trip-accommodation-content .booking-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.trip-accommodation-content .booking-modal.active {
+  display: flex;
+}
+.trip-accommodation-content .modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+.trip-accommodation-content .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e8e0;
+}
+.trip-accommodation-content .modal-header h2 {
+  margin: 0;
+  color: #2c5530;
+  font-size: 20px;
+}
+.trip-accommodation-content .close-modal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.trip-accommodation-content .close-modal:hover {
+  background: #f0f0f0;
+  color: #2c5530;
+}
+.trip-accommodation-content .form-group {
+  margin-bottom: 16px;
+}
+.trip-accommodation-content .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #2c5530;
+  font-weight: 600;
+  font-size: 14px;
+}
+.trip-accommodation-content .form-group input,
+.trip-accommodation-content .form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e0e8e0;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.trip-accommodation-content .form-group input:focus,
+.trip-accommodation-content .form-group select:focus {
+  outline: none;
+  border-color: #4a7c59;
+}
+.trip-accommodation-content .modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.trip-accommodation-content .btn-cancel {
+  flex: 1;
+  padding: 12px 20px;
+  background: #fff;
+  color: #2c5530;
+  border: 2px solid #2c5530;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.trip-accommodation-content .btn-confirm {
+  flex: 1;
+  padding: 12px 20px;
+  background: #2c5530;
+  color: #fff;
+  border: 2px solid #2c5530;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.trip-accommodation-content .btn-confirm:hover {
+  background: #4a7c59;
+  border-color: #4a7c59;
+}
+@media (max-width: 768px) {
+  .trip-accommodation-content .hotels-grid {
+    grid-template-columns: 1fr;
+  }
+  .trip-accommodation-content .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .trip-accommodation-content .hotel-actions {
+    flex-direction: column;
+  }
+}
