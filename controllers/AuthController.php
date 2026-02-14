@@ -51,6 +51,7 @@ class AuthController {
                 $redirectTo = $redirect;
             } else {
                 $redirectTo = null;
+            }
             // Get user name for guides
             if ($user['role'] === 'guide') {
                 $guideModel = new Guide($this->db);
