@@ -1,32 +1,23 @@
-@import url("admin_common.css");
+@import url("common.css");
 
-.inquiry-table {
+.user-table {
   width: 100%;
   border-collapse: collapse;
   background: white;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-top: 8px;
 }
 
-.inquiry-table th, .inquiry-table td {
+.user-table th, .user-table td {
   padding: 12px;
   border-bottom: 1px solid #eee;
   text-align: left;
 }
 
-.inquiry-table th {
+.user-table th {
   background: #f1f1f1;
-}
-
-.status.pending { 
-  color: orange; 
-  font-weight: bold; 
-}
-
-.status.resolved { 
-  color: green; 
-  font-weight: bold; 
 }
 
 .actions {
@@ -38,9 +29,15 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .icon-btn.danger {
   color: red;
+}
+
+.reviews-management .sub-text {
+  font-size: 14px;
+  color: gray;
+  margin-bottom: 20px;
 }

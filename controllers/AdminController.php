@@ -7,7 +7,7 @@ class AdminController {
     }
 
     public function dashboard() {
-        view('admin/admin_dashboard');
+        view('admin/dashboard');
     }
 
     public function profile() {
@@ -20,9 +20,9 @@ class AdminController {
         $admin_id = $_SESSION['user_ref_id'] ?? null;
         if ($admin_id) {
             $admin = $adminModel->getAdminById($admin_id);
-            view('admin/admin_profile', ['admin' => $admin]);
+            view('admin/profile', ['admin' => $admin]);
         } else {
-            view('admin/admin_profile');
+            view('admin/profile');
         }
     }
 
@@ -136,7 +136,7 @@ class AdminController {
         $users = $userModel->getAllUsers($status);
         $stats = $userModel->getUserStats();
 
-        view('admin/admin_user', [
+        view('admin/user', [
             'users' => $users,
             'selectedStatus' => $status,
             'stats' => $stats
@@ -215,7 +215,7 @@ class AdminController {
         $bookings = $bookingModel->getAllBookingsWithUsers($status, $searchId, $date);
         $stats = $bookingModel->getBookingStats(); // statistics
 
-        view('admin/admin_bookings', [
+        view('admin/bookings', [
             'bookings' => $bookings, 
             'selectedStatus' => $status, 
             'searchId' => $searchId,
@@ -278,7 +278,7 @@ class AdminController {
     }
 
     public function payments() {
-        view('admin/admin_payments');
+        view('admin/payments');
     }
 
     public function reviews()
@@ -292,7 +292,7 @@ class AdminController {
         $reviews = $reviewModel->getAllReviews($rating);
         $metrics = $reviewModel->getReviewMetrics();
 
-        view('admin/admin_reviews', [
+        view('admin/reviews', [
             'reviews' => $reviews,
             'selectedRating' => $rating,
             'metrics' => $metrics
@@ -370,11 +370,46 @@ class AdminController {
     }
 
     public function inquiries() {
-        view('admin/admin_inquiries');
+        view('admin/inquiries');
     }
 
-    public function promotions() {
-        view('admin/admin_promotions');
+    public function packages() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->createPackage();
+            return;
+        }
+
+        $stmt = $this->db->query("SELECT * FROM packages ORDER BY id DESC");
+        $packages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        view('admin/packages', ['packages' => $packages]);
+    }
+
+    private function createPackage() {
+        $data = $_POST;
+
+        $overview = json_encode(
+            array_filter(array_map('trim', explode("\n", $data['overview'])))
+        );
+
+        $stmt = $this->db->prepare("
+            INSERT INTO packages
+            (title, location, locations, duration, image, category, price, overview)
+            VALUES (:title, :location, :locations, :duration, :image, :category, :price, :overview)
+        ");
+
+        $stmt->execute([
+            ':title' => $data['title'],
+            ':location' => $data['location'],
+            ':locations' => $data['locations'],
+            ':duration' => $data['duration'],
+            ':image' => $data['image'],
+            ':category' => $data['category'],
+            ':price' => $data['price'],
+            ':overview' => $overview
+        ]);
+
+        header("Location: /CeylonGo/public/admin/packages");
     }
 
     public function reports() {
@@ -395,7 +430,7 @@ class AdminController {
         $bookings = array_column($chartData, 'total');
         $cancellations = array_column($chartData, 'cancelled');
 
-        view('admin/admin_reports', [
+        view('admin/reports', [
             'totalBookings' => $totalBookings,
             'totalCancellations' => $totalCancellations,
             'labels' => $labels,
@@ -482,7 +517,7 @@ class AdminController {
         }
 
         // Pass data to the view
-        view('admin/admin_service', [
+        view('admin/service', [
             'providers' => $providers,
             'stats' => $stats,
             'roleLabels' => $roleLabels,
@@ -491,11 +526,11 @@ class AdminController {
     }
 
     public function settings() {
-        view('admin/admin_settings');
+        view('admin/settings');
     }
 
     public function forgotPassword() {
-        view('admin/admin_forgot_pwd');
+        view('admin/forgot_pwd');
     }
 }
 ?>
