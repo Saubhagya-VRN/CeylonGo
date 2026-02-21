@@ -41,6 +41,19 @@
     color: red;
 }
 
+/* Package bookings — approved = green, rejected = red */
+.status.approved {
+    color: green;
+}
+
+.status.rejected {
+    color: red;
+}
+
+.status.cancelled {
+    color: red;
+}
+
 .actions {
   display: flex;
   gap: 8px;
