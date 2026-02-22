@@ -22,6 +22,14 @@ class AuthController {
         $authUser = new AuthUser($this->db);
         $user = $authUser->getUserByEmail($email);
 
+        // Debug: Log what we found
+        error_log("Login attempt for: $email");
+        error_log("User found: " . ($user ? 'YES' : 'NO'));
+        if ($user) {
+            error_log("User role: " . $user['role']);
+            error_log("User ref_id: " . ($user['ref_id'] ?? 'NULL'));
+        }
+
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['ref_id'];
             $_SESSION['user_role'] = $user['role'];
@@ -43,6 +51,13 @@ class AuthController {
                 $redirectTo = $redirect;
             } else {
                 $redirectTo = null;
+            // Get user name for guides
+            if ($user['role'] === 'guide') {
+                $guideModel = new Guide($this->db);
+                $guide = $guideModel->getGuideById($user['ref_id']);
+                if ($guide) {
+                    $_SESSION['user_name'] = trim($guide['first_name'] . ' ' . $guide['last_name']);
+                }
             }
 
             switch ($user['role']) {

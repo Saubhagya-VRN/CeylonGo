@@ -14,16 +14,7 @@
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
   <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    .status-badge.cancelled {
-      background: #dc3545;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-  </style>
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/cancelled.css">
 </head>
 <body>
   <!-- Navbar -->
@@ -60,7 +51,7 @@
         <li class="active"><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
         <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-        <li><a href="/CeylonGo/public/guide/places"><i class="fa-solid fa-map-location-dot"></i> My Places</a></li>
+        <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </div>
 
