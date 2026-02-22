@@ -37,23 +37,6 @@ $router->get('transporter/payment', 'TransportProviderController@payment');
 $router->post('transporter/payment', 'TransportProviderController@saveBankDetails');
 $router->post('registerProvider', 'TransportProviderController@registerProvider');
 
-// ========== ADMIN ROUTES ==========
-$router->get('admin/dashboard', 'AdminController@dashboard');
-$router->get('admin/profile', 'AdminController@profile');
-$router->post('admin/profile', 'AdminController@updateProfile');
-$router->post('admin/delete-profile', 'AdminController@deleteProfile');
-$router->get('admin/users', 'AdminController@users');
-$router->get('admin/bookings', 'AdminController@bookings');
-$router->post('admin/approve-booking', 'AdminController@approveBooking');
-$router->get('admin/payments', 'AdminController@payments');
-$router->get('admin/reviews', 'AdminController@reviews');
-$router->get('admin/inquiries', 'AdminController@inquiries');
-$router->get('admin/promotions', 'AdminController@promotions');
-$router->get('admin/reports', 'AdminController@reports');
-$router->get('admin/service', 'AdminController@service');
-$router->get('admin/settings', 'AdminController@settings');
-$router->get('admin/forgot-password', 'AdminController@forgotPassword');
-
 // ========== TOURIST ROUTES ==========
 $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
@@ -124,6 +107,30 @@ $router->get('hotel/notifications', 'HotelController@notifications');
 $router->get('hotel/payments', 'HotelController@payments');
 $router->get('hotel/reviews', 'HotelController@reviews');
 $router->get('hotel/report-issue', 'HotelController@reportIssue');
+
+// ========== ADMIN ROUTES ==========
+$router->get('admin/dashboard', 'AdminController@dashboard');
+$router->get('admin/profile', 'AdminController@profile');
+$router->post('admin/profile', 'AdminController@updateProfile');
+$router->post('admin/delete-profile', 'AdminController@deleteProfile');
+$router->get('admin/users', 'AdminController@users');
+$router->get('admin/bookings', 'AdminController@bookings');
+$router->get('admin/payments', 'AdminController@payments');
+$router->get('admin/reviews', 'AdminController@reviews');
+$router->get('admin/inquiries', 'AdminController@inquiries');
+$router->get('admin/promotions', 'AdminController@promotions');
+$router->get('admin/reports', 'AdminController@reports');
+$router->get('admin/service', 'AdminController@service');
+$router->get('admin/settings', 'AdminController@settings');
+$router->get('admin/forgot-password', 'AdminController@forgotPassword');
+$router->post('admin/user/status', 'AdminController@toggleUserStatus');
+$router->post('admin/provider/status', 'AdminController@toggleProviderStatus');
+$router->post('admin/users', 'AdminController@users');
+$router->get('admin/booking-details', 'AdminController@getBookingDetails');
+$router->post('admin/review/delete', 'AdminController@deleteReview');
+$router->post('admin/review/reply', 'AdminController@replyToReview');
+$router->post('admin/review/approve', 'AdminController@approveReview');
+$router->post('admin/flag-booking', 'AdminController@flagBooking');
 
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
