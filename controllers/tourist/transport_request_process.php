@@ -4,6 +4,7 @@ require_once('../../config/database.php');
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Collect form data
     $customerName = $_POST['customerName'];
+    $contactNumber = $_POST['contactNumber'];
     $vehicleType = $_POST['vehicleType'];
     $date = $_POST['date'];
     $pickupTime = $_POST['pickupTime'];
@@ -14,11 +15,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Insert into database
     $query = "INSERT INTO tourist_transport_requests
-              (customerName, vehicleType, date, pickupTime, pickupLocation, dropoffLocation, numPeople, notes)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+              (customerName, contactNumber, vehicleType, date, pickupTime, pickupLocation, dropoffLocation, numPeople, notes)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("ssssssis", $customerName, $vehicleType, $date, $pickupTime, $pickupLocation, $dropoffLocation, $numPeople, $notes);
+    $stmt->bind_param("ssssssssi", $customerName, $contactNumber, $vehicleType, $date, $pickupTime, $pickupLocation, $dropoffLocation, $numPeople, $notes);
 
     if ($stmt->execute()) {
         // Redirect to report page after successful insert

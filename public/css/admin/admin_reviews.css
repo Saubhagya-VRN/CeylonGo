@@ -1,4 +1,4 @@
-@import url("common.css");
+@import url("admin_common.css");
 
 .user-table {
   width: 100%;
@@ -34,4 +34,10 @@
 
 .icon-btn.danger {
   color: red;
+}
+
+.reviews-management .sub-text {
+  font-size: 14px;
+  color: gray;
+  margin-bottom: 20px;
 }

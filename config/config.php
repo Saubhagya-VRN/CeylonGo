@@ -13,3 +13,9 @@ define('PUBLIC_PATH', BASE_PATH . '/public');
 define('VIEW_PATH', BASE_PATH . '/views');
 // Absolute path to uploads directory (served from public)
 define('UPLOADS_PATH', PUBLIC_PATH . '/uploads');
+
+// Base URL for the app (used for API links in views)
+define('BASE_URL', '/CeylonGo/public');
+
+// Google Maps API Key for stop locations (server-side only)
+define('GOOGLE_MAPS_API_KEY', 'AIzaSyBFdoF5vZo-egKRXYOOoySVbtuvkpFEOKY');

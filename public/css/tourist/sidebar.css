@@ -1,0 +1,193 @@
+/* ===== TOURIST SIDEBAR (match transport provider styling, Ceylon Go green) ===== */
+.trip-sidebar {
+  width: 260px;
+  background: #ffffff;
+  min-height: calc(100vh - var(--trip-nav-height, 72px));
+  padding: 25px 0;
+  position: fixed;
+  top: var(--trip-nav-height, 72px);
+  left: 0;
+  border-right: 1px solid #e8e8e8;
+  overflow-y: auto;
+  z-index: 900;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  transition: left 0.3s ease, transform 0.3s ease;
+}
+
+.trip-sidebar ul {
+  list-style: none;
+  padding: 0 12px;
+  margin: 0;
+}
+
+.trip-sidebar ul li {
+  margin-bottom: 4px;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.trip-sidebar ul li a {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: #444;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  gap: 12px;
+}
+
+.trip-sidebar ul li a .sidebar-link-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.trip-sidebar ul li a .sidebar-sub {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+  margin-top: 2px;
+}
+
+.trip-sidebar ul li.active a .sidebar-sub {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.trip-sidebar ul li i {
+  font-size: 18px;
+  color: #666;
+  width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.trip-sidebar ul li:hover {
+  background: rgba(44, 85, 48, 0.08);
+}
+
+.trip-sidebar ul li:hover a {
+  color: #2c5530;
+}
+
+.trip-sidebar ul li:hover i {
+  color: #2c5530;
+}
+
+.trip-sidebar ul li.active {
+  background: #2c5530;
+  box-shadow: 0 4px 12px rgba(44, 85, 48, 0.3);
+}
+
+.trip-sidebar ul li.active a {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.trip-sidebar ul li.active i {
+  color: #ffffff;
+}
+
+.trip-sidebar-divider {
+  height: 1px;
+  background: #ddd;
+  margin: 20px 20px;
+}
+
+.trip-sidebar-user {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #eee;
+}
+
+.trip-sidebar-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: linear-gradient(135deg, #4a7c59, #5a8c69);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.trip-sidebar-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trip-sidebar-user-name {
+  font-weight: 600;
+  color: #2c5530;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-sidebar-user-email {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trip-sidebar-signout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  color: #dc3545;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.trip-sidebar-signout:hover {
+  background: rgba(220, 53, 69, 0.08);
+  color: #c82333;
+}
+
+.trip-sidebar-signout i {
+  font-size: 16px;
+}
+
+.sidebar-overlay.trip-overlay {
+  z-index: 850;
+}
+
+@media (max-width: 768px) {
+  .trip-sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 280px;
+    height: 100vh;
+    min-height: 100vh;
+    padding-top: 80px;
+    z-index: 950;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .trip-sidebar.active {
+    left: 0;
+  }
+
+  .trip-sidebar ul li a {
+    padding: 16px 18px;
+    font-size: 16px;
+  }
+}

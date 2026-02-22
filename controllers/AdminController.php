@@ -87,20 +87,286 @@ class AdminController {
         exit();
     }
 
+    public function toggleUserStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $userId = intval($_POST['user_id'] ?? 0);
+        $status = intval($_POST['status'] ?? 1);
+
+        $userModel = new User($this->db); // ✅ Use User class
+        $success = $userModel->updateStatus($userId, $status);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
     public function users() {
-        view('admin/admin_user');
+        $userModel = new User($this->db); 
+
+        // ✅ Handle POST for editing user
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_user'])) {
+            $userId = intval($_POST['user_id']);
+            $firstName = trim($_POST['first_name']);
+            $lastName = trim($_POST['last_name']);
+            $contact = trim($_POST['contact']);
+            $email = trim($_POST['email']);
+
+            $success = $userModel->updateUserByAdmin($userId, $firstName, $lastName, $contact, $email);
+
+            if ($success) {
+                $_SESSION['success'] = "User updated successfully!";
+            } else {
+                $_SESSION['error'] = "Failed to update user.";
+            }
+
+            header("Location: /CeylonGo/public/admin/users");
+            exit();
+        }
+        // GET / display users
+        $status = $_GET['status'] ?? 'all';
+        $users = $userModel->getAllUsers($status);
+        $stats = $userModel->getUserStats();
+
+        view('admin/admin_user', [
+            'users' => $users,
+            'selectedStatus' => $status,
+            'stats' => $stats
+        ]);
+    }
+
+    public function toggleProviderStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+        exit();
+        }
+
+        $providerId = intval($_POST['provider_id'] ?? 0);
+        $status = intval($_POST['status'] ?? 1);
+
+        if (!$providerId) {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        // Determine which table to update based on role
+        $conn = Database::getMysqliConnection();
+
+        // Fetch provider's role from users table
+        $stmt = $conn->prepare("SELECT role FROM users WHERE ref_id=?");
+        $stmt->bind_param("i", $providerId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        if (!$row) {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $role = $row['role'];
+        $table = '';
+        $idField = '';
+
+        switch($role){
+            case 'guide':
+                $table = 'guide_users';
+                $idField = 'id';
+                break;
+            case 'hotel':
+                $table = 'hotel_users';
+                $idField = 'id';
+                break;
+            case 'transport':
+                $table = 'transport_users';
+                $idField = 'user_id';
+                break;
+            default:
+                echo json_encode(['success' => false]);
+                exit();
+        }
+
+        $stmt = $conn->prepare("UPDATE $table SET is_active=? WHERE $idField=?");
+        $stmt->bind_param("ii", $status, $providerId);
+        $success = $stmt->execute();
+
+        echo json_encode(['success' => $success]);
+        exit();
     }
 
     public function bookings() {
-        view('admin/admin_bookings');
+        $status = $_GET['status'] ?? 'all';      // from filter button
+        $searchId = $_GET['search'] ?? null;    // from search input
+        $date = $_GET['date'] ?? null;
+
+        $bookingModel = new Booking($this->db);
+        $bookings = $bookingModel->getAllBookingsWithUsers($status, $searchId, $date);
+        $stats = $bookingModel->getBookingStats(); // statistics
+
+        view('admin/admin_bookings', [
+            'bookings' => $bookings, 
+            'selectedStatus' => $status, 
+            'searchId' => $searchId,
+            'date' => $date,
+            'stats' => $stats
+        ]);
+    }
+
+    public function getBookingDetails() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_GET['booking_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking ID missing']);
+            exit;
+        }
+
+        $bookingId = intval($_GET['booking_id']);
+        $bookingModel = new Booking($this->db);
+
+        // Fetch booking info
+        $booking = $bookingModel->getBookingById($bookingId);
+
+        if (!$booking) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking not found']);
+            exit;
+        }
+
+        // Fetch destinations
+        $destinations = $bookingModel->getBookingDestinations($bookingId);
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'booking' => $booking,
+            'destinations' => $destinations
+        ]);
+        exit;
+    }
+
+    public function flagBooking() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $bookingId = intval($data['booking_id'] ?? 0);
+        $reason = trim($data['reason'] ?? '');
+
+        if(!$bookingId || !$reason){
+            echo json_encode(['success'=>false, 'message'=>'Invalid input']);
+            exit;
+        }
+
+        $stmt = $this->db->prepare("UPDATE trip_bookings SET is_flagged=1, flag_reason=:reason WHERE id=:id");
+        $success = $stmt->execute([':reason'=>$reason, ':id'=>$bookingId]);
+
+        echo json_encode(['success'=>$success]);
+        exit;
     }
 
     public function payments() {
         view('admin/admin_payments');
     }
 
-    public function reviews() {
-        view('admin/admin_reviews');
+    public function reviews()
+    {
+        $reviewModel = new Review($this->db);
+
+        // Filter
+        $rating = $_GET['rating'] ?? 'all';
+
+        // Data
+        $reviews = $reviewModel->getAllReviews($rating);
+        $metrics = $reviewModel->getReviewMetrics();
+
+        view('admin/admin_reviews', [
+            'reviews' => $reviews,
+            'selectedRating' => $rating,
+            'metrics' => $metrics
+        ]);
+    }
+
+    public function deleteReview() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->deleteReview($reviewId);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
+    public function replyToReview()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        $reply = trim($_POST['reply'] ?? '');
+
+        if ($reviewId === 0 || $reply === '') {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->saveAdminReply($reviewId, $reply);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
+    public function approveReview()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = intval($_POST['review_id'] ?? 0);
+        if (!$reviewId) {
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $stmt = $this->db->prepare(
+            "UPDATE reviews SET status = 'approved', approved_at = NOW() WHERE id = :id"
+        );
+        $success = $stmt->execute([':id' => $reviewId]);
+
+        echo json_encode(['success' => $success]);
+        exit();
     }
 
     public function inquiries() {
@@ -112,11 +378,116 @@ class AdminController {
     }
 
     public function reports() {
-        view('admin/admin_reports');
+        $bookingModel = new Booking($this->db);
+        $stats = $bookingModel->getBookingStats();
+
+        $totalBookings = $stats['total'] ?? 0;
+        $totalCancellations = $stats['cancelled'] ?? 0;
+
+        // Get period from URL, default to 'daily'
+        $period = $_GET['period'] ?? 'daily';
+
+        // Get aggregated data based on period
+        $chartData = $bookingModel->getAggregatedBookings($period);
+
+        // Extract arrays for Chart.js
+        $labels = array_column($chartData, 'period');
+        $bookings = array_column($chartData, 'total');
+        $cancellations = array_column($chartData, 'cancelled');
+
+        view('admin/admin_reports', [
+            'totalBookings' => $totalBookings,
+            'totalCancellations' => $totalCancellations,
+            'labels' => $labels,
+            'bookings' => $bookings,
+            'cancellations' => $cancellations,
+            'period' => $period
+        ]);
     }
 
     public function service() {
-        view('admin/admin_service');
+        $status = $_GET['status'] ?? 'all';
+        $conn = Database::getMysqliConnection();
+
+        $whereStatus = "";
+        if ($status === 'active') {
+            $whereStatus = " AND is_active = 1 ";
+        } elseif ($status === 'inactive') {
+            $whereStatus = " AND is_active = 0 ";
+        }
+
+        $sql = "
+            SELECT g.id AS id,
+                CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
+                u.email,
+                u.role,
+                g.is_active
+            FROM users u
+            JOIN guide_users g ON u.ref_id = g.id
+            WHERE u.role = 'guide' $whereStatus
+
+            UNION ALL
+
+            SELECT t.user_id AS id,
+                t.full_name AS provider_name,
+                u.email,
+                u.role,
+                t.is_active
+            FROM users u
+            JOIN transport_users t ON u.ref_id = t.user_id
+            WHERE u.role = 'transport' $whereStatus
+
+            UNION ALL
+
+            SELECT h.id AS id,
+                h.hotel_name AS provider_name,
+                u.email,
+                u.role,
+                h.is_active
+            FROM users u
+            JOIN hotel_users h ON u.ref_id = h.id
+            WHERE u.role = 'hotel' $whereStatus
+        ";
+
+        $result = $conn->query($sql);
+        $providers = [];
+
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $providers[] = $row;
+            }
+        }
+
+        // Role labels for display
+        $roleLabels = [
+            'guide'     => 'Tour Guide',
+            'hotel'     => 'Hotel',
+            'transport' => 'Transport Provider'
+        ];
+
+        // Statistics
+        $stats = [
+            'total' => count($providers),
+            'guide' => 0,
+            'hotel' => 0,
+            'transport' => 0
+        ];
+
+        foreach ($providers as $p) {
+            if (isset($p['role'])) {
+                if ($p['role'] === 'guide') $stats['guide']++;
+                if ($p['role'] === 'hotel') $stats['hotel']++;
+                if ($p['role'] === 'transport') $stats['transport']++;
+            }
+        }
+
+        // Pass data to the view
+        view('admin/admin_service', [
+            'providers' => $providers,
+            'stats' => $stats,
+            'roleLabels' => $roleLabels,
+            'selectedStatus' => $status
+        ]);
     }
 
     public function settings() {

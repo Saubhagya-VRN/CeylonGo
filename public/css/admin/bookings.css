@@ -1,4 +1,4 @@
-@import url("common.css");
+@import url("admin_common.css");
 
 .date-filter .date-input {
   padding: 6px;
@@ -29,16 +29,16 @@
   font-weight: bold;
 }
 
-.status.active {
-  color: green;
+.status.pending {
+    color: orange;
 }
 
 .status.completed {
-  color: blue;
+    color: green;
 }
 
 .status.cancelled {
-  color: red;
+    color: red;
 }
 
 .actions {
@@ -57,33 +57,50 @@
   color: red;
 }
 
-/* Stats Section */
-.stats-section {
-  margin-top: 30px;
+.modal {
+    display: none; 
+    position: fixed;
+    z-index: 9999;
+    padding-top: 60px;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
 }
-.subheading {
-  color: #777;
-  margin-bottom: 10px;
+
+.modal-content {
+    background-color: #fff;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 700px;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
 }
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
 }
-.stat-box {
-  border: 1px solid #ccc;
-  padding: 15px;
-  text-align: center;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+
+.close:hover {
+    color: #000;
 }
-.stat-box strong {
-  font-size: 13px;
-  color: #555;
+
+#bookingDetailsContent table {
+    width: 100%;
+    border-collapse: collapse;
 }
-.stat-box span {
-  font-size: 18px;
-  font-weight: bold;
-  color: #000;
+
+#bookingDetailsContent th, #bookingDetailsContent td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#bookingDetailsContent th {
+    background-color: #f2f2f2;
 }
