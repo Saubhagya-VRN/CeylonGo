@@ -1346,10 +1346,22 @@
 .trip-modal-close:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+.trip-modal-form-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .trip-modal-form {
   padding: 24px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+}
+.trip-modal-btn-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .trip-modal-instruction {
   margin: 0 0 20px 0;

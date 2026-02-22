@@ -683,6 +683,7 @@ $main_cities = [
         transportModalOverlay.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
       }
+      if (typeof showTransportForm === 'function') showTransportForm();
     }
     if (document.getElementById('transportRequestModalClose')) {
       document.getElementById('transportRequestModalClose').addEventListener('click', closeTransportModal);
@@ -695,10 +696,59 @@ $main_cities = [
         if (e.target === transportModalOverlay) closeTransportModal();
       });
     }
-    var vehicleCapacities = { 'Tuk': 3, 'Car': 4, 'Minivan': 7, 'Minivan AC': 7, 'Bus': 40, 'Bus AC': 40 };
+    var vehicleCapacities = { 'Tuk': 3, 'Car': 4, 'Minivan': 7, 'Minivan AC': 7, 'Bus': 20, 'Bus AC': 20 };
     var transportForm = document.getElementById('transportRequestForm');
+    var trFormWrap = document.getElementById('tr_formWrap');
+    var trSuccessState = document.getElementById('tr_successState');
+    var transportSubmitUrl = '/CeylonGo/public/tourist/transport-services';
+    var lastSubmittedNumPeople = 0;
+    function showTransportForm() {
+      if (trFormWrap) trFormWrap.style.display = '';
+      if (trSuccessState) trSuccessState.style.display = 'none';
+    }
+    function showTransportSuccess() {
+      if (trFormWrap) trFormWrap.style.display = 'none';
+      if (trSuccessState) trSuccessState.style.display = 'block';
+    }
+    function resetTransportFormForAnother() {
+      var vehicleSelect = document.getElementById('tr_vehicleType');
+      var numPeopleEl = document.getElementById('tr_numPeople');
+      var estimatedFare = document.getElementById('tr_estimatedFare');
+      var fareValEl = document.getElementById('tr_estimatedFareValue');
+      var distValEl = document.getElementById('tr_distanceValue');
+      var breakdown = document.getElementById('tr_fareBreakdown');
+      var errEl = document.getElementById('tr_vehicleError');
+      if (vehicleSelect) vehicleSelect.value = '';
+      if (numPeopleEl) {
+        var adultsEl = document.getElementById('adults');
+        var childrenEl = document.getElementById('children');
+        var infantsEl = document.getElementById('infants');
+        var total = (parseInt(adultsEl && adultsEl.value, 10) || 0) + (parseInt(childrenEl && childrenEl.value, 10) || 0) + (parseInt(infantsEl && infantsEl.value, 10) || 0);
+        var remaining = total - lastSubmittedNumPeople;
+        numPeopleEl.value = Math.max(1, remaining);
+      }
+      if (estimatedFare) estimatedFare.value = 'LKR 0.00';
+      if (fareValEl) fareValEl.value = '';
+      if (distValEl) distValEl.value = '';
+      if (breakdown) breakdown.style.display = 'none';
+      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+      var confirmBtn = document.getElementById('tr_btnConfirm');
+      if (confirmBtn) confirmBtn.disabled = true;
+    }
+    if (document.getElementById('tr_btnAddAnother')) {
+      document.getElementById('tr_btnAddAnother').addEventListener('click', function () {
+        resetTransportFormForAnother();
+        showTransportForm();
+      });
+    }
+    if (document.getElementById('tr_btnDone')) {
+      document.getElementById('tr_btnDone').addEventListener('click', function () {
+        window.location.href = '/CeylonGo/public/tourist/transport-report';
+      });
+    }
     if (transportForm) {
       transportForm.addEventListener('submit', function (e) {
+        e.preventDefault();
         var vehicleSelect = document.getElementById('tr_vehicleType');
         var numPeopleEl = document.getElementById('tr_numPeople');
         var errorEl = document.getElementById('tr_vehicleError');
@@ -709,10 +759,32 @@ $main_cities = [
         errorEl.style.display = 'none';
         errorEl.textContent = '';
         if (vehicle && capacity !== undefined && numPeople > capacity) {
-          e.preventDefault();
-          errorEl.textContent = 'This vehicle accommodates up to ' + capacity + ' passengers. Please choose a larger vehicle or reduce the number of people.';
+          errorEl.textContent = 'This vehicle accommodates up to ' + capacity + ' people. Please choose a larger vehicle or reduce the number of people.';
           errorEl.style.display = 'block';
+          return;
         }
+        var submitBtn = transportForm.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        var formData = new FormData(transportForm);
+        fetch(transportSubmitUrl, {
+          method: 'POST',
+          body: formData,
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (submitBtn) submitBtn.disabled = false;
+            if (data && data.success) {
+              lastSubmittedNumPeople = parseInt(numPeopleEl ? numPeopleEl.value : 0, 10) || 0;
+              showTransportSuccess();
+            } else {
+              alert(data && data.error ? data.error : 'Failed to submit transport request.');
+            }
+          })
+          .catch(function () {
+            if (submitBtn) submitBtn.disabled = false;
+            alert('An error occurred. Please try again.');
+          });
       });
       document.getElementById('tr_vehicleType').addEventListener('change', function () {
         var err = document.getElementById('tr_vehicleError');
@@ -758,6 +830,8 @@ $main_cities = [
               var distValEl = document.getElementById('tr_distanceValue');
               if (fareValEl) fareValEl.value = String(data.totalFare || '');
               if (distValEl) distValEl.value = String(data.distance || '');
+              var confirmBtn = document.getElementById('tr_btnConfirm');
+              if (confirmBtn) confirmBtn.disabled = false;
               var breakdown = document.getElementById('tr_fareBreakdown');
               var distEl = document.getElementById('tr_fareDistance');
               var rateEl = document.getElementById('tr_fareBaseRate');

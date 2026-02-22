@@ -149,10 +149,21 @@ class TouristController {
         $request->estimatedFare = isset($data['estimatedFare']) && $data['estimatedFare'] !== '' ? $data['estimatedFare'] : null;
         $request->distance = isset($data['distance']) && $data['distance'] !== '' ? $data['distance'] : null;
 
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         if ($request->addRequest()) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true]);
+                exit();
+            }
             header("Location: /CeylonGo/public/tourist/transport-report");
             exit();
         } else {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Failed to submit transport request.']);
+                exit();
+            }
             header("Location: /CeylonGo/public/tourist/customize-trip?error=" . urlencode("Failed to submit transport request."));
             exit();
         }

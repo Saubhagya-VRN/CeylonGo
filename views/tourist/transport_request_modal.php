@@ -4,12 +4,12 @@ $modal_customer_name = $user_name ?? '';
 $modal_contact = (isset($tourist_data['contact_number']) ? $tourist_data['contact_number'] : '') ?: ($_SESSION['tourist_contact'] ?? '');
 $vehicle_types = [
     '' => 'Select a vehicle',
-    'Tuk' => 'Tuk (3 passengers)',
-    'Car' => 'Car (4 passengers)',
-    'Minivan' => 'Minivan (7 passengers)',
-    'Minivan AC' => 'Minivan AC (7 passengers)',
-    'Bus' => 'Bus (40 passengers)',
-    'Bus AC' => 'Bus AC (40 passengers)'
+    'Tuk' => 'Tuk (3 people)',
+    'Car' => 'Car (4 people)',
+    'Minivan' => 'Minivan (7 people)',
+    'Minivan AC' => 'Minivan AC (7 people)',
+    'Bus' => 'Bus (20 people)',
+    'Bus AC' => 'Bus AC (20 people)'
 ];
 ?>
 <div class="trip-modal-overlay" id="transportRequestModalOverlay" aria-hidden="true">
@@ -18,6 +18,7 @@ $vehicle_types = [
       <h2 class="trip-modal-title" id="transportRequestModalTitle">Request Transport Service</h2>
       <button type="button" class="trip-modal-close" id="transportRequestModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
     </header>
+    <div id="tr_formWrap" class="trip-modal-form-wrap">
     <form action="/CeylonGo/public/tourist/transport-services" method="post" class="trip-modal-form" id="transportRequestForm">
       <div class="trip-modal-form-grid">
         <div class="trip-modal-col">
@@ -90,9 +91,18 @@ $vehicle_types = [
         <div class="trip-modal-fare-breakdown-row"><span class="trip-modal-fare-label">Total Fare:</span> <span id="tr_fareTotal" class="trip-modal-fare-total">—</span></div>
       </div>
       <footer class="trip-modal-footer">
-        <button type="submit" class="trip-modal-btn-confirm">Confirm Selection</button>
+        <button type="submit" class="trip-modal-btn-confirm" id="tr_btnConfirm" disabled>Confirm Selection</button>
         <button type="button" class="trip-modal-btn-cancel" id="transportRequestModalCancel">Cancel</button>
       </footer>
     </form>
+    </div>
+    <div id="tr_successState" class="trip-modal-success-state" style="display:none; padding:32px 24px; text-align:center;">
+      <p class="trip-modal-success-message" style="font-size:18px; color:#4a7c59; margin:0 0 20px 0;"><i class="fa-solid fa-circle-check" style="margin-right:8px;"></i>Request submitted!</p>
+      <p style="font-size:14px; color:#555; margin:0 0 24px 0;">Need another vehicle for the same trip?</p>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button type="button" class="trip-modal-btn-confirm" id="tr_btnAddAnother">Add another vehicle</button>
+        <button type="button" class="trip-modal-btn-cancel" id="tr_btnDone">Done</button>
+      </div>
+    </div>
   </div>
 </div>
