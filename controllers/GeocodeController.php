@@ -1,5 +1,86 @@
 <?php
 class GeocodeController {
+    /**
+     * Places autocomplete for stop locations (Google Places API, Sri Lanka).
+     * Optional GET 'district' biases results to that area so stops match where the tourist is staying.
+     */
+    public function placesAutocomplete() {
+        if (ob_get_level()) ob_end_clean();
+        ob_start();
+        header('Content-Type: application/json; charset=UTF-8');
+        header('Access-Control-Allow-Origin: *');
+
+        $input = isset($_GET['input']) ? trim($_GET['input']) : '';
+        if (strlen($input) < 2) {
+            ob_end_clean();
+            echo json_encode(['predictions' => []]);
+            return;
+        }
+
+        $predictions = [];
+        $apiKey = defined('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '';
+        if (!empty($apiKey)) {
+            $params = [
+                'input' => $input,
+                'components' => 'country:lk',
+                'language' => 'en',
+                'key' => $apiKey
+            ];
+            $district = isset($_GET['district']) ? trim(strtolower($_GET['district'])) : '';
+            if ($district !== '' && isset(self::$districtCenter[$district])) {
+                $center = self::$districtCenter[$district];
+                $params['locationbias'] = 'circle:50000@' . $center['lat'] . ',' . $center['lon'];
+            }
+            $url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json?' . http_build_query($params);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            if ($httpCode === 200 && $response) {
+                $data = json_decode($response, true);
+                if (!isset($data['error_message']) && !empty($data['predictions']) && is_array($data['predictions'])) {
+                    $predictions = $data['predictions'];
+                }
+            }
+        }
+
+        ob_end_clean();
+        echo json_encode(['predictions' => $predictions]);
+    }
+
+    /** District centers (lat/lon) for biasing stop suggestions to the selected destination area */
+    private static $districtCenter = [
+        'ampara' => ['lat' => 7.2833, 'lon' => 81.6667],
+        'anuradhapura' => ['lat' => 8.3114, 'lon' => 80.4037],
+        'badulla' => ['lat' => 6.9934, 'lon' => 81.0550],
+        'batticaloa' => ['lat' => 7.7310, 'lon' => 81.6747],
+        'colombo' => ['lat' => 6.9271, 'lon' => 79.8612],
+        'galle' => ['lat' => 6.0535, 'lon' => 80.2210],
+        'gampaha' => ['lat' => 7.0917, 'lon' => 79.9942],
+        'hambantota' => ['lat' => 6.1429, 'lon' => 81.1212],
+        'jaffna' => ['lat' => 9.6615, 'lon' => 80.0255],
+        'kalutara' => ['lat' => 6.5854, 'lon' => 79.9607],
+        'kandy' => ['lat' => 7.2906, 'lon' => 80.6337],
+        'kegalle' => ['lat' => 7.2533, 'lon' => 80.3436],
+        'kilinochchi' => ['lat' => 9.4000, 'lon' => 80.4000],
+        'kurunegala' => ['lat' => 7.4863, 'lon' => 80.3623],
+        'mannar' => ['lat' => 8.9833, 'lon' => 79.9000],
+        'matale' => ['lat' => 7.4717, 'lon' => 80.6242],
+        'matara' => ['lat' => 5.9549, 'lon' => 80.5550],
+        'monaragala' => ['lat' => 6.8714, 'lon' => 81.3486],
+        'mullaitivu' => ['lat' => 9.2667, 'lon' => 80.8167],
+        'nuwara-eliya' => ['lat' => 6.9497, 'lon' => 80.7891],
+        'polonnaruwa' => ['lat' => 7.9403, 'lon' => 81.0188],
+        'puttalam' => ['lat' => 8.0333, 'lon' => 79.8333],
+        'ratnapura' => ['lat' => 6.7056, 'lon' => 80.3847],
+        'trincomalee' => ['lat' => 8.5874, 'lon' => 81.2152],
+        'vavuniya' => ['lat' => 8.7500, 'lon' => 80.5000]
+    ];
+
     // Sri Lankan cities database with coordinates
     private static $cities = [
         'colombo' => ['lat' => 6.9271, 'lon' => 79.8612, 'name' => 'Colombo'],
@@ -150,6 +231,8 @@ class GeocodeController {
         $pickup = isset($_GET['pickup']) ? trim($_GET['pickup']) : '';
         $dropoff = isset($_GET['dropoff']) ? trim($_GET['dropoff']) : '';
         $vehicleType = isset($_GET['vehicleType']) ? trim($_GET['vehicleType']) : '';
+        $pickupPlaceId = isset($_GET['pickup_place_id']) ? trim($_GET['pickup_place_id']) : '';
+        $dropoffPlaceId = isset($_GET['dropoff_place_id']) ? trim($_GET['dropoff_place_id']) : '';
         
         if (empty($pickup) || empty($dropoff) || empty($vehicleType)) {
             http_response_code(400);
@@ -157,39 +240,73 @@ class GeocodeController {
             return;
         }
 
-        // Geocode both locations
-        $pickupCoords = $this->geocodeLocation($pickup);
-        $dropoffCoords = $this->geocodeLocation($dropoff);
-        
+        // Geocode both locations (needed for response; also used if place_id not available)
+        $pickupCoords = $this->geocodeLocationForFare($pickup);
+        $dropoffCoords = $this->geocodeLocationForFare($dropoff);
         if (!$pickupCoords) {
             http_response_code(404);
             echo json_encode(['error' => 'Pickup location not found', 'location' => $pickup]);
             return;
         }
-        
         if (!$dropoffCoords) {
             http_response_code(404);
             echo json_encode(['error' => 'Dropoff location not found', 'location' => $dropoff]);
             return;
         }
 
-        // Calculate distance
-        $distance = $this->calculateDistance(
-            $pickupCoords['lat'], $pickupCoords['lon'],
-            $dropoffCoords['lat'], $dropoffCoords['lon']
-        );
+        // Use Google Distance Matrix API: place_id preferred (most accurate), else coordinates
+        $apiKey = defined('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '';
+        $distance = null;
+        $origins = (!empty($pickupPlaceId)) ? 'place_id:' . $pickupPlaceId : ($pickupCoords['lat'] . ',' . $pickupCoords['lon']);
+        $destinations = (!empty($dropoffPlaceId)) ? 'place_id:' . $dropoffPlaceId : ($dropoffCoords['lat'] . ',' . $dropoffCoords['lon']);
 
-        // Define fare rates per km
+        if (!empty($apiKey)) {
+            $params = [
+                'origins' => $origins,
+                'destinations' => $destinations,
+                'key' => $apiKey,
+                'region' => 'lk',
+                'units' => 'metric',
+                'mode' => 'driving'
+            ];
+            $url = 'https://maps.googleapis.com/maps/api/distancematrix/json?' . http_build_query($params);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            $response = curl_exec($ch);
+            curl_close($ch);
+            if ($response) {
+                $data = json_decode($response, true);
+                if (!empty($data['rows'][0]['elements'][0]['status']) && $data['rows'][0]['elements'][0]['status'] === 'OK') {
+                    $elem = $data['rows'][0]['elements'][0];
+                    $meters = isset($elem['distance']['value']) ? (float) $elem['distance']['value'] : 0;
+                    $distance = $meters / 1000; // Convert to km
+                }
+            }
+        }
+
+        // Fallback to Haversine if Distance Matrix unavailable or failed
+        if ($distance === null || $distance <= 0) {
+            $distance = $this->calculateDistance(
+                $pickupCoords['lat'], $pickupCoords['lon'],
+                $dropoffCoords['lat'], $dropoffCoords['lon']
+            );
+        }
+
+        // Define fare rates per km (LKR)
         $fareRates = [
+            'Tuk' => 80,
             'Car' => 120,
-            'Van' => 150,
+            'Minivan' => 150,
+            'Minivan AC' => 180,
             'Bus' => 200,
+            'Bus AC' => 250,
+            // Legacy names
+            'Van' => 150,
             'Three-Wheeler' => 80,
-            'Bike' => 60,
-            'Tuk (3 People)' => 80,
-            'Car (4 People)' => 120,
-            'Van (8 People)' => 150,
-            'Mini Bus (15 People)' => 180
+            'Bike' => 60
         ];
 
         $baseRate = isset($fareRates[$vehicleType]) ? $fareRates[$vehicleType] : 100;
@@ -217,6 +334,72 @@ class GeocodeController {
         ]);
     }
 
+    /**
+     * Geocode for fare calculation: prioritises Google (region=lk) for Sri Lankan addresses
+     * from Places autocomplete, to avoid wrong resolution (e.g. Anula Vidyalaya in Nugegoda).
+     */
+    private function geocodeLocationForFare($location) {
+        $normalized = strtolower(trim($location));
+        $normalized = str_replace([', sri lanka', ' sri lanka'], '', $normalized);
+        $normalized = trim($normalized);
+
+        // Check exact match in cities
+        if (isset(self::$cities[$normalized])) {
+            $c = self::$cities[$normalized];
+            return ['lat' => $c['lat'], 'lon' => $c['lon'], 'name' => $c['name']];
+        }
+
+        // Try partial match
+        foreach (self::$cities as $key => $value) {
+            if (strpos($normalized, $key) !== false || strpos($key, $normalized) !== false) {
+                return ['lat' => $value['lat'], 'lon' => $value['lon'], 'name' => $value['name']];
+            }
+        }
+
+        // Prefer Google Geocoding (region=lk) for Places-style addresses - more accurate for Sri Lanka
+        $apiKey = defined('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '';
+        if (!empty($apiKey)) {
+            $address = strpos($location, 'Sri Lanka') !== false ? $location : $location . ', Sri Lanka';
+            $params = ['address' => $address, 'region' => 'lk', 'key' => $apiKey];
+            // Bias to Colombo metro when address suggests Colombo/Nugegoda - avoids wrong Anula Vidyalaya elsewhere
+            $n = $normalized;
+            if (strpos($n, 'nugegoda') !== false || strpos($n, 'colombo') !== false || strpos($n, 'gampaha') !== false || strpos($n, 'dehiwala') !== false || strpos($n, 'maharagama') !== false || strpos($n, 'boralesgamuwa') !== false || strpos($n, 'kotte') !== false) {
+                $params['bounds'] = '6.80,79.75|6.98,80.10'; // Colombo metro viewport (SW|NE)
+            }
+            $url = 'https://maps.googleapis.com/maps/api/geocode/json?' . http_build_query($params);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $response = curl_exec($ch);
+            curl_close($ch);
+            if ($response) {
+                $data = json_decode($response, true);
+                if (!empty($data['results'][0]) && $data['status'] === 'OK') {
+                    $r = $data['results'][0];
+                    return [
+                        'lat' => $r['geometry']['location']['lat'],
+                        'lon' => $r['geometry']['location']['lng'],
+                        'name' => $r['formatted_address'] ?? $location
+                    ];
+                }
+            }
+        }
+
+        // Fallback to Nominatim
+        $result = $this->geocodeWithNominatim($location);
+        if ($result && $result['success']) {
+            return [
+                'lat' => $result['lat'],
+                'lon' => $result['lon'],
+                'name' => $result['name']
+            ];
+        }
+
+        return null;
+    }
+
     private function geocodeLocation($location) {
         $normalized = strtolower(trim($location));
         $normalized = str_replace([', sri lanka', ' sri lanka'], '', $normalized);
@@ -242,6 +425,31 @@ class GeocodeController {
                 'lon' => $result['lon'],
                 'name' => $result['name']
             ];
+        }
+
+        // Try Google Geocoding API for addresses from Places autocomplete
+        $apiKey = defined('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '';
+        if (!empty($apiKey)) {
+            $address = strpos($location, 'Sri Lanka') !== false ? $location : $location . ', Sri Lanka';
+            $url = 'https://maps.googleapis.com/maps/api/geocode/json?' . http_build_query(['address' => $address, 'region' => 'lk', 'key' => $apiKey]);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            $response = curl_exec($ch);
+            curl_close($ch);
+            if ($response) {
+                $data = json_decode($response, true);
+                if (!empty($data['results'][0]) && $data['status'] === 'OK') {
+                    $r = $data['results'][0];
+                    return [
+                        'lat' => $r['geometry']['location']['lat'],
+                        'lon' => $r['geometry']['location']['lng'],
+                        'name' => $r['formatted_address'] ?? $location
+                    ];
+                }
+            }
         }
 
         return null;

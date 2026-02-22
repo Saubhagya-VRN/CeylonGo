@@ -2432,24 +2432,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         suggestionsContainer.innerHTML = '<div class="suggestion-loading">Loading...</div>';
         suggestionsContainer.classList.add('active');
 
-        // Debounce API calls
+        // Use local fallback suggestions (no external API)
         debounceTimer = setTimeout(() => {
-          fetch('/CeylonGo/api/places_autocomplete.php?input=' + encodeURIComponent(query))
-            .then(response => response.json())
-            .then(data => {
-              if (data.error) {
-                console.error('Google API Error:', data.error);
-                // Fallback to local cities if API fails
-                useFallbackSuggestions(query);
-              } else {
-                suggestions = data.predictions || [];
-                displaySuggestions(suggestions);
-              }
-            })
-            .catch(error => {
-              console.error('Autocomplete error:', error);
-              useFallbackSuggestions(query);
-            });
+          useFallbackSuggestions(query);
         }, 300);
       });
 

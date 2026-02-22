@@ -49,80 +49,144 @@
                     </div>
                 </div>
 
+                <?php
+                $bookings = $bookings ?? [];
+                $stats = $stats ?? ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0, 'cancelled' => 0];
+                ?>
                 <div class="stats-section">
                     <h4>Booking Statistics</h4><br>
                     <p class="subheading">Overview of current bookings</p>
                     <div class="stats-grid">
                     <div class="stat-box">
                         <strong>Total</strong><br>
-                        <span>50</span>
+                        <span><?php echo $stats['total']; ?></span>
                     </div>
                     <div class="stat-box">
-                        <strong>Active</strong><br>
-                        <span>30</span>
+                        <strong>Pending</strong><br>
+                        <span><?php echo $stats['pending']; ?></span>
                     </div>
                     <div class="stat-box">
-                        <strong>Cancelled</strong><br>
-                        <span>10</span>
+                        <strong>Approved</strong><br>
+                        <span><?php echo $stats['approved']; ?></span>
                     </div>
                     <div class="stat-box">
-                        <strong>Completed</strong><br>
-                        <span>10</span>
+                        <strong>Rejected</strong><br>
+                        <span><?php echo $stats['rejected']; ?></span>
                     </div>
                     </div>
                 </div>
                 <br>
+
+                <?php if (isset($_GET['success'])): ?>
+                <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+                    <?php echo htmlspecialchars($_GET['success']); ?>
+                </div>
+                <?php endif; ?>
+                <?php if (isset($_GET['error'])): ?>
+                <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 4px; margin-bottom: 16px;">
+                    <?php echo htmlspecialchars($_GET['error']); ?>
+                </div>
+                <?php endif; ?>
 
                 <div class="bookings-section">
                     <table class="booking-table">
                     <thead>
                         <tr>
                         <th>Booking ID</th>
-                        <th>User</th>
+                        <th>Package</th>
+                        <th>Customer</th>
+                        <th>Travel Date</th>
+                        <th>Travelers</th>
+                        <th>Amount</th>
                         <th>Status</th>
-                        <th>Date</th>
+                        <th>Created</th>
                         <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($bookings)): ?>
                         <tr>
-                        <td>1234</td>
-                        <td>John Doe</td>
-                        <td><span class="status active">Active</span></td>
-                        <td>2023-10-12</td>
+                            <td colspan="9" style="text-align: center; padding: 40px;">No bookings found</td>
+                        </tr>
+                        <?php else: ?>
+                        <?php foreach ($bookings as $booking): 
+                            $status = $booking['status'] ?? 'pending';
+                            $userName = trim(($booking['user_first_name'] ?? '') . ' ' . ($booking['user_last_name'] ?? ''));
+                            if (empty($userName)) $userName = $booking['fullname'] ?? 'N/A';
+                        ?>
+                        <tr>
+                        <td>#<?php echo htmlspecialchars($booking['id']); ?></td>
+                        <td><?php echo htmlspecialchars($booking['package_name'] ?? 'N/A'); ?></td>
+                        <td><?php echo htmlspecialchars($userName); ?><br><small><?php echo htmlspecialchars($booking['email'] ?? ''); ?></small></td>
+                        <td><?php echo htmlspecialchars($booking['travel_date'] ?? '-'); ?></td>
+                        <td><?php echo (int)($booking['travelers'] ?? 0); ?> (<?php echo (int)($booking['adults'] ?? 0); ?>A, <?php echo (int)($booking['children'] ?? 0); ?>C, <?php echo (int)($booking['infants'] ?? 0); ?>I)</td>
+                        <td>LKR <?php echo number_format((float)($booking['total_amount'] ?? 0), 2); ?></td>
+                        <td>
+                            <?php if ($status === 'pending'): ?>
+                            <span class="status pending" style="background: #ffc107; color: #000;">Pending</span>
+                            <?php elseif ($status === 'approved'): ?>
+                            <span class="status approved" style="background: #28a745; color: #fff;">Approved</span>
+                            <?php elseif ($status === 'rejected'): ?>
+                            <span class="status rejected" style="background: #dc3545; color: #fff;">Rejected</span>
+                            <?php else: ?>
+                            <span class="status cancelled" style="background: #6c757d; color: #fff;"><?php echo ucfirst($status); ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo date('Y-m-d', strtotime($booking['created_at'] ?? 'now')); ?></td>
                         <td class="actions">
-                            <button class="icon-btn">👁️</button>
-                            <button class="icon-btn danger">❌</button>
+                            <?php if ($status === 'pending'): ?>
+                            <form method="POST" action="/CeylonGo/public/admin/approve-booking" style="display: inline;">
+                                <input type="hidden" name="booking_id" value="<?php echo (int)$booking['id']; ?>">
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="icon-btn" style="background: #28a745; color: #fff;" title="Approve">✓</button>
+                            </form>
+                            <form method="POST" action="/CeylonGo/public/admin/approve-booking" style="display: inline;">
+                                <input type="hidden" name="booking_id" value="<?php echo (int)$booking['id']; ?>">
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="icon-btn danger" title="Reject">✕</button>
+                            </form>
+                            <?php endif; ?>
+                            <button class="icon-btn" onclick="showBookingDetails(<?php echo htmlspecialchars(json_encode($booking)); ?>)" title="View Details">👁️</button>
                         </td>
                         </tr>
-                        <tr>
-                        <td>5678</td>
-                        <td>Jane Smith</td>
-                        <td><span class="status completed">Completed</span></td>
-                        <td>2023-10-10</td>
-                        <td class="actions">
-                            <button class="icon-btn">👁️</button>
-                            <button class="icon-btn danger">❌</button>
-                        </td>
-                        </tr>
-                        <tr>
-                        <td>91011</td>
-                        <td>Emily Johnson</td>
-                        <td><span class="status cancelled">Cancelled</span></td>
-                        <td>2023-10-01</td>
-                        <td class="actions">
-                            <button class="icon-btn">👁️</button>
-                            <button class="icon-btn danger">❌</button>
-                        </td>
-                        </tr>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                     </table>
                 </div>
 
-                <div class="footer-buttons">
-                    <button class="footer-btn black">+ New Booking</button>
-                </div>
             </div>
         </div>
+
+        <!-- Booking Details Modal -->
+        <div id="bookingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 24px; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                <h3>Booking Details</h3>
+                <div id="bookingDetails"></div>
+                <button onclick="document.getElementById('bookingModal').style.display='none'" style="margin-top: 16px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+
+        <script>
+        function showBookingDetails(booking) {
+            const modal = document.getElementById('bookingModal');
+            const details = document.getElementById('bookingDetails');
+            details.innerHTML = `
+                <p><strong>Booking ID:</strong> #${booking.id}</p>
+                <p><strong>Package:</strong> ${booking.package_name || 'N/A'}</p>
+                <p><strong>Customer:</strong> ${booking.fullname || 'N/A'}</p>
+                <p><strong>Email:</strong> ${booking.email || 'N/A'}</p>
+                <p><strong>Phone:</strong> ${booking.phone || 'N/A'}</p>
+                <p><strong>Travel Date:</strong> ${booking.travel_date || '-'}</p>
+                <p><strong>Travelers:</strong> ${booking.travelers || 0} (${booking.adults || 0} Adults, ${booking.children || 0} Children, ${booking.infants || 0} Infants)</p>
+                <p><strong>Total Amount:</strong> LKR ${parseFloat(booking.total_amount || 0).toLocaleString()}</p>
+                <p><strong>Status:</strong> ${booking.status || 'pending'}</p>
+                ${booking.special_requests ? '<p><strong>Special Requests:</strong> ' + booking.special_requests + '</p>' : ''}
+                ${booking.admin_notes ? '<p><strong>Admin Notes:</strong> ' + booking.admin_notes + '</p>' : ''}
+                <p><strong>Created:</strong> ${booking.created_at || '-'}</p>
+            `;
+            modal.style.display = 'flex';
+        }
+        </script>
     </body>
 </html>

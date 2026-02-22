@@ -44,6 +44,7 @@ $router->post('admin/profile', 'AdminController@updateProfile');
 $router->post('admin/delete-profile', 'AdminController@deleteProfile');
 $router->get('admin/users', 'AdminController@users');
 $router->get('admin/bookings', 'AdminController@bookings');
+$router->post('admin/approve-booking', 'AdminController@approveBooking');
 $router->get('admin/payments', 'AdminController@payments');
 $router->get('admin/reviews', 'AdminController@reviews');
 $router->get('admin/inquiries', 'AdminController@inquiries');
@@ -87,6 +88,7 @@ $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
 $router->get('api/calculate-fare', 'GeocodeController@calculateFare');
+$router->get('api/places-autocomplete', 'GeocodeController@placesAutocomplete');
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');

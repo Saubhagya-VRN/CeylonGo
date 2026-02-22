@@ -92,7 +92,73 @@ class AdminController {
     }
 
     public function bookings() {
-        view('admin/admin_bookings');
+        // Fetch all package bookings from database
+        try {
+            $sql = "SELECT pb.*, 
+                    u.email as user_email,
+                    (SELECT first_name FROM tourists WHERE id = pb.user_id) as user_first_name,
+                    (SELECT last_name FROM tourists WHERE id = pb.user_id) as user_last_name
+                    FROM package_bookings pb
+                    LEFT JOIN users u ON u.ref_id = pb.user_id AND u.role = 'tourist'
+                    ORDER BY pb.created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Calculate statistics
+            $stats = [
+                'total' => count($bookings),
+                'pending' => 0,
+                'approved' => 0,
+                'rejected' => 0,
+                'cancelled' => 0
+            ];
+            foreach ($bookings as $booking) {
+                $status = $booking['status'] ?? 'pending';
+                if (isset($stats[$status])) {
+                    $stats[$status]++;
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("Error fetching bookings: " . $e->getMessage());
+            $bookings = [];
+            $stats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0, 'cancelled' => 0];
+        }
+        
+        view('admin/admin_bookings', ['bookings' => $bookings, 'stats' => $stats]);
+    }
+    
+    public function approveBooking() {
+        if (!isset($_SESSION['user_ref_id']) || $_SESSION['user_role'] !== 'admin') {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
+        
+        $booking_id = isset($_POST['booking_id']) ? (int) $_POST['booking_id'] : 0;
+        $action = isset($_POST['action']) ? trim($_POST['action']) : '';
+        $admin_notes = isset($_POST['admin_notes']) ? trim($_POST['admin_notes']) : '';
+        
+        if ($booking_id <= 0 || !in_array($action, ['approve', 'reject'])) {
+            header('Location: /CeylonGo/public/admin/bookings?error=' . urlencode('Invalid request'));
+            exit;
+        }
+        
+        $status = $action === 'approve' ? 'approved' : 'rejected';
+        $admin_id = (int) $_SESSION['user_ref_id'];
+        
+        try {
+            $sql = "UPDATE package_bookings 
+                    SET status = ?, approved_by = ?, approved_at = NOW(), admin_notes = ?
+                    WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$status, $admin_id, $admin_notes, $booking_id]);
+            
+            header('Location: /CeylonGo/public/admin/bookings?success=' . urlencode('Booking ' . $status . ' successfully'));
+        } catch (PDOException $e) {
+            error_log("Error updating booking: " . $e->getMessage());
+            header('Location: /CeylonGo/public/admin/bookings?error=' . urlencode('Failed to update booking'));
+        }
+        exit;
     }
 
     public function payments() {
