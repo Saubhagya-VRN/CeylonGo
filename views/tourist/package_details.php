@@ -183,7 +183,7 @@ $accommodation = $p['accommodation'] ?? [];
                             <li><span class="pkg-cross">✕</span> <?php echo htmlspecialchars($item); ?></li>
                             <?php endforeach; ?>
                         </ul>
-                        <p class="pkg-included-note">These services are not included and will be charged separately.</p>
+                        <p class="pkg-included-note">These services are not included.</p>
                     </div>
                 </div>
             </section>

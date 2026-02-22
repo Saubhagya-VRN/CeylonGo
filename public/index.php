@@ -71,6 +71,7 @@ $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
 $router->get('api/calculate-fare', 'GeocodeController@calculateFare');
+$router->get('api/places-autocomplete', 'GeocodeController@placesAutocomplete');
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
