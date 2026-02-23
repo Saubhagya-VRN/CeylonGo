@@ -23,7 +23,6 @@ class Review {
                 JOIN tourist_users t ON r.user_id = t.id
                 ORDER BY r.created_at DESC
             ";
-
             $stmt = $this->db->prepare($sql);
         } else {
             $sql = "
@@ -31,6 +30,7 @@ class Review {
                     r.id,
                     r.user_id,
                     r.review_text,
+                    r.admin_reply,
                     r.rating,
                     r.status,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
@@ -39,7 +39,6 @@ class Review {
                 WHERE r.rating = :rating
                 ORDER BY r.created_at DESC
             ";
-
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':rating', (int)$rating, PDO::PARAM_INT);
         }
