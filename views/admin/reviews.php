@@ -153,8 +153,6 @@
                                             <td>
                                                 <?php if ($review['status'] === 'approved'): ?>
                                                     <span style="color:green;font-weight:bold">Approved</span>
-                                                <?php elseif ($review['status'] === 'rejected'): ?>
-                                                    <span style="color:red;font-weight:bold">Rejected</span>
                                                 <?php else: ?>
                                                     <span style="color:orange;font-weight:bold">Pending</span>
                                                 <?php endif; ?>
@@ -164,8 +162,8 @@
                                                 <?php if ($review['status'] === 'pending'): ?>
                                                     <button class="icon-btn approve-btn" title="Approve">✅</button>
                                                 <?php endif; ?>
-                                                <button class="icon-btn danger delete-btn">❌</button>
-                                                <button class="icon-btn reply-btn">💬</button>
+                                                <button class="icon-btn danger delete-btn" title="Delete">🗑️</button>
+                                                <button class="icon-btn reply-btn" title="Comment">💬</button>
                                             </td>
                                             <td>
                                                 <?php if (!empty($review['admin_reply'])): ?>
@@ -227,9 +225,9 @@
                 const row = button.closest("tr");
                 const reviewId = row.dataset.id;
 
-                // Delete review
+                // ── Delete review ─────────────────────────────────
                 if (button.classList.contains("delete-btn")) {
-                    if (!confirm("Delete this review?")) return;
+                    if (!confirm("Permanently delete this review?")) return;
 
                     fetch("/CeylonGo/public/admin/review/delete", {
                         method: "POST",
@@ -246,12 +244,10 @@
                     });
                 }
 
-                // Reply to review
+                // ── Reply to review ───────────────────────────────
                 if (button.classList.contains("reply-btn")) {
-
                     const existingReply = row.dataset.reply || "";
                     const reply = prompt("Enter admin reply:", existingReply);
-
                     if (reply === null || reply.trim() === "") return;
 
                     fetch("/CeylonGo/public/admin/review/reply", {
@@ -263,6 +259,9 @@
                     .then(data => {
                         if (data.success) {
                             row.dataset.reply = reply;
+                            // Update the admin reply cell visually
+                            const replyCell = row.cells[row.cells.length - 1];
+                            replyCell.innerHTML = reply;
                             alert("Reply saved ✅");
                         } else {
                             alert("Failed to save reply ❌");
@@ -270,7 +269,7 @@
                     });
                 }
 
-                // Approve review
+                // ── Approve review ────────────────────────────────
                 if (button.classList.contains("approve-btn")) {
                     if (!confirm("Approve this review?")) return;
 
@@ -282,11 +281,12 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            location.reload(); // refresh metrics + table safely
+                            location.reload();
                         } else {
-                            alert("Failed to approve review");
+                            alert("Failed to approve review. Check server logs.");
                         }
-                    });
+                    })
+                    .catch(() => alert("Server error while approving."));
                 }
             });
 

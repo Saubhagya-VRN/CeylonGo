@@ -155,7 +155,6 @@
                                     <td><?= date('Y-m-d', strtotime($b['created_at'])) ?></td>
                                     <td>
                                         <button class="icon-btn view-btn" data-booking-id="<?= $b['booking_id'] ?>" title="View Details">👁️</button>
-                                        <button class="icon-btn danger flag-btn" data-booking-id="<?= $b['booking_id'] ?>" title="Reject">✕</button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -262,6 +261,10 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <div class="footer-buttons">
+                        <button class="footer-btn black" id="exportPkgBtn">Export Package Bookings</button>
+                    </div>
                 </div>
             </div>
 
@@ -353,41 +356,81 @@
 
             spanClose.onclick = () => modal.style.display = "none";
 
-            // ── Trip Booking: reject/flag ─────────────────────────
-            document.querySelectorAll(".flag-btn").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const bookingId = btn.dataset.bookingId;
-                    const reason = prompt("Enter reason for rejecting this booking:");
-                    if (!reason) return;
+            // ── Embed all trip bookings with destinations for export ──
+            const tripBookingsData = <?= json_encode(array_map(function($b) {
+                return [
+                    'booking_id'    => $b['booking_id'],
+                    'user_name'     => $b['user_name'],
+                    'status'        => $b['status'],
+                    'created_at'    => $b['created_at'],
+                    'destinations'  => $b['destinations'] ?? [],
+                ];
+            }, $bookingsWithDestinations ?? []), JSON_UNESCAPED_UNICODE) ?>;
 
-                    fetch('/CeylonGo/public/admin/flag-booking', {
-                        method: 'POST',
-                        headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({booking_id: bookingId, reason})
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) { alert("Booking rejected!"); btn.disabled = true; }
-                        else alert("Failed: " + data.message);
-                    })
-                    .catch(err => console.error(err));
-                });
-            });
-
-            // ── Export trip bookings ──────────────────────────────
+            // ── Export trip bookings — full structured report ──────
             document.getElementById("exportBtn").addEventListener("click", () => {
-                const rows = document.querySelectorAll("#bookingsTableBody tr");
-                if (rows.length === 0) return alert("No bookings to export!");
-                let txt = "Booking ID\tUser\tStatus\tDate\n";
-                rows.forEach(r => {
-                    if (r.style.display !== "none") {
-                        txt += [...r.cells].slice(0,4).map(c => c.innerText).join("\t") + "\n";
+                if (!tripBookingsData || tripBookingsData.length === 0) {
+                    alert("No bookings to export!");
+                    return;
+                }
+
+                const sep    = '='.repeat(70);
+                const subSep = '-'.repeat(70);
+                const now    = new Date();
+                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                const timeStr = now.toLocaleTimeString('en-GB');
+
+                let report = '';
+                report += '='.repeat(70) + '\n';
+                report += '        CEYLON GO — TRIP BOOKINGS REPORT\n';
+                report += '='.repeat(70) + '\n';
+                report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
+                report += '  Total Bookings : ' + tripBookingsData.length + '\n';
+                report += '='.repeat(70) + '\n\n';
+
+                tripBookingsData.forEach(function(b, index) {
+                    report += 'BOOKING ' + (index + 1) + ' OF ' + tripBookingsData.length + '\n';
+                    report += sep + '\n';
+
+                    // ── Booking summary ──
+                    report += '  BOOKING DETAILS\n';
+                    report += '  ' + subSep + '\n';
+                    report += '  Booking ID   : ' + b.booking_id + '\n';
+                    report += '  Customer     : ' + b.user_name + '\n';
+                    report += '  Status       : ' + b.status.charAt(0).toUpperCase() + b.status.slice(1) + '\n';
+                    report += '  Submitted On : ' + b.created_at + '\n\n';
+
+                    // ── Destinations ──
+                    if (b.destinations && b.destinations.length > 0) {
+                        report += '  DESTINATIONS (' + b.destinations.length + ')\n';
+                        report += '  ' + subSep + '\n';
+                        b.destinations.forEach(function(d, di) {
+                            report += '  Destination ' + (di + 1) + '\n';
+                            report += '    Location   : ' + d.destination + '\n';
+                            report += '    People     : ' + d.people_count + '\n';
+                            report += '    Days       : ' + d.days + '\n';
+                            if (d.hotel && d.hotel.trim() !== '')
+                                report += '    Hotel      : ' + d.hotel + '\n';
+                            report += '    Transport  : ' + d.transport + '\n';
+                        });
+                    } else {
+                        report += '  DESTINATIONS\n';
+                        report += '  ' + subSep + '\n';
+                        report += '  No destination details recorded.\n';
                     }
+
+                    report += '\n' + sep + '\n\n';
                 });
-                const blob = new Blob([txt], {type:"text/plain"});
-                const link = document.createElement("a");
+
+                report += '='.repeat(70) + '\n';
+                report += '  END OF REPORT\n';
+                report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
+                report += '='.repeat(70) + '\n';
+
+                const blob = new Blob([report], { type: 'text/plain' });
+                const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = `bookings_${new Date().toISOString().slice(0,10)}.txt`;
+                link.download = 'ceylongo_trip_bookings_' + now.toISOString().slice(0, 10) + '.txt';
                 link.click();
             });
 
@@ -502,6 +545,91 @@
                     else alert("Failed to reject: " + (data.message || 'Unknown error'));
                 })
                 .catch(() => alert("Server error. Please try again."));
+            });
+
+            // ── Export package bookings report ────────────────────
+            document.getElementById("exportPkgBtn").addEventListener("click", function() {
+                if (!pkgBookingsData || pkgBookingsData.length === 0) {
+                    alert("No package bookings to export!");
+                    return;
+                }
+
+                const sep    = '='.repeat(70);
+                const subSep = '-'.repeat(70);
+                const now    = new Date();
+                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                const timeStr = now.toLocaleTimeString('en-GB');
+
+                let report = '';
+                report += '='.repeat(70) + '\n';
+                report += '      CEYLON GO — PACKAGE BOOKINGS REPORT\n';
+                report += '='.repeat(70) + '\n';
+                report += '  Generated on    : ' + dateStr + ' at ' + timeStr + '\n';
+                report += '  Total Bookings  : ' + pkgBookingsData.length + '\n';
+                report += '='.repeat(70) + '\n\n';
+
+                pkgBookingsData.forEach(function(pb, index) {
+                    report += 'BOOKING ' + (index + 1) + ' OF ' + pkgBookingsData.length + '\n';
+                    report += sep + '\n';
+
+                    // ── Customer details ──
+                    report += '  CUSTOMER DETAILS\n';
+                    report += '  ' + subSep + '\n';
+                    report += '  Full Name    : ' + pb.fullname + '\n';
+                    report += '  Email        : ' + pb.email + '\n';
+                    report += '  Phone        : ' + pb.phone + '\n\n';
+
+                    // ── Booking details ──
+                    report += '  BOOKING DETAILS\n';
+                    report += '  ' + subSep + '\n';
+                    report += '  Booking ID   : #' + pb.id + '\n';
+                    report += '  Package      : ' + pb.package_name + '\n';
+                    report += '  Travel Date  : ' + pb.travel_date + '\n';
+                    report += '  Status       : ' + pb.status.charAt(0).toUpperCase() + pb.status.slice(1) + '\n';
+                    report += '  Submitted On : ' + pb.created_at + '\n\n';
+
+                    // ── Traveler breakdown ──
+                    report += '  TRAVELERS\n';
+                    report += '  ' + subSep + '\n';
+                    report += '  Total        : ' + pb.travelers + '\n';
+                    report += '  Adults       : ' + pb.adults + '\n';
+                    if (pb.children > 0) report += '  Children     : ' + pb.children + '\n';
+                    if (pb.infants  > 0) report += '  Infants      : ' + pb.infants  + '\n';
+                    report += '\n';
+
+                    // ── Payment ──
+                    report += '  PAYMENT\n';
+                    report += '  ' + subSep + '\n';
+                    report += '  Total Amount : LKR ' + Number(pb.total_amount).toLocaleString() + '\n\n';
+
+                    // ── Extra info if present ──
+                    if (pb.special_requests) {
+                        report += '  SPECIAL REQUESTS\n';
+                        report += '  ' + subSep + '\n';
+                        report += '  ' + pb.special_requests + '\n\n';
+                    }
+                    if (pb.admin_notes) {
+                        report += '  ADMIN NOTES\n';
+                        report += '  ' + subSep + '\n';
+                        report += '  ' + pb.admin_notes + '\n\n';
+                    }
+                    if (pb.approved_at) {
+                        report += '  Approved At  : ' + pb.approved_at + '\n\n';
+                    }
+
+                    report += sep + '\n\n';
+                });
+
+                report += '='.repeat(70) + '\n';
+                report += '  END OF REPORT\n';
+                report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
+                report += '='.repeat(70) + '\n';
+
+                const blob = new Blob([report], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'package_bookings_' + now.toISOString().slice(0, 10) + '.txt';
+                link.click();
             });
 
             // ── Close all modals on outside click ─────────────────

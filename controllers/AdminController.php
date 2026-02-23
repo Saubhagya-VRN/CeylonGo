@@ -211,12 +211,19 @@ class AdminController {
         $searchId = $_GET['search'] ?? null;
         $date     = $_GET['date']   ?? null;
 
-        // Existing trip bookings
+        // Trip bookings
         $bookingModel = new Booking($this->db);
         $bookings     = $bookingModel->getAllBookingsWithUsers($status, $searchId, $date);
         $stats        = $bookingModel->getBookingStats();
 
-        // Package bookings — fetch all from package_bookings table
+        // Pre-load ALL destinations for every trip booking (needed for export report)
+        $bookingsWithDestinations = [];
+        foreach ($bookings as $b) {
+            $destinations = $bookingModel->getBookingDestinations($b['booking_id']);
+            $bookingsWithDestinations[] = array_merge($b, ['destinations' => $destinations]);
+        }
+
+        // Package bookings
         $pkgStmt = $this->db->prepare("
             SELECT *
             FROM package_bookings
@@ -234,13 +241,14 @@ class AdminController {
         }
 
         view('admin/bookings', [
-            'bookings'        => $bookings,
-            'selectedStatus'  => $status,
-            'searchId'        => $searchId,
-            'date'            => $date,
-            'stats'           => $stats,
-            'packageBookings' => $packageBookings,
-            'pkgStats'        => $pkgStats,
+            'bookings'                 => $bookings,
+            'bookingsWithDestinations' => $bookingsWithDestinations,
+            'selectedStatus'           => $status,
+            'searchId'                 => $searchId,
+            'date'                     => $date,
+            'stats'                    => $stats,
+            'packageBookings'          => $packageBookings,
+            'pkgStats'                 => $pkgStats,
         ]);
     }
 
@@ -441,16 +449,23 @@ class AdminController {
 
         $reviewId = intval($_POST['review_id'] ?? 0);
         if (!$reviewId) {
-            echo json_encode(['success' => false]);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid review ID']);
             exit();
         }
 
+        // FIX: removed approved_at — that column does not exist in the reviews table
         $stmt = $this->db->prepare(
-            "UPDATE reviews SET status = 'approved', approved_at = NOW() WHERE id = :id"
+            "UPDATE reviews SET status = 'approved' WHERE id = :id"
         );
         $success = $stmt->execute([':id' => $reviewId]);
+        $affected = $stmt->rowCount();
 
-        echo json_encode(['success' => $success]);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $success && $affected > 0,
+            'message' => $affected > 0 ? 'Approved' : 'No rows updated — check the ID',
+        ]);
         exit();
     }
 
