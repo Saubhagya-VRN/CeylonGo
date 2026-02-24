@@ -1,4 +1,4 @@
-@import url("admin_common.css");
+@import url("common.css");
 
 .date-filter .date-input {
   padding: 6px;
@@ -35,6 +35,19 @@
 
 .status.completed {
     color: green;
+}
+
+.status.cancelled {
+    color: red;
+}
+
+/* Package bookings — approved = green, rejected = red */
+.status.approved {
+    color: green;
+}
+
+.status.rejected {
+    color: red;
 }
 
 .status.cancelled {

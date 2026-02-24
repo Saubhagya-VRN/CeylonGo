@@ -15,7 +15,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
         <!-- Optional admin-only overrides -->
-        <link rel="stylesheet" href="/CeylonGO/public/css/admin/admin_reviews.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/admin/reviews.css">
         
         <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
@@ -63,7 +63,7 @@
                     <li><a href="/CeylonGo/public/admin/service"><i class="fa-solid fa-van-shuttle"></i> Service Providers</a></li>
                     <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                     <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
-                    <li><a href="/CeylonGo/public/admin/promotions"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
+                    <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
                     <li class="active"><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
@@ -153,8 +153,6 @@
                                             <td>
                                                 <?php if ($review['status'] === 'approved'): ?>
                                                     <span style="color:green;font-weight:bold">Approved</span>
-                                                <?php elseif ($review['status'] === 'rejected'): ?>
-                                                    <span style="color:red;font-weight:bold">Rejected</span>
                                                 <?php else: ?>
                                                     <span style="color:orange;font-weight:bold">Pending</span>
                                                 <?php endif; ?>
@@ -164,8 +162,8 @@
                                                 <?php if ($review['status'] === 'pending'): ?>
                                                     <button class="icon-btn approve-btn" title="Approve">✅</button>
                                                 <?php endif; ?>
-                                                <button class="icon-btn danger delete-btn">❌</button>
-                                                <button class="icon-btn reply-btn">💬</button>
+                                                <button class="icon-btn danger delete-btn" title="Delete">🗑️</button>
+                                                <button class="icon-btn reply-btn" title="Comment">💬</button>
                                             </td>
                                             <td>
                                                 <?php if (!empty($review['admin_reply'])): ?>
@@ -227,9 +225,9 @@
                 const row = button.closest("tr");
                 const reviewId = row.dataset.id;
 
-                // Delete review
+                // ── Delete review ─────────────────────────────────
                 if (button.classList.contains("delete-btn")) {
-                    if (!confirm("Delete this review?")) return;
+                    if (!confirm("Permanently delete this review?")) return;
 
                     fetch("/CeylonGo/public/admin/review/delete", {
                         method: "POST",
@@ -246,12 +244,10 @@
                     });
                 }
 
-                // Reply to review
+                // ── Reply to review ───────────────────────────────
                 if (button.classList.contains("reply-btn")) {
-
                     const existingReply = row.dataset.reply || "";
                     const reply = prompt("Enter admin reply:", existingReply);
-
                     if (reply === null || reply.trim() === "") return;
 
                     fetch("/CeylonGo/public/admin/review/reply", {
@@ -263,6 +259,9 @@
                     .then(data => {
                         if (data.success) {
                             row.dataset.reply = reply;
+                            // Update the admin reply cell visually
+                            const replyCell = row.cells[row.cells.length - 1];
+                            replyCell.innerHTML = reply;
                             alert("Reply saved ✅");
                         } else {
                             alert("Failed to save reply ❌");
@@ -270,7 +269,7 @@
                     });
                 }
 
-                // Approve review
+                // ── Approve review ────────────────────────────────
                 if (button.classList.contains("approve-btn")) {
                     if (!confirm("Approve this review?")) return;
 
@@ -282,11 +281,12 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            location.reload(); // refresh metrics + table safely
+                            location.reload();
                         } else {
-                            alert("Failed to approve review");
+                            alert("Failed to approve review. Check server logs.");
                         }
-                    });
+                    })
+                    .catch(() => alert("Server error while approving."));
                 }
             });
 
