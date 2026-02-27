@@ -776,6 +776,13 @@ $main_cities = [
             if (submitBtn) submitBtn.disabled = false;
             if (data && data.success) {
               lastSubmittedNumPeople = parseInt(numPeopleEl ? numPeopleEl.value : 0, 10) || 0;
+              // Update success message with driver assignment info
+              var successMsg = document.querySelector('.trip-modal-success-message');
+              if (successMsg && data.assigned) {
+                successMsg.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-right:8px;"></i>Request submitted! Driver <strong>' + (data.driverName || 'Assigned') + '</strong> (Vehicle: ' + (data.vehicleNo || '') + ') will receive your booking.';
+              } else if (successMsg && data.assigned === false) {
+                successMsg.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-right:8px;"></i>Request submitted! We will assign an available driver soon.';
+              }
               showTransportSuccess();
             } else {
               alert(data && data.error ? data.error : 'Failed to submit transport request.');

@@ -19,8 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $psg_capacity = $_POST['psg_capacity'] ?? 0;
 
         // Validate passenger capacity
+        $capacity_limits = ['1' => 3, '2' => 4, '3' => 7, '4' => 7, '5' => 20, '6' => 20];
+        $capacity_names = ['1' => 'TUK', '2' => 'Car', '3' => 'Minivan', '4' => 'Minivan AC', '5' => 'Bus', '6' => 'Bus AC'];
         if ($psg_capacity < 1) {
             $error = "Passenger capacity must be at least 1.";
+        } elseif (isset($capacity_limits[$vehicle_type]) && $psg_capacity > $capacity_limits[$vehicle_type]) {
+            $error = "Maximum passenger capacity for " . $capacity_names[$vehicle_type] . " is " . $capacity_limits[$vehicle_type] . ".";
         } else {
             // Handle file upload
             $image = '';
@@ -197,3 +201,50 @@ try {
 
 </body>
 </html>
+
+<script>
+  // Passenger capacity limits per vehicle type
+  const capacityLimits = { '1': 3, '2': 4, '3': 7, '4': 7, '5': 20, '6': 20 };
+  const capacityNames = { '1': 'TUK', '2': 'Car', '3': 'Minivan', '4': 'Minivan AC', '5': 'Bus', '6': 'Bus AC' };
+  const vehicleTypeSelect = document.querySelector('select[name="vehicle_type"]');
+  const psgCapacityInput = document.querySelector('input[name="psg_capacity"]');
+
+  // Create error message element
+  const capacityError = document.createElement('div');
+  capacityError.style.cssText = 'color: #c62828; font-size: 13px; margin-top: 5px; display: none;';
+  psgCapacityInput.parentNode.insertBefore(capacityError, psgCapacityInput.nextSibling);
+
+  function validateCapacity() {
+    const type = vehicleTypeSelect.value;
+    const capacity = parseInt(psgCapacityInput.value) || 0;
+    const maxCapacity = capacityLimits[type];
+
+    if (type && maxCapacity && capacity > maxCapacity) {
+      capacityError.textContent = `Maximum passenger capacity for ${capacityNames[type]} is ${maxCapacity}.`;
+      capacityError.style.display = 'block';
+      psgCapacityInput.style.borderColor = '#c62828';
+      return false;
+    } else {
+      capacityError.style.display = 'none';
+      psgCapacityInput.style.borderColor = '';
+      return true;
+    }
+  }
+
+  vehicleTypeSelect.addEventListener('change', function() {
+    const type = this.value;
+    if (capacityLimits[type]) {
+      psgCapacityInput.setAttribute('max', capacityLimits[type]);
+    }
+    validateCapacity();
+  });
+
+  psgCapacityInput.addEventListener('input', validateCapacity);
+
+  document.querySelector('form').addEventListener('submit', function(e) {
+    if (!validateCapacity()) {
+      e.preventDefault();
+      psgCapacityInput.focus();
+    }
+  });
+</script>

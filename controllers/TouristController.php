@@ -134,6 +134,16 @@ class TouristController {
             }
         }
 
+        // Map tourist vehicle type string to DB vehicle_type ID
+        $vehicleTypeMap = [
+            'Tuk'        => '1',  // TUK
+            'Car'        => '2',  // VAN
+            'Minivan'    => '2',  // VAN
+            'Minivan AC' => '2',  // VAN
+            'Bus'        => '2',  // VAN
+            'Bus AC'     => '2',  // VAN
+        ];
+
         $request = new TransportRequest($this->db);
         $request->userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
         $request->customerName = trim($data['customerName'] ?? '');
@@ -149,11 +159,36 @@ class TouristController {
         $request->estimatedFare = isset($data['estimatedFare']) && $data['estimatedFare'] !== '' ? $data['estimatedFare'] : null;
         $request->distance = isset($data['distance']) && $data['distance'] !== '' ? $data['distance'] : null;
 
+        // Try to find an available vehicle and driver
+        $vehicleTypeStr = $request->vehicleType;
+        $dbTypeId = $vehicleTypeMap[$vehicleTypeStr] ?? null;
+        $assignedVehicle = null;
+
+        if ($dbTypeId) {
+            $vehicleModel = new Vehicle($this->db);
+            $assignedVehicle = $vehicleModel->findAvailableVehicle($dbTypeId, $request->date, $request->numPeople);
+        }
+
+        // Set assignment fields
+        if ($assignedVehicle) {
+            $request->assignedDriverId = trim($assignedVehicle['user_id']);
+            $request->assignedVehicleNo = $assignedVehicle['vehicle_no'];
+        }
+
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         if ($request->addRequest()) {
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true]);
+                $response = ['success' => true, 'requestId' => $request->id];
+                if ($assignedVehicle) {
+                    $response['assigned'] = true;
+                    $response['driverName'] = $assignedVehicle['driver_name'] ?? 'Driver';
+                    $response['vehicleNo'] = $assignedVehicle['vehicle_no'];
+                } else {
+                    $response['assigned'] = false;
+                    $response['message'] = 'Request saved. No available vehicle found at the moment. We will assign one soon.';
+                }
+                echo json_encode($response);
                 exit();
             }
             header("Location: /CeylonGo/public/tourist/transport-report");

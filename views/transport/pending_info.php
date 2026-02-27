@@ -1,4 +1,18 @@
-<?php require_once 'session_init.php'; ?>
+<?php require_once 'session_init.php'; 
+$booking = $booking ?? null;
+if (!$booking) {
+    header('Location: /CeylonGo/public/transporter/pending');
+    exit();
+}
+// Format date nicely
+$dateFormatted = date('F j, Y', strtotime($booking['date']));
+$dayOfWeek = date('l', strtotime($booking['date']));
+$timeFormatted = date('h:i A', strtotime($booking['pickup_time']));
+$customerName = trim(($booking['tourist_first_name'] ?? '') . ' ' . ($booking['tourist_last_name'] ?? ''));
+if (empty($customerName)) $customerName = $booking['customer_name'] ?? 'Customer';
+$customerEmail = $booking['tourist_email'] ?? '';
+$customerPhone = $booking['contact_number'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,7 +85,7 @@
       <!-- Page Header -->
       <div class="page-header">
         <h1><i class="fa-solid fa-clock"></i> Pending Booking Request</h1>
-        <button class="back-btn" onclick="history.back()">
+        <button class="back-btn" onclick="window.location.href='/CeylonGo/public/transporter/pending'">
           <i class="fa-solid fa-arrow-left"></i> Back to List
         </button>
       </div>
@@ -85,7 +99,7 @@
             <p>Please review and accept or reject this booking request</p>
           </div>
         </div>
-        <span class="booking-id">#BK-12345</span>
+        <span class="booking-id">#BK-<?php echo htmlspecialchars($booking['id']); ?></span>
       </div>
 
       <!-- Awaiting Response Box -->
@@ -103,30 +117,25 @@
             <div class="icon-box"><i class="fa-solid fa-user"></i></div>
             <div class="detail-text">
               <label>Customer Name</label>
-              <p>Sarah Fernando</p>
+              <p><?php echo htmlspecialchars($customerName); ?></p>
             </div>
           </div>
           <div class="customer-detail-item">
             <div class="icon-box"><i class="fa-solid fa-phone"></i></div>
             <div class="detail-text">
               <label>Contact Number</label>
-              <p>+94 71 456 7890</p>
+              <p><?php echo htmlspecialchars($customerPhone); ?></p>
             </div>
           </div>
+          <?php if (!empty($customerEmail)): ?>
           <div class="customer-detail-item">
             <div class="icon-box"><i class="fa-solid fa-envelope"></i></div>
             <div class="detail-text">
               <label>Email Address</label>
-              <p>sarah.fernando@email.com</p>
+              <p><?php echo htmlspecialchars($customerEmail); ?></p>
             </div>
           </div>
-          <div class="customer-detail-item">
-            <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
-            <div class="detail-text">
-              <label>Country</label>
-              <p>Australia</p>
-            </div>
-          </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -135,111 +144,83 @@
         <div class="trip-card">
           <div class="card-icon date"><i class="fa-regular fa-calendar"></i></div>
           <h4>Requested Date</h4>
-          <p>March 15, 2026</p>
-          <p class="small">Sunday</p>
+          <p><?php echo htmlspecialchars($dateFormatted); ?></p>
+          <p class="small"><?php echo htmlspecialchars($dayOfWeek); ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon time"><i class="fa-regular fa-clock"></i></div>
           <h4>Pickup Time</h4>
-          <p>09:00 AM</p>
-          <p class="small">Morning pickup</p>
-        </div>
-
-        <div class="trip-card">
-          <div class="card-icon duration"><i class="fa-solid fa-hourglass-half"></i></div>
-          <h4>Duration</h4>
-          <p>4 Days</p>
-          <p class="small">Multi-day trip</p>
+          <p><?php echo htmlspecialchars($timeFormatted); ?></p>
+          <p class="small"><?php echo strpos($timeFormatted, 'AM') !== false ? 'Morning pickup' : 'Afternoon pickup'; ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon location"><i class="fa-solid fa-location-dot"></i></div>
           <h4>Pickup Location</h4>
-          <p>123, Park Road</p>
-          <p class="small">Dehiwala, Colombo</p>
+          <p><?php echo htmlspecialchars($booking['pickup_location']); ?></p>
+        </div>
+
+        <div class="trip-card">
+          <div class="card-icon location"><i class="fa-solid fa-map-marker-alt"></i></div>
+          <h4>Dropoff Location</h4>
+          <p><?php echo htmlspecialchars($booking['dropoff_location']); ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon passengers"><i class="fa-solid fa-user-group"></i></div>
           <h4>Passengers</h4>
-          <p>4 Adults</p>
-          <p class="small">Family trip</p>
+          <p><?php echo htmlspecialchars($booking['num_people']); ?> People</p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon vehicle"><i class="fa-solid fa-car"></i></div>
           <h4>Vehicle Requested</h4>
-          <p>Van (AC)</p>
-          <p class="small">Spacious for luggage</p>
+          <p><?php echo htmlspecialchars($booking['vehicle_type']); ?></p>
+          <?php if (!empty($booking['assigned_vehicle_no'])): ?>
+          <p class="small">Assigned: <?php echo htmlspecialchars($booking['assigned_vehicle_no']); ?></p>
+          <?php endif; ?>
         </div>
       </div>
 
+      <?php if (!empty($booking['estimated_fare'])): ?>
+      <div class="trip-grid" style="margin-top: 0;">
+        <div class="trip-card">
+          <div class="card-icon" style="background: #e8f5e9; color: #2e7d32;"><i class="fa-solid fa-money-bill-wave"></i></div>
+          <h4>Estimated Fare</h4>
+          <p>LKR <?php echo number_format((float)$booking['estimated_fare'], 2); ?></p>
+        </div>
+        <?php if (!empty($booking['distance'])): ?>
+        <div class="trip-card">
+          <div class="card-icon" style="background: #e3f2fd; color: #1565c0;"><i class="fa-solid fa-road"></i></div>
+          <h4>Distance</h4>
+          <p><?php echo number_format((float)$booking['distance'], 1); ?> km</p>
+        </div>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
+
       <!-- Customer Notes -->
+      <?php if (!empty($booking['notes'])): ?>
       <div class="notes-section">
         <h4><i class="fa-solid fa-comment-dots"></i> Customer's Message</h4>
-        <p>Hi! We are a family of 4 traveling from Australia. We'd like to explore the hill country including Kandy, Nuwara Eliya, and Ella. We have quite a bit of luggage, so a spacious van would be great. Looking forward to hearing from you!</p>
+        <p><?php echo htmlspecialchars($booking['notes']); ?></p>
       </div>
-
-      <!-- Requested Itinerary Section -->
-      <div class="itinerary-section">
-        <h3><i class="fa-solid fa-map-marked-alt"></i> Requested Tour Plan</h3>
-        
-        <ul class="timeline">
-          <li class="timeline-item">
-            <div class="timeline-badge">1</div>
-            <div class="timeline-content">
-              <h4>Day 1: Kandy</h4>
-              <p>Pickup from Dehiwala and drive to Kandy. Visit the Temple of the Sacred Tooth Relic and explore the Kandy Lake area. Evening cultural dance show.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">2</div>
-            <div class="timeline-content">
-              <h4>Day 2: Nuwara Eliya</h4>
-              <p>Morning visit to Royal Botanic Gardens, then drive to Nuwara Eliya via tea plantations. Visit a tea factory and explore the "Little England" town.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">3</div>
-            <div class="timeline-content">
-              <h4>Day 3: Ella</h4>
-              <p>Scenic drive to Ella. Visit the Nine Arch Bridge, hike to Little Adam's Peak for panoramic views, and explore Ravana Falls.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">4</div>
-            <div class="timeline-content">
-              <h4>Day 4: Return</h4>
-              <p>Morning leisure time in Ella, then drive back to Colombo. Drop-off at the hotel or airport as per customer preference.</p>
-            </div>
-          </li>
-        </ul>
-      </div>
+      <?php endif; ?>
 
       <!-- Decision Section -->
       <div class="decision-section">
         <h3><i class="fa-solid fa-gavel"></i> Make Your Decision</h3>
         <div class="decision-buttons">
-          <button class="decision-btn accept" onclick="acceptBooking()">
+          <button class="decision-btn accept" onclick="acceptBooking(<?php echo $booking['id']; ?>)">
             <i class="fa-solid fa-check-circle"></i>
             Accept Booking
           </button>
-          <button class="decision-btn reject" onclick="rejectBooking()">
+          <button class="decision-btn reject" onclick="rejectBooking(<?php echo $booking['id']; ?>)">
             <i class="fa-solid fa-times-circle"></i>
             Reject Booking
           </button>
         </div>
-      </div>
-
-      <!-- Other Action Buttons -->
-      <div class="action-buttons">
-        <button class="action-btn primary" onclick="alert('Contacting customer...')">
-          <i class="fa-solid fa-phone"></i> Contact Customer
-        </button>
       </div>
 
     </main>
@@ -298,21 +279,48 @@
       });
     });
 
-    function acceptBooking() {
-      if (confirm('Are you sure you want to ACCEPT this booking request?')) {
-        alert('✅ Booking accepted successfully! The customer will be notified.');
-        // TODO: Add AJAX call to update booking status in database
-        window.location.href = '/CeylonGo/public/transporter/pending';
-      }
+    function acceptBooking(bookingId) {
+      if (!confirm('Are you sure you want to ACCEPT this booking request?')) return;
+      
+      fetch('/CeylonGo/public/transporter/accept-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          alert('✅ ' + data.message);
+          window.location.href = '/CeylonGo/public/transporter/pending';
+        } else {
+          alert('Error: ' + (data.message || 'Something went wrong'));
+        }
+      })
+      .catch(function() {
+        alert('An error occurred. Please try again.');
+      });
     }
 
-    function rejectBooking() {
-      if (confirm('Are you sure you want to REJECT this booking request?')) {
-        const reason = prompt('Please provide a reason for rejection (optional):');
-        alert('❌ Booking rejected. The customer will be notified.');
-        // TODO: Add AJAX call to update booking status with reason in database
-        window.location.href = '/CeylonGo/public/transporter/pending';
-      }
+    function rejectBooking(bookingId) {
+      if (!confirm('Are you sure you want to REJECT this booking request?')) return;
+      
+      fetch('/CeylonGo/public/transporter/reject-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          alert('❌ ' + data.message);
+          window.location.href = '/CeylonGo/public/transporter/pending';
+        } else {
+          alert('Error: ' + (data.message || 'Something went wrong'));
+        }
+      })
+      .catch(function() {
+        alert('An error occurred. Please try again.');
+      });
     }
   </script>
 

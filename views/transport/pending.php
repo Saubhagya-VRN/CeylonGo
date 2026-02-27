@@ -1,4 +1,6 @@
-<?php require_once 'session_init.php'; ?>
+<?php require_once 'session_init.php'; 
+$pending_bookings = $pending_bookings ?? [];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,6 +72,14 @@
     <div class="main-content">
       <h2 class="page-title"><i class="fa-regular fa-clock"></i> Pending Bookings</h2>
 
+      <?php if (empty($pending_bookings)): ?>
+        <div style="text-align: center; padding: 60px 20px; color: #888;">
+          <i class="fa-regular fa-clock" style="font-size: 48px; margin-bottom: 16px; display: block; color: #ccc;"></i>
+          <h3 style="margin: 0 0 8px; color: #666;">No Pending Bookings</h3>
+          <p style="margin: 0; font-size: 14px;">You don't have any pending booking requests at the moment.</p>
+        </div>
+      <?php else: ?>
+
       <!-- Desktop Table View -->
       <div class="table-container">
         <table>
@@ -79,228 +89,79 @@
               <th>Date</th>
               <th>Pickup Time</th>
               <th>Pickup Location</th>
-              <th>No. of Days</th>
+              <th>Passengers</th>
               <th>Manage Request</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>#12345</td>
-              <td>2025-03-15</td>
-              <td>09:00 AM</td>
-              <td>123, Park Road, Dehiwala</td>
-              <td>4</td>
+            <?php foreach ($pending_bookings as $booking): ?>
+            <tr id="booking-row-<?php echo $booking['id']; ?>">
+              <td>#<?php echo htmlspecialchars($booking['id']); ?></td>
+              <td><?php echo htmlspecialchars($booking['date']); ?></td>
+              <td><?php echo date('h:i A', strtotime($booking['pickup_time'])); ?></td>
+              <td><?php echo htmlspecialchars($booking['pickup_location']); ?></td>
+              <td><?php echo htmlspecialchars($booking['num_people']); ?></td>
               <td>
-                <button class="accept-btn">Accept</button>
-                <button class="reject-btn">Reject</button>
+                <button class="accept-btn" onclick="handleBooking(<?php echo $booking['id']; ?>, 'accept')">Accept</button>
+                <button class="reject-btn" onclick="handleBooking(<?php echo $booking['id']; ?>, 'reject')">Reject</button>
               </td>
-              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td><a href="/CeylonGo/public/transporter/pending_info?id=<?php echo $booking['id']; ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
-            <tr>
-              <td>#VN101</td>
-              <td>2026-01-20</td>
-              <td>07:30 AM</td>
-              <td>Galle Face Hotel</td>
-              <td>5</td>
-              <td>
-                <button class="accept-btn">Accept</button>
-                <button class="reject-btn">Reject</button>
-              </td>
-              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#VN102</td>
-              <td>2026-01-25</td>
-              <td>08:00 AM</td>
-              <td>Colombo Hilton</td>
-              <td>3</td>
-              <td>
-                <button class="accept-btn">Accept</button>
-                <button class="reject-btn">Reject</button>
-              </td>
-              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#VN103</td>
-              <td>2026-02-05</td>
-              <td>09:30 AM</td>
-              <td>Negombo Beach Resort</td>
-              <td>7</td>
-              <td>
-                <button class="accept-btn">Accept</button>
-                <button class="reject-btn">Reject</button>
-              </td>
-              <td><a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
+            <?php endforeach; ?>
           </tbody>
         </table>
       </div>
 
       <!-- Mobile Card View -->
       <div class="booking-cards">
-        <div class="booking-card-item" style="border-left-color: #ff9800;">
+        <?php foreach ($pending_bookings as $booking): ?>
+        <div class="booking-card-item" id="booking-card-<?php echo $booking['id']; ?>" style="border-left-color: #ff9800;">
           <div class="card-header">
-            <span class="booking-no">#12345</span>
-            <span class="status-badge pending" style="background: #fff3e0; color: #e65100;">Pending</span>
+            <span class="booking-no">#<?php echo htmlspecialchars($booking['id']); ?></span>
+            <span class="status-badge pending" style="background: #fff3e0; color: #e65100;">
+              <?php echo htmlspecialchars($booking['vehicle_type']); ?> - Pending
+            </span>
           </div>
           <div class="card-body">
             <div class="card-row">
               <i class="fa-solid fa-calendar"></i>
               <span class="label">Date:</span>
-              <span>2025-03-15</span>
+              <span><?php echo htmlspecialchars($booking['date']); ?></span>
             </div>
             <div class="card-row">
               <i class="fa-solid fa-clock"></i>
               <span class="label">Time:</span>
-              <span>09:00 AM</span>
+              <span><?php echo date('h:i A', strtotime($booking['pickup_time'])); ?></span>
             </div>
             <div class="card-row">
               <i class="fa-solid fa-location-dot"></i>
               <span class="label">Pickup:</span>
-              <span>123, Park Road, Dehiwala</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span class="label">Duration:</span>
-              <span>4 Days</span>
-            </div>
-          </div>
-          <div class="card-actions" style="flex-direction: column; gap: 12px;">
-            <div style="display: flex; gap: 10px;">
-              <button class="accept-btn" style="flex: 1;">Accept</button>
-              <button class="reject-btn" style="flex: 1;">Reject</button>
-            </div>
-            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
-
-        <!-- Van Pending Booking 1 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN101</span>
-            <span class="status-badge pending" style="background: #e3f2fd; color: #1565c0;">Van - Pending</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
-              <span class="label">Date:</span>
-              <span>2026-01-20</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
-              <span class="label">Time:</span>
-              <span>07:30 AM</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
-              <span class="label">Pickup:</span>
-              <span>Galle Face Hotel</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span class="label">Duration:</span>
-              <span>5 Days</span>
+              <span><?php echo htmlspecialchars($booking['pickup_location']); ?></span>
             </div>
             <div class="card-row">
               <i class="fa-solid fa-users"></i>
               <span class="label">Passengers:</span>
-              <span>8</span>
+              <span><?php echo htmlspecialchars($booking['num_people']); ?></span>
+            </div>
+            <div class="card-row">
+              <i class="fa-solid fa-user"></i>
+              <span class="label">Customer:</span>
+              <span><?php echo htmlspecialchars($booking['customer_name']); ?></span>
             </div>
           </div>
           <div class="card-actions" style="flex-direction: column; gap: 12px;">
             <div style="display: flex; gap: 10px;">
-              <button class="accept-btn" style="flex: 1;">Accept</button>
-              <button class="reject-btn" style="flex: 1;">Reject</button>
+              <button class="accept-btn" style="flex: 1;" onclick="handleBooking(<?php echo $booking['id']; ?>, 'accept')">Accept</button>
+              <button class="reject-btn" style="flex: 1;" onclick="handleBooking(<?php echo $booking['id']; ?>, 'reject')">Reject</button>
             </div>
-            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
+            <a href="/CeylonGo/public/transporter/pending_info?id=<?php echo $booking['id']; ?>" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
           </div>
         </div>
-
-        <!-- Van Pending Booking 2 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN102</span>
-            <span class="status-badge pending" style="background: #e3f2fd; color: #1565c0;">Van - Pending</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
-              <span class="label">Date:</span>
-              <span>2026-01-25</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
-              <span class="label">Time:</span>
-              <span>08:00 AM</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
-              <span class="label">Pickup:</span>
-              <span>Colombo Hilton</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span class="label">Duration:</span>
-              <span>3 Days</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-users"></i>
-              <span class="label">Passengers:</span>
-              <span>10</span>
-            </div>
-          </div>
-          <div class="card-actions" style="flex-direction: column; gap: 12px;">
-            <div style="display: flex; gap: 10px;">
-              <button class="accept-btn" style="flex: 1;">Accept</button>
-              <button class="reject-btn" style="flex: 1;">Reject</button>
-            </div>
-            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
-
-        <!-- Van Pending Booking 3 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN103</span>
-            <span class="status-badge pending" style="background: #e3f2fd; color: #1565c0;">Van - Pending</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <i class="fa-solid fa-calendar"></i>
-              <span class="label">Date:</span>
-              <span>2026-02-05</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-clock"></i>
-              <span class="label">Time:</span>
-              <span>09:30 AM</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-location-dot"></i>
-              <span class="label">Pickup:</span>
-              <span>Negombo Beach Resort</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span class="label">Duration:</span>
-              <span>7 Days</span>
-            </div>
-            <div class="card-row">
-              <i class="fa-solid fa-users"></i>
-              <span class="label">Passengers:</span>
-              <span>12</span>
-            </div>
-          </div>
-          <div class="card-actions" style="flex-direction: column; gap: 12px;">
-            <div style="display: flex; gap: 10px;">
-              <button class="accept-btn" style="flex: 1;">Accept</button>
-              <button class="reject-btn" style="flex: 1;">Reject</button>
-            </div>
-            <a href="/CeylonGo/public/transporter/pending_info" class="see-more-link">View Details <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
+        <?php endforeach; ?>
       </div>
+
+      <?php endif; ?>
     </div>
   </div>
 
@@ -311,6 +172,45 @@
       <li><a href="#">Contact Us</a></li>
     </ul>
   </footer>
+
+  <!-- Accept/Reject Booking Script -->
+  <script>
+    function handleBooking(bookingId, action) {
+      var actionText = action === 'accept' ? 'ACCEPT' : 'REJECT';
+      if (!confirm('Are you sure you want to ' + actionText + ' this booking request?')) return;
+
+      var url = action === 'accept' 
+        ? '/CeylonGo/public/transporter/accept-booking' 
+        : '/CeylonGo/public/transporter/reject-booking';
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success) {
+          alert((action === 'accept' ? '✅ ' : '❌ ') + data.message);
+          // Remove the row/card from the page
+          var row = document.getElementById('booking-row-' + bookingId);
+          var card = document.getElementById('booking-card-' + bookingId);
+          if (row) row.remove();
+          if (card) card.remove();
+          // If no more bookings, reload to show empty state
+          var tbody = document.querySelector('tbody');
+          if (tbody && tbody.children.length === 0) location.reload();
+          var cards = document.querySelector('.booking-cards');
+          if (cards && cards.children.length === 0) location.reload();
+        } else {
+          alert('Error: ' + (data.message || 'Something went wrong'));
+        }
+      })
+      .catch(function() {
+        alert('An error occurred. Please try again.');
+      });
+    }
+  </script>
 
   <!-- Hamburger Menu Toggle Script -->
   <script>
