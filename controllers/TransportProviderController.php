@@ -30,7 +30,14 @@ class TransportProviderController {
     }
 
     public function pending() {
-        view('transport/pending');
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $driverId = trim($_SESSION['transporter_id']);
+        $requestModel = new TransportRequest($this->db);
+        $pending_bookings = $requestModel->getPendingByDriverId($driverId);
+        view('transport/pending', ['pending_bookings' => $pending_bookings]);
     }
 
     public function cancelled() {
@@ -152,11 +159,102 @@ class TransportProviderController {
     }
 
     public function pendingInfo() {
-        view('transport/pending_info');
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $bookingId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        if ($bookingId <= 0) {
+            header('Location: /CeylonGo/public/transporter/pending');
+            exit();
+        }
+        $requestModel = new TransportRequest($this->db);
+        $booking = $requestModel->getRequestByIdFull($bookingId);
+        
+        // Verify this booking belongs to the logged-in driver
+        if (!$booking || trim($booking['assigned_driver_id']) !== trim($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/transporter/pending');
+            exit();
+        }
+        view('transport/pending_info', ['booking' => $booking]);
     }
 
     public function cancelledInfo() {
         view('transport/cancelled_info');
+    }
+
+    /**
+     * Accept a pending booking (AJAX)
+     */
+    public function acceptBooking() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['transporter_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit();
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $bookingId = isset($input['booking_id']) ? (int) $input['booking_id'] : 0;
+        if ($bookingId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+        $requestModel = new TransportRequest($this->db);
+        $booking = $requestModel->getRequestByIdFull($bookingId);
+        if (!$booking || trim($booking['assigned_driver_id']) !== trim($_SESSION['transporter_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Booking not found or not assigned to you']);
+            exit();
+        }
+        if ($requestModel->updateStatus($bookingId, 'confirmed')) {
+            echo json_encode(['success' => true, 'message' => 'Booking accepted successfully!']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to accept booking']);
+        }
+        exit();
+    }
+
+    /**
+     * Reject a pending booking (AJAX) — re-assigns to another driver or leaves unassigned
+     */
+    public function rejectBooking() {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['transporter_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+            exit();
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $bookingId = isset($input['booking_id']) ? (int) $input['booking_id'] : 0;
+        if ($bookingId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+        $requestModel = new TransportRequest($this->db);
+        $booking = $requestModel->getRequestByIdFull($bookingId);
+        if (!$booking || trim($booking['assigned_driver_id']) !== trim($_SESSION['transporter_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Booking not found or not assigned to you']);
+            exit();
+        }
+        
+        // Map vehicle type string to DB type ID for re-assignment
+        $vehicleTypeMap = [
+            'Tuk' => '1', 'Car' => '2', 'Minivan' => '2',
+            'Minivan AC' => '2', 'Bus' => '2', 'Bus AC' => '2'
+        ];
+        $dbTypeId = $vehicleTypeMap[$booking['vehicle_type']] ?? null;
+
+        // First unassign current driver
+        $requestModel->assignDriver($bookingId, null, null);
+        
+        // Try to find another available vehicle
+        if ($dbTypeId) {
+            $vehicleModel = new Vehicle($this->db);
+            $newVehicle = $vehicleModel->findAvailableVehicle($dbTypeId, $booking['date'], (int) $booking['num_people']);
+            if ($newVehicle) {
+                $requestModel->assignDriver($bookingId, trim($newVehicle['user_id']), $newVehicle['vehicle_no']);
+            }
+        }
+        
+        echo json_encode(['success' => true, 'message' => 'Booking rejected. It will be reassigned to another driver.']);
+        exit();
     }
 
     public function registerView() {

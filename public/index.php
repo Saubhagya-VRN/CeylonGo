@@ -36,6 +36,8 @@ $router->post('transporter/update-vehicle', 'TransportProviderController@updateV
 $router->get('transporter/payment', 'TransportProviderController@payment');
 $router->post('transporter/payment', 'TransportProviderController@saveBankDetails');
 $router->post('registerProvider', 'TransportProviderController@registerProvider');
+$router->post('transporter/accept-booking', 'TransportProviderController@acceptBooking');
+$router->post('transporter/reject-booking', 'TransportProviderController@rejectBooking');
 
 // ========== TOURIST ROUTES ==========
 $router->get('tourist/register', 'TouristController@registerView');

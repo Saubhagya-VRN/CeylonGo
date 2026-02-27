@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $db = Database::getConnection();
         $bankModel = new GuideBankDetails($db);
         
-        $bankModel->id = $user_id;
+        $bankModel->ref_id = $user_id;
         $bankModel->bank_name = trim($_POST['bank_name']);
         $bankModel->acc_no = trim($_POST['acc_no']);
         $bankModel->acc_holder_name = trim($_POST['acc_holder_name']);

@@ -49,8 +49,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
             $psg_capacity = $_POST['psg_capacity'];
             
             // Validate passenger capacity
+            $capacity_limits = ['1' => 3, '2' => 4, '3' => 7, '4' => 7, '5' => 20, '6' => 20];
+            $capacity_names = ['1' => 'TUK', '2' => 'Car', '3' => 'Minivan', '4' => 'Minivan AC', '5' => 'Bus', '6' => 'Bus AC'];
             if ($psg_capacity < 1) {
                 $error = "Passenger capacity must be at least 1.";
+            } elseif (isset($capacity_limits[$vehicle_type]) && $psg_capacity > $capacity_limits[$vehicle_type]) {
+                $error = "Maximum passenger capacity for " . $capacity_names[$vehicle_type] . " is " . $capacity_limits[$vehicle_type] . ".";
             } else {
                 // Handle file upload
                 $image = '';
@@ -495,9 +499,11 @@ try {
                   <h4>
                     <?= 
                       $v['vehicle_type'] == '1' ? 'TUK' :
-                      ($v['vehicle_type'] == '2' ? 'VAN' :
-                      ($v['vehicle_type'] == '3' ? 'CAR' :
-                      ($v['vehicle_type'] == '4' ? 'BUS' : $v['vehicle_type'])))
+                      ($v['vehicle_type'] == '2' ? 'Car' :
+                      ($v['vehicle_type'] == '3' ? 'Minivan' :
+                      ($v['vehicle_type'] == '4' ? 'Minivan AC' :
+                      ($v['vehicle_type'] == '5' ? 'Bus' :
+                      ($v['vehicle_type'] == '6' ? 'Bus AC' : $v['vehicle_type'])))))
                     ?>
                   </h4>
                   <div class="vehicle-detail">
@@ -632,8 +638,16 @@ try {
       document.getElementById('edit_vehicle_type').value = vehicleType;
       
       // Set display value for vehicle type
-      const vehicleTypeNames = { '1': 'TUK', '2': 'VAN', '3': 'CAR', '4': 'BUS' };
+      const vehicleTypeNames = { '1': 'TUK', '2': 'Car', '3': 'Minivan', '4': 'Minivan AC', '5': 'Bus', '6': 'Bus AC' };
       document.getElementById('edit_vehicle_type_display').value = vehicleTypeNames[vehicleType] || vehicleType;
+      
+      // Set max capacity based on vehicle type
+      const capacityLimits = { '1': 3, '2': 4, '3': 7, '4': 7, '5': 20, '6': 20 };
+      const maxCap = capacityLimits[vehicleType];
+      const editCapInput = document.getElementById('edit_psg_capacity');
+      if (maxCap) {
+        editCapInput.setAttribute('max', maxCap);
+      }
       
       document.getElementById('edit_psg_capacity').value = psgCapacity;
       
@@ -674,6 +688,21 @@ try {
         closeEditModal();
       }
     }
+
+    // Validate edit modal capacity on submit
+    document.getElementById('editVehicleForm').addEventListener('submit', function(e) {
+      const capacityLimits = { '1': 3, '2': 4, '3': 7, '4': 7, '5': 20, '6': 20 };
+      const capacityNames = { '1': 'TUK', '2': 'Car', '3': 'Minivan', '4': 'Minivan AC', '5': 'Bus', '6': 'Bus AC' };
+      const vType = document.getElementById('edit_vehicle_type').value;
+      const cap = parseInt(document.getElementById('edit_psg_capacity').value) || 0;
+      const maxCap = capacityLimits[vType];
+
+      if (maxCap && cap > maxCap) {
+        e.preventDefault();
+        alert(`Maximum passenger capacity for ${capacityNames[vType]} is ${maxCap}.`);
+        document.getElementById('edit_psg_capacity').focus();
+      }
+    });
   </script>
 
   <!-- Footer -->
