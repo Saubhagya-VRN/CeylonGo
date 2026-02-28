@@ -9,29 +9,19 @@
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
-    
-    <!-- Component styles -->
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/cards.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/buttons.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/forms.css">
-
-    <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">  
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/cancelled_info.css">
 </head>
 <body>
 
-  <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
       <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
+        <span></span><span></span><span></span>
       </button>
       <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
@@ -48,11 +38,9 @@
     </nav>
   </header>
 
-  <!-- Sidebar Overlay for Mobile -->
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="page-wrapper">
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <ul>
         <li><a href="/CeylonGo/public/transporter/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -65,9 +53,14 @@
       </ul>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
       
+      <?php
+        $bookingDate = date('F d, Y', strtotime($booking['date']));
+        $bookingDay = date('l', strtotime($booking['date']));
+        $pickupTime = date('h:i A', strtotime($booking['pickup_time']));
+      ?>
+
       <!-- Page Header -->
       <div class="page-header">
         <h1><i class="fa-solid fa-ban"></i> Cancelled Booking Details</h1>
@@ -85,17 +78,21 @@
             <p>This booking has been cancelled and is no longer active</p>
           </div>
         </div>
-        <span class="booking-id">#BK-54321</span>
+        <span class="booking-id">#BK-<?= htmlspecialchars($booking['id']) ?></span>
       </div>
 
-      <!-- Cancellation Reason -->
+      <?php if (!empty($booking['notes'])): ?>
+      <!-- Cancellation Notes -->
       <div class="cancellation-card">
-        <h4><i class="fa-solid fa-comment-dots"></i> Cancellation Reason</h4>
-        <p>Customer cancelled due to change in travel plans. They mentioned that their flight was rescheduled and they will be arriving on a different date. They apologize for any inconvenience caused.</p>
+        <h4><i class="fa-solid fa-comment-dots"></i> Notes</h4>
+        <p><?= htmlspecialchars($booking['notes']) ?></p>
+        <?php if (!empty($booking['updated_at'])): ?>
         <div class="cancelled-date">
-          <i class="fa-regular fa-calendar"></i> Cancelled on: January 5, 2026 at 02:30 PM
+          <i class="fa-regular fa-calendar"></i> Updated on: <?= date('F d, Y \a\t h:i A', strtotime($booking['updated_at'])) ?>
         </div>
+        <?php endif; ?>
       </div>
+      <?php endif; ?>
 
       <!-- Customer Information -->
       <div class="info-card">
@@ -105,30 +102,34 @@
             <div class="icon-box"><i class="fa-solid fa-user"></i></div>
             <div class="detail-text">
               <label>Customer Name</label>
-              <p>Emma Rajapaksa</p>
+              <p><?= htmlspecialchars($booking['customer_name']) ?></p>
             </div>
           </div>
           <div class="detail-item">
             <div class="icon-box"><i class="fa-solid fa-phone"></i></div>
             <div class="detail-text">
               <label>Contact Number</label>
-              <p>+94 77 456 7890</p>
+              <p><?= htmlspecialchars($booking['contact_number'] ?? 'N/A') ?></p>
             </div>
           </div>
+          <?php if (!empty($booking['tourist_email'])): ?>
           <div class="detail-item">
             <div class="icon-box"><i class="fa-solid fa-envelope"></i></div>
             <div class="detail-text">
               <label>Email Address</label>
-              <p>emma.r@email.com</p>
+              <p><?= htmlspecialchars($booking['tourist_email']) ?></p>
             </div>
           </div>
+          <?php endif; ?>
+          <?php if (!empty($booking['tourist_first_name'])): ?>
           <div class="detail-item">
-            <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
+            <div class="icon-box"><i class="fa-solid fa-id-card"></i></div>
             <div class="detail-text">
-              <label>Country</label>
-              <p>Australia</p>
+              <label>Account Name</label>
+              <p><?= htmlspecialchars($booking['tourist_first_name'] . ' ' . ($booking['tourist_last_name'] ?? '')) ?></p>
             </div>
           </div>
+          <?php endif; ?>
         </div>
       </div>
 
@@ -141,56 +142,50 @@
         <div class="trip-card">
           <div class="card-icon date"><i class="fa-regular fa-calendar"></i></div>
           <h4>Scheduled Date</h4>
-          <p>January 10, 2026</p>
-          <p class="small">Saturday</p>
+          <p><?= $bookingDate ?></p>
+          <p class="small"><?= $bookingDay ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon time"><i class="fa-regular fa-clock"></i></div>
           <h4>Pickup Time</h4>
-          <p>09:00 AM</p>
-          <p class="small">Morning pickup</p>
+          <p><?= $pickupTime ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon location"><i class="fa-solid fa-location-dot"></i></div>
           <h4>Pickup Location</h4>
-          <p>Galle Face Hotel, Colombo</p>
-          <p class="small">Main entrance</p>
+          <p><?= htmlspecialchars($booking['pickup_location']) ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon location"><i class="fa-solid fa-flag-checkered"></i></div>
           <h4>Drop-off Location</h4>
-          <p>Yala National Park</p>
-          <p class="small">Safari entrance</p>
+          <p><?= htmlspecialchars($booking['dropoff_location']) ?></p>
         </div>
 
         <div class="trip-card">
           <div class="card-icon passengers"><i class="fa-solid fa-user-group"></i></div>
           <h4>Passengers</h4>
-          <p>4 Adults</p>
-          <p class="small">No children</p>
+          <p><?= htmlspecialchars($booking['num_people']) ?> People</p>
         </div>
 
         <div class="trip-card">
-          <div class="card-icon vehicle"><i class="fa-solid fa-van-shuttle"></i></div>
+          <div class="card-icon vehicle"><i class="fa-solid fa-car"></i></div>
           <h4>Vehicle Type</h4>
-          <p>Van (AC)</p>
-          <p class="small">8 seater capacity</p>
+          <p><?= htmlspecialchars($booking['vehicle_type_name'] ?? $booking['vehicle_type']) ?></p>
         </div>
       </div>
 
-      <!-- Refund Status -->
-      <div class="refund-card pending">
-        <h4><i class="fa-solid fa-clock"></i> Refund Status: Processing</h4>
-        <p>The refund is currently being processed. Customer will receive their refund within 5-7 business days. Refund amount: LKR 15,000</p>
+      <?php if (!empty($booking['estimated_fare'])): ?>
+      <div class="info-card" style="background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 50%, #ede9fe 100%); color: #1e293b; border: 1px solid #bfdbfe;">
+        <h3 style="color: #3b82f6;"><i class="fa-solid fa-money-bill-wave"></i> Estimated Fare: LKR <?= number_format($booking['estimated_fare'], 2) ?></h3>
       </div>
+      <?php endif; ?>
 
     </main>
   </div>
 
-  <!-- Footer -->
   <footer>
     <ul>
       <li><a href="#">About Us</a></li>
@@ -198,67 +193,33 @@
     </ul>
   </footer>
 
-  <!-- Hamburger Menu Toggle Script -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const hamburgerBtn = document.getElementById('hamburgerBtn');
       const sidebar = document.getElementById('sidebar');
       const sidebarOverlay = document.getElementById('sidebarOverlay');
-      
       function toggleSidebar() {
-        hamburgerBtn.classList.toggle('active');
-        sidebar.classList.toggle('active');
-        sidebarOverlay.classList.toggle('active');
+        hamburgerBtn.classList.toggle('active'); sidebar.classList.toggle('active'); sidebarOverlay.classList.toggle('active');
         document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
       }
-      
       function closeSidebar() {
-        hamburgerBtn.classList.remove('active');
-        sidebar.classList.remove('active');
-        sidebarOverlay.classList.remove('active');
+        hamburgerBtn.classList.remove('active'); sidebar.classList.remove('active'); sidebarOverlay.classList.remove('active');
         document.body.style.overflow = '';
       }
-      
-      if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', toggleSidebar);
-      }
-      
-      if (sidebarOverlay) {
-        sidebarOverlay.addEventListener('click', closeSidebar);
-      }
-      
-      const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
-      sidebarLinks.forEach(link => {
-        link.addEventListener('click', function() {
-          if (window.innerWidth <= 768) {
-            closeSidebar();
-          }
-        });
+      if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleSidebar);
+      if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+      document.querySelectorAll('.sidebar ul li a').forEach(link => {
+        link.addEventListener('click', function() { if (window.innerWidth <= 768) closeSidebar(); });
       });
-      
-      window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-          closeSidebar();
-        }
-      });
+      window.addEventListener('resize', function() { if (window.innerWidth > 768) closeSidebar(); });
     });
   </script>
-
-  <!-- Profile Dropdown Script -->
   <script>
-    function toggleProfileDropdown() {
-      const dropdown = document.getElementById('profileDropdown');
-      dropdown.classList.toggle('show');
-    }
-
-    // Close dropdown when clicking outside
+    function toggleProfileDropdown() { document.getElementById('profileDropdown').classList.toggle('show'); }
     document.addEventListener('click', function(event) {
       const dropdown = document.getElementById('profileDropdown');
       const profilePic = document.querySelector('.profile-pic');
-      
-      if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
-        dropdown.classList.remove('show');
-      }
+      if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) dropdown.classList.remove('show');
     });
   </script>
 
