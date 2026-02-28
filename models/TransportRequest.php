@@ -165,5 +165,26 @@ class TransportRequest {
         $stmt->bindParam(":id", $id, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    /**
+     * Get cancelled bookings for a driver
+     */
+    public function getCancelledByDriverId($driverId) {
+        $query = "SELECT tr.id, tr.customer_name, tr.contact_number, tr.vehicle_type, 
+                  tr.date, tr.pickup_time, tr.pickup_location, tr.dropoff_location,
+                  tr.num_people, tr.notes, tr.estimated_fare, tr.distance, tr.status,
+                  tr.assigned_vehicle_no, tr.created_at,
+                  tu.first_name AS tourist_first_name, tu.last_name AS tourist_last_name,
+                  tu.email AS tourist_email
+                  FROM " . $this->table . " tr
+                  LEFT JOIN tourist_users tu ON tr.user_id = tu.id
+                  WHERE TRIM(tr.assigned_driver_id) = TRIM(:driver_id)
+                    AND tr.status = 'cancelled'
+                  ORDER BY tr.date DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":driver_id", $driverId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

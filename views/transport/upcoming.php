@@ -69,253 +69,95 @@
     <div class="main-content">
       <h2 class="page-title"><span class="icon icon-calendar"></span> Upcoming Bookings</h2>
 
+      <?php if (!empty($confirmed_bookings) && count($confirmed_bookings) > 0): ?>
       <!-- Desktop Table View -->
       <div class="table-container">
         <table>
           <thead>
             <tr>
               <th>Booking No</th>
+              <th>Customer</th>
               <th>Date</th>
               <th>Pickup Time</th>
               <th>Pickup Location</th>
+              <th>Vehicle Type</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
+            <?php foreach ($confirmed_bookings as $booking): ?>
             <tr>
-              <td>#12345</td>
-              <td>2025-03-15</td>
-              <td>09:00 AM</td>
-              <td>123, Park Road, Dehiwala</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              <td>#<?= htmlspecialchars($booking['id']) ?></td>
+              <td><?= htmlspecialchars($booking['customer_name']) ?></td>
+              <td><?= date('Y-m-d', strtotime($booking['date'])) ?></td>
+              <td><?= date('h:i A', strtotime($booking['pickup_time'])) ?></td>
+              <td><?= htmlspecialchars($booking['pickup_location']) ?></td>
+              <td><?= htmlspecialchars($booking['vehicle_type']) ?></td>
+              <td><a href="/CeylonGo/public/transporter/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>
-            <tr>
-              <td>#77889</td>
-              <td>2025-08-19</td>
-              <td>02:30 PM</td>
-              <td>202 Cedar Road, Colombo</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#VN001</td>
-              <td>2026-01-15</td>
-              <td>08:30 AM</td>
-              <td>Colombo Fort</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#VN002</td>
-              <td>2026-01-18</td>
-              <td>06:00 AM</td>
-              <td>Mount Lavinia Hotel</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#VN003</td>
-              <td>2026-01-22</td>
-              <td>10:00 AM</td>
-              <td>Bandaranaike Airport</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#VN004</td>
-              <td>2026-02-01</td>
-              <td>07:00 AM</td>
-              <td>Kandy City</td>
-              <td><a href="/CeylonGo/public/transporter/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
+            <?php endforeach; ?>
           </tbody>
         </table>
       </div>
 
       <!-- Mobile Card View -->
       <div class="booking-cards">
+        <?php foreach ($confirmed_bookings as $booking): ?>
         <div class="booking-card-item">
           <div class="card-header">
-            <span class="booking-no">#12345</span>
-            <span class="status-badge upcoming">Upcoming</span>
+            <span class="booking-no">#<?= htmlspecialchars($booking['id']) ?></span>
+            <span class="status-badge upcoming">Confirmed</span>
           </div>
           <div class="card-body">
             <div class="card-row">
+              <span class="icon icon-user"></span>
+              <span class="label">Customer:</span>
+              <span><?= htmlspecialchars($booking['customer_name']) ?></span>
+            </div>
+            <div class="card-row">
               <span class="icon icon-calendar"></span>
               <span class="label">Date:</span>
-              <span>2025-03-15</span>
+              <span><?= date('Y-m-d', strtotime($booking['date'])) ?></span>
             </div>
             <div class="card-row">
               <span class="icon icon-clock"></span>
               <span class="label">Time:</span>
-              <span>09:00 AM</span>
+              <span><?= date('h:i A', strtotime($booking['pickup_time'])) ?></span>
             </div>
             <div class="card-row">
               <span class="icon icon-location"></span>
               <span class="label">Pickup:</span>
-              <span>123, Park Road, Dehiwala</span>
-            </div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
-          </div>
-        </div>
-
-        <div class="booking-card-item">
-          <div class="card-header">
-            <span class="booking-no">#77889</span>
-            <span class="status-badge upcoming">Upcoming</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <span class="icon icon-calendar"></span>
-              <span class="label">Date:</span>
-              <span>2025-08-19</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-clock"></span>
-              <span class="label">Time:</span>
-              <span>02:30 PM</span>
+              <span><?= htmlspecialchars($booking['pickup_location']) ?></span>
             </div>
             <div class="card-row">
               <span class="icon icon-location"></span>
-              <span class="label">Pickup:</span>
-              <span>202 Cedar Road, Colombo</span>
-            </div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
-          </div>
-        </div>
-
-        <!-- Van Booking 1 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN001</span>
-            <span class="status-badge upcoming">Van Booking</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <span class="icon icon-calendar"></span>
-              <span class="label">Date:</span>
-              <span>2026-01-15</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-clock"></span>
-              <span class="label">Time:</span>
-              <span>08:30 AM</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-location"></span>
-              <span class="label">Pickup:</span>
-              <span>Colombo Fort</span>
+              <span class="label">Dropoff:</span>
+              <span><?= htmlspecialchars($booking['dropoff_location']) ?></span>
             </div>
             <div class="card-row">
               <span class="icon icon-users"></span>
               <span class="label">Passengers:</span>
-              <span>10</span>
+              <span><?= htmlspecialchars($booking['num_people']) ?></span>
             </div>
           </div>
           <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
+            <a href="/CeylonGo/public/transporter/info?id=<?= $booking['id'] ?>" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
           </div>
         </div>
-
-        <!-- Van Booking 2 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN002</span>
-            <span class="status-badge upcoming">Van Booking</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <span class="icon icon-calendar"></span>
-              <span class="label">Date:</span>
-              <span>2026-01-18</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-clock"></span>
-              <span class="label">Time:</span>
-              <span>06:00 AM</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-location"></span>
-              <span class="label">Pickup:</span>
-              <span>Mount Lavinia Hotel</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-users"></span>
-              <span class="label">Passengers:</span>
-              <span>12</span>
-            </div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
-          </div>
-        </div>
-
-        <!-- Van Booking 3 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN003</span>
-            <span class="status-badge upcoming">Van Booking</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <span class="icon icon-calendar"></span>
-              <span class="label">Date:</span>
-              <span>2026-01-22</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-clock"></span>
-              <span class="label">Time:</span>
-              <span>10:00 AM</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-location"></span>
-              <span class="label">Pickup:</span>
-              <span>Bandaranaike Airport</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-users"></span>
-              <span class="label">Passengers:</span>
-              <span>7</span>
-            </div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
-          </div>
-        </div>
-
-        <!-- Van Booking 4 -->
-        <div class="booking-card-item" style="border-left-color: #2196F3;">
-          <div class="card-header">
-            <span class="booking-no">#VN004</span>
-            <span class="status-badge upcoming">Van Booking</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row">
-              <span class="icon icon-calendar"></span>
-              <span class="label">Date:</span>
-              <span>2026-02-01</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-clock"></span>
-              <span class="label">Time:</span>
-              <span>07:00 AM</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-location"></span>
-              <span class="label">Pickup:</span>
-              <span>Kandy City</span>
-            </div>
-            <div class="card-row">
-              <span class="icon icon-users"></span>
-              <span class="label">Passengers:</span>
-              <span>9</span>
-            </div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/transporter/info" class="see-more-link">View Details <span class="icon icon-arrow-right"></span></a>
-          </div>
-        </div>
+        <?php endforeach; ?>
       </div>
+
+      <?php else: ?>
+      <!-- No bookings message -->
+      <div style="text-align: center; padding: 60px 20px; color: #888;">
+        <i class="fa-regular fa-calendar-xmark" style="font-size: 3em; margin-bottom: 15px; display: block; opacity: 0.4;"></i>
+        <h3 style="color: #666; margin-bottom: 10px;">No Upcoming Bookings</h3>
+        <p>You don't have any confirmed bookings yet. Once you accept a pending booking, it will appear here.</p>
+        <a href="/CeylonGo/public/transporter/pending" style="display: inline-block; margin-top: 15px; padding: 10px 24px; background: #2563eb; color: white; border-radius: 8px; text-decoration: none; font-weight: 500;">
+          <i class="fa-regular fa-clock"></i> View Pending Bookings
+        </a>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -392,4 +234,3 @@
   </script>
 </body>
 </html>
-

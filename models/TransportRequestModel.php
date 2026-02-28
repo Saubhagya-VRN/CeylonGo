@@ -98,5 +98,27 @@ class TransportRequestModel {
         $stmt->bind_param("i", $id);
         return $stmt->execute();
     }
+
+    /**
+     * Get all transport requests for a user with driver and vehicle details
+     */
+    public function getByUserIdWithDriverDetails($user_id) {
+        $query = "SELECT tr.*, 
+                  tu.full_name AS driver_name, tu.contact_no AS driver_contact, tu.profile_image AS driver_image,
+                  tv.vehicle_no AS v_vehicle_no, tv.vehicle_type AS v_vehicle_type, 
+                  tv.image AS vehicle_image, tv.psg_capacity AS v_psg_capacity,
+                  tvt.type_name AS vehicle_type_name
+                  FROM " . $this->table . " tr
+                  LEFT JOIN transport_users tu ON TRIM(tr.assigned_driver_id) = TRIM(tu.user_id)
+                  LEFT JOIN transport_vehicle tv ON tr.assigned_vehicle_no = tv.vehicle_no
+                  LEFT JOIN transport_vehicle_types tvt ON tv.vehicle_type = tvt.type_id
+                  WHERE tr.user_id = ?
+                  ORDER BY tr.created_at DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        return $stmt->get_result();
+    }
 }
 ?>
