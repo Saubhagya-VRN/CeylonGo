@@ -144,48 +144,44 @@
           return bookingDate < today;
         }
 
-        // Tour Booking Data
+        // Build booking data from real DB records (injected by PHP)
         const allBookingData = [
-          {
-            date: "2026-01-20",
-            status: "upcoming",
-            customerName: "John Silva",
-            tourType: "Historical Tour",
-            time: "09:00 AM",
-            location: "Sigiriya Rock Fortress",
-            numPeople: 4,
-            notes: "English speaking"
-          },
-          {
-            date: "2026-01-25",
-            status: "upcoming",
-            customerName: "Sarah Fernando",
-            tourType: "Cultural Tour",
-            time: "08:00 AM",
-            location: "Kandy Temple",
-            numPeople: 6,
-            notes: "Family group"
-          },
-          {
-            date: "2026-02-01",
-            status: "upcoming",
-            customerName: "David Perera",
-            tourType: "Beach Tour",
-            time: "10:00 AM",
-            location: "Galle Fort",
-            numPeople: 3,
-            notes: ""
-          },
-          {
-            date: "2026-01-28",
-            status: "cancelled",
-            customerName: "Emma Rajapaksa",
-            tourType: "Wildlife Tour",
-            time: "06:00 AM",
-            location: "Yala National Park",
-            numPeople: 2,
-            notes: "Cancelled due to weather"
-          }
+          <?php
+            $allCalendarBookings = [];
+            // Upcoming (approved) bookings
+            if (!empty($upcomingBookings)) {
+              foreach ($upcomingBookings as $b) {
+                $timeFormatted = date('h:i A', strtotime($b['time']));
+                $allCalendarBookings[] = json_encode([
+                  'date' => $b['date'],
+                  'status' => 'upcoming',
+                  'customerName' => $b['customerName'],
+                  'tourType' => $b['language'] . ' Tour',
+                  'time' => $timeFormatted,
+                  'location' => $b['location'],
+                  'numPeople' => 1,
+                  'notes' => $b['notes'] ?? ''
+                ]);
+              }
+            }
+            // Pending bookings (show in calendar as pending)
+            if (!empty($pendingBookings)) {
+              foreach ($pendingBookings as $b) {
+                $timeFormatted = date('h:i A', strtotime($b['time']));
+                $allCalendarBookings[] = json_encode([
+                  'date' => $b['date'],
+                  'status' => 'pending',
+                  'customerName' => $b['customerName'],
+                  'tourType' => $b['language'] . ' Tour',
+                  'time' => $timeFormatted,
+                  'location' => $b['location'],
+                  'numPeople' => 1,
+                  'notes' => $b['notes'] ?? ''
+                ]);
+              }
+            }
+            echo implode(",\n          ", $allCalendarBookings);
+          ?>
         ];
 
         const bookingData = allBookingData.filter(booking => !isPastDate(booking.date));
@@ -234,12 +230,12 @@
             // Check if this date has bookings
             const bookingsOnDate = bookingData.filter(b => b.date === fullDate);
             if (bookingsOnDate.length > 0) {
-              const hasCancelled = bookingsOnDate.some(b => b.status === "cancelled");
+              const hasPending = bookingsOnDate.some(b => b.status === "pending");
               const hasUpcoming = bookingsOnDate.some(b => b.status === "upcoming");
               
-              if (hasCancelled && hasUpcoming) {
+              if (hasPending && hasUpcoming) {
                 dateDiv.classList.add("booking-mixed");
-              } else if (hasCancelled) {
+              } else if (hasPending) {
                 dateDiv.classList.add("booking-cancelled");
               } else {
                 dateDiv.classList.add("booking-upcoming");
@@ -313,7 +309,7 @@
         }
         </script>
 
-        <!-- Pending Booking Requests -->
+        <!-- Pending Booking Requests (from DB) -->
         <div class="pending-requests-card">
           <div class="pending-requests-header">
             Pending Tour Requests
@@ -321,55 +317,25 @@
           </div>
 
           <div class="pending-requests-body" id="pendingRequestsBody">
-            <!-- Pending requests will be dynamically populated -->
-          </div>
-          
-          <script>
-            // Populate pending bookings list
-            function populatePendingBookings() {
-              const pendingRequestsBody = document.getElementById('pendingRequestsBody');
-              
-              const pendingBookings = bookingData.filter(booking => 
-                booking.status === 'upcoming' && !isPastDate(booking.date)
-              );
-              
-              if (pendingBookings.length === 0) {
-                pendingRequestsBody.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">No pending requests</p>';
-                return;
-              }
-              
-              pendingRequestsBody.innerHTML = '';
-              
-              pendingBookings.forEach((booking, index) => {
-                const bookingDate = new Date(booking.date);
-                const formattedDate = bookingDate.toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  year: 'numeric' 
-                });
-                
-                const requestCard = document.createElement('a');
-                requestCard.href = `/CeylonGo/public/guide/pending#request-${index + 1}`;
-                requestCard.className = 'pending-request-card';
-                requestCard.innerHTML = `
+            <?php if (!empty($pendingBookings)): ?>
+              <?php foreach ($pendingBookings as $booking): ?>
+                <a href="/CeylonGo/public/guide/pending" class="pending-request-card">
                   <div class="request-header">
                     <i class="fa-solid fa-user"></i>
-                    <h4>${booking.customerName}</h4>
+                    <h4><?= htmlspecialchars($booking['customerName']) ?></h4>
                   </div>
                   <div class="request-details">
-                    <p><i class="fa-solid fa-map-location-dot"></i> ${booking.tourType}</p>
-                    <p><i class="fa-regular fa-calendar"></i> ${formattedDate}</p>
-                    <p><i class="fa-solid fa-location-dot"></i> ${booking.location}</p>
+                    <p><i class="fa-solid fa-language"></i> <?= htmlspecialchars($booking['language']) ?></p>
+                    <p><i class="fa-regular fa-calendar"></i> <?= date('M d, Y', strtotime($booking['date'])) ?></p>
+                    <p><i class="fa-solid fa-location-dot"></i> <?= htmlspecialchars($booking['location']) ?></p>
                   </div>
                   <span class="request-badge">New</span>
-                `;
-                
-                pendingRequestsBody.appendChild(requestCard);
-              });
-            }
-            
-            populatePendingBookings();
-          </script>
+                </a>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <p style="text-align: center; padding: 20px; color: #666;">No pending requests</p>
+            <?php endif; ?>
+          </div>
         </div>
       </div>
 

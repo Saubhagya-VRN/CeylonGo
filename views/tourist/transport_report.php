@@ -27,12 +27,12 @@ if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
 <body>
   <?php include(dirname(__FILE__) . '/header.php'); ?>
 
-  <section class="intro" style="padding: 60px 20px;">
+  <section class="transport-header" style="padding: 25px 20px 10px; height: auto; overflow: visible;">
     <h1>Transport Requests</h1>
     <p>Review, edit, or delete your submitted transport requests.</p>
   </section>
 
-  <section style="padding: 40px 20px;">
+  <section style="padding: 10px 20px 40px;">
     <div style="max-width: 1100px; margin: 0 auto;">
       <div style="overflow-x:auto; background:#ffffff; border-radius: 12px; box-shadow: 0 8px 25px rgba(74,124,89,0.15); border: 1px solid rgba(74,124,89,0.1);">
         <table style="width: 100%; border-collapse: collapse;">

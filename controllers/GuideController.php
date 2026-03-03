@@ -119,19 +119,52 @@ class GuideController {
     }
 
     public function dashboard() {
-        view('guide/guide_dashboard');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        $pendingBookings = [];
+        $upcomingBookings = [];
+        if ($user_id) {
+            $guideRequest = new GuideRequest($this->db);
+            $pendingBookings = $guideRequest->getPendingByGuide($user_id);
+            $upcomingBookings = $guideRequest->getUpcomingByGuide($user_id);
+        }
+        view('guide/guide_dashboard', [
+            'pendingBookings' => $pendingBookings,
+            'upcomingBookings' => $upcomingBookings
+        ]);
     }
 
     public function upcoming() {
-        view('guide/upcoming');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        $bookings = [];
+        if ($user_id) {
+            $guideRequest = new GuideRequest($this->db);
+            $bookings = $guideRequest->getUpcomingByGuide($user_id);
+        }
+        view('guide/upcoming', ['bookings' => $bookings]);
     }
 
     public function pending() {
-        view('guide/pending');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        $bookings = [];
+        if ($user_id) {
+            $guideRequest = new GuideRequest($this->db);
+            $bookings = $guideRequest->getPendingByGuide($user_id);
+        }
+        view('guide/pending', ['bookings' => $bookings]);
     }
 
     public function cancelled() {
-        view('guide/cancelled');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        $bookings = [];
+        if ($user_id) {
+            $guideRequest = new GuideRequest($this->db);
+            $bookings = $guideRequest->getCancelledByGuide($user_id);
+        }
+        view('guide/cancelled', ['bookings' => $bookings]);
     }
 
     public function review() {
@@ -147,19 +180,124 @@ class GuideController {
     }
 
     public function info() {
-        view('guide/info');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        $booking = null;
+        if ($id > 0) {
+            $guideRequest = new GuideRequest($this->db);
+            $booking = $guideRequest->getById($id);
+        }
+        view('guide/info', ['booking' => $booking]);
     }
 
     public function pendingInfo() {
-        view('guide/pending_info');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        $booking = null;
+        if ($id > 0) {
+            $guideRequest = new GuideRequest($this->db);
+            $booking = $guideRequest->getById($id);
+        }
+        view('guide/pending_info', ['booking' => $booking]);
     }
 
     public function cancelledInfo() {
-        view('guide/cancelled_info');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        $booking = null;
+        if ($id > 0) {
+            $guideRequest = new GuideRequest($this->db);
+            $booking = $guideRequest->getById($id);
+        }
+        view('guide/cancelled_info', ['booking' => $booking]);
     }
 
     public function payment() {
-        view('guide/payment');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        $payments = [];
+        if ($user_id) {
+            $guideRequest = new GuideRequest($this->db);
+            $payments = $guideRequest->getPaymentsByGuide($user_id);
+        }
+        view('guide/payment', ['payments' => $payments]);
+    }
+
+    /**
+     * Accept a pending booking (POST)
+     */
+    public function acceptBooking() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+
+        if (!$user_id || ($_SESSION['user_role'] ?? '') !== 'guide') {
+            header("Location: /CeylonGo/public/login");
+            exit();
+        }
+
+        $request_id = isset($_POST['request_id']) ? (int) $_POST['request_id'] : 0;
+        if ($request_id <= 0) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Invalid booking ID"));
+            exit();
+        }
+
+        $guideRequest = new GuideRequest($this->db);
+        $booking = $guideRequest->getById($request_id);
+
+        // Verify this booking is assigned to the current guide
+        if (!$booking || (int) $booking['guide_id'] !== (int) $user_id) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking not found or not assigned to you"));
+            exit();
+        }
+
+        if ($guideRequest->updateStatus($request_id, 'approved')) {
+            header("Location: /CeylonGo/public/guide/upcoming?success=" . urlencode("Booking accepted successfully!"));
+        } else {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Failed to accept booking"));
+        }
+        exit();
+    }
+
+    /**
+     * Reject a pending booking (POST) — tries to re-assign to another guide
+     */
+    public function rejectBooking() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+
+        if (!$user_id || ($_SESSION['user_role'] ?? '') !== 'guide') {
+            header("Location: /CeylonGo/public/login");
+            exit();
+        }
+
+        $request_id = isset($_POST['request_id']) ? (int) $_POST['request_id'] : 0;
+        if ($request_id <= 0) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Invalid booking ID"));
+            exit();
+        }
+
+        $guideRequest = new GuideRequest($this->db);
+        $booking = $guideRequest->getById($request_id);
+
+        // Verify this booking is assigned to the current guide
+        if (!$booking || (int) $booking['guide_id'] !== (int) $user_id) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking not found or not assigned to you"));
+            exit();
+        }
+
+        // Mark as rejected first
+        $guideRequest->updateStatus($request_id, 'rejected');
+
+        // Try to find another guide, excluding the rejecting one
+        $newGuide = $guideRequest->findAvailableGuide($booking['language'], [(int) $user_id]);
+        if ($newGuide) {
+            // Reassign to new guide (sets status back to 'pending')
+            $guideRequest->reassignGuide($request_id, $newGuide['id']);
+            header("Location: /CeylonGo/public/guide/pending?success=" . urlencode("Booking rejected and reassigned to another guide."));
+        } else {
+            header("Location: /CeylonGo/public/guide/pending?success=" . urlencode("Booking rejected. No other guides available."));
+        }
+        exit();
     }
 }
 ?>

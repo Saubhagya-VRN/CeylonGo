@@ -92,6 +92,8 @@ $router->get('guide/pending_info', 'GuideController@pendingInfo');
 $router->get('guide/cancelled_info', 'GuideController@cancelledInfo');
 $router->get('guide/payment', 'GuideController@payment');
 $router->post('guide/payment', 'GuideController@payment');
+$router->post('guide/accept-booking', 'GuideController@acceptBooking');
+$router->post('guide/reject-booking', 'GuideController@rejectBooking');
 
 // ========== HOTEL ROUTES ==========
 $router->get('hotel/register', 'HotelController@registerView');

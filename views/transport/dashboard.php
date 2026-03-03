@@ -503,7 +503,7 @@
         dropdown.classList.remove('show');
       }
     });
-
+  </script>
 
 </body>
 </html>
