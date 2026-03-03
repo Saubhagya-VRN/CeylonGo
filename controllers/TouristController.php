@@ -505,6 +505,8 @@ class TouristController {
         }
 
         try {
+            if (session_status() === PHP_SESSION_NONE) session_start();
+
             // Use the GuideRequest model
             $guideRequest = new GuideRequest($this->db);
             $guideRequest->customerName = $data['customerName'];
@@ -514,6 +516,15 @@ class TouristController {
             $guideRequest->date = $data['date'];
             $guideRequest->time = $data['time'];
             $guideRequest->notes = $data['notes'] ?? '';
+
+            // Store the logged-in tourist's ID
+            $guideRequest->tourist_id = $_SESSION['user_id'] ?? null;
+
+            // Auto-assign an available guide matching the requested language
+            $availableGuide = $guideRequest->findAvailableGuide($data['language']);
+            if ($availableGuide) {
+                $guideRequest->guide_id = $availableGuide['id'];
+            }
 
             if ($guideRequest->create()) {
                 header("Location: /CeylonGo/public/tourist/tour-guide-report");
@@ -531,15 +542,13 @@ class TouristController {
 
     public function tourGuideRequestReport() {
         try {
+            if (session_status() === PHP_SESSION_NONE) session_start();
             $guideRequest = new GuideRequest($this->db);
-            $requests = $guideRequest->getAll();
+            $requests = [];
             
-            // Filter by logged-in user if needed
+            // Filter by logged-in tourist's ID
             if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
-                $customer_name = $_SESSION['user_name'] ?? '';
-                if (!empty($customer_name)) {
-                    $requests = $guideRequest->getByCustomerName($customer_name);
-                }
+                $requests = $guideRequest->getRequestsByTourist($_SESSION['user_id']);
             }
             
             view('tourist/tour_guide_request_report', ['requests' => $requests]);

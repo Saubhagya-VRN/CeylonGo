@@ -67,91 +67,61 @@
               <th>Tourist Name</th>
               <th>Date</th>
               <th>Location</th>
-              <th>Tour Type</th>
+              <th>Language</th>
               <th>Status</th>
-              <th>Cancellation Reason</th>
+              <th>Reason</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>#TG005</td>
-              <td>Emma Rajapaksa</td>
-              <td>2025-12-30</td>
-              <td>Nuwara Eliya</td>
-              <td>Nature Tour</td>
-              <td><span class="status-badge cancelled">Cancelled</span></td>
-              <td>Weather conditions - heavy rain expected</td>
-              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG006</td>
-              <td>Michael De Silva</td>
-              <td>2026-01-10</td>
-              <td>Mirissa Beach</td>
-              <td>Beach Tour</td>
-              <td><span class="status-badge cancelled">Cancelled</span></td>
-              <td>Customer request - change of plans</td>
-              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG007</td>
-              <td>Priya Mendis</td>
-              <td>2026-01-12</td>
-              <td>Yala National Park</td>
-              <td>Wildlife Safari</td>
-              <td><span class="status-badge cancelled">Cancelled</span></td>
-              <td>Park closed for maintenance</td>
-              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG008</td>
-              <td>Alex Johnson</td>
-              <td>2026-01-15</td>
-              <td>Dambulla Cave Temple</td>
-              <td>Cultural Tour</td>
-              <td><span class="status-badge cancelled">Cancelled</span></td>
-              <td>Guide unavailable - medical emergency</td>
-              <td><a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
+            <?php if (!empty($bookings)): ?>
+              <?php foreach ($bookings as $booking): ?>
+              <tr>
+                <td>#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></td>
+                <td><?= htmlspecialchars($booking['customerName']) ?></td>
+                <td><?= htmlspecialchars($booking['date']) ?></td>
+                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td><?= htmlspecialchars($booking['language']) ?></td>
+                <td><span class="status-badge cancelled">Cancelled</span></td>
+                <td><?= htmlspecialchars($booking['notes'] ?? '—') ?></td>
+                <td><a href="/CeylonGo/public/guide/cancelled_info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="8" style="text-align: center; padding: 30px; color: #888;">No cancelled tours found.</td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
 
       <!-- Mobile Card View -->
       <div class="booking-cards">
-        <div class="booking-card-item" style="border-left-color: #dc3545;">
-          <div class="card-header">
-            <span class="booking-no">#TG005</span>
-            <span class="status-badge cancelled">Cancelled</span>
+        <?php if (!empty($bookings)): ?>
+          <?php foreach ($bookings as $booking): ?>
+          <div class="booking-card-item" style="border-left-color: #dc3545;">
+            <div class="card-header">
+              <span class="booking-no">#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></span>
+              <span class="status-badge cancelled">Cancelled</span>
+            </div>
+            <div class="card-body">
+              <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span><?= htmlspecialchars($booking['customerName']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span><?= htmlspecialchars($booking['date']) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span><?= htmlspecialchars($booking['location']) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-language"></i><span class="label">Language:</span><span><?= htmlspecialchars($booking['language']) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-info-circle"></i><span class="label">Reason:</span><span><?= htmlspecialchars($booking['notes'] ?? '—') ?></span></div>
+            </div>
+            <div class="card-actions">
+              <a href="/CeylonGo/public/guide/cancelled_info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span>Emma Rajapaksa</span></div>
-            <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span>2025-12-30</span></div>
-            <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Nuwara Eliya</span></div>
-            <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Nature Tour</span></div>
-            <div class="card-row"><i class="fa-solid fa-info-circle"></i><span class="label">Reason:</span><span>Weather conditions</span></div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="booking-card-item" style="text-align: center; padding: 30px; color: #888;">
+            <p>No cancelled tours found.</p>
           </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
-        <div class="booking-card-item" style="border-left-color: #dc3545;">
-          <div class="card-header">
-            <span class="booking-no">#TG006</span>
-            <span class="status-badge cancelled">Cancelled</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span>Michael De Silva</span></div>
-            <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span>2026-01-10</span></div>
-            <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Mirissa Beach</span></div>
-            <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Beach Tour</span></div>
-            <div class="card-row"><i class="fa-solid fa-info-circle"></i><span class="label">Reason:</span><span>Customer request</span></div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/guide/cancelled_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

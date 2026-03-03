@@ -61,6 +61,16 @@
     <!-- Main Content -->
     <main class="main-content">
       
+      <?php if (!$booking): ?>
+        <div class="page-header">
+          <h1><i class="fa-regular fa-clock"></i> Pending Tour Request</h1>
+          <a href="/CeylonGo/public/guide/pending" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back to List
+          </a>
+        </div>
+        <p style="text-align:center;padding:40px;color:#888;">Booking not found.</p>
+      <?php else: ?>
+
       <!-- Page Header -->
       <div class="page-header">
         <h1><i class="fa-regular fa-clock"></i> Pending Tour Request</h1>
@@ -78,7 +88,7 @@
             <p>Please review this request and accept or reject</p>
           </div>
         </div>
-        <span class="booking-id">#TG010</span>
+        <span class="booking-id">#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></span>
       </div>
 
       <!-- Tourist Information -->
@@ -89,28 +99,28 @@
             <div class="icon-box"><i class="fa-solid fa-user"></i></div>
             <div class="detail-text">
               <label>Tourist Name</label>
-              <p>Robert Anderson</p>
+              <p><?= htmlspecialchars($booking['customerName']) ?></p>
             </div>
           </div>
           <div class="tourist-detail-item">
             <div class="icon-box"><i class="fa-solid fa-phone"></i></div>
             <div class="detail-text">
               <label>Contact Number</label>
-              <p>+1 555 789 4561</p>
+              <p><?= htmlspecialchars($booking['contactNumber']) ?></p>
             </div>
           </div>
           <div class="tourist-detail-item">
-            <div class="icon-box"><i class="fa-solid fa-envelope"></i></div>
+            <div class="icon-box"><i class="fa-solid fa-language"></i></div>
             <div class="detail-text">
-              <label>Email Address</label>
-              <p>robert.a@email.com</p>
+              <label>Language</label>
+              <p><?= htmlspecialchars($booking['language']) ?></p>
             </div>
           </div>
           <div class="tourist-detail-item">
-            <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
+            <div class="icon-box"><i class="fa-solid fa-calendar-plus"></i></div>
             <div class="detail-text">
-              <label>Country</label>
-              <p>United States</p>
+              <label>Requested On</label>
+              <p><?= date('M d, Y h:i A', strtotime($booking['created_at'])) ?></p>
             </div>
           </div>
         </div>
@@ -121,125 +131,73 @@
         <div class="tour-card">
           <div class="card-icon date"><i class="fa-regular fa-calendar"></i></div>
           <h4>Requested Date</h4>
-          <p>February 15, 2026</p>
-          <p class="small">Saturday</p>
+          <p><?= date('F d, Y', strtotime($booking['date'])) ?></p>
+          <p class="small"><?= date('l', strtotime($booking['date'])) ?></p>
         </div>
 
         <div class="tour-card">
           <div class="card-icon time"><i class="fa-regular fa-clock"></i></div>
           <h4>Preferred Time</h4>
-          <p>09:00 AM</p>
-          <p class="small">Morning session</p>
+          <p><?= date('h:i A', strtotime($booking['time'])) ?></p>
         </div>
 
         <div class="tour-card">
           <div class="card-icon location"><i class="fa-solid fa-location-dot"></i></div>
           <h4>Location</h4>
-          <p>Ella Nine Arches Bridge</p>
-          <p class="small">Hill Country</p>
+          <p><?= htmlspecialchars($booking['location']) ?></p>
         </div>
 
         <div class="tour-card">
-          <div class="card-icon tour-type"><i class="fa-solid fa-map"></i></div>
-          <h4>Tour Type</h4>
-          <p>Nature Tour</p>
-          <p class="small">Scenic Experience</p>
-        </div>
-
-        <div class="tour-card">
-          <div class="card-icon people"><i class="fa-solid fa-user-group"></i></div>
-          <h4>Group Size</h4>
-          <p>4 People</p>
-          <p class="small">All adults</p>
-        </div>
-
-        <div class="tour-card">
-          <div class="card-icon duration"><i class="fa-solid fa-hourglass-half"></i></div>
-          <h4>Duration</h4>
-          <p>5 Hours</p>
-          <p class="small">Half day tour</p>
+          <div class="card-icon tour-type"><i class="fa-solid fa-language"></i></div>
+          <h4>Language</h4>
+          <p><?= htmlspecialchars($booking['language']) ?> Tour</p>
         </div>
       </div>
 
       <!-- Message from Tourist -->
+      <?php if (!empty($booking['notes'])): ?>
       <div class="message-section">
         <h3><i class="fa-solid fa-message"></i> Message from Tourist</h3>
         <div class="message-content">
-          <p>Hi! We're a group of 4 friends visiting Sri Lanka for the first time. We've seen amazing photos of the Nine Arches Bridge and would love to experience it with a knowledgeable local guide. We're particularly interested in the best photo spots and would like to catch the train passing over the bridge if possible. We're all reasonably fit and enjoy hiking. Looking forward to your response!</p>
+          <p><?= htmlspecialchars($booking['notes']) ?></p>
         </div>
       </div>
-
-      <!-- Itinerary Section -->
-      <div class="itinerary-section">
-        <h3><i class="fa-solid fa-map-marked-alt"></i> Suggested Tour Plan</h3>
-        
-        <ul class="timeline">
-          <li class="timeline-item">
-            <div class="timeline-badge">1</div>
-            <div class="timeline-content">
-              <h4>09:00 AM - Pickup from Ella Town</h4>
-              <p>Meet at the main junction in Ella town center for a short briefing about the day's activities.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">2</div>
-            <div class="timeline-content">
-              <h4>09:30 AM - Trek to Nine Arches Bridge</h4>
-              <p>Scenic 20-minute walk through tea plantations with stunning views of the hill country.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">3</div>
-            <div class="timeline-content">
-              <h4>10:00 AM - Photography Session</h4>
-              <p>Explore the best viewpoints and capture the iconic bridge. Train crossing expected around 10:30 AM.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">4</div>
-            <div class="timeline-content">
-              <h4>11:30 AM - Little Adam's Peak</h4>
-              <p>Optional hike to Little Adam's Peak for panoramic views of Ella Gap (weather permitting).</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">5</div>
-            <div class="timeline-content">
-              <h4>01:00 PM - Lunch & Return</h4>
-              <p>Traditional Sri Lankan lunch at a local restaurant before return to Ella town.</p>
-            </div>
-          </li>
-        </ul>
-      </div>
+      <?php endif; ?>
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button class="action-btn contact" onclick="alert('Contacting tourist...')">
+        <a href="tel:<?= htmlspecialchars($booking['contactNumber']) ?>" class="action-btn contact">
           <i class="fa-solid fa-phone"></i> Contact Tourist
-        </button>
+        </a>
       </div>
+
+      <?php endif; ?>
 
     </main>
   </div>
 
   <!-- Floating Decision Panel -->
+  <?php if ($booking && $booking['status'] === 'pending'): ?>
   <div class="decision-section">
     <h3><i class="fa-solid fa-gavel"></i> Make Your Decision</h3>
     <div class="decision-buttons">
-      <button class="decision-btn accept" onclick="if(confirm('Accept this tour request?')) alert('Request accepted!')">
-        <i class="fa-solid fa-check-circle"></i>
-        Accept
-      </button>
-      <button class="decision-btn reject" onclick="if(confirm('Are you sure you want to reject this request?')) alert('Request rejected')">
-        <i class="fa-solid fa-times-circle"></i>
-        Reject
-      </button>
+      <form method="POST" action="/CeylonGo/public/guide/accept-booking" style="display:inline;">
+        <input type="hidden" name="request_id" value="<?= $booking['id'] ?>">
+        <button type="submit" class="decision-btn accept" onclick="return confirm('Accept this tour request?')">
+          <i class="fa-solid fa-check-circle"></i>
+          Accept
+        </button>
+      </form>
+      <form method="POST" action="/CeylonGo/public/guide/reject-booking" style="display:inline;">
+        <input type="hidden" name="request_id" value="<?= $booking['id'] ?>">
+        <button type="submit" class="decision-btn reject" onclick="return confirm('Are you sure you want to reject this request?')">
+          <i class="fa-solid fa-times-circle"></i>
+          Reject
+        </button>
+      </form>
     </div>
   </div>
+  <?php endif; ?>
 
   <!-- Footer -->
   <footer>
