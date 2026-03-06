@@ -1,0 +1,324 @@
+<?php
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+        header("Location: /CeylonGo/public/login");
+        exit();
+    }
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <!-- Font Awesome (REQUIRED) -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+        <!-- Optional admin-only overrides -->
+        <link rel="stylesheet" href="/CeylonGO/public/css/admin/reviews.css">
+        
+        <!-- Shared Transport Layout -->
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
+
+        <!-- Responsive styles (always last) -->
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
+
+        <title>Reviews Management</title>
+    </head>
+
+    <body>
+        <!-- Navbar -->
+        <header class="navbar">
+        <div class="branding">
+            <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+            <div class="logo-text">Ceylon Go</div>
+        </div>
+
+        <nav class="nav-links">
+            <a href="/CeylonGo/public/admin/dashboard">Home</a>
+            <div class="profile-dropdown">
+            <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+            <div class="profile-dropdown-menu" id="profileDropdown">
+                <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+                <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+            </div>
+            </div>
+        </nav>
+        </header>
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="page-wrapper">
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <ul>
+                    <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+                    <li><a href="/CeylonGo/public/admin/users"><i class="fa-solid fa-users"></i> Users</a></li>
+                    <li><a href="/CeylonGo/public/admin/bookings"><i class="fa-regular fa-calendar"></i> Bookings</a></li>
+                    <li><a href="/CeylonGo/public/admin/service"><i class="fa-solid fa-van-shuttle"></i> Service Providers</a></li>
+                    <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
+                    <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
+                    <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
+                    <li class="active"><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+                    <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
+                </ul>
+            </div>
+
+            <div class="main-content">
+                <div class="reviews-management">
+
+                    <h2 class="page-title">Reviews Management</h2>
+                    <br>
+
+                    
+                    <h4>Overall Ratings</h4><br>
+                    <p class="sub-text">Service Performance Metrics</p>
+
+                    <div class="footer-buttons">
+                        <button class="footer-btn">
+                            Average Rating:
+                            <b><?= number_format($metrics['average'], 1) ?></b>
+                        </button>
+
+                        <button class="footer-btn">
+                            Total Reviews:
+                            <b><?= $metrics['total'] ?></b>
+                            <?php if ($metrics['pending'] > 0): ?>
+                                <span style="color:orange;font-size:12px;">
+                                    (<?= $metrics['pending'] ?> pending)
+                                </span>
+                            <?php endif; ?>
+                        </button>
+
+                        <button class="footer-btn">
+                            Positive Feedback:
+                            <b><?= $metrics['positive_percentage'] ?>%</b>
+                        </button>
+                    </div>
+                    <br><br>
+
+                    <form method="GET" action="/CeylonGo/public/admin/reviews">
+                        <div class="toolbar">
+                            <div class="filter-buttons">
+                                <button type="submit" name="rating" value="all"
+                                    class="filter-btn <?= ($selectedRating=='all')?'active':'' ?>">
+                                    All
+                                </button>
+
+                                <?php for ($i = 5; $i >= 1; $i--): ?>
+                                    <button type="submit" name="rating" value="<?= $i ?>"
+                                        class="filter-btn <?= ($selectedRating==$i)?'active':'' ?>">
+                                        <?= $i ?> ⭐
+                                    </button>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                    </form>
+                    <br>
+
+                    <div class="users-section">
+                        <table class="user-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>User Name</th>
+                                    <th>Comment</th>
+                                    <th>Rating</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                    <th>Admin Reply</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewTableBody">
+                                <?php if(count($reviews) > 0): ?>
+                                    <?php foreach($reviews as $review): ?>
+                                        <tr data-id="<?= $review['id'] ?>">
+                                            <td><?= htmlspecialchars($review['user_id']) ?></td>
+                                            <td><?= htmlspecialchars($review['tourist_name']) ?></td>
+                                            <td><?= htmlspecialchars($review['review_text']) ?></td>
+
+                                            <!-- ⭐ Rating -->
+                                            <td>
+                                                <?php
+                                                    for ($i = 1; $i <= 5; $i++) {
+                                                        echo $i <= $review['rating'] ? "⭐" : "☆";
+                                                    }
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?php if ($review['status'] === 'approved'): ?>
+                                                    <span style="color:green;font-weight:bold">Approved</span>
+                                                <?php else: ?>
+                                                    <span style="color:orange;font-weight:bold">Pending</span>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="actions">
+                                                <?php if ($review['status'] === 'pending'): ?>
+                                                    <button class="icon-btn approve-btn" title="Approve">✅</button>
+                                                <?php endif; ?>
+                                                <button class="icon-btn danger delete-btn" title="Delete">🗑️</button>
+                                                <button class="icon-btn reply-btn" title="Comment">💬</button>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($review['admin_reply'])): ?>
+                                                    <?= htmlspecialchars($review['admin_reply']) ?>
+                                                <?php else: ?>
+                                                    <span style="color:#aaa;font-style:italic;">—</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align:center;">No reviews found.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <br>
+
+                    <div class="footer-buttons">
+                        <button class="footer-btn black"id="exportBtn">Export Reviews</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+        <ul>
+            <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
+            <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
+            <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+        </ul>
+        </footer>
+
+        <script>
+            function toggleProfileDropdown() {
+                const dropdown = document.getElementById('profileDropdown');
+                dropdown.classList.toggle('show');
+            }
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('profileDropdown');
+                const profilePic = document.querySelector('.profile-pic');
+                
+                if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
+                dropdown.classList.remove('show');
+                }
+            });
+
+            document.getElementById("reviewTableBody").addEventListener("click", function(e) {
+
+                const button = e.target.closest("button");
+                if (!button) return;
+
+                const row = button.closest("tr");
+                const reviewId = row.dataset.id;
+
+                // ── Delete review ─────────────────────────────────
+                if (button.classList.contains("delete-btn")) {
+                    if (!confirm("Permanently delete this review?")) return;
+
+                    fetch("/CeylonGo/public/admin/review/delete", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `review_id=${reviewId}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            row.remove();
+                        } else {
+                            alert("Failed to delete review");
+                        }
+                    });
+                }
+
+                // ── Reply to review ───────────────────────────────
+                if (button.classList.contains("reply-btn")) {
+                    const existingReply = row.dataset.reply || "";
+                    const reply = prompt("Enter admin reply:", existingReply);
+                    if (reply === null || reply.trim() === "") return;
+
+                    fetch("/CeylonGo/public/admin/review/reply", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `review_id=${reviewId}&reply=${encodeURIComponent(reply)}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            row.dataset.reply = reply;
+                            // Update the admin reply cell visually
+                            const replyCell = row.cells[row.cells.length - 1];
+                            replyCell.innerHTML = reply;
+                            alert("Reply saved ✅");
+                        } else {
+                            alert("Failed to save reply ❌");
+                        }
+                    });
+                }
+
+                // ── Approve review ────────────────────────────────
+                if (button.classList.contains("approve-btn")) {
+                    if (!confirm("Approve this review?")) return;
+
+                    fetch("/CeylonGo/public/admin/review/approve", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `review_id=${reviewId}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert("Failed to approve review. Check server logs.");
+                        }
+                    })
+                    .catch(() => alert("Server error while approving."));
+                }
+            });
+
+            // Export Reviews
+            document.getElementById("exportBtn").addEventListener("click", () => {
+                const rows = document.querySelectorAll("#reviewTableBody tr");
+                if(rows.length === 0) return alert("No reviews to export!");
+
+                // Column headers
+                let txt = "User ID\tUser Name\tComment\tRating\tStatus\n";
+
+                rows.forEach(row => {
+                    if(row.style.display !== "none") { // Only visible rows (filters/search)
+                        const cells = [...row.cells];
+                        const userId = cells[0].innerText.trim();
+                        const userName = cells[1].innerText.trim();
+                        const comment = cells[2].innerText.trim();
+                        const rating = cells[3].innerText.trim();
+                        const status = cells[4].innerText.trim();
+
+                        txt += [userId, userName, comment, rating, status].join("\t") + "\n";
+                    }
+                });
+
+                const blob = new Blob([txt], { type: "text/plain" });
+                const link = document.createElement("a");
+
+                const date = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+                link.download = `reviews_${date}.txt`;
+                link.href = URL.createObjectURL(blob);
+                link.click();
+            });
+        </script>
+    </body>
+</html>

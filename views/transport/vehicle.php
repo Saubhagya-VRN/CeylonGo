@@ -3,7 +3,9 @@ require_once "../config/config.php";
 require_once "../core/Database.php";
 require_once "../models/Vehicle.php";
 require_once "../models/VehicleType.php";
+require_once "session_init.php";
 
+$user_id = $_SESSION['transporter_id'];
 $user_id = $_SESSION['transporter_id'];
 $message = "";
 $error = "";
@@ -14,39 +16,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         $vehicle_no = $_POST['vehicle_no'] ?? '';
         $vehicle_type = $_POST['vehicle_type'] ?? '';
-        $psg_capacity = $_POST['psg_capacity'] ?? '';
+        $psg_capacity = $_POST['psg_capacity'] ?? 0;
 
-        // Handle file upload
-        $image = '';
-        if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-            $uploadDir = __DIR__ . '/CeylonGo/uploads/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-
-            $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
-            $extension = $fileInfo['extension'];
-            $newFileName = uniqid('img_', true) . '.' . $extension;
-            $targetPath = $uploadDir . $newFileName;
-
-            if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
-                $image = $newFileName;
-            }
-        }
-
-        // Save vehicle
-        $vehicle = new Vehicle($db);
-        $vehicle->vehicle_no = $vehicle_no;
-        $vehicle->user_id = $user_id;
-        $vehicle->vehicle_type = $vehicle_type;
-        $vehicle->psg_capacity = $psg_capacity;
-        $vehicle->image = $image;
-
-        if ($vehicle->addVehicle()) {
-            header("Location: profile");
-            exit;
+        // Validate passenger capacity
+        $capacity_limits = ['1' => 3, '2' => 4, '3' => 7, '4' => 7, '5' => 20, '6' => 20];
+        $capacity_names = ['1' => 'TUK', '2' => 'Car', '3' => 'Minivan', '4' => 'Minivan AC', '5' => 'Bus', '6' => 'Bus AC'];
+        if ($psg_capacity < 1) {
+            $error = "Passenger capacity must be at least 1.";
+        } elseif (isset($capacity_limits[$vehicle_type]) && $psg_capacity > $capacity_limits[$vehicle_type]) {
+            $error = "Maximum passenger capacity for " . $capacity_names[$vehicle_type] . " is " . $capacity_limits[$vehicle_type] . ".";
         } else {
-            $error = "Failed to add vehicle. Please try again.";
+            // Handle file upload
+            $image = '';
+            if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
+                $uploadDir = __DIR__ . '/CeylonGo/uploads/';
+                if (!file_exists($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $fileInfo = pathinfo($_FILES['vehicle_image']['name']);
+                $extension = $fileInfo['extension'];
+                $newFileName = uniqid('img_', true) . '.' . $extension;
+                $targetPath = $uploadDir . $newFileName;
+
+                if (move_uploaded_file($_FILES['vehicle_image']['tmp_name'], $targetPath)) {
+                    $image = $newFileName;
+                }
+            }
+
+            // Save vehicle
+            $vehicle = new Vehicle($db);
+            $vehicle->vehicle_no = $vehicle_no;
+            $vehicle->user_id = trim($user_id);
+            $vehicle->vehicle_type = $vehicle_type;
+            $vehicle->psg_capacity = $psg_capacity;
+            $vehicle->image = $image;
+
+            if ($vehicle->addVehicle()) {
+                header("Location: profile");
+                exit;
+            } else {
+                $error = "Failed to add vehicle. Please try again.";
+            }
         }
 
     } catch (Exception $e) {
@@ -90,6 +101,7 @@ try {
     <!-- Responsive styles (always last) -->
     <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">   
     
+    <!-- Font Awesome -->
     <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -102,8 +114,8 @@ try {
     </div>
     <nav class="nav-links">
       <a href="#">Home</a>
-      <a href="#">Logout</a>
-      <img src="/CeylonGO/public/images/profile.jpg" alt="User" class="profile-pic">
+      <a href="/CeylonGo/views/transport/logout.php">Logout</a>
+      <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic">
     </nav>
   </header>
 
@@ -166,7 +178,7 @@ try {
       <input type="file" name="vehicle_image" accept="image/*">
 
       <label>Passenger Capacity</label>
-      <input type="number" name="psg_capacity" placeholder="Enter your Vehicle's Passenger Capacity" required>
+      <input type="number" name="psg_capacity" min="1" value="1" placeholder="Enter your Vehicle's Passenger Capacity" required>
 
       <input type="hidden" name="user_id" value="<?=$user_id?>">
 
@@ -189,3 +201,50 @@ try {
 
 </body>
 </html>
+
+<script>
+  // Passenger capacity limits per vehicle type
+  const capacityLimits = { '1': 3, '2': 4, '3': 7, '4': 7, '5': 20, '6': 20 };
+  const capacityNames = { '1': 'TUK', '2': 'Car', '3': 'Minivan', '4': 'Minivan AC', '5': 'Bus', '6': 'Bus AC' };
+  const vehicleTypeSelect = document.querySelector('select[name="vehicle_type"]');
+  const psgCapacityInput = document.querySelector('input[name="psg_capacity"]');
+
+  // Create error message element
+  const capacityError = document.createElement('div');
+  capacityError.style.cssText = 'color: #c62828; font-size: 13px; margin-top: 5px; display: none;';
+  psgCapacityInput.parentNode.insertBefore(capacityError, psgCapacityInput.nextSibling);
+
+  function validateCapacity() {
+    const type = vehicleTypeSelect.value;
+    const capacity = parseInt(psgCapacityInput.value) || 0;
+    const maxCapacity = capacityLimits[type];
+
+    if (type && maxCapacity && capacity > maxCapacity) {
+      capacityError.textContent = `Maximum passenger capacity for ${capacityNames[type]} is ${maxCapacity}.`;
+      capacityError.style.display = 'block';
+      psgCapacityInput.style.borderColor = '#c62828';
+      return false;
+    } else {
+      capacityError.style.display = 'none';
+      psgCapacityInput.style.borderColor = '';
+      return true;
+    }
+  }
+
+  vehicleTypeSelect.addEventListener('change', function() {
+    const type = this.value;
+    if (capacityLimits[type]) {
+      psgCapacityInput.setAttribute('max', capacityLimits[type]);
+    }
+    validateCapacity();
+  });
+
+  psgCapacityInput.addEventListener('input', validateCapacity);
+
+  document.querySelector('form').addEventListener('submit', function(e) {
+    if (!validateCapacity()) {
+      e.preventDefault();
+      psgCapacityInput.focus();
+    }
+  });
+</script>

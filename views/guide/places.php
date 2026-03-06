@@ -1,135 +1,227 @@
-<?php
-require_once '../../config/db.php';
-
-// Add new place
-if(isset($_POST['add_place'])) {
-    $guide_id = 1; // Replace with actual logged in guide ID
-    $place_name = $_POST['place_name'];
-    $address = $_POST['address'];
-    $notes = $_POST['notes'];
-    
-    $sql = "INSERT INTO guide_places (guide_id, place_name, address, notes) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("isss", $guide_id, $place_name, $address, $notes);
-    $stmt->execute();
-}
-
-// Fetch places
-$guide_id = 1; // Replace with actual logged in guide ID
-$sql = "SELECT * FROM guide_places WHERE guide_id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $guide_id);
-$stmt->execute();
-$result = $stmt->get_result();
-?>
+<?php require_once 'session_init.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ceylon Go - Guide Places</title>
-    <!-- Base styles -->
-    <link rel="stylesheet" href="../../public/css/guide/base.css">
-    <link rel="stylesheet" href="../../public/css/guide/navbar.css">
-    <link rel="stylesheet" href="../../public/css/guide/sidebar.css">
-    <link rel="stylesheet" href="../../public/css/guide/footer.css">
-    
-    <!-- Component styles -->
-    <link rel="stylesheet" href="../../public/css/guide/cards.css">
-    <link rel="stylesheet" href="../../public/css/guide/buttons.css">
-    <link rel="stylesheet" href="../../public/css/guide/forms.css">
-    
-    <!-- Page-specific styles -->
-    <link rel="stylesheet" href="../../public/css/guide/tables.css">
-    <link rel="stylesheet" href="../../public/css/guide/profile.css">
-    <link rel="stylesheet" href="../../public/css/guide/reviews.css">
-    <link rel="stylesheet" href="../../public/css/guide/charts.css">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ceylon Go - My Places</title>
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/base.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/navbar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/sidebar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/cards.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/buttons.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/forms.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/tables.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/places.css">
 </head>
 <body>
-    <!-- Navbar -->
-    <header class="navbar">
-        <div class="branding">
-            <img src="../../public/images/logo.png" class="logo-img" alt="Logo">
-            <div class="logo-text">Ceylon Go</div>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="branding">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <div class="logo-text">Ceylon Go</div>
+    </div>
+    <nav class="nav-links">
+      <a href="/CeylonGo/public/guide/dashboard">Home</a>
+      <div class="profile-dropdown">
+        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+          <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
         </div>
-        <nav class="nav-links">
-            <a href="guide_dashboard.php">Home</a>
-            <a href="../tourist/tourist_dashboard.php">Logout</a>
-            <img src="../../public/images/user.png" alt="User" class="profile-pic">
-        </nav>
-    </header>
+      </div>
+    </nav>
+  </header>
+  
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <div class="page-wrapper">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <ul>
-                <li><a href="guide_dashboard.php"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-                <li><a href="upcoming.php"><i class="fa-regular fa-calendar"></i> Upcoming Tours</a></li>
-                <li><a href="pending.php"><i class="fa-regular fa-clock"></i> Pending Requests</a></li>
-                <li><a href="cancelled.php"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
-                <li class="active"><a href="places.php"><i class="fa-solid fa-location-dot"></i> Manage Places</a></li>
-                <li><a href="profile.php"><i class="fa-regular fa-user"></i> Profile</a></li>
-            </ul>
-        </div>
-
-        <div class="main-content">
-            <div class="welcome">
-                <h2>Manage Guide Places</h2>
-                <button onclick="showAddForm()" class="add-btn">Add New Place</button>
-            </div>
-
-            <!-- Add Place Form -->
-            <div id="addPlaceForm" class="form-container" style="display:none;">
-                <form method="POST" action="">
-                    <input type="text" name="place_name" placeholder="Place Name" required>
-                    <input type="text" name="address" placeholder="Address" required>
-                    <textarea name="notes" placeholder="Notes"></textarea>
-                    <button type="submit" name="add_place">Add Place</button>
-                </form>
-            </div>
-
-            <!-- Places Table -->
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Place Name</th>
-                            <th>Address</th>
-                            <th>Notes</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while($row = $result->fetch_assoc()): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($row['place_name']); ?></td>
-                            <td><?php echo htmlspecialchars($row['address']); ?></td>
-                            <td><?php echo htmlspecialchars($row['notes']); ?></td>
-                            <td>
-                                <a href="edit_place.php?id=<?php echo $row['id']; ?>" class="edit-btn">Edit</a>
-                                <a href="delete_place.php?id=<?php echo $row['id']; ?>" class="delete-btn" onclick="return confirm('Are you sure?')">Delete</a>
-                            </td>
-                        </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <div class="page-wrapper">
+    <div class="sidebar" id="sidebar">
+      <ul>
+        <li><a href="/CeylonGo/public/guide/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+        <li><a href="/CeylonGo/public/guide/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Tours</a></li>
+        <li><a href="/CeylonGo/public/guide/pending"><i class="fa-regular fa-clock"></i> Pending Requests</a></li>
+        <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
+        <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
+        <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
+        <li class="active"><a href="/CeylonGo/public/guide/places"><i class="fa-solid fa-map-location-dot"></i> My Places</a></li>
+        <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+      </ul>
     </div>
 
-    <footer>
-        <ul>
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Contact Us</a></li>
-        </ul>
-    </footer>
+    <div class="main-content">
+      <h2 class="page-title"><i class="fa-solid fa-map-location-dot"></i> My Places</h2>
 
-    <script>
-    function showAddForm() {
-        document.getElementById('addPlaceForm').style.display = 'block';
+      <button class="btn-add-place" onclick="toggleAddForm()">
+        <i class="fa-solid fa-plus"></i> Add New Place
+      </button>
+
+      <!-- Add Place Form -->
+      <div class="add-form-container" id="addPlaceForm">
+        <h3><i class="fa-solid fa-plus-circle"></i> Add New Place</h3>
+        <form method="POST" action="">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Place Name</label>
+              <input type="text" name="place_name" placeholder="e.g., Sigiriya Rock Fortress" required>
+            </div>
+            <div class="form-group">
+              <label>Location/Address</label>
+              <input type="text" name="address" placeholder="e.g., Sigiriya, Central Province" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description/Notes</label>
+            <textarea name="notes" placeholder="Describe what makes this place special, best time to visit, etc."></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" name="add_place" class="btn-save">
+              <i class="fa-solid fa-save"></i> Save Place
+            </button>
+            <button type="button" class="btn-cancel" onclick="toggleAddForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Places Grid -->
+      <div class="places-grid">
+        <div class="place-card">
+          <div class="place-card-image">
+            <i class="fa-solid fa-mountain-sun"></i>
+          </div>
+          <div class="place-card-body">
+            <h4>Sigiriya Rock Fortress</h4>
+            <div class="place-detail">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>Sigiriya, Central Province</span>
+            </div>
+            <div class="place-detail">
+              <i class="fa-solid fa-info-circle"></i>
+              <span>Ancient rock fortress with stunning views and historical frescoes. Best visited early morning.</span>
+            </div>
+          </div>
+          <div class="place-card-actions">
+            <button class="btn-edit-place"><i class="fa-solid fa-edit"></i> Edit</button>
+            <button class="btn-delete-place"><i class="fa-solid fa-trash"></i> Delete</button>
+          </div>
+        </div>
+
+        <div class="place-card">
+          <div class="place-card-image">
+            <i class="fa-solid fa-landmark"></i>
+          </div>
+          <div class="place-card-body">
+            <h4>Temple of the Tooth</h4>
+            <div class="place-detail">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>Kandy, Central Province</span>
+            </div>
+            <div class="place-detail">
+              <i class="fa-solid fa-info-circle"></i>
+              <span>Sacred Buddhist temple housing the relic of the tooth of Buddha. Puja ceremonies daily.</span>
+            </div>
+          </div>
+          <div class="place-card-actions">
+            <button class="btn-edit-place"><i class="fa-solid fa-edit"></i> Edit</button>
+            <button class="btn-delete-place"><i class="fa-solid fa-trash"></i> Delete</button>
+          </div>
+        </div>
+
+        <div class="place-card">
+          <div class="place-card-image">
+            <i class="fa-solid fa-umbrella-beach"></i>
+          </div>
+          <div class="place-card-body">
+            <h4>Galle Fort</h4>
+            <div class="place-detail">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>Galle, Southern Province</span>
+            </div>
+            <div class="place-detail">
+              <i class="fa-solid fa-info-circle"></i>
+              <span>UNESCO World Heritage Site. Dutch colonial architecture, boutique shops, and beautiful sunsets.</span>
+            </div>
+          </div>
+          <div class="place-card-actions">
+            <button class="btn-edit-place"><i class="fa-solid fa-edit"></i> Edit</button>
+            <button class="btn-delete-place"><i class="fa-solid fa-trash"></i> Delete</button>
+          </div>
+        </div>
+
+        <div class="place-card">
+          <div class="place-card-image">
+            <i class="fa-solid fa-paw"></i>
+          </div>
+          <div class="place-card-body">
+            <h4>Yala National Park</h4>
+            <div class="place-detail">
+              <i class="fa-solid fa-location-dot"></i>
+              <span>Hambantota, Southern Province</span>
+            </div>
+            <div class="place-detail">
+              <i class="fa-solid fa-info-circle"></i>
+              <span>Famous for leopards and elephants. Best visited early morning or late afternoon for wildlife sightings.</span>
+            </div>
+          </div>
+          <div class="place-card-actions">
+            <button class="btn-edit-place"><i class="fa-solid fa-edit"></i> Edit</button>
+            <button class="btn-delete-place"><i class="fa-solid fa-trash"></i> Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    hamburgerBtn.addEventListener('click', function() {
+      hamburgerBtn.classList.toggle('active');
+      sidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active');
+    });
+
+    sidebarOverlay.addEventListener('click', function() {
+      hamburgerBtn.classList.remove('active');
+      sidebar.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+    });
+
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('show');
     }
-    </script>
+
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-pic')) {
+        var dropdowns = document.getElementsByClassName("profile-dropdown-menu");
+        for (var i = 0; i < dropdowns.length; i++) {
+          if (dropdowns[i].classList.contains('show')) {
+            dropdowns[i].classList.remove('show');
+          }
+        }
+      }
+    }
+
+    function toggleAddForm() {
+      const form = document.getElementById('addPlaceForm');
+      form.classList.toggle('active');
+    }
+  </script>
+  <!-- Footer -->
+  <footer>
+    <ul>
+      <li><a href="#">About Us</a></li>
+      <li><a href="#">Contact Us</a></li>
+    </ul>
+  </footer>
 </body>
 </html>

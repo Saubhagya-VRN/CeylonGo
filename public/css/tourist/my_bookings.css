@@ -1,0 +1,160 @@
+/* My Bookings (pending cart) page */
+.my-bookings-page {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  min-height: 100vh;
+}
+
+.my-bookings-main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 16px 80px;
+}
+
+.my-bookings-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 8px;
+}
+
+.my-bookings-intro {
+  color: #6b7280;
+  margin: 0 0 24px;
+  font-size: 1rem;
+}
+
+.my-bookings-empty {
+  background: #fff;
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+}
+
+.my-bookings-empty p {
+  margin: 0 0 20px;
+  color: #6b7280;
+}
+
+.my-bookings-empty .btn-primary-pkg {
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(to right, #2c5530, #234a26);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+}
+
+.my-bookings-empty .btn-primary-pkg:hover {
+  filter: brightness(1.05);
+}
+
+.my-bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.my-booking-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.my-booking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.my-booking-status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.my-booking-status--pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.my-booking-status--approved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.my-booking-btn-payment {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 12px 24px;
+  background: linear-gradient(to right, #2c5530, #234a26);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: filter 0.2s, box-shadow 0.2s;
+}
+
+.my-booking-btn-payment:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 12px rgba(44, 85, 48, 0.35);
+  color: #fff;
+}
+
+.my-booking-approve-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.my-booking-approve-link:hover {
+  text-decoration: underline;
+  color: #374151;
+}
+
+.my-booking-date {
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.my-booking-package {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 12px;
+  line-height: 1.3;
+}
+
+.my-booking-details {
+  margin: 0 0 12px;
+  padding-left: 1.25rem;
+  color: #374151;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.my-booking-details li {
+  margin-bottom: 4px;
+}
+
+.my-booking-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #2c5530;
+  font-weight: 500;
+}

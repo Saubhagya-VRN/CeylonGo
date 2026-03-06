@@ -1,110 +1,165 @@
-<?php
-// views/guide/upcoming.php
-?>
+<?php require_once 'session_init.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Upcoming Tours</title>
-  <!-- Base styles -->
-  <link rel="stylesheet" href="../../public/css/guide/base.css">
-  <link rel="stylesheet" href="../../public/css/guide/navbar.css">
-  <link rel="stylesheet" href="../../public/css/guide/sidebar.css">
-  <link rel="stylesheet" href="../../public/css/guide/footer.css">
-  
-  <!-- Component styles -->
-  <link rel="stylesheet" href="../../public/css/guide/cards.css">
-  <link rel="stylesheet" href="../../public/css/guide/buttons.css">
-  <link rel="stylesheet" href="../../public/css/guide/forms.css">
-  
-  <!-- Page-specific styles -->
-  <link rel="stylesheet" href="../../public/css/guide/tables.css">
-  <link rel="stylesheet" href="../../public/css/guide/profile.css">
-  <link rel="stylesheet" href="../../public/css/guide/reviews.css">
-  <link rel="stylesheet" href="../../public/css/guide/charts.css">
-
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/base.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/navbar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/sidebar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/cards.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/buttons.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/tables.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/footer.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/guide/responsive.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
   <!-- Navbar -->
   <header class="navbar">
     <div class="branding">
-      <img src="../../public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
       <div class="logo-text">Ceylon Go</div>
     </div>
     <nav class="nav-links">
-      <a href="guide_dashboard.php">Home</a>
-      <a href="../tourist/tourist_dashboard.php">Logout</a>
-      <img src="../../public/images/user.png" alt="User" class="profile-pic">
+      <a href="/CeylonGo/public/guide/dashboard">Home</a>
+      <div class="profile-dropdown">
+        <img src="<?php echo htmlspecialchars($profile_picture); ?>" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+          <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+      </div>
     </nav>
   </header>
+  
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="page-wrapper">
-    <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
       <ul>
-        <li><a href="guide_dashboard.php"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
-        <li class="active"><a href="upcoming.php"><i class="fa-regular fa-calendar"></i> Upcoming Tours</a></li>
-        <li><a href="pending.php"><i class="fa-regular fa-clock"></i> Pending Requests</a></li>
-        <li><a href="cancelled.php"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
-        <li><a href="review.php"><i class="fa-regular fa-star"></i> Reviews</a></li>
-        <li><a href="profile.php"><i class="fa-regular fa-user"></i> Manage Profile</a></li>
+        <li><a href="/CeylonGo/public/guide/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+        <li class="active"><a href="/CeylonGo/public/guide/upcoming"><i class="fa-regular fa-calendar"></i> Upcoming Tours</a></li>
+        <li><a href="/CeylonGo/public/guide/pending"><i class="fa-regular fa-clock"></i> Pending Requests</a></li>
+        <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
+        <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
+        <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
+        <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
       </ul>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Welcome Section -->
-      <div class="welcome">
-        <h2>Upcoming Tours</h2>
-      </div>
+      <?php if (isset($_GET['success'])): ?>
+        <div class="alert-success" style="background:#d4edda;color:#155724;padding:12px 20px;border-radius:8px;margin-bottom:16px;border:1px solid #c3e6cb;">
+          <?= htmlspecialchars($_GET['success']) ?>
+        </div>
+      <?php endif; ?>
+      <h2 class="page-title"><i class="fa-regular fa-calendar"></i> Upcoming Tours</h2>
 
-      <!-- Tours Table -->
+      <!-- Desktop Table View -->
       <div class="table-container">
         <table>
           <thead>
             <tr>
-              <th>Tour No</th>
+              <th>Booking No</th>
+              <th>Tourist Name</th>
               <th>Date</th>
-              <th>Start Time</th>
-              <th>Meeting Location</th>
-              <th>Tour Type</th>
-              <th>Action</th>
+              <th>Time</th>
+              <th>Location</th>
+              <th>Language</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>#TG001</td>
-              <td>2025-03-15</td>
-              <td>09:00 AM</td>
-              <td>Colombo Fort Railway Station</td>
-              <td>Cultural Heritage Tour</td>
-              <td><a href="#">See More</a></td>
-            </tr>
-            <tr>
-              <td>#TG002</td>
-              <td>2025-08-19</td>
-              <td>02:30 PM</td>
-              <td>Kandy Temple of the Tooth</td>
-              <td>Religious Sites Tour</td>
-              <td><a href="#">See More</a></td>
-            </tr>
-            <tr>
-              <td>#TG003</td>
-              <td>2025-09-22</td>
-              <td>08:00 AM</td>
-              <td>Sigiriya Rock Fortress</td>
-              <td>Historical Sites Tour</td>
-              <td><a href="#">See More</a></td>
-            </tr>
+            <?php if (!empty($bookings)): ?>
+              <?php foreach ($bookings as $booking): ?>
+              <tr>
+                <td>#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></td>
+                <td><?= htmlspecialchars($booking['customerName']) ?></td>
+                <td><?= htmlspecialchars($booking['date']) ?></td>
+                <td><?= date('h:i A', strtotime($booking['time'])) ?></td>
+                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td><?= htmlspecialchars($booking['language']) ?></td>
+                <td><a href="/CeylonGo/public/guide/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 30px; color: #888;">No upcoming tours found.</td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="booking-cards">
+        <?php if (!empty($bookings)): ?>
+          <?php foreach ($bookings as $booking): ?>
+          <div class="booking-card-item">
+            <div class="card-header">
+              <span class="booking-no">#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></span>
+              <span class="status-badge upcoming">Upcoming</span>
+            </div>
+            <div class="card-body">
+              <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span><?= htmlspecialchars($booking['customerName']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span><?= htmlspecialchars($booking['date']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span><?= date('h:i A', strtotime($booking['time'])) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span><?= htmlspecialchars($booking['location']) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-language"></i><span class="label">Language:</span><span><?= htmlspecialchars($booking['language']) ?></span></div>
+            </div>
+            <div class="card-actions">
+              <a href="/CeylonGo/public/guide/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="booking-card-item" style="text-align: center; padding: 30px; color: #888;">
+            <p>No upcoming tours found.</p>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>
 
+  <script>
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    hamburgerBtn.addEventListener('click', function() {
+      hamburgerBtn.classList.toggle('active');
+      sidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active');
+    });
+
+    sidebarOverlay.addEventListener('click', function() {
+      hamburgerBtn.classList.remove('active');
+      sidebar.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+    });
+
+    function toggleProfileDropdown() {
+      document.getElementById('profileDropdown').classList.toggle('show');
+    }
+
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-pic')) {
+        var dropdowns = document.getElementsByClassName("profile-dropdown-menu");
+        for (var i = 0; i < dropdowns.length; i++) {
+          if (dropdowns[i].classList.contains('show')) {
+            dropdowns[i].classList.remove('show');
+          }
+        }
+      }
+    }
+  </script>
   <!-- Footer -->
   <footer>
     <ul>

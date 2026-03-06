@@ -1,0 +1,312 @@
+/* ===== ADMIN PROFILE PAGE STYLES ===== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  background: var(--bg-light, #f5f7fa);
+  color: var(--text-color, #333);
+  line-height: 1.6;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 800px;
+}
+
+.profile-card {
+  background: var(--bg-white, #ffffff);
+  border-radius: var(--border-radius, 12px);
+  padding: 30px;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.profile-header h2 {
+  color: var(--text-color, #333);
+  font-size: 1.8em;
+  font-weight: 700;
+}
+
+/* Success and Error Messages */
+.success-msg {
+  background: #d4edda;
+  color: #155724;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #28a745;
+  font-weight: 500;
+}
+
+.error-msg {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #dc3545;
+  font-weight: 500;
+}
+
+.profile-info {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: var(--bg-light, #f5f7fa);
+  border-radius: var(--border-radius, 12px);
+}
+
+.profile-info h3 {
+  font-size: 1.3em;
+  color: var(--primary-color, #2c5530);
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.profile-info p {
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: var(--text-color, #333);
+}
+
+.profile-info p strong {
+  color: var(--text-light, #666);
+  font-weight: 600;
+  min-width: 120px;
+  display: inline-block;
+}
+
+/* Edit Profile Section */
+.edit-profile {
+  margin-top: 30px;
+}
+
+.edit-profile h3 {
+  font-size: 1.3em;
+  color: var(--primary-color, #2c5530);
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-color, #333);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  font-size: 14px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  background-color: var(--bg-white, #ffffff);
+  transition: var(--transition, all 0.3s ease);
+  color: var(--text-color, #333);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary-color, #2c5530);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.1);
+}
+
+/* Select Dropdown Styling */
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'><path fill='%23666' d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+  padding-right: 35px;
+}
+
+.form-group select option {
+  padding: 10px;
+}
+
+/* Buttons */
+.save-btn {
+  width: 100%;
+  background: var(--primary-color, #2c5530);
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition, all 0.3s ease);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.save-btn:hover {
+  background: var(--primary-dark, #1e3d22);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  width: 100%;
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition, all 0.3s ease);
+  margin-top: 15px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.delete-btn:hover {
+  background: #b02a37;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+  transform: translateY(-1px);
+}
+
+.dashboard-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: var(--text-color, #333);
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 8px;
+  margin-top: 20px;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition, all 0.3s ease);
+  text-align: center;
+  box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.08));
+}
+
+.dashboard-btn:hover {
+  background-color: var(--text-color, #333);
+  opacity: 0.9;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+  transform: translateY(-1px);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  body {
+    padding: 20px 15px;
+  }
+
+  .profile-card {
+    padding: 25px 20px;
+  }
+
+  .profile-header h2 {
+    font-size: 1.5em;
+  }
+
+  .profile-info h3,
+  .edit-profile h3 {
+    font-size: 1.2em;
+  }
+
+  .form-group input,
+  .form-group select {
+    font-size: 15px;
+    padding: 12px 14px;
+  }
+
+  .save-btn,
+  .delete-btn {
+    font-size: 14px;
+    padding: 12px 18px;
+  }
+
+  .dashboard-btn {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  body {
+    padding: 15px 10px;
+  }
+
+  .profile-card {
+    padding: 20px 15px;
+  }
+
+  .profile-header h2 {
+    font-size: 1.3em;
+  }
+
+  .profile-info {
+    padding: 15px;
+  }
+
+  .profile-info h3,
+  .edit-profile h3 {
+    font-size: 1.1em;
+  }
+
+  .profile-info p {
+    font-size: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input,
+  .form-group select {
+    font-size: 14px;
+    padding: 11px 12px;
+  }
+
+  .save-btn,
+  .delete-btn,
+  .dashboard-btn {
+    font-size: 14px;
+    padding: 11px 16px;
+  }
+}

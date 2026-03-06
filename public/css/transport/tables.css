@@ -2,13 +2,15 @@
 .table-container {
   background: #fff;
   border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+  overflow-x: auto;
+  overflow-y: visible;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px;
 }
 
 thead {
@@ -16,10 +18,12 @@ thead {
   text-align: left;
 }
 
-th, td {
+th,
+td {
   padding: 14px;
   border-bottom: 1px solid #eee;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 td a {

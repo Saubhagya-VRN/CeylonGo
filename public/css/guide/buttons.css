@@ -1,3 +1,4 @@
+
 /* ===== BUTTONS ===== */
 
 *{
@@ -110,7 +111,7 @@ button.save {
   cursor: pointer;
 }
 
-.add-tour {
+.add-vehicle {
   background: #007bff;
   color: #fff;
 }

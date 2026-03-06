@@ -1,5 +1,10 @@
 <?php
 // payment.php
+$booking = $booking ?? null;
+$asset_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($asset_base === '' || $asset_base === '/') {
+  $asset_base = '/CeylonGo/public';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -7,9 +12,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment - Ceylon Go</title>
-  <link rel="stylesheet" href="../../public/css/tourist/tourist_dashboard.css">
-  <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
-   <link rel="stylesheet" href="../../public/css/tourist/footer.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/tourist_dashboard.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/navbar.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/footer.css">
   <style>
     body {
       background-color: #f0f8f0; /* Light greenish background from tourist_dashboard */
@@ -139,13 +144,27 @@
       <!-- Payment Summary -->
       <div class="payment-summary">
         <h3>Booking Summary</h3>
+        <?php if ($booking): ?>
+        <div class="summary-item">
+          <span>Package:</span>
+          <span><?php echo htmlspecialchars($booking['package_name'] ?? 'Package'); ?></span>
+        </div>
+        <div class="summary-item">
+          <span>Number of Travelers:</span>
+          <span><?php echo (int)($booking['travelers'] ?? 0); ?><?php if (isset($booking['adults']) || isset($booking['children']) || isset($booking['infants'])): ?> (<?php echo (int)($booking['adults'] ?? 0); ?> adult<?php echo ((int)($booking['adults'] ?? 0)) !== 1 ? 's' : ''; ?><?php if (!empty($booking['children'])): ?>, <?php echo (int)$booking['children']; ?> child<?php echo (int)$booking['children'] !== 1 ? 'ren' : ''; ?><?php endif; ?><?php if (!empty($booking['infants'])): ?>, <?php echo (int)$booking['infants']; ?> infant<?php echo (int)$booking['infants'] !== 1 ? 's' : ''; ?><?php endif; ?>)<?php endif; ?></span>
+        </div>
+        <div class="summary-item">
+          <span>Travel Date:</span>
+          <span><?php echo htmlspecialchars($booking['travel_date'] ?? '-'); ?></span>
+        </div>
+        <div class="summary-item">
+          <span>Total Amount:</span>
+          <span>LKR <?php echo number_format((int)($booking['total_amount'] ?? 0)); ?></span>
+        </div>
+        <?php else: ?>
         <div class="summary-item">
           <span>Package:</span>
           <span>Cultural Experience in Sri Lanka</span>
-        </div>
-        <div class="summary-item">
-          <span>Duration:</span>
-          <span>5 days, 4 nights</span>
         </div>
         <div class="summary-item">
           <span>Number of Persons:</span>
@@ -156,17 +175,10 @@
           <span>Dec 15 - Dec 19, 2024</span>
         </div>
         <div class="summary-item">
-          <span>Tour Guide:</span>
-          <span>Yes</span>
-        </div>
-        <div class="summary-item">
-          <span>Transport:</span>
-          <span>Yes</span>
-        </div>
-        <div class="summary-item">
           <span>Total Amount:</span>
           <span>Rs. 50,000</span>
         </div>
+        <?php endif; ?>
       </div>
 
       <!-- Payment Methods -->
@@ -215,8 +227,8 @@
         </div>
 
         <div style="display: flex; gap: 15px; margin-top: 20px;">
-          <button type="submit" class="btn" style="flex: 1;">Pay Rs. 50,000</button>
-          <a href="javascript:history.back()" class="btn" style="flex: 1; background: #000; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center;">Back</a>
+          <button type="submit" class="btn" style="flex: 1;">Pay <?php echo $booking ? 'LKR ' . number_format((int)($booking['total_amount'] ?? 0)) : 'Rs. 50,000'; ?></button>
+          <a href="<?php echo $booking ? htmlspecialchars($asset_base) . '/tourist/my-bookings' : 'javascript:history.back()'; ?>" class="btn" style="flex: 1; background: #000; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center;">Back</a>
         </div>
       </div>
     </div>
