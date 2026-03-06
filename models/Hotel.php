@@ -31,9 +31,13 @@ class Hotel {
         $stmt->bindParam(":email", $this->email);
         $stmt->bindParam(":password", $this->password);
 
-        if ($stmt->execute()) {
-            $this->id = $this->conn->lastInsertId();
-            return true;
+        try {
+            if ($stmt->execute()) {
+                $this->id = $this->conn->lastInsertId();
+                return true;
+            }
+        } catch (PDOException $e) {
+            error_log('Hotel model registration error: ' . $e->getMessage());
         }
         return false;
     }
