@@ -2,7 +2,7 @@
  * Trip page layout – sidebar + main (match transport provider, Ceylon Go colors)
  */
 :root {
-  --trip-sidebar-width: 260px;
+  --trip-sidebar-width: 250px;
   --trip-navbar-height: 48px;
   --trip-nav-height: var(--trip-navbar-height);
   --trip-primary: #2c5530;

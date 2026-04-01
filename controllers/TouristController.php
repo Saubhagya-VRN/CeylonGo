@@ -171,8 +171,25 @@ class TouristController {
 
     public function transportReport() {
         $requestModel = new TransportRequest($this->db);
-        $requests = $requestModel->getAllRequests();
-        view('tourist/transport_report', ['requests' => $requests]);
+        if (isset($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'tourist') {
+            $requests = $requestModel->getRequestsByUserId((int) $_SESSION['user_id']);
+        } else {
+            $requests = $requestModel->getAllRequests();
+        }
+        $tourist_data = null;
+        $user_name = $_SESSION['user_name'] ?? '';
+        if (isset($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'tourist') {
+            $touristModel = new Tourist($this->db);
+            $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
+            if ($user_name === '' && $tourist_data) {
+                $user_name = trim(($tourist_data['first_name'] ?? '') . ' ' . ($tourist_data['last_name'] ?? ''));
+            }
+        }
+        view('tourist/transport_report', [
+            'requests' => $requests,
+            'tourist_data' => $tourist_data,
+            'user_name' => $user_name
+        ]);
     }
 
     public function tourGuides() {
@@ -187,6 +204,71 @@ class TouristController {
 
     public function hotelDetails($id) {
         view('tourist/hotel_details', ['hotel_id' => $id]);
+    }
+
+    public function hotelRequestSubmit() {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
+
+        $data = $_POST;
+
+        $userId       = (int)($data['user_id'] ?? $_SESSION['user_id']);
+        $hotelId      = trim($data['hotel_id'] ?? '');
+        $hotelName    = trim($data['hotel_name'] ?? '');
+        $customerName = trim($data['customer_name'] ?? '');
+        $contact      = trim($data['contact_number'] ?? '');
+        $guests       = (int)($data['guests'] ?? 1);
+        $adults       = (int)($data['adults'] ?? 0);
+        $children     = (int)($data['children'] ?? 0);
+        $checkIn      = trim($data['check_in_date'] ?? '');
+        $checkOut     = trim($data['check_out_date'] ?? '');
+        $nights       = (int)($data['nights'] ?? 1);
+        $roomType     = trim($data['room_type'] ?? '');
+        $roomCount    = (int)($data['room_count'] ?? 1);
+        $totalPrice   = isset($data['total_price']) ? (float)$data['total_price'] : 0.0;
+
+        if (!$hotelId || !$hotelName || !$customerName || !$contact || !$checkIn || !$checkOut || !$roomType || $totalPrice <= 0) {
+            header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Please fill all required fields for hotel booking.'));
+            exit;
+        }
+
+        try {
+            $sql = "INSERT INTO hotel_requests (
+                        user_id, hotel_id, hotel_name,
+                        customer_name, contact_number, guests, adults, children,
+                        check_in_date, check_out_date, nights,
+                        room_type, room_count, total_price, currency
+                    ) VALUES (
+                        :user_id, :hotel_id, :hotel_name,
+                        :customer_name, :contact_number, :guests, :adults, :children,
+                        :check_in_date, :check_out_date, :nights,
+                        :room_type, :room_count, :total_price, 'LKR'
+                    )";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':user_id'        => $userId,
+                ':hotel_id'       => $hotelId,
+                ':hotel_name'     => $hotelName,
+                ':customer_name'  => $customerName,
+                ':contact_number' => $contact,
+                ':guests'         => $guests,
+                ':adults'         => $adults,
+                ':children'       => $children,
+                ':check_in_date'  => $checkIn,
+                ':check_out_date' => $checkOut,
+                ':nights'         => $nights,
+                ':room_type'      => $roomType,
+                ':room_count'     => $roomCount,
+                ':total_price'    => $totalPrice,
+            ]);
+            header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Hotel request submitted.'));
+            exit;
+        } catch (\Throwable $e) {
+            header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Failed to submit hotel request.'));
+            exit;
+        }
     }
 
     public function bookingForm() {

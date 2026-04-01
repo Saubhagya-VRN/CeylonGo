@@ -67,6 +67,7 @@ $router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSu
 $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
 $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
+$router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');

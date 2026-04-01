@@ -325,6 +325,121 @@
   background: #4a7c59;
   border-color: #4a7c59;
 }
+
+/* Hotel details popup modal */
+.trip-accommodation-content .modal-details-content {
+  max-width: 560px;
+  padding: 0;
+  overflow: hidden;
+}
+.trip-accommodation-content .modal-details-body {
+  display: flex;
+  flex-wrap: wrap;
+}
+.trip-accommodation-content .modal-details-image {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-color: #e8e8e8;
+}
+.trip-accommodation-content .modal-details-info {
+  padding: 20px 24px 24px;
+  flex: 1;
+  min-width: 0;
+}
+.trip-accommodation-content .modal-details-rating {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #666;
+}
+.trip-accommodation-content .modal-details-rating .stars {
+  color: #f0c14b;
+}
+.trip-accommodation-content .modal-details-name {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #2c5530;
+  font-weight: 700;
+}
+.trip-accommodation-content .modal-details-location {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #666;
+}
+.trip-accommodation-content .modal-details-amenities {
+  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.trip-accommodation-content .modal-details-amenities .amenity {
+  background: rgba(44, 85, 48, 0.1);
+  color: #2c5530;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.trip-accommodation-content .modal-details-price {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c5530;
+}
+.trip-accommodation-content .modal-details-rooms {
+  margin-bottom: 16px;
+  border-top: 1px solid #e0e8e0;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.trip-accommodation-content .modal-room-card {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f1f1;
+}
+.trip-accommodation-content .modal-room-card:last-child {
+  border-bottom: none;
+}
+.trip-accommodation-content .modal-room-image {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  background-color: #e5e7eb;
+  flex-shrink: 0;
+}
+.trip-accommodation-content .modal-room-info {
+  flex: 1;
+  min-width: 0;
+}
+.trip-accommodation-content .modal-room-type {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+.trip-accommodation-content .modal-room-desc {
+  font-size: 13px;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+.trip-accommodation-content .modal-room-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2c5530;
+}
+.trip-accommodation-content .btn-book-from-details {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .trip-accommodation-content .hotels-grid {
     grid-template-columns: 1fr;

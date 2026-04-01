@@ -41,7 +41,7 @@
     </div>
 
     <div class="buttons">
-      <button class="btn-register" onclick="window.location.href='tourist/tourist_dashboard.php'">Back</button>
+      <button class="btn-register" onclick="window.location.href='/CeylonGo/public/tourist/dashboard'">Back</button>
     </div>
   </div>
 

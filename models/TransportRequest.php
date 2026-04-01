@@ -67,6 +67,16 @@ class TransportRequest {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getRequestsByUserId($userId) {
+        $query = "SELECT id, user_id, customer_name AS customerName, contact_number AS contactNumber, vehicle_type AS vehicleType,
+                  date, pickup_time AS pickupTime, pickup_location AS pickupLocation, dropoff_location AS dropoffLocation,
+                  num_people AS numPeople, notes, estimated_fare AS estimatedFare, distance, status, created_at, updated_at
+                  FROM " . $this->table . " WHERE user_id = ? ORDER BY id DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>
 
