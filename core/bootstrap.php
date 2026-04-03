@@ -24,6 +24,7 @@ require_once dirname(__DIR__) . '/config/config.php';
 require_once BASE_PATH . '/core/autoload.php';
 require_once BASE_PATH . '/core/helpers.php';
 require_once BASE_PATH . '/core/Database.php';
+require_once BASE_PATH . '/core/PayHere.php';
 
 // Set up error handling for production (uncomment when deploying)
 // error_reporting(0);

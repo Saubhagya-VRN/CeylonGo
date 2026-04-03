@@ -95,6 +95,37 @@
   border: 1px solid #bbf7d0;
 }
 
+.my-booking-status--paid {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.my-bookings-flash {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.my-bookings-flash--ok {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.my-bookings-flash--err {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.my-bookings-flash--info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
 .my-booking-btn-payment {
   display: inline-block;
   margin-top: 12px;

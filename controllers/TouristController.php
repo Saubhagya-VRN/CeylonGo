@@ -424,8 +424,18 @@ class TouristController {
             error_log("Error fetching bookings: " . $e->getMessage());
             $bookings = [];
         }
+
+        $payment_message = $_SESSION['payment_message'] ?? null;
+        $payment_error = $_SESSION['payment_error'] ?? null;
+        $payment_info = $_SESSION['payment_info'] ?? null;
+        unset($_SESSION['payment_message'], $_SESSION['payment_error'], $_SESSION['payment_info']);
         
-        view('tourist/my_bookings', ['bookings' => $bookings]);
+        view('tourist/my_bookings', [
+            'bookings' => $bookings,
+            'payment_message' => $payment_message,
+            'payment_error' => $payment_error,
+            'payment_info' => $payment_info,
+        ]);
     }
 
     public function bookingApprove() {
@@ -461,7 +471,7 @@ class TouristController {
         
         if ($booking_id > 0) {
             try {
-                $sql = "SELECT * FROM package_bookings WHERE id = ? AND user_id = ? AND status = 'approved' LIMIT 1";
+                $sql = "SELECT * FROM package_bookings WHERE id = ? AND user_id = ? AND status IN ('approved', 'paid') LIMIT 1";
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute([$booking_id, $current_user_id]);
                 $booking = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -470,7 +480,353 @@ class TouristController {
             }
         }
         
-        view('tourist/payment', ['booking' => $booking]);
+        $payhereMax = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
+        $bankDetails = defined('BANK_TRANSFER_DETAILS') ? BANK_TRANSFER_DETAILS : '';
+        view('tourist/payment', [
+            'booking' => $booking,
+            'payhere_per_transaction_max_lkr' => $payhereMax,
+            'bank_transfer_details' => $bankDetails,
+        ]);
+    }
+
+    /**
+     * Start PayHere hosted checkout (POST booking_id, payment_method).
+     */
+    public function paymentCheckout() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/my-bookings');
+            exit;
+        }
+
+        $booking_id = isset($_POST['booking_id']) ? (int) $_POST['booking_id'] : 0;
+        $method = isset($_POST['payment_method']) ? trim($_POST['payment_method']) : '';
+        $current_user_id = (int) $_SESSION['user_id'];
+
+        if ($booking_id <= 0) {
+            header('Location: /CeylonGo/public/tourist/my-bookings');
+            exit;
+        }
+
+        if ($method === 'bank-transfer') {
+            $_SESSION['payment_info'] = 'Use the bank details on the payment page. Include the booking reference in your transfer. Your booking stays approved until we confirm the payment (usually within 1–2 business days).';
+            header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+            exit;
+        }
+
+        try {
+            $sql = "SELECT * FROM package_bookings WHERE id = ? AND user_id = ? AND status = 'approved' LIMIT 1";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$booking_id, $current_user_id]);
+            $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("paymentCheckout: " . $e->getMessage());
+            $_SESSION['payment_error'] = 'Could not load booking.';
+            header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+            exit;
+        }
+
+        if (!$booking) {
+            $_SESSION['payment_error'] = 'This booking cannot be paid online.';
+            header('Location: /CeylonGo/public/tourist/my-bookings');
+            exit;
+        }
+
+        $email = trim((string) ($booking['email'] ?? ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['payment_error'] = 'Add a valid email to your booking profile before paying online.';
+            header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+            exit;
+        }
+        $phoneDigits = preg_replace('/\D/', '', (string) ($booking['phone'] ?? ''));
+        if (strlen($phoneDigits) < 9) {
+            $_SESSION['payment_error'] = 'Add a valid phone number (at least 9 digits) to your booking before paying online.';
+            header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+            exit;
+        }
+
+        $payhereCap = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
+        $totalLkr = (float) $booking['total_amount'];
+        if ($payhereCap > 0 && $totalLkr > $payhereCap + 0.001) {
+            $_SESSION['payment_error'] = sprintf(
+                'Online card payment is limited to LKR %s per transaction on this payment account. Your booking is LKR %s. Use Bank transfer below, or ask your business to raise the PayHere limit (dashboard / plan upgrade).',
+                number_format($payhereCap),
+                number_format($totalLkr, 2, '.', ',')
+            );
+            header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+            exit;
+        }
+
+        $merchantId = trim((string) PAYHERE_MERCHANT_ID);
+        $secret = trim((string) PAYHERE_MERCHANT_SECRET);
+        $orderId = 'PKG' . $booking_id . 'T' . time();
+        $currency = 'LKR';
+        $amount = number_format((float) $booking['total_amount'], 2, '.', '');
+
+        $hash = PayHere::checkoutHash($merchantId, $orderId, $amount, $currency, $secret);
+
+        $fullname = trim((string) ($booking['fullname'] ?? 'Customer'));
+        $nameParts = preg_split('/\s+/', $fullname, 2);
+        $firstName = $nameParts[0] ?: 'Customer';
+        $lastName = isset($nameParts[1]) ? $nameParts[1] : 'N/A';
+
+        $itemsName = (string) ($booking['package_name'] ?? 'Package booking');
+        if (function_exists('iconv')) {
+            $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $itemsName);
+            if ($ascii !== false) {
+                $itemsName = $ascii;
+            }
+        }
+        $itemsName = preg_replace('/\s+/', ' ', $itemsName);
+        $itemsName = mb_substr(trim($itemsName), 0, 120) ?: 'Package booking';
+
+        $fields = [
+            'merchant_id' => $merchantId,
+            'return_url' => app_absolute_url('tourist/payment/return') . '?',
+            'cancel_url' => app_absolute_url('tourist/payment?booking_id=' . $booking_id),
+            'notify_url' => app_absolute_url('tourist/payment/notify'),
+            'order_id' => $orderId,
+            'items' => $itemsName,
+            'currency' => $currency,
+            'amount' => $amount,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $email,
+            'phone' => $phoneDigits,
+            'address' => 'N/A',
+            'city' => 'Colombo',
+            'country' => 'Sri Lanka',
+            'hash' => $hash,
+            'custom_1' => (string) $booking_id,
+        ];
+
+        $checkoutUrl = PayHere::checkoutUrl((bool) PAYHERE_SANDBOX);
+
+        $_SESSION['payhere_pending_booking_id'] = (int) $booking_id;
+        $_SESSION['payhere_pending_order_id'] = $orderId;
+
+        view('tourist/payhere_redirect', [
+            'checkout_url' => $checkoutUrl,
+            'fields' => $fields,
+        ]);
+    }
+
+    /**
+     * Browser return after PayHere. Some setups send no query string on return (notify POST is authoritative).
+     */
+    public function paymentReturn() {
+        $q = $this->payHereCollectReturnParams();
+
+        $applied = false;
+        if (!empty($q['md5sig']) && PayHere::notifyValid($q, (string) PAYHERE_MERCHANT_SECRET)) {
+            if ((int) ($q['status_code'] ?? 0) === 2) {
+                $applied = $this->payHereCompleteApprovedBooking($q);
+            }
+        }
+
+        // Sandbox: notify cannot reach localhost; return often has no md5sig or only status_code=0 — still mark pending booking paid when not an explicit decline.
+        if (!$applied && (bool) PAYHERE_SANDBOX && defined('PAYHERE_SANDBOX_TRUST_EMPTY_RETURN') && PAYHERE_SANDBOX_TRUST_EMPTY_RETURN) {
+            $sc = isset($q['status_code']) ? (int) $q['status_code'] : null;
+            $explicitFailure = ($sc === -1 || $sc === -2 || $sc === -3);
+            if (!$explicitFailure) {
+                $bid = (int) ($_SESSION['payhere_pending_booking_id'] ?? 0);
+                $uid = (int) ($_SESSION['user_id'] ?? 0);
+                if ($bid > 0 && $uid > 0 && $this->payHereSandboxCompletePendingBooking($bid, $uid)) {
+                    $applied = true;
+                    unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+                }
+            }
+        }
+
+        if ($applied) {
+            unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+            $_SESSION['payment_message'] = 'Payment completed successfully.';
+        } else {
+            $status = isset($q['status_code']) ? (int) $q['status_code'] : null;
+            if ($status === 2) {
+                unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+                $_SESSION['payment_message'] = 'PayHere reported success. If your booking is not Paid yet, wait a few seconds and refresh.';
+            } elseif ($status === -1) {
+                unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+                $_SESSION['payment_error'] = 'Payment was cancelled.';
+            } elseif ($status === 0) {
+                $_SESSION['payment_message'] = 'Payment is still processing. Refresh My Bookings shortly.';
+            } elseif ($status === -2 || $status === -3) {
+                unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+                $_SESSION['payment_error'] = 'Payment was declined or reversed at the gateway.';
+            } elseif ($status === null) {
+                $this->payHereMessageAfterEmptyReturn();
+            } else {
+                unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+                $_SESSION['payment_error'] = 'Payment was not completed. If money was debited, contact support with your receipt.';
+            }
+        }
+
+        error_log('PayHERE return: method=' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' qs=' . ($_SERVER['QUERY_STRING'] ?? '') . ' keys=' . implode(',', array_keys($q)));
+
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
+            exit;
+        }
+        header('Location: /CeylonGo/public/tourist/my-bookings');
+        exit;
+    }
+
+    /**
+     * Merge GET/POST/query string from multiple server vars (some Apache setups omit $_GET).
+     */
+    private function payHereCollectReturnParams(): array {
+        $q = array_merge($_GET, $_POST);
+        foreach (['QUERY_STRING', 'REDIRECT_QUERY_STRING'] as $sk) {
+            if (!empty($_SERVER[$sk])) {
+                parse_str((string) $_SERVER[$sk], $p);
+                if (is_array($p)) {
+                    $q = array_merge($q, $p);
+                }
+            }
+        }
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $parsedQs = parse_url($uri, PHP_URL_QUERY);
+        if (is_string($parsedQs) && $parsedQs !== '') {
+            parse_str($parsedQs, $p2);
+            if (is_array($p2)) {
+                $q = array_merge($q, $p2);
+            }
+        }
+        if (empty($q) && strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) === 'POST') {
+            $raw = file_get_contents('php://input');
+            if (is_string($raw) && $raw !== '') {
+                parse_str($raw, $parsed);
+                if (is_array($parsed)) {
+                    $q = array_merge($q, $parsed);
+                }
+            }
+        }
+        return $this->payHereNormalizeParams($q);
+    }
+
+    /**
+     * Sandbox/local: mark approved booking paid when return has no gateway payload (session must match checkout).
+     */
+    private function payHereSandboxCompletePendingBooking(int $bookingId, int $userId): bool {
+        try {
+            $pid = 'sandbox-empty-return-' . bin2hex(random_bytes(8));
+            $stmt = $this->db->prepare(
+                'UPDATE package_bookings SET status = \'paid\', payhere_payment_id = ?, paid_at = NOW()
+                 WHERE id = ? AND user_id = ? AND status = \'approved\''
+            );
+            $stmt->execute([$pid, $bookingId, $userId]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log('payHereSandboxCompletePendingBooking: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function payHereMessageAfterEmptyReturn(): void {
+        $bid = isset($_SESSION['payhere_pending_booking_id']) ? (int) $_SESSION['payhere_pending_booking_id'] : 0;
+        $uid = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+        if ($bid > 0 && $uid > 0) {
+            try {
+                $stmt = $this->db->prepare('SELECT id, status FROM package_bookings WHERE id = ? AND user_id = ? LIMIT 1');
+                $stmt->execute([$bid, $uid]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && $row['status'] === 'paid') {
+                    unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
+                    $_SESSION['payment_message'] = 'Payment completed. Your booking is marked Paid.';
+                    return;
+                }
+            } catch (PDOException $e) {
+                error_log('payHereMessageAfterEmptyReturn: ' . $e->getMessage());
+            }
+        }
+        $_SESSION['payment_message'] = 'We could not confirm this payment automatically. Refresh My Bookings in a moment. On a real server, set a public notify URL in PayHere so status updates without this message.';
+    }
+
+    private function payHereNormalizeParams(array $raw): array {
+        $out = [];
+        foreach ($raw as $k => $v) {
+            if (is_array($v)) {
+                continue;
+            }
+            $out[strtolower((string) $k)] = is_string($v) ? trim($v) : $v;
+        }
+        return $out;
+    }
+
+    private function payHereCompleteApprovedBooking(array $post): bool {
+        $bookingId = isset($post['custom_1']) ? (int) $post['custom_1'] : 0;
+        if ($bookingId <= 0 && !empty($post['order_id']) && preg_match('/^PKG(\d+)T\d+$/', (string) $post['order_id'], $m)) {
+            $bookingId = (int) $m[1];
+        }
+        $paymentId = isset($post['payment_id']) ? trim((string) $post['payment_id']) : '';
+        $payAmount = isset($post['payhere_amount']) ? (string) $post['payhere_amount'] : '';
+        if ($bookingId <= 0 || $paymentId === '') {
+            error_log('PayHere complete: missing booking_id or payment_id');
+            return false;
+        }
+        try {
+            $stmt = $this->db->prepare('SELECT id, total_amount, status, payhere_payment_id FROM package_bookings WHERE id = ? LIMIT 1');
+            $stmt->execute([$bookingId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return false;
+            }
+            if ($row['status'] === 'paid' && (string) $row['payhere_payment_id'] === $paymentId) {
+                return true;
+            }
+            if ($row['status'] !== 'approved') {
+                return false;
+            }
+            $expected = number_format((float) $row['total_amount'], 2, '.', '');
+            if ($payAmount !== $expected) {
+                error_log('PayHere complete: amount mismatch booking ' . $bookingId);
+                return false;
+            }
+            $upd = $this->db->prepare(
+                'UPDATE package_bookings SET status = \'paid\', payhere_payment_id = ?, paid_at = NOW() WHERE id = ? AND status = \'approved\''
+            );
+            $upd->execute([$paymentId, $bookingId]);
+            return true;
+        } catch (PDOException $e) {
+            error_log('PayHere complete DB: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * PayHere server-to-server notification (needs a public URL; localhost usually cannot receive this).
+     */
+    public function paymentNotify() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            return;
+        }
+
+        $post = $this->payHereNormalizeParams($_POST);
+        if (!PayHere::notifyValid($post, (string) PAYHERE_MERCHANT_SECRET)) {
+            error_log('PayHere notify: invalid md5sig');
+            http_response_code(400);
+            echo 'INVALID';
+            return;
+        }
+
+        $statusCode = isset($post['status_code']) ? (int) $post['status_code'] : 0;
+        if ($statusCode !== 2) {
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo 'OK';
+            return;
+        }
+
+        if (!$this->payHereCompleteApprovedBooking($post)) {
+            error_log('PayHere notify: payHereCompleteApprovedBooking returned false');
+        }
+
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'OK';
     }
 
     public function tripSummary() {
