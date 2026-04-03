@@ -168,7 +168,16 @@ class GuideController {
     }
 
     public function review() {
-        view('guide/review');
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        $reviews = [];
+        $stats = [];
+        if ($user_id) {
+            $reviewModel = new GuideReview($this->db);
+            $reviews = $reviewModel->getReviewsByGuideId($user_id);
+            $stats = $reviewModel->getReviewStats($user_id);
+        }
+        view('guide/review', ['reviews' => $reviews, 'stats' => $stats]);
     }
 
     public function profile() {

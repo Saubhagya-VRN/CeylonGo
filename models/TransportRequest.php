@@ -122,7 +122,8 @@ class TransportRequest {
                   FROM " . $this->table . " tr
                   WHERE TRIM(tr.assigned_driver_id) = TRIM(:driver_id)
                     AND tr.status = 'confirmed'
-                  ORDER BY tr.date ASC";
+                    AND CONCAT(tr.date, ' ', tr.pickup_time) > NOW()
+                  ORDER BY tr.date ASC, tr.pickup_time ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":driver_id", $driverId);
         $stmt->execute();
@@ -180,6 +181,24 @@ class TransportRequest {
                   LEFT JOIN tourist_users tu ON tr.user_id = tu.id
                   WHERE TRIM(tr.assigned_driver_id) = TRIM(:driver_id)
                     AND tr.status = 'cancelled'
+                  ORDER BY tr.date DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":driver_id", $driverId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get completed bookings for payment history (past confirmed bookings)
+     */
+    public function getPaymentsByDriverId($driverId) {
+        $query = "SELECT tr.id, tr.customer_name, tr.contact_number, tr.vehicle_type, 
+                  tr.date, tr.pickup_time, tr.pickup_location, tr.dropoff_location,
+                  tr.num_people, tr.estimated_fare, tr.distance, tr.status,
+                  tr.assigned_vehicle_no, tr.created_at
+                  FROM " . $this->table . " tr
+                  WHERE TRIM(tr.assigned_driver_id) = TRIM(:driver_id)
+                    AND tr.status IN ('confirmed', 'completed')
                   ORDER BY tr.date DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":driver_id", $driverId);

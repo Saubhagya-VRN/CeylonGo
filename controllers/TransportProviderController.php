@@ -70,7 +70,15 @@ class TransportProviderController {
     }
 
     public function review() {
-        view('transport/review');
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $driverId = trim($_SESSION['transporter_id']);
+        $reviewModel = new TransportReview($this->db);
+        $reviews = $reviewModel->getReviewsByDriverId($driverId);
+        $stats = $reviewModel->getReviewStats($driverId);
+        view('transport/review', ['reviews' => $reviews, 'stats' => $stats]);
     }
 
     public function profile() {
@@ -101,7 +109,14 @@ class TransportProviderController {
     }
 
     public function payment() {
-        view('transport/payment');
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $driverId = trim($_SESSION['transporter_id']);
+        $requestModel = new TransportRequest($this->db);
+        $payments = $requestModel->getPaymentsByDriverId($driverId);
+        view('transport/payment', ['payments' => $payments]);
     }
 
     // API endpoint to get bookings for calendar (JSON)
