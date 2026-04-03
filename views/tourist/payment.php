@@ -212,6 +212,9 @@ if ($asset_base === '' || $asset_base === '/') {
         <?php if ($booking && isset($booking['status']) && $booking['status'] === 'paid'): ?>
         <p style="color:#166534;font-weight:600;">This booking is already paid. Thank you.</p>
         <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/my-bookings" class="btn" style="display:inline-block;margin-top:16px;text-decoration:none;text-align:center;">Back to My Bookings</a>
+        <?php elseif ($booking && ($booking['status'] ?? '') === 'approved' && !empty($booking['bank_transfer_submitted_at'])): ?>
+        <p style="color:#1e40af;font-weight:600;">We have recorded your bank transfer. Check <strong>My Bookings</strong> for status — we usually confirm within 1–2 business days.</p>
+        <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/my-bookings" class="btn" style="display:inline-block;margin-top:16px;text-decoration:none;text-align:center;">My Bookings</a>
         <?php elseif ($booking): ?>
         <form method="post" action="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment/checkout" id="payment-form">
           <input type="hidden" name="booking_id" value="<?php echo (int)($booking['id'] ?? 0); ?>">
@@ -241,7 +244,7 @@ if ($asset_base === '' || $asset_base === '/') {
           <p style="margin:0 0 12px;font-size:0.9rem;color:#b45309;">Add your company bank details in <code style="font-size:0.8rem;">config/config.php</code> (<strong>BANK_TRANSFER_DETAILS</strong>).</p>
           <?php endif; ?>
           <p style="margin:0 0 8px;font-size:0.95rem;color:#2c5530;"><strong>Amount:</strong> LKR <?php echo number_format((int)($booking['total_amount'] ?? 0)); ?></p>
-          <p style="margin:0;font-size:0.95rem;color:#2c5530;"><strong>Reference / narration:</strong> BOOKING-<?php echo (int)($booking['id'] ?? 0); ?> — <?php echo htmlspecialchars($booking['fullname'] ?? ''); ?> (must appear on the transfer so we can match your payment)</p>
+          <p style="margin:0;font-size:0.95rem;color:#2c5530;"><strong>Reference / narration:</strong> <?php echo (int)($booking['id'] ?? 0); ?></p>
           <p style="margin:12px 0 0;font-size:0.85rem;color:#6b7280;">After you transfer, click Continue. An admin can mark the booking paid when the money is received.</p>
         </div>
 

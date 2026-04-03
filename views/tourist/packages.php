@@ -61,9 +61,9 @@ $is_logged_in = isset($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') ==
 
             <div class="sidebar-block">
                 <label class="sidebar-label">Price Range</label>
-                <input type="range" class="range-slider" id="priceMin" min="0" max="300000" value="0" step="10000">
-                <input type="range" class="range-slider" id="priceMax" min="0" max="300000" value="300000" step="10000">
-                <div class="range-labels"><span id="priceMinLabel">Price on request</span> – <span id="priceMaxLabel">Rs 300,000</span></div>
+                <input type="range" class="range-slider" id="priceMin" min="0" max="45999" value="0" step="1000">
+                <input type="range" class="range-slider" id="priceMax" min="0" max="45999" value="45999" step="1000">
+                <div class="range-labels"><span id="priceMinLabel">Price on request</span> – <span id="priceMaxLabel">Rs 45,999</span></div>
             </div>
 
             <div class="sidebar-block">

@@ -51,12 +51,15 @@ if ($asset_base === '' || $asset_base === '/') {
         <?php foreach (array_reverse($bookings) as $b):
           $is_paid = (isset($b['status']) && $b['status'] === 'paid');
           $is_approved = (isset($b['status']) && $b['status'] === 'approved');
+          $bank_transfer_waiting = $is_approved && !empty($b['bank_transfer_submitted_at']);
           $bid = isset($b['id']) ? $b['id'] : '';
         ?>
         <div class="my-booking-card">
           <div class="my-booking-header">
             <?php if ($is_paid): ?>
             <span class="my-booking-status my-booking-status--paid">Completed</span>
+            <?php elseif ($bank_transfer_waiting): ?>
+            <span class="my-booking-status my-booking-status--awaiting-bank">Payment submitted</span>
             <?php elseif ($is_approved): ?>
             <span class="my-booking-status my-booking-status--approved">Approved</span>
             <?php else: ?>
@@ -73,10 +76,12 @@ if ($asset_base === '' || $asset_base === '/') {
             <li><strong>Requests:</strong> <?php echo htmlspecialchars($b['special_requests']); ?></li>
             <?php endif; ?>
           </ul>
-          <?php if ($is_approved): ?>
-          <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment?booking_id=<?php echo htmlspecialchars(urlencode($bid)); ?>" class="my-booking-btn-payment">Proceed to payment</a>
-          <?php elseif ($is_paid): ?>
+          <?php if ($is_paid): ?>
           <p class="my-booking-note">Payment complete. Thank you for choosing Ceylon Go.</p>
+          <?php elseif ($bank_transfer_waiting): ?>
+          <p class="my-booking-note">We have recorded your bank transfer. Your booking stays approved while we verify the payment (usually within 1–2 business days).</p>
+          <?php elseif ($is_approved): ?>
+          <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment?booking_id=<?php echo htmlspecialchars(urlencode($bid)); ?>" class="my-booking-btn-payment">Proceed to payment</a>
           <?php else: ?>
           <p class="my-booking-note">We will contact you within 24 hrs. Your booking will be reviewed by our team.</p>
           <?php endif; ?>

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `package_bookings` (
   `status` ENUM('pending', 'approved', 'rejected', 'cancelled', 'paid') NOT NULL DEFAULT 'pending',
   `payhere_payment_id` VARCHAR(64) DEFAULT NULL COMMENT 'PayHere payment_id when paid online',
   `paid_at` DATETIME DEFAULT NULL COMMENT 'When online payment was confirmed',
+  `bank_transfer_submitted_at` DATETIME DEFAULT NULL COMMENT 'Tourist clicked Continue after bank transfer; awaiting manual verification',
   `admin_notes` TEXT DEFAULT NULL COMMENT 'Admin notes or comments',
   `approved_at` DATETIME DEFAULT NULL COMMENT 'When booking was approved',
   `approved_by` INT UNSIGNED DEFAULT NULL COMMENT 'Admin user ID who approved',

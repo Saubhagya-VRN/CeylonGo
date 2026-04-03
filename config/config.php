@@ -33,7 +33,7 @@ define('PAYHERE_PER_TRANSACTION_MAX_LKR', 0);
 define('PAYHERE_SANDBOX_TRUST_EMPTY_RETURN', true);
 
 // Bank transfer (manual): shown on the payment page when the tourist selects Bank transfer. Replace with your real bank name, account name, and account number.
-define('BANK_TRANSFER_DETAILS', "Bank: Your Bank Name\nAccount name: Ceylon Go (Pvt) Ltd\nAccount number: 0000000000\nBranch: Your branch");
+define('BANK_TRANSFER_DETAILS', "Bank: Your Bank Name\nAccount name: Ceylon Go (Pvt) Ltd\nAccount number: 1862793051\nBranch: Boralesgamuwa");
 
 // Google Maps API Key for stop locations (server-side only)
 define('GOOGLE_MAPS_API_KEY', 'AIzaSyBFdoF5vZo-egKRXYOOoySVbtuvkpFEOKY');

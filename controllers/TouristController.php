@@ -512,8 +512,35 @@ class TouristController {
         }
 
         if ($method === 'bank-transfer') {
-            $_SESSION['payment_info'] = 'Use the bank details on the payment page. Include the booking reference in your transfer. Your booking stays approved until we confirm the payment (usually within 1–2 business days).';
-            header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+            try {
+                $sql = "SELECT id, status FROM package_bookings WHERE id = ? AND user_id = ? AND status = 'approved' LIMIT 1";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$booking_id, $current_user_id]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                error_log('paymentCheckout bank-transfer: ' . $e->getMessage());
+                $_SESSION['payment_error'] = 'Could not update booking. Please try again.';
+                header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+                exit;
+            }
+            if (!$row) {
+                $_SESSION['payment_error'] = 'This booking cannot be updated.';
+                header('Location: /CeylonGo/public/tourist/my-bookings');
+                exit;
+            }
+            try {
+                $upd = $this->db->prepare(
+                    'UPDATE package_bookings SET bank_transfer_submitted_at = NOW() WHERE id = ? AND user_id = ? AND status = \'approved\''
+                );
+                $upd->execute([$booking_id, $current_user_id]);
+            } catch (PDOException $e) {
+                error_log('paymentCheckout bank_transfer_submitted_at: ' . $e->getMessage());
+                $_SESSION['payment_error'] = 'Database update failed. If this persists, run the migration: database/migrate_bank_transfer_submitted_at.sql';
+                header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+                exit;
+            }
+            $_SESSION['payment_info'] = 'Your booking stays approved until we confirm the payment (usually within 1–2 business days).';
+            header('Location: /CeylonGo/public/tourist/my-bookings');
             exit;
         }
 
