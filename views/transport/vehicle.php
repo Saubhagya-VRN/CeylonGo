@@ -5,8 +5,8 @@ require_once "../models/Vehicle.php";
 require_once "../models/VehicleType.php";
 require_once "session_init.php";
 
-$user_id = $_SESSION['transporter_id'];
-$user_id = $_SESSION['transporter_id'];
+$user_id = trim($_SESSION['transporter_id']);
+$user_id = trim($_SESSION['transporter_id']);
 $message = "";
 $error = "";
 
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Handle file upload
             $image = '';
             if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-                $uploadDir = __DIR__ . '/CeylonGo/uploads/';
+                $uploadDir = dirname(__DIR__, 2) . '/public/uploads/transport/';
                 if (!file_exists($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }

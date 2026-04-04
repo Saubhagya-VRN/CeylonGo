@@ -27,7 +27,7 @@ if (isset($_SESSION['profile_error'])) {
 
 // Check if user is logged in
 if(isset($_SESSION['transporter_id'])){
-  $user_id = $_SESSION['transporter_id'];
+  $user_id = trim($_SESSION['transporter_id']);
 }
 else{
   header('Location: /CeylonGo/views/transport/login.php');
@@ -299,6 +299,28 @@ try {
 } catch (Exception $e) {
     die("Database error: " . $e->getMessage());
 }
+
+function getVehicleImageUrl($image)
+{
+    $image = trim((string) $image);
+    if (empty($image)) {
+        return null;
+    }
+
+    $projectRoot = dirname(__DIR__, 2);
+    $publicTransportPath = $projectRoot . '/public/uploads/transport/' . $image;
+    $rootUploadsPath = $projectRoot . '/uploads/' . $image;
+
+    if (file_exists($publicTransportPath)) {
+        return '/CeylonGo/public/uploads/transport/' . $image;
+    }
+
+    if (file_exists($rootUploadsPath)) {
+        return '/CeylonGo/uploads/' . $image;
+    }
+
+    return null;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -498,8 +520,9 @@ try {
             <?php foreach($vehicles as $v): ?>
               <div class="vehicle-card">
                 <div class="vehicle-card-image">
-                  <?php if(isset($v['image']) && !empty($v['image'])): ?>
-                    <img src="/CeylonGo/uploads/<?= $v['image'] ?>" alt="<?= $v['vehicle_no'] ?>">
+                  <?php $vehicleImageUrl = getVehicleImageUrl($v['image'] ?? ''); ?>
+                  <?php if ($vehicleImageUrl): ?>
+                    <img src="<?= htmlspecialchars($vehicleImageUrl) ?>" alt="<?= htmlspecialchars($v['vehicle_no'] ?? 'Vehicle') ?>">
                   <?php else: ?>
                     <img src="/CeylonGo/public/images/logo.png" alt="No Image">
                   <?php endif; ?>

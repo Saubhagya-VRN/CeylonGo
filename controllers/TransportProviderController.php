@@ -459,8 +459,8 @@ class TransportProviderController {
         $data = $_POST;
         $files = $_FILES;
 
-        // Make sure uploads folder exists
-        $uploadDir = __DIR__ . "/../uploads/";
+        // Make sure uploads folder exists in public so images can be served by the browser
+        $uploadDir = __DIR__ . "/../public/uploads/transport/";
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -474,21 +474,21 @@ class TransportProviderController {
         if (!empty($files['vehicle_image']['tmp_name'])) {
             $newFileName = $this->generateFileName($files['vehicle_image']['name']);
             $targetPath = $uploadDir . $newFileName;
-            move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath);
-            $transport_vehicle->image = $newFileName;
+            if (move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath)) {
+                $transport_vehicle->image = $newFileName;
+            }
         }
         $transport_vehicle->addVehicle();
 
         header('Location: ../../public/transporter/profile');
-
     }
 
     public function updateVehicle() {
         $data = $_POST;
         $files = $_FILES;
 
-        // Make sure uploads folder exists
-        $uploadDir = __DIR__ . "/../uploads/";
+        // Make sure uploads folder exists in public so images can be served by the browser
+        $uploadDir = __DIR__ . "/../public/uploads/transport/";
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -502,9 +502,10 @@ class TransportProviderController {
         if (!empty($files['vehicle_image']['tmp_name'])) {
             $newFileName = $this->generateFileName($files['vehicle_image']['name']);
             $targetPath = $uploadDir . $newFileName;
-            move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath);
-            $transport_vehicle->image = $newFileName;
-        header('Location: ../../public/transporter/profile#');
+            if (move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath)) {
+                $transport_vehicle->image = $newFileName;
+            }
+            header('Location: ../../public/transporter/profile#');
         }
         $transport_vehicle->updateVehicle();
 
