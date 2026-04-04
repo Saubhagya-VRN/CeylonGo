@@ -361,7 +361,7 @@ class AdminController {
         }
 
         $stmt = $this->db->prepare(
-            "UPDATE reviews SET status = 'approved', approved_at = NOW() WHERE id = :id"
+            "UPDATE package_reviews SET status = 'approved', approved_at = NOW() WHERE id = :id"
         );
         $success = $stmt->execute([':id' => $reviewId]);
 

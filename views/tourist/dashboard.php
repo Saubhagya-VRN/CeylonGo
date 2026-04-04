@@ -27,7 +27,7 @@ $packages_by_cat = [
     'safari'    => [ 5 ],
     'beach'     => [ 8 ],
 ];
-$trending_packages = [ 1, 2, 6 ];
+$trending_bar_packages = $trending_bar_packages ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -48,12 +48,12 @@ $trending_packages = [ 1, 2, 6 ];
         <div class="package-bar-dropdown">
             <span class="package-bar-trigger">Popular <i class="fa-solid fa-chevron-down"></i></span>
             <div class="package-bar-panel package-bar-panel--cards">
-                <?php foreach ($trending_packages as $id): $p = $package_cards[$id] ?? null; if (!$p) continue; ?>
+                <?php foreach ($trending_bar_packages as $p): ?>
                 <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="package-bar-card">
-                    <img src="<?php echo htmlspecialchars($p['image']); ?>" alt="" class="package-bar-card-img">
+                    <img src="<?php echo htmlspecialchars($p['image'] ?? ''); ?>" alt="" class="package-bar-card-img">
                     <div class="package-bar-card-body">
-                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title']); ?></span>
-                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location']); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration']); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars($p['rating']); ?></span></span>
+                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title'] ?? ''); ?></span>
+                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location'] ?? ''); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration_short'] ?? $p['duration'] ?? ''); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars((string)($p['rating'] ?? '')); ?></span></span>
                     </div>
                 </a>
                 <?php endforeach; ?>

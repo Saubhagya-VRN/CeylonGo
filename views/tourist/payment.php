@@ -129,6 +129,17 @@ if ($asset_base === '' || $asset_base === '/') {
       border-color: #4a7c59;
       box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.1);
     }
+
+    .form-group input[type="file"] {
+      width: 100%;
+      max-width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e8e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
@@ -216,7 +227,7 @@ if ($asset_base === '' || $asset_base === '/') {
         <p style="color:#1e40af;font-weight:600;">We have recorded your bank transfer. Check <strong>My Bookings</strong> for status — we usually confirm within 1–2 business days.</p>
         <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/my-bookings" class="btn" style="display:inline-block;margin-top:16px;text-decoration:none;text-align:center;">My Bookings</a>
         <?php elseif ($booking): ?>
-        <form method="post" action="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment/checkout" id="payment-form">
+        <form method="post" action="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment/checkout" id="payment-form" enctype="multipart/form-data">
           <input type="hidden" name="booking_id" value="<?php echo (int)($booking['id'] ?? 0); ?>">
           <?php
           $card_blocked = $payhere_per_transaction_max_lkr > 0 && $booking_total > $payhere_per_transaction_max_lkr + 0.001;
@@ -244,8 +255,13 @@ if ($asset_base === '' || $asset_base === '/') {
           <p style="margin:0 0 12px;font-size:0.9rem;color:#b45309;">Add your company bank details in <code style="font-size:0.8rem;">config/config.php</code> (<strong>BANK_TRANSFER_DETAILS</strong>).</p>
           <?php endif; ?>
           <p style="margin:0 0 8px;font-size:0.95rem;color:#2c5530;"><strong>Amount:</strong> LKR <?php echo number_format((int)($booking['total_amount'] ?? 0)); ?></p>
-          <p style="margin:0;font-size:0.95rem;color:#2c5530;"><strong>Reference / narration:</strong> <?php echo (int)($booking['id'] ?? 0); ?></p>
-          <p style="margin:12px 0 0;font-size:0.85rem;color:#6b7280;">After you transfer, click Continue. An admin can mark the booking paid when the money is received.</p>
+          <p style="margin:0 0 12px;font-size:0.95rem;color:#2c5530;"><strong>Reference / narration:</strong> <?php echo (int)($booking['id'] ?? 0); ?></p>
+          <div class="form-group" style="margin-top:4px;text-align:left;">
+            <label for="bank_transfer_slip">Upload screenshot of bank slip / transfer</label>
+            <input type="file" id="bank_transfer_slip" name="bank_transfer_slip" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+            <p style="margin:6px 0 0;font-size:0.8rem;color:#6b7280;">JPG, PNG or WebP, max 5 MB. Required before Continue.</p>
+          </div>
+          <p style="margin:12px 0 0;font-size:0.85rem;color:#6b7280;">After you transfer and upload your slip, click Continue. An admin can mark the booking paid when the money is received.</p>
         </div>
 
         <div style="display: flex; gap: 15px; margin-top: 20px;">
@@ -261,7 +277,10 @@ if ($asset_base === '' || $asset_base === '/') {
           var pPay = document.getElementById('payhere-panel');
           var pBank = document.getElementById('bank-panel');
           var btn = document.getElementById('pay-submit');
+          var form = document.getElementById('payment-form');
+          var slipInput = document.getElementById('bank_transfer_slip');
           var payLabel = 'Pay LKR <?php echo number_format((int)($booking['total_amount'] ?? 0)); ?>';
+          var maxBytes = 5 * 1024 * 1024;
           function sync() {
             if (cardBlocked) return;
             var isBank = bank && bank.checked;
@@ -272,6 +291,20 @@ if ($asset_base === '' || $asset_base === '/') {
           if (card) card.addEventListener('change', sync);
           if (bank) bank.addEventListener('change', sync);
           sync();
+          if (form && slipInput && bank) {
+            form.addEventListener('submit', function (e) {
+              if (!bank.checked) return;
+              if (!slipInput.files || slipInput.files.length === 0) {
+                e.preventDefault();
+                alert('Please upload a screenshot of your bank transfer slip.');
+                return;
+              }
+              if (slipInput.files[0].size > maxBytes) {
+                e.preventDefault();
+                alert('File is too large. Maximum size is 5 MB.');
+              }
+            });
+          }
         })();
         </script>
         <?php else: ?>

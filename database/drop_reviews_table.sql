@@ -1,0 +1,2 @@
+-- Run only after the app uses `package_reviews` only and you have a backup.
+-- DROP TABLE IF EXISTS `reviews`;

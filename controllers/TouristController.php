@@ -71,8 +71,13 @@ class TouristController {
             $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
         }
 
-        // Pass data to view
-        view('tourist/dashboard', ['tourist_data' => $tourist_data]);
+        $packageModel = new Package($this->db);
+        $trending_bar_packages = $packageModel->getAll(['trending' => true]);
+
+        view('tourist/dashboard', [
+            'tourist_data' => $tourist_data,
+            'trending_bar_packages' => $trending_bar_packages,
+        ]);
     }
 
     public function oldDashboard() {
@@ -111,9 +116,13 @@ class TouristController {
             $touristModel = new Tourist($this->db);
             $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
         }
+        $packageModel = new Package($this->db);
+        $trending_bar_packages = $packageModel->getAll(['trending' => true]);
+
         view('tourist/dashboard', [
             'tourist_data' => $tourist_data,
-            'is_logged_in' => isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist'
+            'is_logged_in' => isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist',
+            'trending_bar_packages' => $trending_bar_packages,
         ]);
     }
 
@@ -528,14 +537,29 @@ class TouristController {
                 header('Location: /CeylonGo/public/tourist/my-bookings');
                 exit;
             }
+
+            $file = isset($_FILES['bank_transfer_slip']) ? $_FILES['bank_transfer_slip'] : null;
+            if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                $_SESSION['payment_error'] = 'Please upload a screenshot of your bank transfer slip.';
+                header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+                exit;
+            }
+            $slipPath = $this->saveBankTransferSlip($booking_id, $file);
+            if ($slipPath === null) {
+                $_SESSION['payment_error'] = 'Please upload a JPG, PNG, or WebP image (max 5 MB).';
+                header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
+                exit;
+            }
+
             try {
                 $upd = $this->db->prepare(
-                    'UPDATE package_bookings SET bank_transfer_submitted_at = NOW() WHERE id = ? AND user_id = ? AND status = \'approved\''
+                    'UPDATE package_bookings SET bank_transfer_submitted_at = NOW(), bank_transfer_slip_path = ? WHERE id = ? AND user_id = ? AND status = \'approved\''
                 );
-                $upd->execute([$booking_id, $current_user_id]);
+                $upd->execute([$slipPath, $booking_id, $current_user_id]);
             } catch (PDOException $e) {
                 error_log('paymentCheckout bank_transfer_submitted_at: ' . $e->getMessage());
-                $_SESSION['payment_error'] = 'Database update failed. If this persists, run the migration: database/migrate_bank_transfer_submitted_at.sql';
+                @unlink((defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__) . '/public/uploads')) . '/' . str_replace('\\', '/', $slipPath));
+                $_SESSION['payment_error'] = 'Database update failed. If this persists, run: database/migrate_bank_transfer_slip_path.sql (and migrate_bank_transfer_submitted_at.sql if needed).';
                 header('Location: /CeylonGo/public/tourist/payment?booking_id=' . $booking_id);
                 exit;
             }
@@ -860,6 +884,243 @@ class TouristController {
         view('tourist/trip_summary');
     }
 
+    /**
+     * Paid package booking: load booking + package and compute accommodation/itinerary breakdown.
+     *
+     * @return array{booking: array, package: ?array, price_adult_unit: int, price_child_unit: int, price_infant_unit: int, accommodation: array, itinerary: array}|null
+     */
+    private function getPaidPackageBookingSummaryData(int $booking_id, int $user_id): ?array {
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT * FROM package_bookings WHERE id = ? AND user_id = ? AND status = \'paid\' LIMIT 1'
+            );
+            $stmt->execute([$booking_id, $user_id]);
+            $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('getPaidPackageBookingSummaryData: ' . $e->getMessage());
+            return null;
+        }
+        if (!$booking) {
+            return null;
+        }
+
+        $packageModel = new Package($this->db);
+        $package = $packageModel->getById((int) $booking['package_id']);
+
+        $priceAdult = $package ? (int) $package['price'] : 0;
+        $cr = $package ? (float) ($package['price_child_ratio'] ?? 0.5) : 0.5;
+        $ir = $package ? (float) ($package['price_infant_ratio'] ?? 0) : 0;
+        $childUnit = (int) round($priceAdult * $cr);
+        $infantUnit = (int) round($priceAdult * $ir);
+
+        $accommodation = [];
+        if ($package && !empty($package['accommodation']) && is_array($package['accommodation'])) {
+            $dayCursor = 1;
+            foreach ($package['accommodation'] as $seg) {
+                $nights = isset($seg['nights']) ? max(0, (int) $seg['nights']) : 0;
+                if ($nights < 1) {
+                    continue;
+                }
+                $endDay = $dayCursor + $nights - 1;
+                if ($dayCursor === $endDay) {
+                    $rangeLabel = 'Day ' . $dayCursor;
+                } else {
+                    $rangeLabel = 'Day ' . $dayCursor . ' to Day ' . $endDay;
+                }
+                $accommodation[] = [
+                    'hotel' => (string) ($seg['hotel'] ?? ''),
+                    'location' => (string) ($seg['location'] ?? ''),
+                    'range_label' => $rangeLabel,
+                ];
+                $dayCursor = $endDay + 1;
+            }
+        }
+
+        $itinerary = [];
+        if ($package && !empty($package['itinerary']) && is_array($package['itinerary'])) {
+            $itinerary = $package['itinerary'];
+        }
+
+        return [
+            'booking' => $booking,
+            'package' => $package,
+            'price_adult_unit' => $priceAdult,
+            'price_child_unit' => $childUnit,
+            'price_infant_unit' => $infantUnit,
+            'accommodation' => $accommodation,
+            'itinerary' => $itinerary,
+        ];
+    }
+
+    /**
+     * Trip summary for a paid package booking: travel date, pricing breakdown, accommodation, itinerary (from package).
+     */
+    public function packageBookingTripSummary() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
+            exit;
+        }
+        $booking_id = isset($_GET['booking_id']) ? (int) $_GET['booking_id'] : 0;
+        if ($booking_id <= 0) {
+            header('Location: /CeylonGo/public/tourist/my-bookings');
+            exit;
+        }
+        $uid = (int) $_SESSION['user_id'];
+        $data = $this->getPaidPackageBookingSummaryData($booking_id, $uid);
+        if (!$data) {
+            header('Location: /CeylonGo/public/tourist/my-bookings');
+            exit;
+        }
+
+        view('tourist/package_booking_trip_summary', [
+            'booking' => $data['booking'],
+            'package' => $data['package'],
+            'price_adult_unit' => $data['price_adult_unit'],
+            'price_child_unit' => $data['price_child_unit'],
+            'price_infant_unit' => $data['price_infant_unit'],
+            'accommodation' => $data['accommodation'],
+            'itinerary' => $data['itinerary'],
+        ]);
+    }
+
+    /**
+     * JSON for trip summary modal (My Bookings — paid bookings only).
+     */
+    public function packageBookingTripSummaryJson() {
+        header('Content-Type: application/json; charset=UTF-8');
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            http_response_code(401);
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+        $booking_id = isset($_GET['booking_id']) ? (int) $_GET['booking_id'] : 0;
+        if ($booking_id <= 0) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Invalid booking']);
+            return;
+        }
+        $data = $this->getPaidPackageBookingSummaryData($booking_id, (int) $_SESSION['user_id']);
+        if (!$data) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'error' => 'Not found']);
+            return;
+        }
+        $booking = $data['booking'];
+        $package = $data['package'];
+        $travel_date = isset($booking['travel_date']) ? $booking['travel_date'] : '';
+        $travel_date_fmt = $travel_date !== '' ? date('F j, Y', strtotime($travel_date)) : '—';
+        $ta = (int) ($booking['travelers'] ?? 0);
+        $ad = (int) ($booking['adults'] ?? 0);
+        $ch = (int) ($booking['children'] ?? 0);
+        $inf = (int) ($booking['infants'] ?? 0);
+        $parts = [$ad . ' adult' . ($ad !== 1 ? 's' : '')];
+        if ($ch > 0) {
+            $parts[] = $ch . ' child' . ($ch !== 1 ? 'ren' : '');
+        }
+        if ($inf > 0) {
+            $parts[] = $inf . ' infant' . ($inf !== 1 ? 's' : '');
+        }
+        $travelers_text = $ta . ' (' . implode(', ', $parts) . ')';
+        $pkg_title = ($package && !empty($package['title'])) ? (string) $package['title'] : (string) ($booking['package_name'] ?? 'Your trip');
+        $duration_line = $package ? (string) ($package['duration'] ?? ($package['duration_short'] ?? '')) : '';
+
+        echo json_encode([
+            'ok' => true,
+            'package_title' => $pkg_title,
+            'duration_line' => $duration_line,
+            'travel_date_formatted' => $travel_date_fmt,
+            'travelers_text' => $travelers_text,
+            'price_adult_unit' => $data['price_adult_unit'],
+            'price_child_unit' => $data['price_child_unit'],
+            'price_infant_unit' => $data['price_infant_unit'],
+            'total_lkr' => (int) round((float) ($booking['total_amount'] ?? 0)),
+            'accommodation' => $data['accommodation'],
+            'itinerary' => $data['itinerary'],
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    /**
+     * Submit refund request (within 3 days of paid_at).
+     */
+    public function packageBookingRefundRequest() {
+        header('Content-Type: application/json; charset=UTF-8');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            http_response_code(401);
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+        $booking_id = isset($_POST['booking_id']) ? (int) $_POST['booking_id'] : 0;
+        $reason = isset($_POST['reason']) ? trim((string) $_POST['reason']) : '';
+        if (strlen($reason) > 2000) {
+            $reason = substr($reason, 0, 2000);
+        }
+        if ($booking_id <= 0) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Invalid booking']);
+            return;
+        }
+        $uid = (int) $_SESSION['user_id'];
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT * FROM package_bookings WHERE id = ? AND user_id = ? AND status = \'paid\' LIMIT 1'
+            );
+            $stmt->execute([$booking_id, $uid]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('packageBookingRefundRequest: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'Server error']);
+            return;
+        }
+        if (!$row) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'error' => 'Booking not found']);
+            return;
+        }
+        if (!empty($row['refund_requested_at'])) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'A refund request was already submitted for this booking.']);
+            return;
+        }
+        $paidAt = $row['paid_at'] ?? null;
+        if (!$paidAt) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Payment date is not recorded for this booking. Please contact support.']);
+            return;
+        }
+        $deadline = strtotime($paidAt) + (3 * 86400);
+        if (time() > $deadline) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'The 3-day refund window from your payment has ended.']);
+            return;
+        }
+        try {
+            $upd = $this->db->prepare(
+                'UPDATE package_bookings SET refund_requested_at = NOW(), refund_reason = ? WHERE id = ? AND user_id = ? AND status = \'paid\' AND refund_requested_at IS NULL'
+            );
+            $upd->execute([$reason !== '' ? $reason : null, $booking_id, $uid]);
+            if ($upd->rowCount() === 0) {
+                http_response_code(409);
+                echo json_encode(['ok' => false, 'error' => 'Could not submit refund request. Please refresh and try again.']);
+                return;
+            }
+        } catch (PDOException $e) {
+            error_log('packageBookingRefundRequest update: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'Could not save request. Run database/migrate_package_bookings_refund.sql if columns are missing.']);
+            return;
+        }
+        echo json_encode([
+            'ok' => true,
+            'message' => 'Your refund request has been submitted. Our team will contact you using your booking email.',
+        ]);
+    }
+
     public function recommendedPackages() {
         view('tourist/recommended_packages');
     }
@@ -885,7 +1146,9 @@ class TouristController {
             header('Location: /CeylonGo/public/tourist/packages');
             exit;
         }
-        view('tourist/package_details', ['package' => $package]);
+        $reviewModel = new Review($this->db);
+        $package_reviews = $reviewModel->getApprovedForPackage((int) $package['id']);
+        view('tourist/package_details', ['package' => $package, 'package_reviews' => $package_reviews]);
     }
 
     public function packageDetailsQuery() {
@@ -895,7 +1158,9 @@ class TouristController {
             header('Location: /CeylonGo/public/tourist/packages');
             exit;
         }
-        view('tourist/package_details', ['package' => $package]);
+        $reviewModel = new Review($this->db);
+        $package_reviews = $reviewModel->getApprovedForPackage((int) $package['id']);
+        view('tourist/package_details', ['package' => $package, 'package_reviews' => $package_reviews]);
     }
 
     /**
@@ -1481,6 +1746,45 @@ class TouristController {
         $query = "DELETE FROM diary_images WHERE entry_id = ?";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$entry_id]);
+    }
+
+    /**
+     * @return string|null Relative path under public/uploads/ (e.g. bank_slips/booking_1_....jpg), or null on failure.
+     */
+    private function saveBankTransferSlip(int $bookingId, array $file): ?string {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return null;
+        }
+        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
+            return null;
+        }
+        $tmp = $file['tmp_name'] ?? '';
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            return null;
+        }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmp);
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+        if (!isset($map[$mime])) {
+            return null;
+        }
+        $ext = $map[$mime];
+        $base = defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__) . '/public/uploads');
+        $dir = $base . DIRECTORY_SEPARATOR . 'bank_slips';
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            error_log('saveBankTransferSlip: cannot create ' . $dir);
+            return null;
+        }
+        $basename = 'booking_' . $bookingId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $dest = $dir . DIRECTORY_SEPARATOR . $basename;
+        if (!move_uploaded_file($tmp, $dest)) {
+            return null;
+        }
+        return 'bank_slips/' . $basename;
     }
 }
 ?>
