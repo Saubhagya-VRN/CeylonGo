@@ -355,20 +355,54 @@ $specializations = [
           <h2><?= htmlspecialchars($user_name) ?></h2>
           <p><i class="fa-solid fa-id-badge"></i> Guide ID: <?= $user['id'] ?? 'N/A' ?></p>
           <p><i class="fa-solid fa-map-marker-alt"></i> <?= htmlspecialchars($specializations[$user['specialization'] ?? ''] ?? 'Tour Guide') ?></p>
-          <div class="profile-stats">
-            <div class="profile-stat">
-              <div class="profile-stat-value"><?= $user['experience'] ?? '0' ?></div>
-              <div class="profile-stat-label">Years Exp.</div>
-            </div>
-            <div class="profile-stat">
-              <div class="profile-stat-value">4.8</div>
-              <div class="profile-stat-label">Rating</div>
-            </div>
-            <div class="profile-stat">
-              <div class="profile-stat-value">125</div>
-              <div class="profile-stat-label">Tours</div>
-            </div>
-          </div>
+          <p><i class="fa-solid fa-award"></i> <?= $user['experience'] ?? '0' ?> Years of Experience</p>
+        </div>
+      </div>
+
+      <!-- Languages & Skills Card -->
+      <div class="profile-card">
+        <div class="profile-card-header">
+          <i class="fa-solid fa-language"></i>
+          <h3>Languages & Skills</h3>
+        </div>
+        
+        <h4 style="color: #555; margin-bottom: 10px; font-size: 14px;">Languages You Speak</h4>
+        <div class="skills-container">
+          <?php 
+          $languages = explode(',', $user['languages'] ?? 'English');
+          foreach ($languages as $lang): 
+            $lang = trim($lang);
+            if (!empty($lang)):
+          ?>
+            <span class="skill-tag"><i class="fa-solid fa-globe"></i> <?= htmlspecialchars($lang) ?></span>
+          <?php 
+            endif;
+          endforeach; 
+          ?>
+        </div>
+        
+        <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Tour Specializations</h4>
+        <div class="skills-container">
+          <?php 
+          $userSpecs = explode(',', $user['specialization'] ?? '');
+          foreach ($userSpecs as $spec):
+            $spec = trim($spec);
+            if (!empty($spec) && isset($specializations[$spec])):
+          ?>
+            <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> <?= htmlspecialchars($specializations[$spec]) ?></span>
+          <?php 
+            endif;
+          endforeach;
+          if (empty(trim($user['specialization'] ?? ''))):
+          ?>
+            <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> Not specified</span>
+          <?php endif; ?>
+        </div>
+        
+        <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Experience</h4>
+        <div class="experience-badge">
+          <i class="fa-solid fa-award"></i>
+          <?= htmlspecialchars($user['experience'] ?? '0') ?> Years of Experience
         </div>
       </div>
 
@@ -458,53 +492,6 @@ $specializations = [
           </div>
           <button type="submit" class="btn-save"><i class="fa-solid fa-save"></i> Update License</button>
         </form>
-      </div>
-
-      <!-- Languages & Skills Card -->
-      <div class="profile-card">
-        <div class="profile-card-header">
-          <i class="fa-solid fa-language"></i>
-          <h3>Languages & Skills</h3>
-        </div>
-        
-        <h4 style="color: #555; margin-bottom: 10px; font-size: 14px;">Languages You Speak</h4>
-        <div class="skills-container">
-          <?php 
-          $languages = explode(',', $user['languages'] ?? 'English');
-          foreach ($languages as $lang): 
-            $lang = trim($lang);
-            if (!empty($lang)):
-          ?>
-            <span class="skill-tag"><i class="fa-solid fa-globe"></i> <?= htmlspecialchars($lang) ?></span>
-          <?php 
-            endif;
-          endforeach; 
-          ?>
-        </div>
-        
-        <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Tour Specializations</h4>
-        <div class="skills-container">
-          <?php 
-          $userSpecs = explode(',', $user['specialization'] ?? '');
-          foreach ($userSpecs as $spec):
-            $spec = trim($spec);
-            if (!empty($spec) && isset($specializations[$spec])):
-          ?>
-            <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> <?= htmlspecialchars($specializations[$spec]) ?></span>
-          <?php 
-            endif;
-          endforeach;
-          if (empty(trim($user['specialization'] ?? ''))):
-          ?>
-            <span class="skill-tag"><i class="fa-solid fa-map-location-dot"></i> Not specified</span>
-          <?php endif; ?>
-        </div>
-        
-        <h4 style="color: #555; margin: 20px 0 10px 0; font-size: 14px;">Experience</h4>
-        <div class="experience-badge">
-          <i class="fa-solid fa-award"></i>
-          <?= htmlspecialchars($user['experience'] ?? '0') ?> Years of Experience
-        </div>
       </div>
 
       <!-- Change Password Card -->

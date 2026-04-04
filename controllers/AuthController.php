@@ -72,7 +72,7 @@ class AuthController {
                     header("Location: /CeylonGo/public/guide/dashboard");
                     break;
                 case 'transport':
-                    $_SESSION['transporter_id'] = $user['ref_id'];
+                    $_SESSION['transporter_id'] = trim($user['ref_id']);
                     header("Location: /CeylonGo/public/transporter/dashboard");
                     break;
                 case 'admin':

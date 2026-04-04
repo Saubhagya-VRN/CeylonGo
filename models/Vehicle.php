@@ -20,8 +20,9 @@ class Vehicle {
                   VALUES (:vehicle_no, :user_id, :vehicle_type, :image, :psg_capacity)";
         $stmt = $this->conn->prepare($query);
 
+        $trimmedUserId = trim($this->user_id);
         $stmt->bindParam(":vehicle_no", $this->vehicle_no);
-        $stmt->bindParam(":user_id", $this->user_id);
+        $stmt->bindParam(":user_id", $trimmedUserId);
         $stmt->bindParam(":vehicle_type", $this->vehicle_type);
         $stmt->bindParam(":image", $this->image);
         $stmt->bindParam(":psg_capacity", $this->psg_capacity);
@@ -40,13 +41,14 @@ class Vehicle {
             $query .= ", image = :image";
         }
 
-        $query .= " WHERE vehicle_no = :old_vehicle_no AND user_id = :user_id";
+        $query .= " WHERE vehicle_no = :old_vehicle_no AND TRIM(user_id) = TRIM(:user_id)";
 
+        $trimmedUserId = trim($this->user_id);
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":vehicle_no", $this->vehicle_no);
         $stmt->bindParam(":vehicle_type", $this->vehicle_type);
         $stmt->bindParam(":psg_capacity", $this->psg_capacity);
-        $stmt->bindParam(":user_id", $this->user_id);
+        $stmt->bindParam(":user_id", $trimmedUserId);
         $stmt->bindParam(":old_vehicle_no", $old_vehicle_no);
 
         if (!empty($this->image)) {
@@ -58,21 +60,22 @@ class Vehicle {
 
     // Delete Vehicle (also deletes uploaded image)
     public function deleteVehicle($vehicle_no, $user_id) {
+        $trimmedUserId = trim($user_id);
         // Get image first
         $query = "SELECT image FROM " . $this->table . "
-                  WHERE vehicle_no = :vehicle_no AND user_id = :user_id";
+                  WHERE vehicle_no = :vehicle_no AND TRIM(user_id) = TRIM(:user_id)";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":vehicle_no", $vehicle_no);
-        $stmt->bindParam(":user_id", $user_id);
+        $stmt->bindParam(":user_id", $trimmedUserId);
         $stmt->execute();
         $vehicle = $stmt->fetch(PDO::FETCH_ASSOC);
 
         // Delete vehicle
         $deleteQuery = "DELETE FROM " . $this->table . "
-                        WHERE vehicle_no = :vehicle_no AND user_id = :user_id";
+                        WHERE vehicle_no = :vehicle_no AND TRIM(user_id) = TRIM(:user_id)";
         $deleteStmt = $this->conn->prepare($deleteQuery);
         $deleteStmt->bindParam(":vehicle_no", $vehicle_no);
-        $deleteStmt->bindParam(":user_id", $user_id);
+        $deleteStmt->bindParam(":user_id", $trimmedUserId);
         $result = $deleteStmt->execute();
 
         // Delete uploaded image
@@ -88,9 +91,10 @@ class Vehicle {
 
     // Fetch all vehicles for a user
     public function getVehiclesByUser($user_id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE user_id = :user_id";
+        $query = "SELECT * FROM " . $this->table . " WHERE TRIM(user_id) = TRIM(:user_id)";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":user_id", $user_id);
+        $trimmed = trim($user_id);
+        $stmt->bindParam(":user_id", $trimmed);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

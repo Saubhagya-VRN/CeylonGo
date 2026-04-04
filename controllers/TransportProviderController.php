@@ -374,8 +374,8 @@ class TransportProviderController {
             mkdir($uploadDir, 0777, true);
         }
 
-        // Generate unique user ID
-        $user_id = 'TP' . uniqid();
+        // Generate unique user ID - must fit in varchar(12)
+        $user_id = substr('TP' . uniqid(), 0, 12);
 
         try {
             // Start PDO transaction
@@ -414,9 +414,12 @@ class TransportProviderController {
             $transport_license->license_no = trim($data['license_no']);
             $transport_license->license_exp_date = $data['license_exp_date'];
             $transport_license->driver_id = $user_id;
+            $transport_license->image = '';
 
             if (!empty($files['license_image']['tmp_name'])) {
-                $newFileName = $this->generateFileName($files['license_image']['name']);
+                $ext = pathinfo($files['license_image']['name'], PATHINFO_EXTENSION);
+                // Keep filename short to fit varchar(20): "lic_" + 10chars + "." + ext
+                $newFileName = 'lic_' . substr(uniqid(), -10) . '.' . $ext;
                 move_uploaded_file($files['license_image']['tmp_name'], $uploadDir . $newFileName);
                 $transport_license->image = $newFileName;
             }

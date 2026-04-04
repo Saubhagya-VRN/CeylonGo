@@ -64,7 +64,7 @@
         <div class="page-header">
           <h1><i class="fa-solid fa-route"></i> Tour Details</h1>
           <a href="/CeylonGo/public/guide/upcoming" class="back-btn">
-            <i class="fa-solid fa-arrow-left"></i> Back to List
+            <i class="fa-solid fa-arrow-left"></i> Back
           </a>
         </div>
         <p style="text-align:center;padding:40px;color:#888;">Booking not found.</p>
@@ -74,7 +74,7 @@
       <div class="page-header">
         <h1><i class="fa-solid fa-route"></i> Tour Details</h1>
         <a href="/CeylonGo/public/guide/upcoming" class="back-btn">
-          <i class="fa-solid fa-arrow-left"></i> Back to List
+          <i class="fa-solid fa-arrow-left"></i> Back
         </a>
       </div>
 
@@ -160,12 +160,12 @@
         <p><?= !empty($booking['notes']) ? htmlspecialchars($booking['notes']) : 'No special notes provided.' ?></p>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons 
       <div class="action-buttons">
         <a href="tel:<?= htmlspecialchars($booking['contactNumber']) ?>" class="action-btn primary">
           <i class="fa-solid fa-phone"></i> Contact Tourist
         </a>
-      </div>
+      </div>-->
 
       <?php endif; ?>
 
