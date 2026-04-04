@@ -47,33 +47,47 @@ class HotelController {
                 die("<script>alert('Only JPG, JPEG, PNG & GIF files are allowed.'); window.history.back();</script>");
             }
 
+            // Additional image validation
+            if (!empty($files['hotel_image']['tmp_name'])) {
+                // Check file size (max 2MB)
+                if ($files['hotel_image']['size'] > 2 * 1024 * 1024) {
+                    die("<script>alert('Image size should be less than 2MB.'); window.history.back();</script>");
+                }
+            }
+
             if (!move_uploaded_file($files['hotel_image']['tmp_name'], $target_file)) {
                 die("<script>alert('Error uploading the image.'); window.history.back();</script>");
             }
         }
 
-        // Create hotel
-        $hotel = new Hotel($this->db);
-        $hotel->hotel_name = $data['hname'];
-        $hotel->location = $data['location'];
-        $hotel->city = $data['city'];
-        $hotel->hotel_image = $image_name;
-        $hotel->contact_number = $data['contact'];
-        $hotel->email = $data['email'];
-        $hotel->password = password_hash($data['password'], PASSWORD_DEFAULT);
+        // Improved error handling and logging
+        try {
+            $hotel = new Hotel($this->db);
+            $hotel->hotel_name = htmlspecialchars($data['hname']);
+            $hotel->location = htmlspecialchars($data['location']);
+            $hotel->city = htmlspecialchars($data['city']);
+            $hotel->hotel_image = $image_name;
+            $hotel->contact_number = htmlspecialchars($data['contact']);
+            $hotel->email = filter_var($data['email'], FILTER_VALIDATE_EMAIL);
+            $hotel->password = password_hash($data['password'], PASSWORD_DEFAULT);
 
-        if ($hotel->register()) {
-            // Add to users table
-            $authUser = new AuthUser($this->db);
-            $authUser->ref_id = $hotel->id;
-            $authUser->email = $hotel->email;
-            $authUser->password = $hotel->password;
-            $authUser->role = 'hotel';
-            $authUser->addUser();
+            if ($hotel->register()) {
+                $authUser = new AuthUser($this->db);
+                $authUser->ref_id = $hotel->id;
+                $authUser->email = $hotel->email;
+                $authUser->password = $hotel->password;
+                $authUser->role = 'hotel';
+                $authUser->addUser();
 
-            echo "<script>alert('Hotel registered successfully!'); window.location.href='/CeylonGo/public/hotel/dashboard';</script>";
-        } else {
-            echo "<script>alert('Registration failed. Please try again.'); window.history.back();</script>";
+                error_log('Hotel registered: ' . $hotel->email);
+                echo "<script>alert('Hotel registered successfully!'); window.location.href='/CeylonGo/public/hotel/dashboard';</script>";
+            } else {
+                error_log('Hotel registration failed: ' . $hotel->email);
+                echo "<script>alert('Registration failed. Please try again.'); window.history.back();</script>";
+            }
+        } catch (Exception $e) {
+            error_log('Hotel registration error: ' . $e->getMessage());
+            echo "<script>alert('An error occurred. Please try again.'); window.history.back();</script>";
         }
     }
 
