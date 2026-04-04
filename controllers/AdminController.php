@@ -371,7 +371,164 @@ class AdminController {
     }
 
     public function payments() {
-        view('admin/payments');
+        // Fetch all package bookings that have any payment activity
+        // (paid, approved-awaiting-payment, bank transfer submitted, etc.)
+        $stmt = $this->db->prepare("
+            SELECT *
+            FROM package_bookings
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute();
+        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+ 
+        // Build stats
+        $payStats = [
+            'total'     => 0,
+            'paid'      => 0,
+            'approved'  => 0,
+            'pending'   => 0,
+            'rejected'  => 0,
+            'cancelled' => 0,
+        ];
+        foreach ($payments as $p) {
+            $payStats['total']++;
+            $s = strtolower($p['status']);
+            if (isset($payStats[$s])) $payStats[$s]++;
+        }
+ 
+        view('admin/payments', [
+            'payments' => $payments,
+            'payStats' => $payStats,
+        ]);
+    }
+
+    public function verifyPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+ 
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$bookingId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+ 
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET status      = 'paid',
+                paid_at     = NOW(),
+                approved_by = :admin_id,
+                updated_at  = NOW()
+            WHERE id = :id
+              AND status IN ('pending', 'approved')
+        ");
+        $stmt->execute([
+            ':admin_id' => $adminUserId,
+            ':id'       => $bookingId,
+        ]);
+ 
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Marked as paid' : 'No rows updated',
+        ]);
+        exit();
+    }
+
+    public function approveSlipPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); exit();
+        }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$bookingId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+ 
+        // Only approve if a slip has actually been submitted and it's not already paid
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET status      = 'paid',
+                paid_at     = NOW(),
+                approved_by = :admin_id,
+                updated_at  = NOW()
+            WHERE id        = :id
+              AND bank_transfer_slip_path IS NOT NULL
+              AND bank_transfer_slip_path != ''
+              AND status IN ('pending', 'approved')
+              AND paid_at IS NULL
+        ");
+        $stmt->execute([':admin_id' => $adminUserId, ':id' => $bookingId]);
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Payment approved' : 'Nothing updated — check slip exists and status is pending/approved',
+        ]);
+        exit();
+    }
+ 
+    // ── Approve a refund request — marks booking as 'cancelled' ─
+    public function approveRefund() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); exit();
+        }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$bookingId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+ 
+        // Only approve if a refund was actually requested
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET status      = 'cancelled',
+                admin_notes = CONCAT(IFNULL(admin_notes, ''), ' | Refund approved by admin on ', NOW()),
+                approved_by = :admin_id,
+                updated_at  = NOW()
+            WHERE id                  = :id
+              AND refund_requested_at IS NOT NULL
+        ");
+        $stmt->execute([':admin_id' => $adminUserId, ':id' => $bookingId]);
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Refund approved, booking cancelled' : 'Nothing updated — check refund was requested',
+        ]);
+        exit();
     }
 
     public function reviews()
