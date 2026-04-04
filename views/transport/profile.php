@@ -447,7 +447,7 @@ try {
         <div class="license-info-grid">
           <div class="license-info-item">
             <label>License Number</label>
-            <span><?= !empty($license['license_no']) ? $license['license_no'] : 'Not set' ?></span>
+            <span><?= !empty($license['license_no']) ? htmlspecialchars($license['license_no']) : 'Not set' ?></span>
           </div>
           <div class="license-info-item">
             <label>Expiry Date</label>
@@ -458,18 +458,27 @@ try {
         <!-- Update License Form -->
         <form method="POST" action="">
           <input type="hidden" name="action" value="update_license">
-          <input type="hidden" name="license_no" value="<?= $license['license_no'] ?? '' ?>">
           <div class="form-grid">
+            <?php if (!empty($license['license_no'])): ?>
+              <!-- License exists: show readonly -->
+              <div class="form-group">
+                <label>License Number</label>
+                <input type="text" value="<?= htmlspecialchars($license['license_no']) ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                <input type="hidden" name="license_no" value="<?= htmlspecialchars($license['license_no']) ?>">
+              </div>
+            <?php else: ?>
+              <!-- No license: allow user to enter -->
+              <div class="form-group">
+                <label>License Number <span style="color: #c62828;">*</span></label>
+                <input type="text" name="license_no" placeholder="Enter your driving license number" required>
+              </div>
+            <?php endif; ?>
             <div class="form-group">
-              <label>License Number</label>
-              <input type="text" value="<?= $license['license_no'] ?? '' ?>" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
-            </div>
-            <div class="form-group">
-              <label>Expiry Date</label>
+              <label>Expiry Date <span style="color: #c62828;">*</span></label>
               <input type="date" name="license_exp_date" value="<?= $license['license_exp_date'] ?? '' ?>" min="<?= date('Y-m-d') ?>" required>
             </div>
           </div>
-          <button type="submit" class="btn-save"><i class="fa-solid fa-save"></i> Update License</button>
+          <button type="submit" class="btn-save"><i class="fa-solid fa-save"></i> <?= !empty($license['license_no']) ? 'Update License' : 'Add License' ?></button>
         </form>
       </div>
 

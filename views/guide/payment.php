@@ -280,7 +280,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                             <th>Payment Date</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Actions</th>
+
                         </tr>
                     </thead>
 
@@ -298,11 +298,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                                     <?= ucfirst($payment['status']) ?>
                                 </span>
                             </td>
-                            <td>
-                                <button class="action-btn" onclick="alert('View receipt for <?= $payment['booking_id'] ?>')">
-                                    <i class="fa-solid fa-receipt"></i> Receipt
-                                </button>
-                            </td>
+
                         </tr>
                         <?php endforeach; ?>
                     </tbody>

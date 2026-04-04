@@ -241,8 +241,9 @@ class GuideRequest {
     public function getUpcomingByGuide($guide_id) {
         try {
             $query = "SELECT * FROM " . $this->table . " 
-                      WHERE guide_id = ? AND status = 'approved' AND date >= CURDATE() 
-                      ORDER BY date ASC";
+                      WHERE guide_id = ? AND status = 'approved' 
+                      AND CONCAT(date, ' ', time) > NOW() 
+                      ORDER BY date ASC, time ASC";
             $stmt = $this->conn->prepare($query);
             $stmt->execute([$guide_id]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -61,7 +61,7 @@
       <div class="page-header">
         <h1><i class="fa-solid fa-route"></i> Booking Details</h1>
         <button class="back-btn" onclick="history.back()">
-          <i class="fa-solid fa-arrow-left"></i> Back to List
+          <i class="fa-solid fa-arrow-left"></i> Back
         </button>
       </div>
 
@@ -238,12 +238,13 @@
         </ul>
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons
       <div class="action-buttons">
         <?php if ($booking['status'] === 'confirmed'): ?>
         <a href="tel:<?= htmlspecialchars($booking['contact_number'] ?? '') ?>" class="action-btn success">
           <i class="fa-solid fa-phone"></i> Contact Customer
-        </a>
+        </a>-->
+
         <?php endif; ?>
         <button class="action-btn" onclick="history.back()" style="background: rgba(0,0,0,0.05); color: #333;">
           <i class="fa-solid fa-arrow-left"></i> Go Back

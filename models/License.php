@@ -18,38 +18,55 @@ class License {
                   VALUES (:license_no, :license_exp_date, :image, :driver_id)";
         $stmt = $this->conn->prepare($query);
 
+        $trimmedDriverId = trim($this->driver_id);
         $stmt->bindParam(":license_no", $this->license_no);
         $stmt->bindParam(":license_exp_date", $this->license_exp_date);
         $stmt->bindParam(":image", $this->image);
-        $stmt->bindParam(":driver_id", $this->driver_id);
+        $stmt->bindParam(":driver_id", $trimmedDriverId);
 
         return $stmt->execute();
     }
 
     // Get license by driver_id
     public function getLicenseByDriverId($driver_id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE driver_id = ?";
+        $query = "SELECT * FROM " . $this->table . " WHERE TRIM(driver_id) = TRIM(?)";
         $stmt = $this->conn->prepare($query);
-        $stmt->execute([$driver_id]);
+        $stmt->execute([trim($driver_id)]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     // Update or insert license information
     public function updateLicense() {
-        // Use INSERT ON DUPLICATE KEY UPDATE to handle both new and existing licenses
-        $query = "INSERT INTO " . $this->table . " 
-                  (license_no, license_exp_date, image, driver_id)
-                  VALUES (:license_no, :license_exp_date, :image, :driver_id)
-                  ON DUPLICATE KEY UPDATE
-                  license_no = VALUES(license_no),
-                  license_exp_date = VALUES(license_exp_date)";
+        // Check if a license already exists for this driver
+        $checkQuery = "SELECT license_no FROM " . $this->table . " WHERE TRIM(driver_id) = TRIM(:driver_id)";
+        $checkStmt = $this->conn->prepare($checkQuery);
+        $trimmedDriverId = trim($this->driver_id);
+        $checkStmt->bindParam(":driver_id", $trimmedDriverId);
+        $checkStmt->execute();
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            // Update existing license
+            $query = "UPDATE " . $this->table . " SET 
+                      license_no = :license_no,
+                      license_exp_date = :license_exp_date
+                      WHERE TRIM(driver_id) = TRIM(:driver_id)";
+        } else {
+            // Insert new license
+            $query = "INSERT INTO " . $this->table . " 
+                      (license_no, license_exp_date, image, driver_id)
+                      VALUES (:license_no, :license_exp_date, :image, :driver_id)";
+        }
         
         $stmt = $this->conn->prepare($query);
         
         $stmt->bindParam(":license_no", $this->license_no);
         $stmt->bindParam(":license_exp_date", $this->license_exp_date);
-        $stmt->bindParam(":image", $this->image);
-        $stmt->bindParam(":driver_id", $this->driver_id);
+        $stmt->bindParam(":driver_id", $trimmedDriverId);
+        
+        if (!$existing) {
+            $stmt->bindParam(":image", $this->image);
+        }
         
         return $stmt->execute();
     }

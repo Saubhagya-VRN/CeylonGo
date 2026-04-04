@@ -53,61 +53,32 @@ $bankAccount = [
     'branch' => isset($bankData['branch_name']) ? $bankData['branch_name'] : 'Not set'
 ];
 
-// Sample payment data - Replace with database queries
-$payments = [
-    [
-        'booking_id' => '#12345',
-        'customer_name' => 'John Silva',
-        'booking_date' => '2025-03-15',
-        'payment_date' => '2025-03-16',
-        'amount' => 10000,
-        'status' => 'paid',
-        'method' => 'Online'
-    ],
-    [
-        'booking_id' => '#77889',
-        'customer_name' => 'Sarah Fernando',
-        'booking_date' => '2025-03-18',
-        'payment_date' => '2025-03-19',
-        'amount' => 15000,
-        'status' => 'paid',
-        'method' => 'Cash'
-    ],
-    [
-        'booking_id' => '#45678',
-        'customer_name' => 'David Perera',
-        'booking_date' => '2025-03-20',
-        'payment_date' => null,
-        'amount' => 8500,
-        'status' => 'pending',
-        'method' => 'Online'
-    ],
-    [
-        'booking_id' => '#99123',
-        'customer_name' => 'Nimal Rajapaksa',
-        'booking_date' => '2025-03-22',
-        'payment_date' => '2025-03-23',
-        'amount' => 12000,
-        'status' => 'paid',
-        'method' => 'Card'
-    ],
-    [
-        'booking_id' => '#55667',
-        'customer_name' => 'Amara Wijesinghe',
-        'booking_date' => '2025-03-25',
-        'payment_date' => null,
-        'amount' => 9500,
-        'status' => 'pending',
-        'method' => 'Cash'
-    ]
-];
+// Build payments array from database data passed by controller
+// $payments is already set via view() extract — it comes from TransportRequest::getPaymentsByDriverId()
+if (!isset($payments)) {
+    $payments = [];
+}
+
+// Transform DB records into the format used by the view
+$formattedPayments = [];
+foreach ($payments as $p) {
+    $formattedPayments[] = [
+        'booking_id' => '#TR' . str_pad($p['id'], 3, '0', STR_PAD_LEFT),
+        'customer_name' => $p['customer_name'],
+        'booking_date' => $p['date'],
+        'payment_date' => $p['created_at'] ?? null,
+        'amount' => floatval($p['estimated_fare'] ?? 0),
+        'status' => $p['status'] === 'completed' ? 'paid' : 'confirmed',
+    ];
+}
+$payments = $formattedPayments;
 
 // Calculate summary statistics
 $totalEarnings = array_sum(array_column($payments, 'amount'));
 $paidPayments = array_filter($payments, fn($p) => $p['status'] === 'paid');
-$pendingPayments = array_filter($payments, fn($p) => $p['status'] === 'pending');
+$confirmedPayments = array_filter($payments, fn($p) => $p['status'] === 'confirmed');
 $completedAmount = array_sum(array_column($paidPayments, 'amount'));
-$pendingAmount = array_sum(array_column($pendingPayments, 'amount'));
+$pendingAmount = array_sum(array_column($confirmedPayments, 'amount'));
 $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
 ?>
 <!DOCTYPE html>
@@ -286,7 +257,7 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                             <th>Payment Date</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Actions</th>
+
                         </tr>
                     </thead>
 
@@ -303,11 +274,7 @@ $averageBooking = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                                     <?= ucfirst($payment['status']) ?>
                                 </span>
                             </td>
-                            <td>
-                                <button class="action-btn" onclick="alert('View receipt for <?= $payment['booking_id'] ?>')">
-                                    <i class="fa-solid fa-receipt"></i> Receipt
-                                </button>
-                            </td>
+
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
