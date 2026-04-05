@@ -15,6 +15,50 @@
   max-width: 600px;
   margin: 0 auto;
 }
+.trip-accommodation-booking-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(44, 85, 48, 0.1);
+  border: 1px solid rgba(44, 85, 48, 0.25);
+  color: #2c5530;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.trip-accommodation-content .trip-accommodation-summary {
+  margin-top: 20px;
+  padding: 14px 14px;
+  border-radius: 8px;
+  background: rgba(44, 85, 48, 0.06);
+  border: 1px solid rgba(44, 85, 48, 0.12);
+}
+.trip-accommodation-content .trip-accommodation-summary-label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2c5530;
+}
+.trip-accommodation-content .trip-accommodation-summary-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #333;
+}
+.trip-accommodation-content .trip-accommodation-summary-body p {
+  margin: 0 0 6px;
+}
+.trip-accommodation-content .trip-accommodation-summary-body p:last-child {
+  margin-bottom: 0;
+}
+.trip-accommodation-content .trip-accommodation-summary-body strong {
+  color: #1a1a1a;
+}
+.trip-accommodation-content .trip-accommodation-summary-item + .trip-accommodation-summary-item {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(44, 85, 48, 0.12);
+}
 .trip-accommodation-content .trip-accommodation-heading {
   margin: 0 0 8px 0;
   font-size: 22px;
@@ -330,11 +374,28 @@
 .trip-accommodation-content .modal-details-content {
   max-width: 560px;
   padding: 0;
-  overflow: hidden;
+  max-height: 90vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+.trip-accommodation-content .modal-details-content .modal-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 20px 24px 12px;
+  margin-bottom: 0;
+  background: #fff;
+  border-bottom: 2px solid #e0e8e0;
 }
 .trip-accommodation-content .modal-details-body {
   display: flex;
   flex-wrap: wrap;
+  flex: 1;
+  min-height: 0;
 }
 .trip-accommodation-content .modal-details-image {
   width: 100%;

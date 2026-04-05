@@ -45,7 +45,11 @@ class TransportRequest {
         $stmt->bindParam(":estimated_fare", $estimatedFare);
         $stmt->bindParam(":distance", $distance);
 
-        return $stmt->execute();
+        if ($stmt->execute()) {
+            $this->id = (int) $this->conn->lastInsertId();
+            return true;
+        }
+        return false;
     }
 
     public function getRequestById($id) {

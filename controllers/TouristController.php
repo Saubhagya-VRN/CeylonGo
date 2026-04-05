@@ -99,11 +99,304 @@ class TouristController {
             $user_name = trim(($tourist_data['first_name'] ?? '') . ' ' . ($tourist_data['last_name'] ?? ''));
         }
         $placesAutocompleteUrl = (defined('BASE_URL') ? BASE_URL : '/CeylonGo/public') . '/api/places-autocomplete';
+        $payhereMax = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
+        $bankDetails = defined('BANK_TRANSFER_DETAILS') ? BANK_TRANSFER_DETAILS : '';
         view('tourist/trip', [
             'tourist_data' => $tourist_data,
             'user_name' => $user_name,
-            'places_autocomplete_url' => $placesAutocompleteUrl
+            'places_autocomplete_url' => $placesAutocompleteUrl,
+            'payhere_per_transaction_max_lkr' => $payhereMax,
+            'bank_transfer_details' => $bankDetails,
         ]);
+    }
+
+    /**
+     * Pay for a customise-trip row: card (PayHere) or bank transfer. POST trip_id, payment_method.
+     */
+    public function tripPaymentCheckout() {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/customize-trip'));
+            exit;
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        $tripId = isset($_POST['trip_id']) ? (int) $_POST['trip_id'] : 0;
+        $method = isset($_POST['payment_method']) ? trim((string) $_POST['payment_method']) : '';
+        $userId = (int) $_SESSION['user_id'];
+
+        if ($tripId <= 0) {
+            $_SESSION['payment_error'] = 'Submit your trip on Trip Summary first, then pay here.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT id, user_id, budget_lkr, status, payhere_payment_id FROM trips WHERE id = ? AND user_id = ? LIMIT 1'
+            );
+            $stmt->execute([$tripId, $userId]);
+            $trip = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('tripPaymentCheckout: ' . $e->getMessage());
+            $_SESSION['payment_error'] = 'Could not load your trip. Try again.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        if (!$trip) {
+            $_SESSION['payment_error'] = 'Trip not found. Submit your trip again from Trip Summary.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        $budget = isset($trip['budget_lkr']) ? (float) $trip['budget_lkr'] : 0.0;
+        if ($budget <= 0) {
+            $_SESSION['payment_error'] = 'This trip has no budget total saved. Re-submit your trip from Trip Summary (run database/alter_trips_payment_columns.sql if needed).';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        if (!empty($trip['payhere_payment_id']) || ($trip['status'] ?? '') === 'confirmed') {
+            $_SESSION['payment_info'] = 'This trip is already paid or confirmed.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        if ($method === 'bank-transfer') {
+            $file = isset($_FILES['bank_transfer_slip']) ? $_FILES['bank_transfer_slip'] : null;
+            if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                $_SESSION['payment_error'] = 'Please upload a screenshot of your bank transfer slip.';
+                header('Location: /CeylonGo/public/tourist/customize-trip');
+                exit;
+            }
+            $slipPath = $this->saveTripBankTransferSlip($tripId, $file);
+            if ($slipPath === null) {
+                $_SESSION['payment_error'] = 'Please upload a JPG, PNG, or WebP image (max 5 MB).';
+                header('Location: /CeylonGo/public/tourist/customize-trip');
+                exit;
+            }
+            try {
+                $upd = $this->db->prepare(
+                    'UPDATE trips SET bank_transfer_submitted_at = NOW(), bank_transfer_slip_path = ? WHERE id = ? AND user_id = ? AND status = \'pending\''
+                );
+                $upd->execute([$slipPath, $tripId, $userId]);
+            } catch (\Throwable $e) {
+                error_log('tripPaymentCheckout bank: ' . $e->getMessage());
+                @unlink((defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__) . '/public/uploads')) . '/' . str_replace('\\', '/', $slipPath));
+                $_SESSION['payment_error'] = 'Could not save your transfer. If the problem persists, run database/alter_trips_payment_columns.sql.';
+                header('Location: /CeylonGo/public/tourist/customize-trip');
+                exit;
+            }
+            $_SESSION['payment_info'] = 'We have recorded your bank transfer. We will confirm within 1–2 business days.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        if ($method !== 'card') {
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        $touristModel = new Tourist($this->db);
+        $tourist = $touristModel->getTouristById($userId);
+        $email = trim((string) ($tourist['email'] ?? ''));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $_SESSION['payment_error'] = 'Add a valid email in your profile before paying online.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+        $phoneDigits = preg_replace('/\D/', '', (string) ($tourist['contact_number'] ?? ''));
+        if (strlen($phoneDigits) < 9) {
+            $_SESSION['payment_error'] = 'Add a valid phone number in your profile (at least 9 digits) before paying online.';
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        $payhereCap = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
+        if ($payhereCap > 0 && $budget > $payhereCap + 0.001) {
+            $_SESSION['payment_error'] = sprintf(
+                'Online card payment is limited to LKR %s per transaction. Use Bank transfer for this amount (LKR %s), or raise the PayHere limit.',
+                number_format($payhereCap),
+                number_format($budget, 2, '.', ',')
+            );
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        $merchantId = trim((string) PAYHERE_MERCHANT_ID);
+        $secret = trim((string) PAYHERE_MERCHANT_SECRET);
+        $orderId = 'CTRIP' . $tripId . 'T' . time();
+        $currency = 'LKR';
+        $amount = number_format($budget, 2, '.', '');
+
+        $hash = PayHere::checkoutHash($merchantId, $orderId, $amount, $currency, $secret);
+
+        $fullname = trim((string) ($tourist['first_name'] ?? '') . ' ' . ($tourist['last_name'] ?? ''));
+        if ($fullname === '') {
+            $fullname = 'Customer';
+        }
+        $nameParts = preg_split('/\s+/', $fullname, 2);
+        $firstName = $nameParts[0] ?: 'Customer';
+        $lastName = isset($nameParts[1]) ? $nameParts[1] : 'N/A';
+
+        $itemsName = 'Custom trip — ' . $orderId;
+        if (function_exists('iconv')) {
+            $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $itemsName);
+            if ($ascii !== false) {
+                $itemsName = $ascii;
+            }
+        }
+        $itemsName = mb_substr(preg_replace('/\s+/', ' ', trim($itemsName)), 0, 120) ?: 'Custom trip';
+
+        $fields = [
+            'merchant_id' => $merchantId,
+            'return_url' => app_absolute_url('tourist/payment/return') . '?',
+            'cancel_url' => app_absolute_url('tourist/customize-trip'),
+            'notify_url' => app_absolute_url('tourist/payment/notify'),
+            'order_id' => $orderId,
+            'items' => $itemsName,
+            'currency' => $currency,
+            'amount' => $amount,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $email,
+            'phone' => $phoneDigits,
+            'address' => 'N/A',
+            'city' => 'Colombo',
+            'country' => 'Sri Lanka',
+            'hash' => $hash,
+            'custom_1' => (string) $tripId,
+        ];
+
+        $checkoutUrl = PayHere::checkoutUrl((bool) PAYHERE_SANDBOX);
+
+        $_SESSION['payhere_pending_trip_id'] = $tripId;
+        $_SESSION['payhere_pending_trip_order_id'] = $orderId;
+
+        view('tourist/payhere_redirect', [
+            'checkout_url' => $checkoutUrl,
+            'fields' => $fields,
+        ]);
+    }
+
+    /**
+     * Final submit from Trip Summary wizard (AJAX). Stores a summary row in `trips` when the table exists.
+     */
+    public function tripSubmit() {
+        $ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower(trim($_SERVER['HTTP_X_REQUESTED_WITH'])) === 'xmlhttprequest';
+        if ($ajax) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+            if ($ajax) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Please log in as a tourist to submit your trip.']);
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/dashboard');
+            exit;
+        }
+
+        $userId = (int) $_SESSION['user_id'];
+        $destination = trim((string) ($_POST['destination'] ?? ''));
+        $startDate = trim((string) ($_POST['start_date'] ?? ''));
+        $endDate = trim((string) ($_POST['end_date'] ?? ''));
+        $customerName = trim((string) ($_POST['customer_name'] ?? ''));
+        if ($customerName === '') {
+            $customerName = trim((string) ($_SESSION['user_name'] ?? 'Tourist'));
+        }
+        $numPeople = max(1, (int) ($_POST['number_of_people'] ?? 1));
+        $numDays = max(1, (int) ($_POST['number_of_days'] ?? 1));
+        $budgetLkr = isset($_POST['budget_lkr']) ? (float) $_POST['budget_lkr'] : 0.0;
+        if ($budgetLkr < 0 || $budgetLkr > 999999999) {
+            $budgetLkr = 0.0;
+        }
+
+        if ($destination === '' || $startDate === '') {
+            if ($ajax) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Please complete destination and dates before submitting.']);
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Complete your trip details first.'));
+            exit;
+        }
+
+        try {
+            $sql = 'INSERT INTO trips (user_id, customer_name, number_of_people, start_date, destination, number_of_days, budget_lkr, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                $userId,
+                $customerName,
+                $numPeople,
+                $startDate,
+                $destination,
+                $numDays,
+                $budgetLkr > 0 ? round($budgetLkr, 2) : null,
+                'pending',
+            ]);
+            $tripId = (int) $this->db->lastInsertId();
+            if ($ajax) {
+                echo json_encode(['success' => true, 'trip_id' => $tripId]);
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Trip submitted.'));
+            exit;
+        } catch (\Throwable $e) {
+            error_log('tripSubmit: ' . $e->getMessage());
+            if (stripos($e->getMessage(), 'budget_lkr') !== false || stripos($e->getMessage(), 'Unknown column') !== false) {
+                try {
+                    $sql = 'INSERT INTO trips (user_id, customer_name, number_of_people, start_date, destination, number_of_days, status)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)';
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->execute([
+                        $userId,
+                        $customerName,
+                        $numPeople,
+                        $startDate,
+                        $destination,
+                        $numDays,
+                        'pending',
+                    ]);
+                    $tripId = (int) $this->db->lastInsertId();
+                    if ($ajax) {
+                        echo json_encode([
+                            'success' => true,
+                            'trip_id' => $tripId,
+                            'budget_persisted' => false,
+                            'message' => 'Run database/alter_trips_payment_columns.sql to save your budget for online payment.',
+                        ]);
+                        exit;
+                    }
+                    header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Trip submitted.'));
+                    exit;
+                } catch (\Throwable $e2) {
+                    error_log('tripSubmit fallback: ' . $e2->getMessage());
+                    $e = $e2;
+                }
+            }
+            if ($ajax) {
+                if (stripos($e->getMessage(), 'trips') !== false || stripos($e->getMessage(), 'Base table') !== false) {
+                    echo json_encode([
+                        'success' => true,
+                        'persisted' => false,
+                        'message' => 'Trip submitted (database trips table not available).',
+                    ]);
+                    exit;
+                }
+                http_response_code(500);
+                echo json_encode(['success' => false, 'error' => 'Could not save your trip. Please try again.']);
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Could not submit trip.'));
+            exit;
+        }
     }
 
     /**
@@ -162,7 +455,13 @@ class TouristController {
         if ($request->addRequest()) {
             if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => true]);
+                $row = $request->getRequestById($request->id);
+                $status = is_array($row) && isset($row['status']) ? (string) $row['status'] : 'pending';
+                echo json_encode([
+                    'success' => true,
+                    'request_id' => (int) $request->id,
+                    'status' => $status,
+                ]);
                 exit();
             }
             header("Location: /CeylonGo/public/tourist/transport-report");
@@ -216,7 +515,18 @@ class TouristController {
     }
 
     public function hotelRequestSubmit() {
+        $ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower(trim($_SERVER['HTTP_X_REQUESTED_WITH'])) === 'xmlhttprequest';
+        if ($ajax) {
+            header('Content-Type: application/json; charset=utf-8');
+        }
+
         if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+            if ($ajax) {
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Please log in as a tourist to complete a booking.']);
+                exit;
+            }
             header('Location: /CeylonGo/public/login');
             exit;
         }
@@ -224,7 +534,7 @@ class TouristController {
         $data = $_POST;
 
         $userId       = (int)($data['user_id'] ?? $_SESSION['user_id']);
-        $hotelId      = trim($data['hotel_id'] ?? '');
+        $hotelSlug    = trim($data['hotel_id'] ?? '');
         $hotelName    = trim($data['hotel_name'] ?? '');
         $customerName = trim($data['customer_name'] ?? '');
         $contact      = trim($data['contact_number'] ?? '');
@@ -238,44 +548,73 @@ class TouristController {
         $roomCount    = (int)($data['room_count'] ?? 1);
         $totalPrice   = isset($data['total_price']) ? (float)$data['total_price'] : 0.0;
 
-        if (!$hotelId || !$hotelName || !$customerName || !$contact || !$checkIn || !$checkOut || !$roomType || $totalPrice <= 0) {
+        if (!$hotelSlug || !$hotelName || !$customerName || !$contact || !$checkIn || !$checkOut || !$roomType || $totalPrice <= 0) {
+            if ($ajax) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Please fill all required fields for the hotel booking.']);
+                exit;
+            }
             header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Please fill all required fields for hotel booking.'));
             exit;
         }
 
         try {
-            $sql = "INSERT INTO hotel_requests (
-                        user_id, hotel_id, hotel_name,
-                        customer_name, contact_number, guests, adults, children,
-                        check_in_date, check_out_date, nights,
-                        room_type, room_count, total_price, currency
+            $sql = "INSERT INTO hotel_bookings (
+                        user_id, hotel_slug, hotel_name,
+                        guest_name, contact_number, guests, adults, children,
+                        check_in, check_out, nights,
+                        room_type, room_count, total_price, currency, status
                     ) VALUES (
-                        :user_id, :hotel_id, :hotel_name,
-                        :customer_name, :contact_number, :guests, :adults, :children,
-                        :check_in_date, :check_out_date, :nights,
-                        :room_type, :room_count, :total_price, 'LKR'
+                        :user_id, :hotel_slug, :hotel_name,
+                        :guest_name, :contact_number, :guests, :adults, :children,
+                        :check_in, :check_out, :nights,
+                        :room_type, :room_count, :total_price, 'LKR', 'pending'
                     )";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':user_id'        => $userId,
-                ':hotel_id'       => $hotelId,
+                ':hotel_slug'     => $hotelSlug,
                 ':hotel_name'     => $hotelName,
-                ':customer_name'  => $customerName,
+                ':guest_name'     => $customerName,
                 ':contact_number' => $contact,
                 ':guests'         => $guests,
                 ':adults'         => $adults,
                 ':children'       => $children,
-                ':check_in_date'  => $checkIn,
-                ':check_out_date' => $checkOut,
+                ':check_in'       => $checkIn,
+                ':check_out'      => $checkOut,
                 ':nights'         => $nights,
                 ':room_type'      => $roomType,
                 ':room_count'     => $roomCount,
                 ':total_price'    => $totalPrice,
             ]);
-            header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Hotel request submitted.'));
+            $bookingId = (int)$this->db->lastInsertId();
+            if ($ajax) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Your accommodation booking has been saved.',
+                    'booking_id' => $bookingId,
+                    'status' => 'pending',
+                    'hotel_name' => $hotelName,
+                    'check_in' => $checkIn,
+                    'check_out' => $checkOut,
+                    'total_price' => $totalPrice,
+                    'total_price_display' => 'Rs.' . number_format($totalPrice, 0, '.', ','),
+                ]);
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Hotel booking saved.'));
             exit;
         } catch (\Throwable $e) {
-            header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Failed to submit hotel request.'));
+            if ($ajax) {
+                http_response_code(500);
+                $msg = 'Could not save your booking. If the problem continues, contact support.';
+                if (stripos($e->getMessage(), 'hotel_bookings') !== false || stripos($e->getMessage(), 'Base table') !== false) {
+                    $msg = 'Database table hotel_bookings is missing. Run database/create_hotel_bookings_table.sql on your database.';
+                }
+                echo json_encode(['success' => false, 'error' => $msg]);
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Failed to save hotel booking.'));
             exit;
         }
     }
@@ -674,7 +1013,10 @@ class TouristController {
         $applied = false;
         if (!empty($q['md5sig']) && PayHere::notifyValid($q, (string) PAYHERE_MERCHANT_SECRET)) {
             if ((int) ($q['status_code'] ?? 0) === 2) {
-                $applied = $this->payHereCompleteApprovedBooking($q);
+                $applied = $this->payHereCompleteCustomTripPayment($q);
+                if (!$applied) {
+                    $applied = $this->payHereCompleteApprovedBooking($q);
+                }
             }
         }
 
@@ -717,6 +1059,16 @@ class TouristController {
         }
 
         error_log('PayHERE return: method=' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' qs=' . ($_SERVER['QUERY_STRING'] ?? '') . ' keys=' . implode(',', array_keys($q)));
+
+        if (!empty($_SESSION['payhere_pending_trip_id'])) {
+            unset($_SESSION['payhere_pending_trip_order_id'], $_SESSION['payhere_pending_trip_id']);
+            if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+                header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/customize-trip'));
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
 
         if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
             header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
@@ -808,7 +1160,57 @@ class TouristController {
         return $out;
     }
 
+    /**
+     * PayHere notify: custom trip payment (order_id CTRIP{n}T...).
+     */
+    private function payHereCompleteCustomTripPayment(array $post): bool {
+        $orderId = trim((string) ($post['order_id'] ?? ''));
+        if (!preg_match('/^CTRIP(\d+)T\d+$/', $orderId, $m)) {
+            return false;
+        }
+        $tripId = (int) $m[1];
+        $paymentId = isset($post['payment_id']) ? trim((string) $post['payment_id']) : '';
+        $payAmount = isset($post['payhere_amount']) ? (string) $post['payhere_amount'] : '';
+        if ($tripId <= 0 || $paymentId === '') {
+            return false;
+        }
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT id, budget_lkr, status, payhere_payment_id FROM trips WHERE id = ? LIMIT 1'
+            );
+            $stmt->execute([$tripId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                return false;
+            }
+            if (!empty($row['payhere_payment_id']) && (string) $row['payhere_payment_id'] === $paymentId) {
+                return true;
+            }
+            if (($row['status'] ?? '') !== 'pending') {
+                return false;
+            }
+            $budget = isset($row['budget_lkr']) ? (float) $row['budget_lkr'] : 0.0;
+            $expected = number_format($budget, 2, '.', '');
+            if ($expected === '0.00' || $payAmount !== $expected) {
+                error_log('PayHere custom trip: amount mismatch for trip ' . $tripId);
+                return false;
+            }
+            $upd = $this->db->prepare(
+                'UPDATE trips SET status = \'confirmed\', payhere_payment_id = ?, paid_at = NOW() WHERE id = ? AND status = \'pending\''
+            );
+            $upd->execute([$paymentId, $tripId]);
+            return $upd->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log('payHereCompleteCustomTripPayment: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     private function payHereCompleteApprovedBooking(array $post): bool {
+        $orderIdEarly = trim((string) ($post['order_id'] ?? ''));
+        if ($orderIdEarly !== '' && preg_match('/^CTRIP\d+T\d+$/', $orderIdEarly)) {
+            return false;
+        }
         $bookingId = isset($post['custom_1']) ? (int) $post['custom_1'] : 0;
         if ($bookingId <= 0 && !empty($post['order_id']) && preg_match('/^PKG(\d+)T\d+$/', (string) $post['order_id'], $m)) {
             $bookingId = (int) $m[1];
@@ -867,6 +1269,12 @@ class TouristController {
 
         $statusCode = isset($post['status_code']) ? (int) $post['status_code'] : 0;
         if ($statusCode !== 2) {
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo 'OK';
+            return;
+        }
+
+        if ($this->payHereCompleteCustomTripPayment($post)) {
             header('Content-Type: text/plain; charset=UTF-8');
             echo 'OK';
             return;
@@ -1191,10 +1599,16 @@ class TouristController {
 
     public function tourGuideRequestSubmit() {
         $data = $_POST;
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         // Validate required fields
-        if (empty($data['customerName']) || empty($data['contact']) || empty($data['location']) || 
+        if (empty($data['customerName']) || empty($data['contact']) || empty($data['location']) ||
             empty($data['language']) || empty($data['date']) || empty($data['time'])) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Please fill in all required fields']);
+                exit();
+            }
             header("Location: /CeylonGo/public/tourist/dashboard?error=" . urlencode("Please fill in all required fields"));
             exit();
         }
@@ -1211,14 +1625,34 @@ class TouristController {
             $guideRequest->notes = $data['notes'] ?? '';
 
             if ($guideRequest->create()) {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'location' => trim((string) ($data['location'] ?? '')),
+                        'request_id' => (int) $guideRequest->id,
+                        'status' => (string) ($guideRequest->status ?? 'pending'),
+                    ]);
+                    exit();
+                }
                 header("Location: /CeylonGo/public/tourist/tour-guide-report");
             } else {
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => 'Failed to submit request']);
+                    exit();
+                }
                 header("Location: /CeylonGo/public/tourist/dashboard?error=" . urlencode("Failed to submit request"));
             }
             exit();
-            
+
         } catch (Exception $e) {
             error_log($e->getMessage());
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'An error occurred. Please try again.']);
+                exit();
+            }
             header("Location: /CeylonGo/public/tourist/dashboard?error=" . urlencode("An error occurred. Please try again."));
             exit();
         }
@@ -1780,6 +2214,45 @@ class TouristController {
             return null;
         }
         $basename = 'booking_' . $bookingId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $dest = $dir . DIRECTORY_SEPARATOR . $basename;
+        if (!move_uploaded_file($tmp, $dest)) {
+            return null;
+        }
+        return 'bank_slips/' . $basename;
+    }
+
+    /**
+     * @return string|null Relative path under public/uploads/ (e.g. bank_slips/trip_1_....jpg)
+     */
+    private function saveTripBankTransferSlip(int $tripId, array $file): ?string {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return null;
+        }
+        if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
+            return null;
+        }
+        $tmp = $file['tmp_name'] ?? '';
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            return null;
+        }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmp);
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+        if (!isset($map[$mime])) {
+            return null;
+        }
+        $ext = $map[$mime];
+        $base = defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__) . '/public/uploads');
+        $dir = $base . DIRECTORY_SEPARATOR . 'bank_slips';
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            error_log('saveTripBankTransferSlip: cannot create ' . $dir);
+            return null;
+        }
+        $basename = 'trip_' . $tripId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
         $dest = $dir . DIRECTORY_SEPARATOR . $basename;
         if (!move_uploaded_file($tmp, $dest)) {
             return null;

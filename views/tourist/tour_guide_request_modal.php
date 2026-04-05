@@ -28,13 +28,15 @@ $time_slots = ['', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
           </div>
           <div class="trip-modal-field">
             <label for="tg_location">Location</label>
-            <input type="text" id="tg_location" name="location" placeholder="e.g., Kandy" required>
+            <div class="trip-modal-location-wrap">
+              <i class="fa-solid fa-location-dot trip-modal-location-icon" aria-hidden="true"></i>
+              <input type="text" id="tg_location" name="location" placeholder="Type to search a place" autocomplete="off" required>
+            </div>
           </div>
           <div class="trip-modal-field">
             <label for="tg_date">Preferred Date</label>
-            <div class="trip-modal-input-wrap">
+            <div class="trip-modal-input-wrap trip-modal-input-wrap--date">
               <input type="date" id="tg_date" name="date" required>
-              <i class="fa-regular fa-calendar trip-modal-input-icon"></i>
             </div>
           </div>
         </div>
