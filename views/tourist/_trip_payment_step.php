@@ -89,7 +89,7 @@ $payhero = htmlspecialchars($asset_base . '/images/pay.jpg', ENT_QUOTES, 'UTF-8'
 
           <div class="trip-payment-btn-row">
             <button type="submit" class="trip-payment-btn trip-payment-btn--primary" id="trip_payment_submit_btn">Pay</button>
-            <a href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/tourist/my-bookings" class="trip-payment-btn trip-payment-btn--back">Back</a>
+            <a href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/tourist/my-bookings?view=custom" class="trip-payment-btn trip-payment-btn--back">Back</a>
           </div>
         </form>
       </div>

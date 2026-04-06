@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS `trips` (
   `status` enum('pending','confirmed','cancelled','completed') DEFAULT 'pending',
   `payhere_payment_id` varchar(64) DEFAULT NULL,
   `paid_at` datetime DEFAULT NULL,
+  `refund_requested_at` datetime DEFAULT NULL,
+  `refund_reason` varchar(2000) DEFAULT NULL,
   `bank_transfer_submitted_at` datetime DEFAULT NULL,
   `bank_transfer_slip_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

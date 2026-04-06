@@ -3,28 +3,69 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $bookings = $bookings ?? [];
+$custom_trips = $custom_trips ?? [];
+$tourist_email = isset($tourist_email) ? (string) $tourist_email : '';
+$bookings_custom_only = !empty($bookings_custom_only);
 $asset_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
 if ($asset_base === '' || $asset_base === '/') {
     $asset_base = '/CeylonGo/public';
 }
+$user_name = isset($_SESSION['user_name']) ? trim((string) $_SESSION['user_name']) : 'Tourist';
+$user_email_sidebar = $tourist_email !== '' ? $tourist_email : (isset($_SESSION['user_email']) ? trim((string) $_SESSION['user_email']) : '');
+$avatar_initial = $user_name !== '' ? strtoupper(substr($user_name, 0, 1)) : 'T';
+$trip_sidebar_active = 'bookings';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Bookings - Ceylon Go</title>
+  <title><?php echo $bookings_custom_only ? 'Customised trips — Bookings - Ceylon Go' : 'My Bookings - Ceylon Go'; ?></title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/common.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/navbar.css">
+  <?php if ($bookings_custom_only): ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/trip_layout.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/sidebar.css">
+  <?php endif; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/footer.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/my_bookings.css">
+  <?php if ($bookings_custom_only): ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base); ?>/css/tourist/trip.css">
+  <?php endif; ?>
 </head>
-<body class="my-bookings-page">
+<body class="<?php echo $bookings_custom_only ? 'trip-page-body ' : ''; ?>my-bookings-page">
   <?php include __DIR__ . '/header.php'; ?>
 
-  <main class="my-bookings-main">
+  <?php if ($bookings_custom_only): ?>
+  <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
+
+  <div class="trip-page-wrapper">
+    <?php include __DIR__ . '/_trip_sidebar.php'; ?>
+
+    <main class="trip-main-content">
+      <button type="button" class="hamburger-btn trip-hamburger" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+      <div class="trip-breadcrumbs">
+        <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/dashboard-side"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <span>&gt;</span>
+        <span>my-bookings</span>
+      </div>
+
+      <div class="trip-header-row my-bookings-custom-header" aria-label="Bookings">
+        <div class="trip-stepper-prev" aria-hidden="true"></div>
+        <h1 class="trip-page-title trip-title-centered">
+          <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> Bookings
+        </h1>
+        <div class="trip-stepper-next" aria-hidden="true"></div>
+      </div>
+
+  <?php endif; ?>
+
+  <div class="my-bookings-main">
+    <?php if (!$bookings_custom_only): ?>
     <h1 class="my-bookings-title">My Bookings</h1>
     <p class="my-bookings-intro">Your booking requests. We will contact you within 24 hrs.</p>
+    <?php endif; ?>
 
     <?php
     $payment_message = $payment_message ?? null;
@@ -41,12 +82,133 @@ if ($asset_base === '' || $asset_base === '/') {
     <div class="my-bookings-flash my-bookings-flash--info"><?php echo htmlspecialchars($payment_info); ?></div>
     <?php endif; ?>
 
-    <?php if (empty($bookings)): ?>
+    <?php
+    $has_any_listing = $bookings_custom_only ? !empty($custom_trips) : !empty($bookings);
+    ?>
+    <?php if (!$has_any_listing): ?>
       <div class="my-bookings-empty">
-        <p>You have no pending bookings.</p>
+        <?php if ($bookings_custom_only): ?>
+        <p>You have no customised trips here yet. Complete a trip in Customise Your Trip and pay (or submit a bank transfer) to see it listed.</p>
+        <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/customize-trip" class="btn-primary-pkg">Customise Your Trip</a>
+        <?php else: ?>
+        <p>You have no bookings yet.</p>
         <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/packages" class="btn-primary-pkg">Browse Packages</a>
+        <?php endif; ?>
       </div>
     <?php else: ?>
+      <?php if ($bookings_custom_only && !empty($custom_trips)): ?>
+      <div class="my-bookings-list my-bookings-list--custom">
+        <?php foreach ($custom_trips as $ct):
+          $ctid = (int) ($ct['id'] ?? 0);
+          $overview_href = htmlspecialchars($asset_base) . '/tourist/customize-trip?step=14&trip_id=' . urlencode((string) $ctid);
+          $badge_submitted = !empty($ct['is_bank_submitted']);
+          $badge_text = $badge_submitted ? 'Payment submitted' : 'Completed';
+          $travelers = (int) ($ct['travelers'] ?? 0);
+          $budget = (float) ($ct['budget_lkr'] ?? 0);
+          $total_line = $budget > 0 ? ('LKR ' . number_format((int) round($budget))) : 'LKR —';
+          $cust = trim((string) ($ct['customer_name'] ?? ''));
+          $em = trim($tourist_email);
+          $contact_line = ($cust === '' && $em === '') ? '' : ($cust . ($em !== '' ? ' · ' . $em : ''));
+          $refund_requested = !empty($ct['refund_requested']);
+          $refund_eligible = !empty($ct['refund_eligible']) && !$badge_submitted;
+          $paid_raw = (string) ($ct['paid_at_raw'] ?? '');
+          $paid_label = '';
+          if ($paid_raw !== '') {
+            $pts = strtotime($paid_raw);
+            $paid_label = $pts !== false ? date('F j, Y \a\t g:i A', $pts) : $paid_raw;
+          }
+          $deadline_label = '';
+          if (!empty($ct['refund_deadline_ts'])) {
+            $deadline_label = date('F j, Y \a\t g:i A', (int) $ct['refund_deadline_ts']);
+          }
+          $total_lkr_int = (int) round($budget);
+          $refund_rr = trim((string) ($ct['refund_requested_at'] ?? ''));
+        ?>
+        <div class="my-booking-card" role="region" aria-label="Custom trip booking">
+          <div class="my-booking-header">
+            <?php if ($badge_submitted): ?>
+            <span class="my-booking-status my-booking-status--awaiting-bank"><?php echo htmlspecialchars($badge_text); ?></span>
+            <?php else: ?>
+            <span class="my-booking-status my-booking-status--paid"><?php echo htmlspecialchars($badge_text); ?></span>
+            <?php endif; ?>
+            <span class="my-booking-date"><?php echo htmlspecialchars($ct['date_label'] ?? '—'); ?></span>
+          </div>
+          <h2 class="my-booking-package"><?php echo htmlspecialchars($ct['destination'] ?: 'Your trip'); ?></h2>
+          <?php if ($badge_submitted): ?>
+          <ul class="my-booking-details">
+            <li><strong>Trip No:</strong> <?php echo $ctid > 0 ? (int) $ctid : '—'; ?></li>
+            <li><strong>Travelers:</strong> <?php echo $travelers > 0 ? $travelers : '—'; ?></li>
+            <li><strong>Total:</strong> <?php echo htmlspecialchars($total_line); ?></li>
+            <li><strong>Contact:</strong> <?php echo htmlspecialchars($contact_line !== '' ? $contact_line : '—'); ?></li>
+          </ul>
+          <p class="my-booking-note">We have recorded your bank transfer. Your booking stays approved while we verify the payment (usually within 1–2 business days).</p>
+          <div class="my-booking-custom-actions">
+            <a class="my-booking-btn-trip-summary" href="<?php echo $overview_href; ?>">View trip summary</a>
+          </div>
+          <?php elseif ($refund_requested): ?>
+          <ul class="my-booking-details my-booking-details--paid-follow">
+            <li><strong>Trip No:</strong> <?php echo $ctid > 0 ? (int) $ctid : '—'; ?></li>
+            <li><strong>Travelers:</strong> <?php echo $travelers > 0 ? $travelers : '—'; ?></li>
+            <li><strong>Total:</strong> <?php echo htmlspecialchars($total_line); ?></li>
+          </ul>
+          <div class="my-booking-paid-footer">
+            <p class="my-booking-refund-status--above">Refund request submitted<?php
+              if ($refund_rr !== '' && strtotime($refund_rr) !== false): ?> on <?php echo htmlspecialchars(date('F j, Y \a\t g:i A', strtotime($refund_rr))); ?><?php endif; ?>. We will email you about the next steps.</p>
+            <div class="my-booking-paid-grid">
+              <div class="my-booking-cell my-booking-cell--contact">
+                <ul class="my-booking-details my-booking-details--contact-only">
+                  <li><strong>Contact:</strong> <?php echo htmlspecialchars($contact_line !== '' ? $contact_line : '—'); ?></li>
+                </ul>
+                <p class="my-booking-note my-booking-paymsg-line">Payment complete. Thank you for choosing Ceylon Go.</p>
+              </div>
+              <div class="my-booking-cell my-booking-cell--refund">
+              </div>
+              <div class="my-booking-cell my-booking-cell--trip">
+                <a class="my-booking-btn-trip-summary" href="<?php echo $overview_href; ?>">View trip summary</a>
+              </div>
+            </div>
+          </div>
+          <?php else: ?>
+          <ul class="my-booking-details my-booking-details--paid-follow">
+            <li><strong>Trip No:</strong> <?php echo $ctid > 0 ? (int) $ctid : '—'; ?></li>
+            <li><strong>Travelers:</strong> <?php echo $travelers > 0 ? $travelers : '—'; ?></li>
+            <li><strong>Total:</strong> <?php echo htmlspecialchars($total_line); ?></li>
+          </ul>
+          <div class="my-booking-paid-footer">
+            <div class="my-booking-paid-grid">
+              <div class="my-booking-cell my-booking-cell--contact">
+                <ul class="my-booking-details my-booking-details--contact-only">
+                  <li><strong>Contact:</strong> <?php echo htmlspecialchars($contact_line !== '' ? $contact_line : '—'); ?></li>
+                </ul>
+                <p class="my-booking-note my-booking-paymsg-line">Payment complete. Thank you for choosing Ceylon Go.</p>
+              </div>
+              <div class="my-booking-cell my-booking-cell--refund">
+                <?php if ($refund_eligible && $paid_label !== ''): ?>
+                <button type="button" class="my-booking-btn-refund js-custom-trip-refund-open"
+                  data-trip-id="<?php echo (int) $ctid; ?>"
+                  data-paid-label="<?php echo htmlspecialchars($paid_label, ENT_QUOTES, 'UTF-8'); ?>"
+                  data-deadline-label="<?php echo htmlspecialchars($deadline_label, ENT_QUOTES, 'UTF-8'); ?>"
+                  data-total-lkr="<?php echo (int) $total_lkr_int; ?>"
+                >Request refund</button>
+                <?php endif; ?>
+              </div>
+              <div class="my-booking-cell my-booking-cell--trip">
+                <a class="my-booking-btn-trip-summary" href="<?php echo $overview_href; ?>">View trip summary</a>
+              </div>
+            </div>
+            <?php if ($paid_raw !== '' && !$refund_eligible): ?>
+            <p class="my-booking-refund-note--below">Refunds can only be requested within 3 days of payment. This booking is outside that window.</p>
+            <?php elseif ($paid_raw === ''): ?>
+            <p class="my-booking-refund-note--below">Refund requests need a confirmed payment time on file. Please contact us with your trip number.</p>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
+
+      <?php if (!$bookings_custom_only && !empty($bookings)): ?>
       <div class="my-bookings-list">
         <?php foreach (array_reverse($bookings) as $b):
           $is_paid = (isset($b['status']) && $b['status'] === 'paid');
@@ -134,8 +296,13 @@ if ($asset_base === '' || $asset_base === '/') {
         </div>
         <?php endforeach; ?>
       </div>
+      <?php endif; ?>
     <?php endif; ?>
-  </main>
+  </div>
+  <?php if ($bookings_custom_only): ?>
+    </main>
+  </div>
+  <?php endif; ?>
 
   <div id="refundModal" class="refund-modal" hidden aria-hidden="true">
     <div class="refund-modal__backdrop js-refund-close" tabindex="-1"></div>
@@ -169,7 +336,7 @@ if ($asset_base === '' || $asset_base === '/') {
     var tripBodyEl = document.getElementById('tripSummaryModalBody');
     var refundModal = document.getElementById('refundModal');
     var refundBodyEl = document.getElementById('refundModalBody');
-    var refundState = { bookingId: '', paidLabel: '', deadlineLabel: '', totalLkr: 0 };
+    var refundState = { mode: 'package', bookingId: '', tripId: '', paidLabel: '', deadlineLabel: '', totalLkr: 0 };
 
     function esc(s) {
       if (s == null) return '';
@@ -202,7 +369,9 @@ if ($asset_base === '' || $asset_base === '/') {
         '<li><strong>Payment received:</strong> ' + esc(refundState.paidLabel) + '</li>' +
         '<li><strong>Request refund by:</strong> ' + esc(refundState.deadlineLabel) + '</li>' +
         '</ul>' +
-        '<p class="refund-hint">If you continue, you confirm a refund request for booking #' + esc(refundState.bookingId) + '.</p>' +
+        '<p class="refund-hint">If you continue, you confirm a refund request for ' +
+        (refundState.mode === 'custom_trip' ? ('trip No. ' + esc(refundState.tripId)) : ('booking #' + esc(refundState.bookingId))) +
+        '.</p>' +
         '<div class="refund-actions">' +
         '<button type="button" class="refund-btn refund-btn--ghost js-refund-step1-cancel">Cancel</button>' +
         '<button type="button" class="refund-btn refund-btn--primary js-refund-step1-continue">Continue</button>' +
@@ -210,10 +379,19 @@ if ($asset_base === '' || $asset_base === '/') {
     }
     function showRefundStep2() {
       if (!refundBodyEl) return;
+      var idLine = '';
+      var hiddenFields = '';
+      if (refundState.mode === 'custom_trip') {
+        hiddenFields = '<input type="hidden" name="trip_id" value="' + esc(refundState.tripId) + '">';
+        idLine = '<p class="refund-confirm-line">Trip No. <strong>' + esc(refundState.tripId) + '</strong></p>';
+      } else {
+        hiddenFields = '<input type="hidden" name="booking_id" value="' + esc(refundState.bookingId) + '">';
+        idLine = '<p class="refund-confirm-line">Booking <strong>#' + esc(refundState.bookingId) + '</strong></p>';
+      }
       refundBodyEl.innerHTML =
         '<form class="refund-step" id="refundSubmitForm">' +
-        '<input type="hidden" name="booking_id" value="' + esc(refundState.bookingId) + '">' +
-        '<p class="refund-confirm-line">Booking <strong>#' + esc(refundState.bookingId) + '</strong></p>' +
+        hiddenFields +
+        idLine +
         '<p class="refund-confirm-line">Total paid: <strong>LKR ' + nf(refundState.totalLkr) + '</strong></p>' +
         '<label class="refund-label">Reason (optional)' +
         '<textarea name="reason" class="refund-textarea" rows="3" maxlength="2000" placeholder="Tell us why you need a refund"></textarea></label>' +
@@ -235,7 +413,21 @@ if ($asset_base === '' || $asset_base === '/') {
     if (refundModal && refundBodyEl) {
       document.querySelectorAll('.js-refund-open').forEach(function (btn) {
         btn.addEventListener('click', function () {
+          refundState.mode = 'package';
           refundState.bookingId = btn.getAttribute('data-booking-id') || '';
+          refundState.tripId = '';
+          refundState.paidLabel = btn.getAttribute('data-paid-label') || '';
+          refundState.deadlineLabel = btn.getAttribute('data-deadline-label') || '';
+          refundState.totalLkr = parseInt(btn.getAttribute('data-total-lkr') || '0', 10) || 0;
+          showRefundStep1();
+          openRefundModal();
+        });
+      });
+      document.querySelectorAll('.js-custom-trip-refund-open').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          refundState.mode = 'custom_trip';
+          refundState.tripId = btn.getAttribute('data-trip-id') || '';
+          refundState.bookingId = '';
           refundState.paidLabel = btn.getAttribute('data-paid-label') || '';
           refundState.deadlineLabel = btn.getAttribute('data-deadline-label') || '';
           refundState.totalLkr = parseInt(btn.getAttribute('data-total-lkr') || '0', 10) || 0;
@@ -273,7 +465,10 @@ if ($asset_base === '' || $asset_base === '/') {
         var fd = new FormData(form);
         var submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;
-        fetch(base + '/tourist/booking/refund-request', {
+        var refundUrl = refundState.mode === 'custom_trip'
+          ? base + '/tourist/trip/refund-request'
+          : base + '/tourist/booking/refund-request';
+        fetch(refundUrl, {
           method: 'POST',
           body: fd,
           credentials: 'same-origin',
@@ -391,5 +586,36 @@ if ($asset_base === '' || $asset_base === '/') {
     });
   })();
   </script>
+  <?php if ($bookings_custom_only): ?>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var hamburger = document.getElementById('tripHamburgerBtn');
+    var sidebar = document.getElementById('tripSidebar');
+    var overlay = document.getElementById('tripSidebarOverlay');
+    function toggleSidebar() {
+      if (hamburger) hamburger.classList.toggle('active');
+      if (sidebar) sidebar.classList.toggle('active');
+      if (overlay) overlay.classList.toggle('active');
+      document.body.style.overflow = sidebar && sidebar.classList.contains('active') ? 'hidden' : '';
+    }
+    function closeSidebar() {
+      if (hamburger) hamburger.classList.remove('active');
+      if (sidebar) sidebar.classList.remove('active');
+      if (overlay) overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    if (hamburger) hamburger.addEventListener('click', toggleSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+    document.querySelectorAll('#tripSidebar ul li a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 768) closeSidebar();
+    });
+  });
+  </script>
+  <?php endif; ?>
 </body>
 </html>

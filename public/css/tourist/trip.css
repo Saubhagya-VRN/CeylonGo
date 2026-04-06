@@ -2144,6 +2144,12 @@
   border: 1px solid #bfdbfe;
 }
 
+.trip-paid-card__badge--submitted {
+  color: #c2410c;
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
 .trip-paid-card__date {
   font-size: 0.82rem;
   color: #6b7280;
@@ -2175,8 +2181,67 @@
   font-size: 0.9rem;
 }
 
+.trip-paid-card__note--success {
+  color: #047857;
+  font-weight: 600;
+}
+
+.trip-paid-card__note--pending {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.trip-paid-card__actions--single {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.trip-paid-card__actions--single .trip-paid-card__btn {
+  flex: 1 1 auto;
+  max-width: 280px;
+}
+
+.trip-paid-card--overview {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Step 14 placeholder is centered; keep destination title centered, details left */
+.trip-step-card--placeholder .trip-paid-card--overview {
+  text-align: left;
+}
+.trip-step-card--placeholder .trip-paid-card--overview .trip-paid-card__title {
+  text-align: center;
+}
+.trip-step-card--placeholder .trip-paid-card--overview .trip-paid-card__meta {
+  list-style: disc;
+  list-style-position: outside;
+  padding-left: 1.35rem;
+  margin: 0;
+  text-align: left;
+}
+.trip-step-card--placeholder .trip-paid-card--overview .trip-paid-card__note--success {
+  text-align: center;
+}
+
 .trip-paid-card__actions {
   margin-top: 12px;
+}
+
+.trip-paid-card__actions--split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.trip-paid-card__actions--split .trip-paid-card__btn {
+  width: auto;
+  flex: 1 1 140px;
+  min-width: 0;
 }
 
 .trip-paid-card__btn {
@@ -2194,8 +2259,218 @@
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.trip-paid-card__btn:hover {
+.trip-paid-card__btn--secondary {
+  border-color: #f97316;
+  color: #c2410c;
+  background: #fff;
+}
+
+.trip-paid-card__btn--secondary:hover {
+  background: #fff7ed;
+}
+
+.trip-paid-card__btn--primary {
+  border-color: #2563eb;
+  color: #1d4ed8;
   background: #eff6ff;
+}
+
+.trip-paid-card__btn--primary:hover {
+  background: #dbeafe;
+}
+
+button.trip-paid-card__btn {
+  cursor: pointer;
+  font: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+}
+
+/* Trip Overview modals — budget popup + refund (styles aligned with my_bookings) */
+.trip-modal-overlay--trip-overview {
+  z-index: 10050;
+}
+.trip-modal.trip-modal--budget-summary {
+  max-width: min(1100px, 96vw);
+  width: 100%;
+}
+.trip-modal--budget-summary .trip-modal-budget-body {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+}
+
+.trip-refund-modal.refund-modal {
+  z-index: 10060;
+}
+
+.refund-modal[hidden] {
+  display: none !important;
+}
+
+.refund-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.refund-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  cursor: pointer;
+}
+
+.refund-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(88vh, 720px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.refund-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.refund-modal__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.refund-modal__close {
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.refund-modal__close:hover {
+  background: #e5e7eb;
+}
+
+.refund-modal__body {
+  padding: 16px 18px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.refund-policy {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.refund-facts {
+  margin: 0 0 14px;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.refund-hint {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.refund-confirm-line {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.refund-label {
+  display: block;
+  margin: 12px 0 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.refund-textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.refund-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.refund-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.refund-btn--ghost {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.refund-btn--ghost:hover {
+  background: #e5e7eb;
+}
+
+.refund-btn--primary {
+  background: linear-gradient(to right, #9a3412, #c2410c);
+  color: #fff;
+}
+
+.refund-btn--primary:hover {
+  filter: brightness(1.05);
+}
+
+.refund-step--success .refund-success-msg {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  color: #166534;
+  line-height: 1.5;
 }
 
 /* Payments step — mirrors public/tourist/payment.php layout */

@@ -45,11 +45,11 @@ $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
         <ul>
           <li><a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/customize-trip"><i class="fa-solid fa-wand-magic-sparkles"></i> <span class="sidebar-link-text">Customise Your Trip <span class="sidebar-sub">Plan Custom Trips</span></span></a></li>
-          <li class="active"><a href="/CeylonGo/public/tourist/transport-report"><i class="fa-solid fa-car-side"></i> <span class="sidebar-link-text">Transport Requests <span class="sidebar-sub">Request Transport</span></span></a></li>
-          <li><a href="#"><i class="fa-regular fa-message"></i> <span class="sidebar-link-text">Queries <span class="sidebar-sub">Active Requests</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/my-bookings"><i class="fa-regular fa-calendar-check"></i> <span class="sidebar-link-text">Bookings <span class="sidebar-sub">Manage Reservations</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/customize-trip?step=11"><i class="fa-solid fa-clipboard-list"></i> <span class="sidebar-link-text">Status of Bookings <span class="sidebar-sub">Trip review &amp; submit</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/customize-trip?step=10"><i class="fa-solid fa-wallet"></i> <span class="sidebar-link-text">Budget Overview <span class="sidebar-sub">Costs &amp; itinerary</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/customize-trip?step=14"><i class="fa-solid fa-clipboard-check"></i> <span class="sidebar-link-text">Trip Overview <span class="sidebar-sub">Final confirmation</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/my-bookings?view=custom"><i class="fa-regular fa-calendar-check"></i> <span class="sidebar-link-text">Bookings <span class="sidebar-sub">Customised trips</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/payment"><i class="fa-solid fa-credit-card"></i> <span class="sidebar-link-text">Payments <span class="sidebar-sub">Invoices & Wallet</span></span></a></li>
-          <li><a href="#"><i class="fa-regular fa-heart"></i> <span class="sidebar-link-text">Wishlist <span class="sidebar-sub">Saved Destinations</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/profile"><i class="fa-regular fa-user"></i> <span class="sidebar-link-text">Profile <span class="sidebar-sub">Account Settings</span></span></a></li>
         </ul>
       </div>

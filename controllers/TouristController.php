@@ -167,6 +167,33 @@ class TouristController {
         $payhereMax = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
         $bankDetails = defined('BANK_TRANSFER_DETAILS') ? BANK_TRANSFER_DETAILS : '';
         $lastTripId = isset($_SESSION['last_trip_id']) ? (int) $_SESSION['last_trip_id'] : 0;
+        $uidTripPage = (int) $_SESSION['user_id'];
+        if (isset($_GET['trip_id'])) {
+            $g = (int) $_GET['trip_id'];
+            if ($g > 0) {
+                try {
+                    $stmt = $this->db->prepare('SELECT id FROM trips WHERE id = ? AND user_id = ? LIMIT 1');
+                    $stmt->execute(array($g, $uidTripPage));
+                    if ($stmt->fetch(PDO::FETCH_ASSOC)) {
+                        $lastTripId = $g;
+                        $_SESSION['last_trip_id'] = $g;
+                    }
+                } catch (\Throwable $e) {
+                    error_log('trip GET trip_id: ' . $e->getMessage());
+                }
+            }
+        }
+        // Wizard + Trip Overview need a trip id even when session was cleared — use latest row for this user.
+        try {
+            $stmt = $this->db->prepare('SELECT id FROM trips WHERE user_id = ? ORDER BY id DESC LIMIT 1');
+            $stmt->execute(array($uidTripPage));
+            $r = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($r && isset($r['id'])) {
+                $lastTripId = max($lastTripId, (int) $r['id']);
+            }
+        } catch (\Throwable $e) {
+            error_log('trip latest id: ' . $e->getMessage());
+        }
         view('tourist/trip', array(
             'tourist_data' => $tourist_data,
             'user_name' => $user_name,
@@ -174,6 +201,65 @@ class TouristController {
             'payhere_per_transaction_max_lkr' => $payhereMax,
             'bank_transfer_details' => $bankDetails,
             'last_trip_id' => $lastTripId,
+        ));
+    }
+
+    /**
+     * Read-only summary for a submitted customised trip (`trips` + optional `trip_submissions` snapshot).
+     */
+    public function customTripSummary() {
+        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+        $type = isset($_SESSION['user_type']) ? (string) $_SESSION['user_type'] : '';
+        $isTourist = ($role === 'tourist' || $type === 'tourist');
+        if (!isset($_SESSION['user_id']) || !$isTourist) {
+            header('Location: /CeylonGo/public/tourist/dashboard');
+            exit;
+        }
+
+        $uid = (int) $_SESSION['user_id'];
+        $tripId = isset($_GET['trip_id']) ? (int) $_GET['trip_id'] : 0;
+
+        $trip = null;
+        $snapshot = null;
+        try {
+            if ($tripId > 0) {
+                $stmt = $this->db->prepare('SELECT * FROM trips WHERE id = ? AND user_id = ? LIMIT 1');
+                $stmt->execute(array($tripId, $uid));
+                $trip = $stmt->fetch(PDO::FETCH_ASSOC);
+            } else {
+                $stmt = $this->db->prepare(
+                    'SELECT * FROM trips WHERE user_id = ? ORDER BY id DESC LIMIT 1'
+                );
+                $stmt->execute(array($uid));
+                $trip = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+            if ($trip && isset($trip['id'])) {
+                $tid = (int) $trip['id'];
+                $stmtJ = $this->db->prepare(
+                    'SELECT trip_json FROM trip_submissions WHERE trip_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1'
+                );
+                $stmtJ->execute(array($tid, $uid));
+                $rj = $stmtJ->fetch(PDO::FETCH_ASSOC);
+                if ($rj && !empty($rj['trip_json'])) {
+                    $dec = json_decode((string) $rj['trip_json'], true);
+                    if (is_array($dec)) {
+                        $snapshot = $dec;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('customTripSummary: ' . $e->getMessage());
+            $trip = null;
+        }
+
+        if (!$trip) {
+            header('Location: /CeylonGo/public/tourist/customize-trip');
+            exit;
+        }
+
+        view('tourist/custom_trip_summary', array(
+            'trip' => $trip,
+            'trip_snapshot' => $snapshot,
         ));
     }
 
@@ -244,7 +330,7 @@ class TouristController {
 
         $tripStatus = isset($trip['status']) ? (string) $trip['status'] : '';
         $payId = isset($trip['payhere_payment_id']) ? (string) $trip['payhere_payment_id'] : '';
-        if ($payId !== '' || $tripStatus === 'confirmed') {
+        if ($payId !== '' || $tripStatus === 'confirmed' || $tripStatus === 'completed') {
             $_SESSION['payment_info'] = 'This trip is already paid or confirmed.';
             header('Location: /CeylonGo/public/tourist/customize-trip');
             exit;
@@ -371,13 +457,45 @@ class TouristController {
     }
 
     /**
+     * Load trips row for JSON status; tries narrower SELECTs if payment columns are missing.
+     *
+     * @return array|null Trip row, null if not found, empty array if all queries failed
+     */
+    private function fetchTripRowForPaymentStatus($tripId, $userId) {
+        $tripId = (int) $tripId;
+        $userId = (int) $userId;
+        if ($tripId <= 0 || $userId <= 0) {
+            return null;
+        }
+        $variants = array(
+            'SELECT id, user_id, destination, start_date, number_of_people, budget_lkr, status, payhere_payment_id, paid_at, bank_transfer_submitted_at FROM trips WHERE id = ? AND user_id = ? LIMIT 1',
+            'SELECT id, user_id, destination, start_date, number_of_people, budget_lkr, status, payhere_payment_id, paid_at FROM trips WHERE id = ? AND user_id = ? LIMIT 1',
+            'SELECT id, user_id, destination, start_date, number_of_people, budget_lkr, status FROM trips WHERE id = ? AND user_id = ? LIMIT 1',
+            'SELECT id, user_id, destination, start_date, number_of_people, status FROM trips WHERE id = ? AND user_id = ? LIMIT 1',
+        );
+        foreach ($variants as $sql) {
+            try {
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute(array($tripId, $userId));
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                return $row ? $row : null;
+            } catch (PDOException $e) {
+                error_log('fetchTripRowForPaymentStatus: ' . $e->getMessage());
+            }
+        }
+        return array();
+    }
+
+    /**
      * JSON: payment status for a custom trip (used by customise-trip UI).
      */
     public function tripPaymentStatus($id) {
         header('Content-Type: application/json; charset=utf-8');
 
         $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
-        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
+        $type = isset($_SESSION['user_type']) ? (string) $_SESSION['user_type'] : '';
+        $isTourist = ($role === 'tourist' || $type === 'tourist');
+        if (!isset($_SESSION['user_id']) || !$isTourist) {
             http_response_code(401);
             echo json_encode(array('success' => false, 'error' => 'Unauthenticated.'));
             exit;
@@ -391,41 +509,66 @@ class TouristController {
         }
 
         $uid = (int) $_SESSION['user_id'];
-        try {
-            $stmt = $this->db->prepare(
-                'SELECT id, user_id, destination, start_date, number_of_people, budget_lkr, status, payhere_payment_id, paid_at, bank_transfer_submitted_at
-                 FROM trips
-                 WHERE id = ? AND user_id = ?
-                 LIMIT 1'
-            );
-            $stmt->execute(array($tripId, $uid));
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$row) {
-                http_response_code(404);
-                echo json_encode(array('success' => false, 'error' => 'Trip not found.'));
-                exit;
-            }
+        $row = $this->fetchTripRowForPaymentStatus($tripId, $uid);
+        if (is_array($row) && $row === array()) {
+            http_response_code(500);
             echo json_encode(array(
-                'success' => true,
-                'trip' => array(
-                    'id' => (int) $row['id'],
-                    'destination' => isset($row['destination']) ? (string) $row['destination'] : '',
-                    'start_date' => isset($row['start_date']) ? (string) $row['start_date'] : '',
-                    'number_of_people' => isset($row['number_of_people']) ? (int) $row['number_of_people'] : 0,
-                    'budget_lkr' => isset($row['budget_lkr']) ? (float) $row['budget_lkr'] : 0.0,
-                    'status' => isset($row['status']) ? (string) $row['status'] : '',
-                    'payhere_payment_id' => isset($row['payhere_payment_id']) ? (string) $row['payhere_payment_id'] : '',
-                    'paid_at' => isset($row['paid_at']) ? (string) $row['paid_at'] : '',
-                    'bank_transfer_submitted_at' => isset($row['bank_transfer_submitted_at']) ? (string) $row['bank_transfer_submitted_at'] : '',
-                ),
+                'success' => false,
+                'error' => 'Database error loading trip. Run database/alter_trips_payment_columns.sql if needed.',
             ));
             exit;
-        } catch (PDOException $e) {
-            error_log('tripPaymentStatus: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(array('success' => false, 'error' => 'Could not load trip status.'));
+        }
+        if ($row === null) {
+            http_response_code(404);
+            echo json_encode(array('success' => false, 'error' => 'Trip not found.'));
             exit;
         }
+
+        $snapshot = null;
+        try {
+            $stmtJ = $this->db->prepare(
+                'SELECT trip_json FROM trip_submissions WHERE trip_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1'
+            );
+            $stmtJ->execute(array($tripId, $uid));
+            $rj = $stmtJ->fetch(PDO::FETCH_ASSOC);
+            if ($rj && !empty($rj['trip_json'])) {
+                $dec = json_decode((string) $rj['trip_json'], true);
+                if (is_array($dec)) {
+                    $snapshot = $dec;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('tripPaymentStatus snapshot: ' . $e->getMessage());
+        }
+
+        $stLc = strtolower((string) (isset($row['status']) ? $row['status'] : ''));
+        $hasPaidAt = isset($row['paid_at']) && trim((string) $row['paid_at']) !== '';
+        $hasPayhere = isset($row['payhere_payment_id']) && trim((string) $row['payhere_payment_id']) !== '';
+        $hasBank = isset($row['bank_transfer_submitted_at']) && trim((string) $row['bank_transfer_submitted_at']) !== '';
+        $paymentState = 'pending';
+        if ($stLc === 'completed' || $stLc === 'confirmed' || $hasPaidAt || $hasPayhere) {
+            $paymentState = 'completed';
+        } elseif ($hasBank) {
+            $paymentState = 'payment_submitted';
+        }
+
+        echo json_encode(array(
+            'success' => true,
+            'trip' => array(
+                'id' => (int) $row['id'],
+                'destination' => isset($row['destination']) ? (string) $row['destination'] : '',
+                'start_date' => isset($row['start_date']) ? (string) $row['start_date'] : '',
+                'number_of_people' => isset($row['number_of_people']) ? (int) $row['number_of_people'] : 0,
+                'budget_lkr' => isset($row['budget_lkr']) ? (float) $row['budget_lkr'] : 0.0,
+                'status' => isset($row['status']) ? (string) $row['status'] : '',
+                'payhere_payment_id' => isset($row['payhere_payment_id']) ? (string) $row['payhere_payment_id'] : '',
+                'paid_at' => isset($row['paid_at']) ? (string) $row['paid_at'] : '',
+                'bank_transfer_submitted_at' => isset($row['bank_transfer_submitted_at']) ? (string) $row['bank_transfer_submitted_at'] : '',
+                'payment_state' => $paymentState,
+            ),
+            'snapshot' => $snapshot,
+        ));
+        exit;
     }
 
     /**
@@ -516,8 +659,7 @@ class TouristController {
             $tripId = (int) $this->db->lastInsertId();
             $_SESSION['last_trip_id'] = $tripId;
 
-            // Record submission snapshot + initial payment status in trip_submissions.
-            $this->tripSubmissionUpsert($tripId, $userId, array(
+            $submissionArr = array(
                 'trip_id' => $tripId,
                 'user_id' => $userId,
                 'destination' => $destination,
@@ -529,7 +671,16 @@ class TouristController {
                 'budget_lkr' => $budgetLkr,
                 'payment_status' => 'pending',
                 'submitted_at' => date('c'),
-            ));
+            );
+            $wizRaw = isset($_POST['wizard_snapshot']) ? trim((string) $_POST['wizard_snapshot']) : '';
+            if ($wizRaw !== '' && strlen($wizRaw) < 600000) {
+                $wizDecoded = json_decode($wizRaw, true);
+                if (is_array($wizDecoded)) {
+                    $submissionArr['wizard_snapshot'] = $wizDecoded;
+                }
+            }
+            // Record submission snapshot + initial payment status in trip_submissions.
+            $this->tripSubmissionUpsert($tripId, $userId, $submissionArr);
 
             $createdGuideRequests = 0;
             if ($tripId > 0 && count($guideReqs) > 0) {
@@ -592,8 +743,7 @@ class TouristController {
                     $tripId = (int) $this->db->lastInsertId();
                     $_SESSION['last_trip_id'] = $tripId;
 
-                    // Record submission snapshot + initial payment status in trip_submissions (fallback insert path).
-                    $this->tripSubmissionUpsert($tripId, $userId, array(
+                    $submissionArrFb = array(
                         'trip_id' => $tripId,
                         'user_id' => $userId,
                         'destination' => $destination,
@@ -605,7 +755,16 @@ class TouristController {
                         'budget_lkr' => $budgetLkr,
                         'payment_status' => 'pending',
                         'submitted_at' => date('c'),
-                    ));
+                    );
+                    $wizRawFb = isset($_POST['wizard_snapshot']) ? trim((string) $_POST['wizard_snapshot']) : '';
+                    if ($wizRawFb !== '' && strlen($wizRawFb) < 600000) {
+                        $wizDecodedFb = json_decode($wizRawFb, true);
+                        if (is_array($wizDecodedFb)) {
+                            $submissionArrFb['wizard_snapshot'] = $wizDecodedFb;
+                        }
+                    }
+                    // Record submission snapshot + initial payment status in trip_submissions (fallback insert path).
+                    $this->tripSubmissionUpsert($tripId, $userId, $submissionArrFb);
                     $createdGuideRequests = 0;
                     if ($tripId > 0 && count($guideReqs) > 0) {
                         try {
@@ -702,6 +861,84 @@ class TouristController {
     }
 
     /**
+     * Sidebar dashboard stats: customised trips with payment or bank transfer submitted only
+     * (same eligibility as /tourist/my-bookings?view=custom). Pending-only planner rows are excluded.
+     * Package holidays are not included.
+     *
+     * Upcoming / completed are based on the trip window (start_date + number_of_days), not DB status alone:
+     * — upcoming: today is on or before the last day of the trip
+     * — completed: today is after the last day of the trip (journey has finished)
+     *
+     * @return array{total_bookings:int,upcoming_trips:int,total_spent_lkr:float,completed_trips:int}
+     */
+    private function computeTouristDashboardStats($userId) {
+        $userId = (int) $userId;
+        $out = array(
+            'total_bookings' => 0,
+            'upcoming_trips' => 0,
+            'total_spent_lkr' => 0.0,
+            'completed_trips' => 0,
+        );
+        if ($userId <= 0) {
+            return $out;
+        }
+        $today = date('Y-m-d');
+
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT start_date, number_of_days, status, budget_lkr, paid_at, payhere_payment_id, bank_transfer_submitted_at '
+                . 'FROM trips WHERE user_id = ?'
+            );
+            $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $tr) {
+                $st = strtolower(trim((string) (isset($tr['status']) ? $tr['status'] : '')));
+                if ($st === 'cancelled') {
+                    continue;
+                }
+                $hasPaidAt = isset($tr['paid_at']) && trim((string) $tr['paid_at']) !== '';
+                $hasPayhere = isset($tr['payhere_payment_id']) && trim((string) $tr['payhere_payment_id']) !== '';
+                $hasBank = isset($tr['bank_transfer_submitted_at']) && trim((string) $tr['bank_transfer_submitted_at']) !== '';
+                $paidComplete = ($st === 'completed' || $st === 'confirmed') || $hasPaidAt || $hasPayhere;
+                if (!($paidComplete || $hasBank)) {
+                    continue;
+                }
+
+                $out['total_bookings']++;
+                $start = isset($tr['start_date']) ? trim((string) $tr['start_date']) : '';
+                $numDays = isset($tr['number_of_days']) ? (int) $tr['number_of_days'] : 1;
+                if ($numDays < 1) {
+                    $numDays = 1;
+                }
+
+                $endDateStr = '';
+                if ($start !== '') {
+                    $startTs = strtotime($start . ' 00:00:00');
+                    if ($startTs !== false) {
+                        $endTs = strtotime('+' . ($numDays - 1) . ' day', $startTs);
+                        if ($endTs !== false) {
+                            $endDateStr = date('Y-m-d', $endTs);
+                        }
+                    }
+                }
+                if ($endDateStr !== '') {
+                    if ($today > $endDateStr) {
+                        $out['completed_trips']++;
+                    } else {
+                        $out['upcoming_trips']++;
+                    }
+                }
+
+                $out['total_spent_lkr'] += (float) (isset($tr['budget_lkr']) ? $tr['budget_lkr'] : 0);
+            }
+        } catch (PDOException $e) {
+            error_log('computeTouristDashboardStats trips: ' . $e->getMessage());
+        }
+
+        return $out;
+    }
+
+    /**
      * Tourist sidebar dashboard (welcome + stats). Separate from /tourist/dashboard (marketing / inquiry page).
      */
     public function dashboardSide() {
@@ -712,14 +949,10 @@ class TouristController {
         }
 
         $touristModel = new Tourist($this->db);
-        $tourist_data = $touristModel->getTouristById((int) $_SESSION['user_id']);
+        $uid = (int) $_SESSION['user_id'];
+        $tourist_data = $touristModel->getTouristById($uid);
 
-        $dashboard_stats = array(
-            'total_bookings' => 0,
-            'upcoming_trips' => 0,
-            'total_spent_lkr' => 0.0,
-            'completed_trips' => 0,
-        );
+        $dashboard_stats = $this->computeTouristDashboardStats($uid);
 
         view('tourist/dashboard_sidebar', array(
             'tourist_data' => $tourist_data,
@@ -1101,32 +1334,118 @@ class TouristController {
 
     public function myBookings() {
         if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
-            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-bookings'));
+            $loginReturn = '/CeylonGo/public/tourist/my-bookings';
+            if (isset($_GET['view']) && (string) $_GET['view'] === 'custom') {
+                $loginReturn .= '?view=custom';
+            }
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode($loginReturn));
             exit;
         }
         $current_user_id = (int) $_SESSION['user_id'];
-        
-        // Fetch bookings from database
-        try {
-            $sql = "SELECT * FROM package_bookings WHERE user_id = ? ORDER BY created_at DESC";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$current_user_id]);
-            $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            // Convert database results to expected format
-            foreach ($bookings as &$booking) {
-                $booking['id'] = (string) $booking['id'];
-                $booking['user_id'] = (int) $booking['user_id'];
-                $booking['package_id'] = (int) $booking['package_id'];
-                $booking['travelers'] = (int) $booking['travelers'];
-                $booking['adults'] = (int) $booking['adults'];
-                $booking['children'] = (int) $booking['children'];
-                $booking['infants'] = (int) $booking['infants'];
-                $booking['total_amount'] = (float) $booking['total_amount'];
+        $bookings_custom_only = isset($_GET['view']) && (string) $_GET['view'] === 'custom';
+
+        $bookings = array();
+        if (!$bookings_custom_only) {
+            try {
+                $sql = "SELECT * FROM package_bookings WHERE user_id = ? ORDER BY created_at DESC";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute(array($current_user_id));
+                $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($bookings as &$booking) {
+                    $booking['id'] = (string) $booking['id'];
+                    $booking['user_id'] = (int) $booking['user_id'];
+                    $booking['package_id'] = (int) $booking['package_id'];
+                    $booking['travelers'] = (int) $booking['travelers'];
+                    $booking['adults'] = (int) $booking['adults'];
+                    $booking['children'] = (int) $booking['children'];
+                    $booking['infants'] = (int) $booking['infants'];
+                    $booking['total_amount'] = (float) $booking['total_amount'];
+                }
+            } catch (PDOException $e) {
+                error_log("Error fetching bookings: " . $e->getMessage());
+                $bookings = array();
             }
-        } catch (PDOException $e) {
-            error_log("Error fetching bookings: " . $e->getMessage());
-            $bookings = [];
+        }
+
+        $tourist_email = '';
+        $custom_trips = array();
+        if ($bookings_custom_only) {
+            try {
+                $touristModel = new Tourist($this->db);
+                $touristRow = $touristModel->getTouristById($current_user_id);
+                if (is_array($touristRow) && isset($touristRow['email'])) {
+                    $tourist_email = trim((string) $touristRow['email']);
+                }
+            } catch (\Throwable $eT) {
+                $tourist_email = '';
+            }
+            try {
+                $stmtT = $this->db->prepare(
+                    'SELECT id, customer_name, destination, start_date, number_of_people, budget_lkr, status, payhere_payment_id, paid_at, bank_transfer_submitted_at, refund_requested_at, created_at '
+                    . 'FROM trips WHERE user_id = ? ORDER BY id DESC'
+                );
+                $stmtT->execute(array($current_user_id));
+                $tripRows = $stmtT->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $eTr) {
+                error_log('myBookings custom trips: ' . $eTr->getMessage());
+                $tripRows = array();
+            }
+            foreach ($tripRows as $tr) {
+                $stLc = strtolower((string) (isset($tr['status']) ? $tr['status'] : ''));
+                $hasPaidAt = isset($tr['paid_at']) && trim((string) $tr['paid_at']) !== '';
+                $hasPayhere = isset($tr['payhere_payment_id']) && trim((string) $tr['payhere_payment_id']) !== '';
+                $hasBank = isset($tr['bank_transfer_submitted_at']) && trim((string) $tr['bank_transfer_submitted_at']) !== '';
+                $paidComplete = ($stLc === 'completed' || $stLc === 'confirmed') || $hasPaidAt || $hasPayhere;
+                if (!($paidComplete || $hasBank)) {
+                    continue;
+                }
+                $isBankFlow = $hasBank && !$paidComplete;
+                $tid = (int) (isset($tr['id']) ? $tr['id'] : 0);
+                $budget = isset($tr['budget_lkr']) ? (float) $tr['budget_lkr'] : 0.0;
+                $travelers = isset($tr['number_of_people']) ? (int) $tr['number_of_people'] : 0;
+                $dest = isset($tr['destination']) ? trim((string) $tr['destination']) : '';
+                $custName = isset($tr['customer_name']) ? trim((string) $tr['customer_name']) : '';
+                $refundRequested = !empty($tr['refund_requested_at']);
+                $paidAtRaw = isset($tr['paid_at']) ? trim((string) $tr['paid_at']) : '';
+                $refundEligible = false;
+                $refundDeadlineTs = null;
+                if ($paidComplete && $paidAtRaw !== '' && !$refundRequested && !$isBankFlow) {
+                    $pt = strtotime($paidAtRaw);
+                    if ($pt !== false) {
+                        $refundDeadlineTs = $pt + (3 * 86400);
+                        $refundEligible = time() <= (int) $refundDeadlineTs;
+                    }
+                }
+                $dateRaw = '';
+                if ($isBankFlow && $hasBank) {
+                    $dateRaw = (string) $tr['bank_transfer_submitted_at'];
+                } elseif ($paidAtRaw !== '') {
+                    $dateRaw = $paidAtRaw;
+                } elseif (isset($tr['start_date'])) {
+                    $dateRaw = (string) $tr['start_date'];
+                }
+                $dateLabel = '';
+                if ($dateRaw !== '') {
+                    $dts = strtotime($dateRaw);
+                    $dateLabel = $dts !== false ? date('F j, Y \a\t g:i A', $dts) : $dateRaw;
+                }
+                $custom_trips[] = array(
+                    'id' => $tid,
+                    'destination' => $dest,
+                    'customer_name' => $custName,
+                    'travelers' => $travelers,
+                    'budget_lkr' => $budget,
+                    'is_bank_submitted' => $isBankFlow,
+                    'payment_completed' => $paidComplete,
+                    'date_label' => $dateLabel,
+                    'refund_requested' => $refundRequested,
+                    'refund_requested_at' => isset($tr['refund_requested_at']) ? trim((string) $tr['refund_requested_at']) : '',
+                    'refund_eligible' => $refundEligible,
+                    'paid_at_raw' => $paidAtRaw,
+                    'refund_deadline_ts' => $refundDeadlineTs,
+                );
+            }
         }
 
         $payment_message = $_SESSION['payment_message'] ?? null;
@@ -1136,6 +1455,9 @@ class TouristController {
         
         view('tourist/my_bookings', [
             'bookings' => $bookings,
+            'custom_trips' => $custom_trips,
+            'tourist_email' => $tourist_email,
+            'bookings_custom_only' => $bookings_custom_only,
             'payment_message' => $payment_message,
             'payment_error' => $payment_error,
             'payment_info' => $payment_info,
@@ -1399,6 +1721,16 @@ class TouristController {
             }
         }
 
+        if (!$applied && (bool) PAYHERE_SANDBOX && defined('PAYHERE_SANDBOX_TRUST_EMPTY_RETURN') && PAYHERE_SANDBOX_TRUST_EMPTY_RETURN) {
+            $scTrip = isset($q['status_code']) ? (int) $q['status_code'] : null;
+            $explicitFailTrip = ($scTrip === -1 || $scTrip === -2 || $scTrip === -3);
+            $tripPend = (int) ($_SESSION['payhere_pending_trip_id'] ?? 0);
+            if (!$explicitFailTrip && $returnTripId > 0 && $tripPend === $returnTripId && $this->payHereSandboxCompletePendingTrip($returnTripId)) {
+                $applied = true;
+                unset($_SESSION['payhere_pending_trip_order_id'], $_SESSION['payhere_pending_trip_id']);
+            }
+        }
+
         if ($applied) {
             unset($_SESSION['payhere_pending_booking_id'], $_SESSION['payhere_pending_order_id']);
             $_SESSION['payment_message'] = 'Payment completed successfully.';
@@ -1509,6 +1841,38 @@ class TouristController {
         }
     }
 
+    /**
+     * Sandbox: mark customise-trip row paid when return cannot verify md5 (localhost) but session matches checkout.
+     */
+    private function payHereSandboxCompletePendingTrip(int $tripId): bool {
+        $tripId = (int) $tripId;
+        if ($tripId <= 0) {
+            return false;
+        }
+        try {
+            $pid = 'sandbox-empty-return-' . bin2hex(random_bytes(8));
+            $stmt = $this->db->prepare(
+                'UPDATE trips SET status = \'completed\', payhere_payment_id = ?, paid_at = NOW()
+                 WHERE id = ? AND status = \'pending\''
+            );
+            $stmt->execute([$pid, $tripId]);
+            $ok = $stmt->rowCount() > 0;
+            if ($ok) {
+                $stmtU = $this->db->prepare('SELECT user_id FROM trips WHERE id = ? LIMIT 1');
+                $stmtU->execute([$tripId]);
+                $urow = $stmtU->fetch(PDO::FETCH_ASSOC);
+                $uid = $urow && isset($urow['user_id']) ? (int) $urow['user_id'] : 0;
+                if ($uid > 0) {
+                    $this->tripSubmissionSetPaymentStatus($tripId, $uid, 'completed');
+                }
+            }
+            return $ok;
+        } catch (PDOException $e) {
+            error_log('payHereSandboxCompletePendingTrip: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     private function payHereMessageAfterEmptyReturn(): void {
         $bid = isset($_SESSION['payhere_pending_booking_id']) ? (int) $_SESSION['payhere_pending_booking_id'] : 0;
         $uid = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
@@ -1544,7 +1908,18 @@ class TouristController {
     }
 
     /**
-     * PayHere notify: custom trip payment (order_id CTRIP{n}T...).
+     * Normalise PayHere amount strings for comparison with trip budget.
+     */
+    private function payHereParseAmountLkr($raw): float {
+        if (is_numeric($raw)) {
+            return (float) $raw;
+        }
+        $s = preg_replace('/[^\d.\-]/', '', (string) $raw);
+        return $s === '' ? 0.0 : (float) $s;
+    }
+
+    /**
+     * PayHere notify / return: custom trip payment (order_id CTRIP{n}T...). Sets trips.status to completed.
      */
     private function payHereCompleteCustomTripPayment(array $post): bool {
         $orderId = trim((string) ($post['order_id'] ?? ''));
@@ -1553,13 +1928,13 @@ class TouristController {
         }
         $tripId = (int) $m[1];
         $paymentId = isset($post['payment_id']) ? trim((string) $post['payment_id']) : '';
-        $payAmount = isset($post['payhere_amount']) ? (string) $post['payhere_amount'] : '';
-        if ($tripId <= 0 || $paymentId === '') {
+        if ($paymentId === '' || $tripId <= 0) {
             return false;
         }
+        $paidF = $this->payHereParseAmountLkr($post['payhere_amount'] ?? '');
         try {
             $stmt = $this->db->prepare(
-                'SELECT id, budget_lkr, status, payhere_payment_id FROM trips WHERE id = ? LIMIT 1'
+                'SELECT id, user_id, budget_lkr, status, payhere_payment_id FROM trips WHERE id = ? LIMIT 1'
             );
             $stmt->execute(array($tripId));
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -1572,23 +1947,31 @@ class TouristController {
             if (($row['status'] ?? '') !== 'pending') {
                 return false;
             }
+            $uid = isset($row['user_id']) ? (int) $row['user_id'] : 0;
             $budget = isset($row['budget_lkr']) ? (float) $row['budget_lkr'] : 0.0;
-            $expected = number_format($budget, 2, '.', '');
-            if ($expected === '0.00' || $payAmount !== $expected) {
-                error_log('PayHere custom trip: amount mismatch for trip ' . $tripId);
+            if ($budget <= 0.0 && $uid > 0) {
+                $budget = $this->getTripBudgetFromSubmission($tripId, $uid);
+            }
+            if ($paidF <= 0.0) {
+                error_log('PayHere custom trip: missing payhere_amount for trip ' . $tripId);
                 return false;
             }
+            if ($budget > 0.01) {
+                if (abs($paidF - $budget) > 1.0) {
+                    error_log(
+                        'PayHere custom trip: amount mismatch trip ' . $tripId
+                        . ' paid=' . $paidF . ' expected_budget=' . $budget
+                    );
+                    return false;
+                }
+            }
             $upd = $this->db->prepare(
-                'UPDATE trips SET status = \'confirmed\', payhere_payment_id = ?, paid_at = NOW() WHERE id = ? AND status = \'pending\''
+                'UPDATE trips SET status = \'completed\', payhere_payment_id = ?, paid_at = NOW() WHERE id = ? AND status = \'pending\''
             );
             $upd->execute(array($paymentId, $tripId));
             $ok = $upd->rowCount() > 0;
             if ($ok) {
                 try {
-                    $stmtU = $this->db->prepare('SELECT user_id FROM trips WHERE id = ? LIMIT 1');
-                    $stmtU->execute(array($tripId));
-                    $urow = $stmtU->fetch(PDO::FETCH_ASSOC);
-                    $uid = $urow && isset($urow['user_id']) ? (int) $urow['user_id'] : 0;
                     if ($uid > 0) {
                         $this->tripSubmissionSetPaymentStatus($tripId, $uid, 'completed');
                     }
@@ -1922,6 +2305,96 @@ class TouristController {
         echo json_encode([
             'ok' => true,
             'message' => 'Your refund request has been submitted. Our team will contact you using your booking email.',
+        ]);
+    }
+
+    /**
+     * Custom trip: submit refund request within 3 days of paid_at.
+     */
+    public function customTripRefundRequest() {
+        header('Content-Type: application/json; charset=UTF-8');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+            http_response_code(401);
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+        $trip_id = isset($_POST['trip_id']) ? (int) $_POST['trip_id'] : 0;
+        $reason = isset($_POST['reason']) ? trim((string) $_POST['reason']) : '';
+        if (strlen($reason) > 2000) {
+            $reason = substr($reason, 0, 2000);
+        }
+        if ($trip_id <= 0) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Invalid trip']);
+            return;
+        }
+        $uid = (int) $_SESSION['user_id'];
+        try {
+            $stmt = $this->db->prepare('SELECT * FROM trips WHERE id = ? AND user_id = ? LIMIT 1');
+            $stmt->execute([$trip_id, $uid]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('customTripRefundRequest: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'Server error']);
+            return;
+        }
+        if (!$row) {
+            http_response_code(404);
+            echo json_encode(['ok' => false, 'error' => 'Trip not found']);
+            return;
+        }
+        if (!empty($row['refund_requested_at'])) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'A refund request was already submitted for this trip.']);
+            return;
+        }
+        $st = strtolower((string) ($row['status'] ?? ''));
+        $paidAt = $row['paid_at'] ?? null;
+        $paid = ($st === 'confirmed' || $st === 'completed')
+            || !empty($row['payhere_payment_id'])
+            || !empty($row['bank_transfer_submitted_at'])
+            || ($paidAt && trim((string) $paidAt) !== '');
+        if (!$paid) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'This trip is not marked as paid.']);
+            return;
+        }
+        if (!$paidAt || trim((string) $paidAt) === '') {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Payment date is not recorded for this trip. Please contact support.']);
+            return;
+        }
+        $deadline = strtotime($paidAt) + (3 * 86400);
+        if (time() > $deadline) {
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'The 3-day refund window from your payment has ended.']);
+            return;
+        }
+        try {
+            $upd = $this->db->prepare(
+                'UPDATE trips SET refund_requested_at = NOW(), refund_reason = ? WHERE id = ? AND user_id = ? AND refund_requested_at IS NULL'
+            );
+            $upd->execute([$reason !== '' ? $reason : null, $trip_id, $uid]);
+            if ($upd->rowCount() === 0) {
+                http_response_code(409);
+                echo json_encode(['ok' => false, 'error' => 'Could not submit refund request. Please refresh and try again.']);
+                return;
+            }
+        } catch (PDOException $e) {
+            error_log('customTripRefundRequest update: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['ok' => false, 'error' => 'Could not save request. Run database/alter_trips_refund_columns.sql if columns are missing.']);
+            return;
+        }
+        echo json_encode([
+            'ok' => true,
+            'message' => 'Your refund request has been submitted. Our team will contact you using your trip email.',
         ]);
     }
 

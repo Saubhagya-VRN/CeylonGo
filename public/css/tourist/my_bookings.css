@@ -26,6 +26,56 @@
   font-size: 1rem;
 }
 
+.my-bookings-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 6px;
+}
+
+.my-bookings-section-title--spaced {
+  margin-top: 36px;
+}
+
+.my-bookings-section-lead {
+  color: #6b7280;
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.my-bookings-list--custom {
+  margin-bottom: 8px;
+}
+
+/* Custom bookings cards reuse .my-booking-card (same as package My Bookings). */
+.my-booking-custom-actions {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.my-bookings-refund-window-note {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Custom bookings (?view=custom): title row aligned with customise-trip */
+.my-bookings-custom-header {
+  margin-top: 4px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.my-bookings-custom-header .trip-header-row {
+  margin-bottom: 0;
+}
+
+.my-bookings-page.trip-page-body .my-bookings-main {
+  padding-top: 8px;
+}
+
 .my-bookings-empty {
   background: #fff;
   border-radius: 12px;
@@ -254,6 +304,11 @@
   border-radius: 8px;
   border: 2px solid #93c5fd;
   transition: background 0.2s, border-color 0.2s;
+  box-sizing: border-box;
+}
+
+a.my-booking-btn-trip-summary:visited {
+  color: #1e40af;
 }
 
 .my-booking-btn-trip-summary:hover {

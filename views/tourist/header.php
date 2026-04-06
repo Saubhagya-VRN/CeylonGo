@@ -5,13 +5,13 @@ $is_user_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === '
 ?>
 <header class="navbar">
   <div class="branding">
-      <a href="<?php echo $is_user_logged_in ? '/CeylonGo/public/tourist/dashboard-side' : '/CeylonGo/public/tourist/dashboard'; ?>" class="branding-link">
+      <a href="/CeylonGo/public/tourist/dashboard" class="branding-link">
         <img src="/CeylonGo/public/images/logo.png" alt="Ceylon Go Logo" class="logo-img">
         <span class="logo-text">Ceylon Go</span>
       </a>
   </div>
   <nav class="nav-links">
-    <a href="<?php echo $is_user_logged_in ? '/CeylonGo/public/tourist/dashboard-side' : '/CeylonGo/public/tourist/dashboard'; ?>">Home</a>
+    <a href="/CeylonGo/public/tourist/dashboard">Home</a>
     <a href="/CeylonGo/public/tourist/packages">Packages</a>
     <?php if ($is_user_logged_in): ?>
       <a href="/CeylonGo/public/tourist/customize-trip">Customize Trip</a>

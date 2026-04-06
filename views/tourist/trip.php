@@ -12,6 +12,9 @@ $payhere_per_transaction_max_lkr = isset($payhere_per_transaction_max_lkr) ? (in
 $bank_transfer_details = isset($bank_transfer_details) ? $bank_transfer_details : '';
 $last_trip_id = isset($last_trip_id) ? (int) $last_trip_id : 0;
 $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
+$asset_base = '/CeylonGo/public';
+$user_email_sidebar = $user_email;
+$trip_sidebar_active = 'customize';
 $steps = array(
     'Travel Group',
     'Destination & Dates',
@@ -70,30 +73,7 @@ $main_cities = array(
   <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
 
   <div class="trip-page-wrapper">
-    <aside class="trip-sidebar" id="tripSidebar">
-      <div class="trip-sidebar-nav">
-        <ul>
-          <li><a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
-          <li class="active"><a href="/CeylonGo/public/tourist/customize-trip"><i class="fa-solid fa-wand-magic-sparkles"></i> <span class="sidebar-link-text">Customise Your Trip <span class="sidebar-sub">Plan Custom Trips</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/transport-report"><i class="fa-solid fa-car-side"></i> <span class="sidebar-link-text">Transport Requests <span class="sidebar-sub">Request Transport</span></span></a></li>
-          <li><a href="#"><i class="fa-regular fa-message"></i> <span class="sidebar-link-text">Queries <span class="sidebar-sub">Active Requests</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/my-bookings"><i class="fa-regular fa-calendar-check"></i> <span class="sidebar-link-text">Bookings <span class="sidebar-sub">Manage Reservations</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/payment"><i class="fa-solid fa-credit-card"></i> <span class="sidebar-link-text">Payments <span class="sidebar-sub">Invoices & Wallet</span></span></a></li>
-          <li><a href="#"><i class="fa-regular fa-heart"></i> <span class="sidebar-link-text">Wishlist <span class="sidebar-sub">Saved Destinations</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/profile"><i class="fa-regular fa-user"></i> <span class="sidebar-link-text">Profile <span class="sidebar-sub">Account Settings</span></span></a></li>
-        </ul>
-      </div>
-      <div class="trip-sidebar-footer">
-        <div class="trip-sidebar-user">
-          <div class="trip-sidebar-user-avatar"><?php echo htmlspecialchars($avatar_initial); ?></div>
-          <div class="trip-sidebar-user-info">
-            <div class="trip-sidebar-user-name"><?php echo htmlspecialchars($user_name ?: 'Tourist'); ?></div>
-            <div class="trip-sidebar-user-email"><?php echo htmlspecialchars($user_email ? substr($user_email, 0, 20) . (strlen($user_email) > 20 ? '...' : '') : ''); ?></div>
-          </div>
-        </div>
-        <a href="/CeylonGo/public/logout" class="trip-sidebar-signout"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
-      </div>
-    </aside>
+    <?php include __DIR__ . '/_trip_sidebar.php'; ?>
 
     <main class="trip-main-content">
       <button class="hamburger-btn trip-hamburger" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
@@ -479,17 +459,27 @@ $main_cities = array(
 
   <?php include __DIR__ . '/transport_request_modal.php'; ?>
   <?php include __DIR__ . '/tour_guide_request_modal.php'; ?>
+  <?php include __DIR__ . '/_trip_overview_modals.php'; ?>
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // If sessionStorage is empty (e.g. after redirect), restore last trip id from server session.
+    var serverLastTid = <?php echo (int) $last_trip_id; ?>;
+    try {
+      var paramsBoot = new URLSearchParams(window.location.search || '');
+      var urlTidBoot = parseInt(paramsBoot.get('trip_id') || '0', 10) || 0;
+      var afterPayBoot = paramsBoot.get('afterPayment') === '1';
+      if (urlTidBoot > 0) {
+        sessionStorage.setItem('ceylonTripWizardTripId', String(urlTidBoot));
+        if (afterPayBoot) {
+          sessionStorage.setItem('ceylonTripWizardSubmitted', '1');
+          sessionStorage.setItem('ceylonTripWizardProceededToPayment', String(urlTidBoot));
+        }
+      }
+    } catch (eUrl) {}
     try {
       var existingTid = String(sessionStorage.getItem('ceylonTripWizardTripId') || '').trim();
-      if (!existingTid) {
-        var serverTid = <?php echo (int) $last_trip_id; ?>;
-        if (serverTid > 0) {
-          sessionStorage.setItem('ceylonTripWizardTripId', String(serverTid));
-        }
+      if (!existingTid && serverLastTid > 0) {
+        sessionStorage.setItem('ceylonTripWizardTripId', String(serverLastTid));
       }
     } catch (e0) {}
     var hamburger = document.getElementById('tripHamburgerBtn');
@@ -613,6 +603,78 @@ $main_cities = array(
       var v = fareH && fareH.value ? parseFloat(String(fareH.value).replace(/[^0-9.]/g, '')) : NaN;
       return isNaN(v) ? 0 : v;
     }
+    function collectWizardSnapshotForSubmit() {
+      function collectStopsFromList(listId) {
+        var out = [];
+        var list = document.getElementById(listId);
+        if (!list) return out;
+        list.querySelectorAll('.trip-stop-card').forEach(function (card) {
+          var loc = ((card.querySelector('.trip-stop-location') || {}).value || '').trim();
+          var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
+          var trNo = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="no"]');
+          var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
+          var gNo = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="no"]');
+          var tYes = trYes && trYes.classList.contains('selected');
+          var tNo = trNo && trNo.classList.contains('selected');
+          var guYes = gYes && gYes.classList.contains('selected');
+          var guNo = gNo && gNo.classList.contains('selected');
+          var row = { location: loc, transport: null, guide: null };
+          if (tYes) {
+            var fareNum = parseFareFromStop(card);
+            row.transport = {
+              pickup: ((card.querySelector('.trip-stop-pickup') || {}).value || '').trim(),
+              dropoff: ((card.querySelector('.trip-stop-dropoff') || {}).value || '').trim(),
+              date: ((card.querySelector('.trip-stop-tr-date') || {}).value || '').trim(),
+              vehicle: ((card.querySelector('.trip-stop-tr-vehicle') || {}).value || '').trim(),
+              time: ((card.querySelector('.trip-stop-tr-time') || {}).value || '').trim(),
+              people: ((card.querySelector('.trip-stop-tr-people') || {}).value || '').trim(),
+              fare: fareNum
+            };
+          } else if (tNo) {
+            row.transport = { notRequested: true };
+          }
+          if (guYes) {
+            row.guide = {
+              location: ((card.querySelector('.trip-stop-guide-location') || {}).value || '').trim(),
+              date: ((card.querySelector('.trip-stop-guide-date') || {}).value || '').trim(),
+              language: ((card.querySelector('.trip-stop-guide-language') || {}).value || '').trim(),
+              time: ((card.querySelector('.trip-stop-guide-time') || {}).value || '').trim(),
+              notes: ((card.querySelector('.trip-stop-guide-notes') || {}).value || '').trim()
+            };
+          } else if (guNo) {
+            row.guide = { notRequested: true };
+          }
+          out.push(row);
+        });
+        return out;
+      }
+      function legBlock(num, destId, startId, endId, stopsListId) {
+        var de = document.getElementById(destId);
+        var se = document.getElementById(startId);
+        var ee = document.getElementById(endId);
+        return {
+          leg: num,
+          destination: de ? (de.value || '').trim() : '',
+          start_date: se ? (se.value || '').trim() : '',
+          end_date: ee ? (ee.value || '').trim() : '',
+          stops: collectStopsFromList(stopsListId)
+        };
+      }
+      var legs = [legBlock(1, 'dest_primary', 'start_date', 'end_date', 'tripStopsList')];
+      if (wantsSecondDestination()) {
+        legs.push(legBlock(2, 'dest_primary_2', 'start_date_2', 'end_date_2', 'tripStopsList_2'));
+      }
+      if (wantsThirdDestination()) {
+        legs.push(legBlock(3, 'dest_primary_3', 'start_date_3', 'end_date_3', 'tripStopsList_3'));
+      }
+      return {
+        trip_type: ((document.getElementById('trip_type') || {}).value || '').trim(),
+        adults: parseInt((document.getElementById('adults') || {}).value, 10) || 0,
+        children: parseInt((document.getElementById('children') || {}).value, 10) || 0,
+        infants: parseInt((document.getElementById('infants') || {}).value, 10) || 0,
+        legs: legs
+      };
+    }
     function computeTripBudgetTotals() {
       var transportSum = 0;
       var accSum = 0;
@@ -657,9 +719,28 @@ $main_cities = array(
         TOUR_GUIDE_RATE_LKR: TOUR_GUIDE_RATE_LKR
       };
     }
-    function renderTripSummaryBudget() {
-      var mount = document.getElementById('tripSummaryDetailedMount');
+    function renderTripSummaryBudget(mountOverride) {
+      var mount = mountOverride;
+      if (typeof mount === 'string') {
+        mount = document.getElementById(mount);
+      }
+      if (!mount) {
+        mount = document.getElementById('tripSummaryDetailedMount');
+      }
       if (!mount) return;
+
+      var hy = null;
+      try {
+        if (window.__tripBudgetHydrate) {
+          hy = window.__tripBudgetHydrate;
+          delete window.__tripBudgetHydrate;
+        }
+      } catch (eHy) {
+        hy = null;
+      }
+      var tripRowHy = hy && hy.trip ? hy.trip : null;
+      var snapHy = hy && hy.snapshot ? hy.snapshot : null;
+      var ws = snapHy && snapHy.wizard_snapshot ? snapHy.wizard_snapshot : null;
 
       var tt = ((document.getElementById('trip_type') || {}).value || '').trim();
       var ttLabel = tt ? tt.charAt(0).toUpperCase() + tt.slice(1).toLowerCase() : '—';
@@ -757,6 +838,81 @@ $main_cities = array(
         return html;
       }
 
+      function renderStopBlocksFromSnapshot(stopsArr) {
+        if (!Array.isArray(stopsArr) || stopsArr.length === 0) return '';
+        var html = '';
+        stopsArr.forEach(function (item, si) {
+          var n = si + 1;
+          var loc = (item && item.location) ? String(item.location).trim() : '';
+          var tr = item && item.transport ? item.transport : null;
+          var gu = item && item.guide ? item.guide : null;
+          var tYes = tr && tr.notRequested !== true && tr.fare != null && parseFloat(tr.fare) > 0;
+          var tNo = tr && tr.notRequested === true;
+          if (!tYes && tr && !tr.notRequested && tr.pickup) tYes = true;
+          var fareNum = tr && tr.fare != null ? parseFloat(tr.fare) : 0;
+          if (isNaN(fareNum)) fareNum = 0;
+          if (tYes && fareNum) transportSum += fareNum;
+          var fareDisp = fareNum ? formatLkr(fareNum) : '—';
+
+          html += '<div class="trip-sum-stop-wrap">';
+          html += '<p class="trip-sum-stop-attr-title"><i class="fa-solid fa-location-dot" aria-hidden="true"></i><span class="trip-sum-stop-badge">Stop ' + n + (loc ? ': ' + escSummaryHtml(loc) : '') + '</span></p>';
+
+          if (tYes && tr) {
+            var pu = (tr.pickup || '').trim();
+            var dof = (tr.dropoff || '').trim();
+            var td = (tr.date || '').trim();
+            var veh = (tr.vehicle || '').trim();
+            var tm = (tr.time || '').trim();
+            var np = (tr.people || '').trim();
+            html += '<div class="trip-sum-service-block">';
+            html += '<div class="trip-sum-service-head trip-sum-service-head--transport"><span class="trip-sum-service-head-main"><i class="fa-solid fa-bus" aria-hidden="true"></i> Stop ' + n + ' — Transport</span><span class="trip-sum-service-head-amt">' + escSummaryHtml(fareDisp) + '</span></div>';
+            html += '<div class="trip-sum-service-body">' + kvTable([
+              ['Date', td ? fmtSummaryDate(td) : '—'],
+              ['Vehicle type', veh || '—'],
+              ['Pickup time', tm || '—'],
+              ['Pickup location', pu || '—'],
+              ['Dropoff location', dof || '—'],
+              ['No. of people', np || '—'],
+              ['Estimated fare (LKR)', fareNum ? String(Math.round(fareNum)) : '—']
+            ]) + '</div></div>';
+          } else if (tNo) {
+            html += '<div class="trip-sum-service-block trip-sum-service-block--single-line-head"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-bus" aria-hidden="true"></i> Stop ' + n + ' - Transport - Not requested</span><span class="trip-sum-service-head-amt">—</span></div></div>';
+          }
+
+          var guYes = gu && gu.notRequested !== true && gu.location;
+          var guNo = gu && gu.notRequested === true;
+          if (guYes) {
+            var gloc = (gu.location || '').trim();
+            var gdt = (gu.date || '').trim();
+            var glang = (gu.language || '').trim();
+            var gtime = (gu.time || '').trim();
+            var gnotes = (gu.notes || '').trim();
+            var gQty = 1;
+            var gLine = TOUR_GUIDE_RATE_LKR * gQty;
+            guideSum += gLine;
+            html += '<div class="trip-sum-service-block">';
+            html += '<div class="trip-sum-service-head trip-sum-service-head--guide trip-sum-service-head--guide-3amt">';
+            html += '<span class="trip-sum-service-head-main"><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Stop ' + n + ' — Tour guide</span>';
+            html += '<div class="trip-sum-service-head-amt-grid" role="group" aria-label="Tour guide amounts (LKR)">';
+            html += '<div class="trip-sum-amt-col"><span class="trip-sum-amt-hd">Unit rate</span><span class="trip-sum-amt-val">' + escSummaryHtml(formatLkr(TOUR_GUIDE_RATE_LKR)) + '</span></div>';
+            html += '<div class="trip-sum-amt-col"><span class="trip-sum-amt-hd">Qty</span><span class="trip-sum-amt-val">' + escSummaryHtml(String(gQty)) + '</span></div>';
+            html += '<div class="trip-sum-amt-col"><span class="trip-sum-amt-hd">Subtotal</span><span class="trip-sum-amt-val">' + escSummaryHtml(formatLkr(gLine)) + '</span></div>';
+            html += '</div></div>';
+            html += '<div class="trip-sum-service-body">' + kvTable([
+              ['Location / attraction', gloc || '—'],
+              ['Preferred date', gdt ? fmtSummaryDate(gdt) : '—'],
+              ['Language', glang || '—'],
+              ['Preferred time', gtime || '—'],
+              ['Notes', gnotes || '—']
+            ]) + '</div></div>';
+          } else if (guNo) {
+            html += '<div class="trip-sum-service-block trip-sum-service-block--single-line-head"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Stop ' + n + ' - Tour Guide - Not requested</span><span class="trip-sum-service-head-amt">—</span></div></div>';
+          }
+          html += '</div>';
+        });
+        return html;
+      }
+
       function formatLkr(n) {
         if (!n || n <= 0) return '—';
         return 'LKR ' + Math.round(n).toLocaleString('en-LK');
@@ -800,7 +956,7 @@ $main_cities = array(
         return '<div class="trip-sum-accommodation-section">' + blockHtml + '</div>';
       }
 
-      function destSection(legNum, destName, startEl, endEl, durEl, stopsId, hotelTitle, accBodyId) {
+      function destSection(legNum, destName, startEl, endEl, durEl, stopsId, hotelTitle, accBodyId, snapshotStopsOpt) {
         var sd = startEl && startEl.value ? fmtSummaryDate(startEl.value) : '—';
         var ed = endEl && endEl.value ? fmtSummaryDate(endEl.value) : '—';
         var dur = durEl ? (durEl.textContent || '').trim() : '—';
@@ -820,12 +976,47 @@ $main_cities = array(
         ]) + '</div>';
         html += '</div></div>';
         html += '<div class="trip-sum-destination-narrow">';
-        html += renderStopBlocks(stopsEl, legNum);
+        if (Array.isArray(snapshotStopsOpt)) {
+          if (snapshotStopsOpt.length > 0) {
+            html += renderStopBlocksFromSnapshot(snapshotStopsOpt);
+          } else if (locLine && locLine !== '—') {
+            html += renderStopBlocksFromSnapshot([{ location: locLine, transport: null, guide: null }]);
+          }
+        } else {
+          var hasCards = stopsEl && stopsEl.querySelectorAll('.trip-stop-card').length > 0;
+          if (hasCards) {
+            html += renderStopBlocks(stopsEl, legNum);
+          } else if (locLine && locLine !== '—') {
+            html += renderStopBlocksFromSnapshot([{ location: locLine, transport: null, guide: null }]);
+          } else {
+            html += renderStopBlocks(stopsEl, legNum);
+          }
+        }
         html += renderAccBlock(hotelTitle, accBodyId);
         html += '</div>';
         html += '</div>';
         html += '</section>';
         return html;
+      }
+
+      if (ws && typeof ws === 'object') {
+        if (ws.trip_type) {
+          tt = String(ws.trip_type).trim();
+          ttLabel = tt ? tt.charAt(0).toUpperCase() + tt.slice(1).toLowerCase() : '—';
+        }
+        if (ws.adults != null) a = parseInt(ws.adults, 10) || 0;
+        if (ws.children != null) c = parseInt(ws.children, 10) || 0;
+        if (ws.infants != null) inf = parseInt(ws.infants, 10) || 0;
+      }
+
+      function computeDurFromDateStrings(sdVal, edVal) {
+        if (!sdVal || !edVal) return '—';
+        var d0 = new Date(String(sdVal).trim() + 'T12:00:00');
+        var d1 = new Date(String(edVal).trim() + 'T12:00:00');
+        if (isNaN(d0.getTime()) || isNaN(d1.getTime()) || d1 < d0) return '—';
+        var nights = Math.round((d1 - d0) / 86400000);
+        if (nights === 0) return '0 Nights';
+        return nights + ' Night' + (nights !== 1 ? 's' : '');
       }
 
       var mainHtml = '';
@@ -844,26 +1035,59 @@ $main_cities = array(
       if (inf) mainHtml += ', ' + escSummaryHtml(String(inf)) + ' infant(s)';
       mainHtml += '</div></div>';
 
-      var d1 = ((document.getElementById('dest_primary') || {}).value || '').trim();
-      mainHtml += destSection(1, d1,
-        document.getElementById('start_date'), document.getElementById('end_date'),
-        document.getElementById('tripDuration'), 'tripStopsList',
-        'Accommodation (destination 1)', 'tripAccommodationSummaryBody');
+      if (ws && Array.isArray(ws.legs) && ws.legs.length > 0) {
+        ws.legs.forEach(function (leg, idx) {
+          var ln = leg.leg != null ? (parseInt(leg.leg, 10) || (idx + 1)) : (idx + 1);
+          var sdV = (leg.start_date || '').trim();
+          var edV = (leg.end_date || '').trim();
+          var destNm = (leg.destination || '').trim();
+          if (!destNm && ln === 1 && tripRowHy && tripRowHy.destination) destNm = String(tripRowHy.destination).trim();
+          if (!sdV && ln === 1 && tripRowHy && tripRowHy.start_date) sdV = String(tripRowHy.start_date).trim();
+          if (!sdV && ln === 1 && snapHy && snapHy.start_date) sdV = String(snapHy.start_date).trim();
+          if (!edV && ln === 1 && snapHy && snapHy.end_date) edV = String(snapHy.end_date).trim();
+          var fs = { value: sdV };
+          var fe = { value: edV };
+          var fdur = { textContent: computeDurFromDateStrings(sdV, edV) };
+          var stopsArr = Array.isArray(leg.stops) ? leg.stops : [];
+          var sid = ln === 1 ? 'tripStopsList' : (ln === 2 ? 'tripStopsList_2' : 'tripStopsList_3');
+          var accT = ln === 1 ? 'Accommodation (destination 1)' : (ln === 2 ? 'Accommodation (destination 2)' : 'Accommodation (destination 3)');
+          var accB = ln === 1 ? 'tripAccommodationSummaryBody' : (ln === 2 ? 'trip2AccommodationSummaryBody' : 'trip3AccommodationSummaryBody');
+          mainHtml += destSection(ln, destNm, fs, fe, fdur, sid, accT, accB, stopsArr);
+        });
+      } else {
+        var d1 = ((document.getElementById('dest_primary') || {}).value || '').trim();
+        if (!d1 && tripRowHy) d1 = String(tripRowHy.destination || '').trim();
+        if (!d1 && snapHy && snapHy.destination) d1 = String(snapHy.destination || '').trim();
 
-      if (wantsSecondDestination()) {
-        var d2 = ((document.getElementById('dest_primary_2') || {}).value || '').trim();
-        mainHtml += destSection(2, d2,
-          document.getElementById('start_date_2'), document.getElementById('end_date_2'),
-          document.getElementById('tripDuration_2'), 'tripStopsList_2',
-          'Accommodation (destination 2)', 'trip2AccommodationSummaryBody');
-      }
+        var startEl = document.getElementById('start_date');
+        var endEl = document.getElementById('end_date');
+        var sdVal = (startEl && startEl.value) ? String(startEl.value).trim() : '';
+        if (!sdVal && tripRowHy && tripRowHy.start_date) sdVal = String(tripRowHy.start_date).trim();
+        if (!sdVal && snapHy && snapHy.start_date) sdVal = String(snapHy.start_date).trim();
+        var edVal = (endEl && endEl.value) ? String(endEl.value).trim() : '';
+        if (!edVal && snapHy && snapHy.end_date) edVal = String(snapHy.end_date).trim();
 
-      if (wantsThirdDestination()) {
-        var d3 = ((document.getElementById('dest_primary_3') || {}).value || '').trim();
-        mainHtml += destSection(3, d3,
-          document.getElementById('start_date_3'), document.getElementById('end_date_3'),
-          document.getElementById('tripDuration_3'), 'tripStopsList_3',
-          'Accommodation (destination 3)', 'trip3AccommodationSummaryBody');
+        var fakeStart = sdVal ? { value: sdVal } : startEl;
+        var fakeEnd = edVal ? { value: edVal } : endEl;
+        var durElUse = (sdVal && edVal) ? { textContent: computeDurFromDateStrings(sdVal, edVal) } : document.getElementById('tripDuration');
+
+        mainHtml += destSection(1, d1, fakeStart, fakeEnd, durElUse, 'tripStopsList', 'Accommodation (destination 1)', 'tripAccommodationSummaryBody');
+
+        if (wantsSecondDestination()) {
+          var d2 = ((document.getElementById('dest_primary_2') || {}).value || '').trim();
+          mainHtml += destSection(2, d2,
+            document.getElementById('start_date_2'), document.getElementById('end_date_2'),
+            document.getElementById('tripDuration_2'), 'tripStopsList_2',
+            'Accommodation (destination 2)', 'trip2AccommodationSummaryBody');
+        }
+
+        if (wantsThirdDestination()) {
+          var d3 = ((document.getElementById('dest_primary_3') || {}).value || '').trim();
+          mainHtml += destSection(3, d3,
+            document.getElementById('start_date_3'), document.getElementById('end_date_3'),
+            document.getElementById('tripDuration_3'), 'tripStopsList_3',
+            'Accommodation (destination 3)', 'trip3AccommodationSummaryBody');
+        }
       }
 
       mainHtml += '</div>';
@@ -879,6 +1103,14 @@ $main_cities = array(
       mainHtml += '</ul>';
       var defaultBudgetWhenNoExpenses = 5000;
       var grand = transportSum + accSum + guideSum;
+      if ((!grand || grand <= 0) && tripRowHy) {
+        var blHy = parseFloat(tripRowHy.budget_lkr);
+        if (!isNaN(blHy) && blHy > 0) grand = blHy;
+      }
+      if ((!grand || grand <= 0) && snapHy) {
+        var bsHy = parseFloat(snapHy.budget_lkr);
+        if (!isNaN(bsHy) && bsHy > 0) grand = bsHy;
+      }
       if (!grand || grand <= 0) grand = defaultBudgetWhenNoExpenses;
       mainHtml += '<div class="trip-sum-budget-total"><span>Total budget</span><strong id="tripBudgetLineGrand">' + escSummaryHtml(formatLkr(grand)) + '</strong></div>';
       mainHtml += '<p class="trip-sum-budget-footnote">Transport fares use estimates from the calculator. Hotel totals use saved bookings. Each requested tour guide is LKR ' + escSummaryHtml(String(TOUR_GUIDE_RATE_LKR.toLocaleString('en-LK'))) + ' per stop.</p>';
@@ -1235,7 +1467,6 @@ $main_cities = array(
           '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
           '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
           '<p class="trip-sum-budget-footnote">Please carefully review your trip before submitting. After submission, you won’t be able to modify it. If you need changes, please contact our team.</p>' +
-          '<div id="tripPaymentCompleteCardMount"></div>' +
           '<div class="trip-sum-booking-submit-wrap" id="tripWizardSubmitWrap">' +
             '<button type="button" class="trip-sum-booking-submit-btn" id="tripWizardSubmitBtn">Submit trip</button>' +
             '<p class="trip-sum-booking-submit-success" id="tripWizardSubmitSuccess" hidden>Your trip was submitted successfully.</p>' +
@@ -1274,80 +1505,34 @@ $main_cities = array(
 
       mount.innerHTML = mainHtml;
       bindTripWizardSubmitButton();
-      renderTripPaidCompletionCard();
     }
     var tripWizardSubmitUrl = '/CeylonGo/public/tourist/trip-submit';
     var tripWizardSubmittedKey = 'ceylonTripWizardSubmitted';
     var tripWizardTripIdKey = 'ceylonTripWizardTripId';
     var tripWizardFingerprintKey = 'ceylonTripWizardFingerprint';
     var tripWizardProceedKey = 'ceylonTripWizardProceededToPayment';
+    var tripWizardDraftKey = 'ceylonTripWizardDraftV2';
+    var tripWizardPendingInitialStep = 1;
+    var tripWizardUrlForcedStep = false;
+    var tripWizardDraftTimer = null;
 
-    function renderTripPaidCompletionCard() {
-      var mount = document.getElementById('tripPaymentCompleteCardMount');
-      if (!mount) return;
-
-      var tripId = '';
-      try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (e) { tripId = ''; }
-      if (!tripId) return;
-
-      fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tripId), {
-        method: 'GET',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        credentials: 'same-origin'
-      })
-        .then(function (r) { return r.json().catch(function () { return null; }); })
-        .then(function (data) {
-          if (!data || !data.success || !data.trip) return;
-          var t = data.trip;
-          var st = (t.status || '').toString().trim().toLowerCase();
-          var paid = (st === 'confirmed') || String(t.payhere_payment_id || '').trim() !== '' || String(t.paid_at || '').trim() !== '';
-          if (!paid) return;
-
-          var paidDate = '';
-          if (String(t.paid_at || '').trim() !== '') {
-            paidDate = fmtSummaryDate(t.paid_at);
-          }
-
-          var dest = String(t.destination || '').trim();
-          if (!dest) dest = (((document.getElementById('dest_primary') || {}).value || '') + '').trim();
-
-          var travelers = parseInt(t.number_of_people, 10) || 0;
-          if (!travelers) {
-            var a = parseInt((document.getElementById('adults') || {}).value, 10) || 0;
-            var c = parseInt((document.getElementById('children') || {}).value, 10) || 0;
-            var inf = parseInt((document.getElementById('infants') || {}).value, 10) || 0;
-            travelers = Math.max(1, a + c + inf);
-          }
-
-          var totalLkr = parseFloat(t.budget_lkr) || 0;
-          if (!totalLkr) {
-            var bud = computeTripBudgetTotals();
-            totalLkr = bud && bud.grand ? bud.grand : 0;
-          }
-          var totalLine = totalLkr ? ('LKR ' + Math.round(totalLkr).toLocaleString('en-LK')) : 'LKR —';
-
-          mount.innerHTML =
-            '<div class="trip-paid-card" role="region" aria-label="Payment completed">' +
-              '<div class="trip-paid-card__top">' +
-                '<span class="trip-paid-card__badge">Completed</span>' +
-                '<span class="trip-paid-card__date">' + escSummaryHtml(paidDate) + '</span>' +
-              '</div>' +
-              '<h3 class="trip-paid-card__title">' + escSummaryHtml(dest || 'Your trip') + '</h3>' +
-              '<ul class="trip-paid-card__meta">' +
-                '<li><strong>Travelers:</strong> ' + escSummaryHtml(String(travelers)) + '</li>' +
-                '<li><strong>Total:</strong> ' + escSummaryHtml(totalLine) + '</li>' +
-                '<li><strong>Contact:</strong> ' + escSummaryHtml(tripUserName || '—') + ' · ' + escSummaryHtml(tripUserEmail || '—') + '</li>' +
-              '</ul>' +
-              '<p class="trip-paid-card__note">Payment complete. Thank you for choosing Ceylon Go.</p>' +
-              '<div class="trip-paid-card__actions">' +
-                '<a class="trip-paid-card__btn" href="/CeylonGo/public/tourist/customize-trip">View trip summary</a>' +
-              '</div>' +
-            '</div>';
-
-          var wrap = document.getElementById('tripWizardSubmitWrap');
-          if (wrap) wrap.style.display = 'none';
-        })
-        .catch(function () {});
+    function fmtTripRefundLabels(paidAtRaw) {
+      var paidLabel = '—';
+      var deadlineLabel = '—';
+      if (!paidAtRaw || !String(paidAtRaw).trim()) {
+        return { paidLabel: paidLabel, deadlineLabel: deadlineLabel };
+      }
+      var raw = String(paidAtRaw).trim();
+      var d = new Date(raw.replace(' ', 'T'));
+      if (isNaN(d.getTime())) d = new Date(raw);
+      if (isNaN(d.getTime())) {
+        return { paidLabel: paidLabel, deadlineLabel: deadlineLabel };
+      }
+      var opts = { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true };
+      paidLabel = d.toLocaleString('en-US', opts);
+      var dl = new Date(d.getTime() + 3 * 86400000);
+      deadlineLabel = dl.toLocaleString('en-US', opts);
+      return { paidLabel: paidLabel, deadlineLabel: deadlineLabel };
     }
 
     function renderTripFinalReviewStep() {
@@ -1358,6 +1543,10 @@ $main_cities = array(
 
       var tripId = '';
       try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (e) { tripId = ''; }
+      if (!tripId && typeof serverLastTid !== 'undefined' && serverLastTid > 0) {
+        tripId = String(serverLastTid);
+        try { sessionStorage.setItem(tripWizardTripIdKey, tripId); } catch (e2) {}
+      }
       if (!tripId) {
         mount.innerHTML = '<p style="margin:0;color:#b45309;">Please submit your trip and complete payment first.</p>';
         return;
@@ -1368,23 +1557,45 @@ $main_cities = array(
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'same-origin'
       })
-        .then(function (r) { return r.json().catch(function () { return null; }); })
-        .then(function (data) {
+        .then(function (r) {
+          return r.text().then(function (text) {
+            var data = null;
+            try { data = JSON.parse(text); } catch (eJ) { data = null; }
+            return { ok: r.ok, status: r.status, data: data };
+          });
+        })
+        .then(function (res) {
+          var data = res.data;
           if (!data || !data.success || !data.trip) {
-            mount.innerHTML = '<p style="margin:0;color:#b91c1c;">Could not load your trip status.</p>';
+            var errMsg = (data && data.error) ? data.error : 'Could not load your trip status.';
+            if (!res.ok && res.status === 401) {
+              errMsg = 'Your session expired. Please sign in again.';
+            }
+            mount.innerHTML = '<p style="margin:0;color:#b91c1c;">' + escSummaryHtml(errMsg) + '</p>';
             return;
           }
           var t = data.trip;
           var st = (t.status || '').toString().trim().toLowerCase();
-          var paid = (st === 'confirmed') || String(t.payhere_payment_id || '').trim() !== '' || String(t.paid_at || '').trim() !== '';
-          if (!paid) {
+          var paymentState = (t.payment_state || '').toString().trim();
+          var hasBank = String(t.bank_transfer_submitted_at || '').trim() !== '';
+          var paidComplete = (st === 'confirmed' || st === 'completed') || String(t.payhere_payment_id || '').trim() !== '' || String(t.paid_at || '').trim() !== '';
+          if (!paymentState && hasBank && !paidComplete) {
+            paymentState = 'payment_submitted';
+          }
+          var showOverviewCard = paidComplete || paymentState === 'payment_submitted' || hasBank;
+          if (!showOverviewCard) {
             mount.innerHTML = '<p style="margin:0;color:#b45309;">Payment is not completed yet. If you already paid, please refresh in a moment.</p>';
             return;
           }
+          var isBankSubmitted = paymentState === 'payment_submitted';
 
           var paidDate = '';
-          if (String(t.paid_at || '').trim() !== '') {
+          if (isBankSubmitted && hasBank) {
+            paidDate = fmtTripRefundLabels(t.bank_transfer_submitted_at).paidLabel;
+          } else if (String(t.paid_at || '').trim() !== '') {
             paidDate = fmtSummaryDate(t.paid_at);
+          } else if (String(t.start_date || '').trim() !== '') {
+            paidDate = fmtSummaryDate(t.start_date);
           }
           var dest = String(t.destination || '').trim();
           if (!dest) dest = (((document.getElementById('dest_primary') || {}).value || '') + '').trim();
@@ -1403,25 +1614,189 @@ $main_cities = array(
             totalLkr = bud && bud.grand ? bud.grand : 0;
           }
           var totalLine = totalLkr ? ('LKR ' + Math.round(totalLkr).toLocaleString('en-LK')) : 'LKR —';
+          var tidNum = parseInt(t.id, 10) || parseInt(tripId, 10) || 0;
+          var rf = fmtTripRefundLabels(t.paid_at);
+          var totalLkrInt = Math.round(totalLkr) || 0;
+          var badgeClass = isBankSubmitted ? 'trip-paid-card__badge trip-paid-card__badge--submitted' : 'trip-paid-card__badge';
+          var badgeText = isBankSubmitted ? 'Payment submitted' : 'Completed';
+          var noteHtml = isBankSubmitted
+            ? '<p class="trip-paid-card__note trip-paid-card__note--pending">Your bank transfer was received. We will confirm payment within 1–2 business days.</p>'
+            : '<p class="trip-paid-card__note trip-paid-card__note--success">Payment complete. Thank you for choosing Ceylon Go.</p>';
+          var actionsHtml = isBankSubmitted
+            ? '<div class="trip-paid-card__actions trip-paid-card__actions--single">' +
+              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open">View trip summary</button>' +
+              '</div>'
+            : '<div class="trip-paid-card__actions trip-paid-card__actions--split">' +
+              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--secondary js-trip-refund-open">Request refund</button>' +
+              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open">View trip summary</button>' +
+              '</div>';
 
           mount.innerHTML =
-            '<div class="trip-paid-card" role="region" aria-label="Payment completed">' +
+            '<div class="trip-paid-card trip-paid-card--overview" role="region" aria-label="Trip overview">' +
               '<div class="trip-paid-card__top">' +
-                '<span class="trip-paid-card__badge">Completed</span>' +
-                '<span class="trip-paid-card__date">' + escSummaryHtml(paidDate) + '</span>' +
+                '<span class="' + badgeClass + '">' + escSummaryHtml(badgeText) + '</span>' +
+                '<span class="trip-paid-card__date">' + escSummaryHtml(paidDate || '—') + '</span>' +
               '</div>' +
               '<h3 class="trip-paid-card__title">' + escSummaryHtml(dest || 'Your trip') + '</h3>' +
               '<ul class="trip-paid-card__meta">' +
+                '<li><strong>Trip No:</strong> ' + escSummaryHtml(tidNum > 0 ? String(tidNum) : '—') + '</li>' +
                 '<li><strong>Travelers:</strong> ' + escSummaryHtml(String(travelers)) + '</li>' +
                 '<li><strong>Total:</strong> ' + escSummaryHtml(totalLine) + '</li>' +
                 '<li><strong>Contact:</strong> ' + escSummaryHtml(tripUserName || '—') + ' · ' + escSummaryHtml(tripUserEmail || '—') + '</li>' +
               '</ul>' +
-              '<p class="trip-paid-card__note">Payment complete. Thank you for choosing Ceylon Go.</p>' +
+              noteHtml +
+              actionsHtml +
             '</div>';
+
+          var refBtn = mount.querySelector('.js-trip-refund-open');
+          var budBtn = mount.querySelector('.js-trip-budget-summary-open');
+          if (refBtn && !isBankSubmitted) {
+            if (tidNum > 0) refBtn.setAttribute('data-trip-no', String(tidNum));
+            refBtn.setAttribute('data-paid-label', rf.paidLabel);
+            refBtn.setAttribute('data-deadline-label', rf.deadlineLabel);
+            refBtn.setAttribute('data-total-lkr', String(totalLkrInt));
+            refBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              openTripCustomRefundModal(this);
+            });
+          }
+          if (budBtn) {
+            budBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              openTripBudgetSummaryModal();
+            });
+          }
         })
         .catch(function () {
           mount.innerHTML = '<p style="margin:0;color:#b91c1c;">Network error loading status.</p>';
         });
+    }
+
+    var tripCustomRefundState = { tripNo: '', paidLabel: '', deadlineLabel: '', totalLkr: 0 };
+    function tripCustomRefundEsc(s) {
+      if (s == null) return '';
+      var d = document.createElement('div');
+      d.textContent = String(s);
+      return d.innerHTML;
+    }
+    function tripCustomRefundNf(n) {
+      return Number(n || 0).toLocaleString('en-LK');
+    }
+    function showTripCustomRefundStep1() {
+      var body = document.getElementById('tripCustomRefundModalBody');
+      if (!body) return;
+      body.innerHTML =
+        '<div class="refund-step">' +
+        '<p class="refund-policy">Refunds are only possible within <strong>3 days</strong> of your payment (not your travel date).</p>' +
+        '<ul class="refund-facts">' +
+        '<li><strong>Payment received:</strong> ' + tripCustomRefundEsc(tripCustomRefundState.paidLabel) + '</li>' +
+        '<li><strong>Request refund by:</strong> ' + tripCustomRefundEsc(tripCustomRefundState.deadlineLabel) + '</li>' +
+        '</ul>' +
+        '<p class="refund-hint">If you continue, you confirm a refund request for Trip No ' + tripCustomRefundEsc(tripCustomRefundState.tripNo) + '.</p>' +
+        '<div class="refund-actions">' +
+        '<button type="button" class="refund-btn refund-btn--ghost js-trip-custom-refund-step1-cancel">Cancel</button>' +
+        '<button type="button" class="refund-btn refund-btn--primary js-trip-custom-refund-step1-continue">Continue</button>' +
+        '</div></div>';
+    }
+    function showTripCustomRefundStep2() {
+      var body = document.getElementById('tripCustomRefundModalBody');
+      if (!body) return;
+      body.innerHTML =
+        '<form class="refund-step" id="tripCustomRefundSubmitForm">' +
+        '<input type="hidden" name="trip_id" value="' + tripCustomRefundEsc(tripCustomRefundState.tripNo) + '">' +
+        '<p class="refund-confirm-line">Trip No <strong>' + tripCustomRefundEsc(tripCustomRefundState.tripNo) + '</strong></p>' +
+        '<p class="refund-confirm-line">Total paid: <strong>LKR ' + tripCustomRefundEsc(tripCustomRefundNf(tripCustomRefundState.totalLkr)) + '</strong></p>' +
+        '<label class="refund-label">Reason (optional)' +
+        '<textarea name="reason" class="refund-textarea" rows="3" maxlength="2000" placeholder="Tell us why you need a refund"></textarea></label>' +
+        '<div class="refund-actions">' +
+        '<button type="button" class="refund-btn refund-btn--ghost js-trip-custom-refund-step2-back">Back</button>' +
+        '<button type="submit" class="refund-btn refund-btn--primary">Submit refund request</button>' +
+        '</div></form>';
+    }
+    function showTripCustomRefundSuccess(msg) {
+      var body = document.getElementById('tripCustomRefundModalBody');
+      if (!body) return;
+      body.innerHTML =
+        '<div class="refund-step refund-step--success">' +
+        '<p class="refund-success-msg">' + tripCustomRefundEsc(msg) + '</p>' +
+        '<div class="refund-actions">' +
+        '<button type="button" class="refund-btn refund-btn--primary js-trip-custom-refund-done">OK</button>' +
+        '</div></div>';
+    }
+    function openTripCustomRefundModal(btn) {
+      var modal = document.getElementById('tripCustomRefundModal');
+      if (!btn || !modal) return;
+      tripCustomRefundState.tripNo = btn.getAttribute('data-trip-no') || '';
+      tripCustomRefundState.paidLabel = btn.getAttribute('data-paid-label') || '';
+      tripCustomRefundState.deadlineLabel = btn.getAttribute('data-deadline-label') || '';
+      tripCustomRefundState.totalLkr = parseInt(btn.getAttribute('data-total-lkr') || '0', 10) || 0;
+      showTripCustomRefundStep1();
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeTripCustomRefundModal() {
+      var modal = document.getElementById('tripCustomRefundModal');
+      if (!modal) return;
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+      var bud = document.getElementById('tripBudgetSummaryModalOverlay');
+      if (!bud || !bud.classList.contains('trip-modal-open')) {
+        document.body.style.overflow = '';
+      }
+    }
+    function openTripBudgetSummaryModal() {
+      var overlay = document.getElementById('tripBudgetSummaryModalOverlay');
+      var inner = document.getElementById('tripBudgetSummaryModalMount');
+      if (!overlay || !inner) return;
+      inner.innerHTML = '<p class="trip-budget-modal-loading" style="margin:16px 20px;color:#6b7280;">Loading…</p>';
+      overlay.classList.add('trip-modal-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      var tripId = '';
+      try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (eT) { tripId = ''; }
+      if (!tripId && typeof serverLastTid !== 'undefined' && serverLastTid > 0) tripId = String(serverLastTid);
+
+      function renderNow() {
+        renderTripSummaryBudget(inner);
+      }
+
+      if (!tripId) {
+        renderNow();
+        return;
+      }
+
+      fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tripId), {
+        method: 'GET',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      })
+        .then(function (r) {
+          return r.json().catch(function () { return null; });
+        })
+        .then(function (data) {
+          if (data && data.success) {
+            window.__tripBudgetHydrate = { trip: data.trip || null, snapshot: data.snapshot || null };
+          } else {
+            window.__tripBudgetHydrate = null;
+          }
+          renderNow();
+        })
+        .catch(function () {
+          window.__tripBudgetHydrate = null;
+          renderNow();
+        });
+    }
+    function closeTripBudgetSummaryModal() {
+      var overlay = document.getElementById('tripBudgetSummaryModalOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('trip-modal-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      var refM = document.getElementById('tripCustomRefundModal');
+      if (!refM || refM.hidden) {
+        document.body.style.overflow = '';
+      }
     }
 
     function tripWizardFingerprint() {
@@ -1449,14 +1824,20 @@ $main_cities = array(
 
     function syncTripWizardSubmissionState() {
       // Prevent "Submitted" from carrying over to a different trip in the same tab/session.
+      // Do not drop trip id after PayHere: full page reload leaves an empty form fingerprint.
       try {
         var currentFp = tripWizardFingerprint();
         var storedFp = sessionStorage.getItem(tripWizardFingerprintKey) || '';
         var submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
+        var tid = sessionStorage.getItem(tripWizardTripIdKey) || '';
+        var proceededFor = sessionStorage.getItem(tripWizardProceedKey) || '';
+        var paymentLocked = (tid !== '' && proceededFor === tid);
         if (submitted && storedFp && storedFp !== currentFp) {
           sessionStorage.removeItem(tripWizardSubmittedKey);
-          sessionStorage.removeItem(tripWizardTripIdKey);
-          sessionStorage.removeItem(tripWizardProceedKey);
+          if (!paymentLocked) {
+            sessionStorage.removeItem(tripWizardTripIdKey);
+            sessionStorage.removeItem(tripWizardProceedKey);
+          }
         }
         sessionStorage.setItem(tripWizardFingerprintKey, currentFp);
       } catch (e) {}
@@ -1525,6 +1906,9 @@ $main_cities = array(
           });
           if (reqs.length) fd.append('guide_requests', JSON.stringify(reqs));
         } catch (eG) {}
+        try {
+          fd.append('wizard_snapshot', JSON.stringify(collectWizardSnapshotForSubmit()));
+        } catch (eW) {}
 
         btn.disabled = true;
         btn.textContent = 'Submitting…';
@@ -1537,6 +1921,7 @@ $main_cities = array(
           .then(function (r) { return r.json().catch(function () { return null; }); })
           .then(function (data) {
             if (data && data.success) {
+              try { clearTripWizardDraft(); } catch (eClr) {}
               sessionStorage.setItem(tripWizardSubmittedKey, '1');
               try { sessionStorage.setItem(tripWizardFingerprintKey, tripWizardFingerprint()); } catch (e) {}
               if (data.trip_id != null) {
@@ -1602,6 +1987,221 @@ $main_cities = array(
       }
       if (step === 14) {
         renderTripFinalReviewStep();
+      }
+      try { scheduleSaveTripWizardDraft(); } catch (eDraft) {}
+    }
+
+    function tripWizardDraftShouldRestore() {
+      try {
+        if (sessionStorage.getItem(tripWizardSubmittedKey) === '1') return false;
+        var qs = new URLSearchParams(window.location.search || '');
+        if (qs.get('afterPayment') === '1') return false;
+        var urlTid = parseInt(qs.get('trip_id') || '0', 10) || 0;
+        if (urlTid > 0) return false;
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    function clearTripWizardDraft() {
+      try { localStorage.removeItem(tripWizardDraftKey); } catch (e) {}
+    }
+    function serializeTripWizardStopCard(card) {
+      function tv(sel) {
+        var el = card.querySelector(sel);
+        return el ? String(el.value || '').trim() : '';
+      }
+      function selGroup(selRoot) {
+        var y = card.querySelector(selRoot + ' .trip-toggle-btn.selected');
+        return y ? String(y.getAttribute('data-value') || '') : '';
+      }
+      var locEl = card.querySelector('.trip-stop-location');
+      return {
+        location: tv('.trip-stop-location'),
+        placeId: locEl && locEl.dataset && locEl.dataset.placeId ? String(locEl.dataset.placeId) : '',
+        transportNeeded: selGroup('.trip-stop-opt-transport'),
+        tourGuideNeeded: selGroup('.trip-stop-opt-guide'),
+        pickup: tv('.trip-stop-pickup'),
+        dropoff: tv('.trip-stop-dropoff'),
+        fareAmount: tv('.trip-stop-fare-amount'),
+        trDate: tv('.trip-stop-tr-date'),
+        trVehicle: tv('.trip-stop-tr-vehicle'),
+        trTime: tv('.trip-stop-tr-time'),
+        trPeople: tv('.trip-stop-tr-people'),
+        guideLocation: tv('.trip-stop-guide-location'),
+        guideDate: tv('.trip-stop-guide-date'),
+        guideLanguage: tv('.trip-stop-guide-language'),
+        guideTime: tv('.trip-stop-guide-time'),
+        guideNotes: tv('.trip-stop-guide-notes')
+      };
+    }
+    function serializeTripWizardStopLists() {
+      function collect(listId) {
+        var list = document.getElementById(listId);
+        if (!list) return [];
+        return Array.prototype.map.call(list.querySelectorAll('.trip-stop-card'), serializeTripWizardStopCard);
+      }
+      return {
+        tripStopsList: collect('tripStopsList'),
+        tripStopsList_2: collect('tripStopsList_2'),
+        tripStopsList_3: collect('tripStopsList_3')
+      };
+    }
+    function buildTripWizardDraftPayload() {
+      var main = document.querySelector('main.trip-main-content');
+      var fields = {};
+      if (main) {
+        main.querySelectorAll('input, select, textarea').forEach(function (el) {
+          var id = el.id;
+          if (!id) return;
+          var type = (el.type || '').toLowerCase();
+          if (type === 'file' || type === 'button' || type === 'submit' || type === 'reset') return;
+          if (type === 'checkbox' || type === 'radio') {
+            fields[id] = el.checked ? (el.value || '1') : '';
+            return;
+          }
+          fields[id] = el.value;
+        });
+      }
+      var tripTypeEl = document.getElementById('trip_type');
+      var anotherEl = document.getElementById('add_another_destination');
+      var thirdEl = document.getElementById('add_third_destination');
+      return {
+        v: 2,
+        savedAt: Date.now(),
+        step: currentStep,
+        fields: fields,
+        stops: serializeTripWizardStopLists(),
+        tripType: tripTypeEl ? String(tripTypeEl.value || '') : '',
+        anotherDest: anotherEl ? String(anotherEl.value || '') : '',
+        thirdDest: thirdEl ? String(thirdEl.value || '') : ''
+      };
+    }
+    function saveTripWizardDraftNow() {
+      if (!tripWizardDraftShouldRestore()) return;
+      try {
+        var payload = buildTripWizardDraftPayload();
+        localStorage.setItem(tripWizardDraftKey, JSON.stringify(payload));
+      } catch (e) {
+        try { console.warn('Trip wizard draft save failed', e); } catch (e2) {}
+      }
+    }
+    function scheduleSaveTripWizardDraft() {
+      if (!tripWizardDraftShouldRestore()) return;
+      clearTimeout(tripWizardDraftTimer);
+      tripWizardDraftTimer = setTimeout(saveTripWizardDraftNow, 450);
+    }
+    function patchTripWizardStopCardFromDraft(card, d) {
+      if (!card || !d) return;
+      function set(sel, v) {
+        var el = card.querySelector(sel);
+        if (el) el.value = v != null ? String(v) : '';
+      }
+      set('.trip-stop-tr-date', d.trDate);
+      set('.trip-stop-tr-vehicle', d.trVehicle);
+      set('.trip-stop-tr-time', d.trTime);
+      set('.trip-stop-tr-people', d.trPeople);
+      set('.trip-stop-guide-date', d.guideDate);
+      set('.trip-stop-guide-language', d.guideLanguage);
+      set('.trip-stop-guide-time', d.guideTime);
+      set('.trip-stop-guide-notes', d.guideNotes);
+      var loc = card.querySelector('.trip-stop-location');
+      if (loc && d.placeId) loc.dataset.placeId = d.placeId;
+      try {
+        syncStopCardFields(card);
+        updateStopCardSummary(card);
+      } catch (e) {}
+    }
+    function restoreTripWizardStopList(listId, rows) {
+      var list = document.getElementById(listId);
+      if (!list) return;
+      list.innerHTML = '';
+      if (listId === 'tripStopsList_3') stopIndex3 = 0;
+      else if (listId === 'tripStopsList_2') stopIndex2 = 0;
+      else stopIndex = 0;
+      (rows || []).forEach(function (row) {
+        var d = row || {};
+        addStopCard({
+          location: d.location || '',
+          transportNeeded: d.transportNeeded || '',
+          tourGuideNeeded: d.tourGuideNeeded || '',
+          pickup: d.pickup || '',
+          dropoff: d.dropoff || '',
+          guideLocation: d.guideLocation || '',
+          fareAmount: d.fareAmount || ''
+        }, { listId: listId });
+        var cards = list.querySelectorAll('.trip-stop-card');
+        var card = cards[cards.length - 1];
+        patchTripWizardStopCardFromDraft(card, d);
+      });
+    }
+    function applyTripWizardDraft(raw) {
+      if (!raw || raw.v !== 2 || !raw.fields) return;
+      var F = raw.fields;
+      Object.keys(F).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var type = (el.type || '').toLowerCase();
+        if (type === 'checkbox' || type === 'radio') {
+          el.checked = String(F[id]) !== '';
+          return;
+        }
+        if (type === 'file') return;
+        el.value = F[id] != null ? String(F[id]) : '';
+      });
+      if (raw.stops) {
+        restoreTripWizardStopList('tripStopsList', raw.stops.tripStopsList);
+        restoreTripWizardStopList('tripStopsList_2', raw.stops.tripStopsList_2);
+        restoreTripWizardStopList('tripStopsList_3', raw.stops.tripStopsList_3);
+      }
+      var tt = raw.tripType || ((document.getElementById('trip_type') || {}).value || '');
+      var hidTt = document.getElementById('trip_type');
+      if (hidTt && tt) {
+        hidTt.value = tt;
+        document.querySelectorAll('.trip-step-panel[data-step="1"] .trip-type-card').forEach(function (c) {
+          var on = (c.getAttribute('data-type') || '') === tt;
+          c.classList.toggle('selected', on);
+        });
+      }
+      var av = raw.anotherDest || '';
+      var hidA = document.getElementById('add_another_destination');
+      if (hidA && av) {
+        hidA.value = av;
+        var p4 = document.querySelector('.trip-step-panel[data-step="4"]');
+        if (p4) {
+          p4.querySelectorAll('.trip-another-dest-card').forEach(function (c) {
+            var on = (c.getAttribute('data-value') || '') === av;
+            c.classList.toggle('selected', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        }
+      }
+      var tv = raw.thirdDest || '';
+      var hid3 = document.getElementById('add_third_destination');
+      if (hid3 && tv) {
+        hid3.value = tv;
+        var p7 = document.querySelector('.trip-step-panel[data-step="7"]');
+        if (p7) {
+          p7.querySelectorAll('.trip-another-dest-card').forEach(function (c) {
+            var on = (c.getAttribute('data-value') || '') === tv;
+            c.classList.toggle('selected', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        }
+      }
+      try {
+        updateStopsHeading();
+        updateStopsHeading2();
+        updateStopsHeading3();
+      } catch (eH) {}
+    }
+    function loadTripWizardDraft() {
+      try {
+        var s = localStorage.getItem(tripWizardDraftKey);
+        if (!s) return null;
+        return JSON.parse(s);
+      } catch (e) {
+        return null;
       }
     }
 
@@ -2330,36 +2930,33 @@ $main_cities = array(
     if (btnPrev) btnPrev.addEventListener('click', function () {
       if (currentStep > 1) showStep(computePrevStep(currentStep));
     });
-    // If we returned from payment, land on Review & Submit.
+    // Initial step is applied after stop lists + draft restore (see tripWizardBootstrapAfterStops).
     (function () {
-      var initial = 1;
+      tripWizardPendingInitialStep = 1;
+      tripWizardUrlForcedStep = false;
       try {
         var fromPay = '';
         try { fromPay = String(sessionStorage.getItem('ceylonTripWizardReturnToReview') || ''); } catch (e0) { fromPay = ''; }
         if (fromPay === '1') {
-          initial = 14;
+          tripWizardPendingInitialStep = 14;
+          tripWizardUrlForcedStep = true;
           try { sessionStorage.removeItem('ceylonTripWizardReturnToReview'); } catch (e1) {}
         }
         var qs = new URLSearchParams(window.location.search || '');
-        if (qs.get('afterPayment') === '1') initial = 14;
+        if (qs.get('afterPayment') === '1') {
+          tripWizardPendingInitialStep = 14;
+          tripWizardUrlForcedStep = true;
+        }
         var rawStep = qs.get('step');
         if (rawStep) {
           var s = parseInt(rawStep, 10);
-          if (!isNaN(s) && s >= 1 && s <= totalSteps) initial = s;
+          if (!isNaN(s) && s >= 1 && s <= totalSteps) {
+            tripWizardPendingInitialStep = s;
+            tripWizardUrlForcedStep = true;
+          }
         }
       } catch (e) {}
-      showStep(initial);
-      // Optional: clean up query string so refresh doesn't keep jumping.
-      try {
-        if ((window.location.search || '').indexOf('afterPayment=1') !== -1 || (window.location.search || '').indexOf('step=') !== -1) {
-          var u = new URL(window.location.href);
-          u.searchParams.delete('afterPayment');
-          u.searchParams.delete('step');
-          window.history.replaceState({}, document.title, u.pathname + u.search + u.hash);
-        }
-      } catch (e2) {}
     })();
-    updateLegStepperVisibility();
     updateAddStopsButtonLabel();
 
     (function initAnotherDestinationChoice() {
@@ -3426,6 +4023,20 @@ $main_cities = array(
     attachTripStopsListStepHandlers('tripStopsList_2');
     attachTripStopsListStepHandlers('tripStopsList_3');
 
+    (function bindTripWizardDraftListeners() {
+      var root = document.querySelector('main.trip-main-content');
+      if (!root) return;
+      ['input', 'change'].forEach(function (ev) {
+        root.addEventListener(ev, scheduleSaveTripWizardDraft, true);
+      });
+      root.addEventListener('click', function () {
+        scheduleSaveTripWizardDraft();
+      }, true);
+    })();
+    window.addEventListener('pagehide', function () {
+      try { saveTripWizardDraftNow(); } catch (ePh) {}
+    });
+
     var transportModalOverlay = document.getElementById('transportRequestModalOverlay');
     function closeTransportModal() {
       tripStopCardForTransport = null;
@@ -4068,7 +4679,100 @@ $main_cities = array(
     registerTripAccommodation('trip2', 'start_date_2', 'end_date_2');
     registerTripAccommodation('trip3', 'start_date_3', 'end_date_3');
 
-    addStopCard();
+    (function initTripOverviewModals() {
+      var budgetOverlay = document.getElementById('tripBudgetSummaryModalOverlay');
+      var budgetClose = document.getElementById('tripBudgetSummaryModalClose');
+      if (budgetClose) budgetClose.addEventListener('click', closeTripBudgetSummaryModal);
+      if (budgetOverlay) {
+        budgetOverlay.addEventListener('click', function (e) {
+          if (e.target === budgetOverlay) closeTripBudgetSummaryModal();
+        });
+      }
+      var tripRefundModal = document.getElementById('tripCustomRefundModal');
+      if (tripRefundModal) {
+        tripRefundModal.addEventListener('click', function (e) {
+          var t = e.target;
+          if (t && t.nodeType !== 1) t = t.parentElement;
+          if (!t || !t.closest) return;
+          if (t.closest('.js-trip-custom-refund-close')) {
+            closeTripCustomRefundModal();
+            return;
+          }
+          if (t.closest('.js-trip-custom-refund-step1-continue')) {
+            e.preventDefault();
+            showTripCustomRefundStep2();
+            return;
+          }
+          if (t.closest('.js-trip-custom-refund-step1-cancel')) {
+            closeTripCustomRefundModal();
+            return;
+          }
+          if (t.closest('.js-trip-custom-refund-step2-back')) {
+            showTripCustomRefundStep1();
+            return;
+          }
+          if (t.closest('.js-trip-custom-refund-done')) {
+            window.location.reload();
+          }
+        });
+        tripRefundModal.addEventListener('submit', function (e) {
+          var form = e.target;
+          if (!form || form.id !== 'tripCustomRefundSubmitForm') return;
+          e.preventDefault();
+          var fd = new FormData(form);
+          var submitBtn = form.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+          fetch('/CeylonGo/public/tourist/trip/refund-request', {
+            method: 'POST',
+            body: fd,
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data && data.ok) {
+              showTripCustomRefundSuccess(data.message || 'Your refund request has been submitted.');
+              return;
+            }
+            alert(data && data.error ? data.error : 'Could not submit refund request.');
+          }).catch(function () {
+            alert('Could not submit refund request. Please try again.');
+          }).then(function () {
+            if (submitBtn) submitBtn.disabled = false;
+          });
+        });
+      }
+    })();
+
+    (function tripWizardBootstrapAfterStops() {
+      var draft = loadTripWizardDraft();
+      if (draft && tripWizardDraftShouldRestore()) {
+        try {
+          applyTripWizardDraft(draft);
+          if (!tripWizardUrlForcedStep && draft.step >= 1 && draft.step <= totalSteps) {
+            tripWizardPendingInitialStep = draft.step;
+          }
+        } catch (eApp) {
+          try { console.warn('Trip wizard draft restore failed', eApp); } catch (eL) {}
+        }
+      }
+      var list1 = document.getElementById('tripStopsList');
+      if (list1 && list1.querySelectorAll('.trip-stop-card').length === 0) {
+        addStopCard();
+      }
+      showStep(tripWizardPendingInitialStep);
+      updateLegStepperVisibility();
+      updateAddStopsButtonLabel();
+      try {
+        var qsk = window.location.search || '';
+        if (qsk.indexOf('afterPayment=1') !== -1 || qsk.indexOf('step=') !== -1 || qsk.indexOf('trip_id=') !== -1) {
+          var u = new URL(window.location.href);
+          u.searchParams.delete('afterPayment');
+          u.searchParams.delete('step');
+          u.searchParams.delete('trip_id');
+          window.history.replaceState({}, document.title, u.pathname + u.search + u.hash);
+        }
+      } catch (e2) {}
+      try { scheduleSaveTripWizardDraft(); } catch (e3) {}
+    })();
   });
   </script>
 </body>
