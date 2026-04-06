@@ -64,7 +64,7 @@ $main_cities = array(
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/trip.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/accommodation_content.css">
 </head>
-<body class="trip-page-body" style="--trip-nav-height: 0px;">
+<body class="trip-page-body">
   <?php include __DIR__ . '/header.php'; ?>
 
   <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
@@ -96,7 +96,7 @@ $main_cities = array(
     </aside>
 
     <main class="trip-main-content">
-      <button class="hamburger-btn" id="tripHamburgerBtn" aria-label="Toggle menu" style="margin: 10px 0 6px;"><span></span><span></span><span></span></button>
+      <button class="hamburger-btn trip-hamburger" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
       <div class="trip-breadcrumbs">
         <a href="/CeylonGo/public/tourist/dashboard"><i class="fa-solid fa-house"></i> Dashboard</a>
         <span>&gt;</span>

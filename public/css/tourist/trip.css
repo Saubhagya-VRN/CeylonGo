@@ -2206,6 +2206,50 @@
   background: #f0f8f0;
 }
 
+/* Trip page uses shared sticky navbar (not .trip-navbar) */
+body.trip-page-body {
+  padding-top: 0 !important;
+}
+
+/* Mobile sidebar toggle (override navbar button styling) */
+.trip-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 28px;
+  height: 20px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 10px 0 6px !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.trip-hamburger span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: #111827;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.trip-hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+.trip-hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+.trip-hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -6px);
+}
+
+@media (max-width: 768px) {
+  .trip-hamburger { display: flex; }
+}
+
 .trip-payment-page {
   width: 100%;
 }
