@@ -1,4 +1,16 @@
-<?php require_once 'session_init.php'; ?>
+<?php require_once 'session_init.php';
+
+// Ensure data from controller
+if (!isset($reviews)) $reviews = [];
+if (!isset($stats)) $stats = [
+    'total_reviews' => 0, 'avg_rating' => 0,
+    'star_5' => 0, 'star_4' => 0, 'star_3' => 0, 'star_2' => 0, 'star_1' => 0,
+    'pct_5' => 0, 'pct_4' => 0, 'pct_3' => 0, 'pct_2' => 0, 'pct_1' => 0,
+    'positive_pct' => 0,
+];
+$avgRating = floatval($stats['avg_rating']);
+$totalReviews = intval($stats['total_reviews']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,7 +79,7 @@
             <i class="fa-solid fa-star"></i>
           </div>
           <div class="stat-content">
-            <h4>4.8</h4>
+            <h4><?= $avgRating > 0 ? number_format($avgRating, 1) : '0.0' ?></h4>
             <p>Average Rating</p>
           </div>
         </div>
@@ -76,7 +88,7 @@
             <i class="fa-solid fa-comments"></i>
           </div>
           <div class="stat-content">
-            <h4>48</h4>
+            <h4><?= $totalReviews ?></h4>
             <p>Total Reviews</p>
           </div>
         </div>
@@ -85,17 +97,8 @@
             <i class="fa-solid fa-thumbs-up"></i>
           </div>
           <div class="stat-content">
-            <h4>96%</h4>
+            <h4><?= $stats['positive_pct'] ?>%</h4>
             <p>Positive Reviews</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon purple">
-            <i class="fa-solid fa-reply"></i>
-          </div>
-          <div class="stat-content">
-            <h4>92%</h4>
-            <p>Response Rate</p>
           </div>
         </div>
       </div>
@@ -103,43 +106,28 @@
       <!-- Overall Rating Card -->
       <div class="overall-rating-card">
         <div class="rating-big-score">
-          <div class="score">4.8</div>
+          <div class="score"><?= $avgRating > 0 ? number_format($avgRating, 1) : '0.0' ?></div>
           <div class="stars">
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star-half-alt"></i>
+            <?php
+              $fullStars = floor($avgRating);
+              $halfStar = ($avgRating - $fullStars) >= 0.3;
+              $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+              for ($i = 0; $i < $fullStars; $i++) echo '<i class="fas fa-star"></i>';
+              if ($halfStar) echo '<i class="fas fa-star-half-alt"></i>';
+              for ($i = 0; $i < $emptyStars; $i++) echo '<i class="far fa-star empty"></i>';
+            ?>
           </div>
-          <div class="total">Based on 48 reviews</div>
+          <div class="total">Based on <?= $totalReviews ?> review<?= $totalReviews !== 1 ? 's' : '' ?></div>
         </div>
 
         <div class="rating-distribution">
+          <?php for ($star = 5; $star >= 1; $star--): ?>
           <div class="rating-bar">
-            <span class="star-num">5 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 75%;"></div></div>
-            <span class="percentage">75%</span>
+            <span class="star-num"><?= $star ?> <i class="fas fa-star"></i></span>
+            <div class="progress-bar"><div class="progress-fill" style="width: <?= $stats['pct_' . $star] ?>%;"></div></div>
+            <span class="percentage"><?= $stats['pct_' . $star] ?>%</span>
           </div>
-          <div class="rating-bar">
-            <span class="star-num">4 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 18%;"></div></div>
-            <span class="percentage">18%</span>
-          </div>
-          <div class="rating-bar">
-            <span class="star-num">3 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 5%;"></div></div>
-            <span class="percentage">5%</span>
-          </div>
-          <div class="rating-bar">
-            <span class="star-num">2 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 2%;"></div></div>
-            <span class="percentage">2%</span>
-          </div>
-          <div class="rating-bar">
-            <span class="star-num">1 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 0%;"></div></div>
-            <span class="percentage">0%</span>
-          </div>
+          <?php endfor; ?>
         </div>
       </div>
 
@@ -150,282 +138,73 @@
 
       <!-- Reviews Container -->
       <div class="reviews-container">
-        
-        <!-- Review 1 -->
-        <div class="review-card" data-rating="5">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar">JS</div>
-              <div class="reviewer-details">
-                <h4>John Silva</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> December 25, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Tour</span>
+        <?php if (!empty($reviews)): ?>
+          <?php
+            // Gradient colors for avatars
+            $avatarColors = [
+              'linear-gradient(135deg, #4e73df 0%, #224abe 100%)',
+              'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              'linear-gradient(135deg, #e83e8c 0%, #fd7e14 100%)',
+              'linear-gradient(135deg, #6f42c1 0%, #6610f2 100%)',
+              'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+            ];
+          ?>
+          <?php foreach ($reviews as $index => $review): ?>
+            <?php
+              $rating = intval($review['rating']);
+              $touristInfo = htmlspecialchars($review['tourist_info']);
+              $reviewText = htmlspecialchars($review['review_text']);
+              // Get initials from tourist_info
+              $words = explode(' ', $touristInfo);
+              $initials = '';
+              foreach (array_slice($words, 0, 2) as $w) {
+                  $initials .= strtoupper(mb_substr($w, 0, 1));
+              }
+              $avatarColor = $avatarColors[$index % count($avatarColors)];
+              // Rating label
+              if ($rating >= 5) $ratingLabel = 'Excellent';
+              elseif ($rating >= 4) $ratingLabel = 'Very Good';
+              elseif ($rating >= 3) $ratingLabel = 'Good';
+              elseif ($rating >= 2) $ratingLabel = 'Fair';
+              else $ratingLabel = 'Poor';
+            ?>
+          <div class="review-card" data-rating="<?= $rating ?>">
+            <div class="review-header">
+              <div class="reviewer-info">
+                <div class="reviewer-avatar" style="background: <?= $avatarColor ?>;"><?= $initials ?></div>
+                <div class="reviewer-details">
+                  <h4><?= $touristInfo ?></h4>
+                  <div class="meta">
+                    <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Tour</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <span class="rating-text">Excellent</span>
-            </div>
-          </div>
-          <div class="review-content">
-            <p>Fantastic guide! Very knowledgeable about Sigiriya's history and made the entire experience memorable. The guide explained everything in great detail and answered all our questions patiently. The pace was perfect, and we had enough time to explore and take photos. Highly recommend!</p>
-          </div>
-          <div class="review-tour">
-            <div class="tour-item">
-              <i class="fa-solid fa-location-dot"></i>
-              <span>Sigiriya Rock Fortress</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-clock"></i>
-              <span>Full Day Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-users"></i>
-              <span>4 Travelers</span>
-            </div>
-            <span class="tour-type-badge"><i class="fa-solid fa-mountain"></i> Cultural Heritage</span>
-          </div>
-          <div class="guide-response">
-            <div class="response-header">
-              <i class="fa-solid fa-reply"></i> Guide Response
-            </div>
-            <p>Thank you so much for the wonderful review, John! It was a pleasure guiding you and your family through Sigiriya. I'm glad you enjoyed the experience. Looking forward to hosting you again on your next adventure in Sri Lanka!</p>
-          </div>
-          <div class="review-actions">
-            <button class="helpful-btn">
-              <i class="fa-regular fa-thumbs-up"></i> Helpful
-            </button>
-            <span class="helpful-count">12 people found this helpful</span>
-          </div>
-        </div>
-
-        <!-- Review 2 -->
-        <div class="review-card" data-rating="4">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">SF</div>
-              <div class="reviewer-details">
-                <h4>Sarah Fernando</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> December 20, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Tour</span>
+              <div class="review-rating">
+                <div class="stars">
+                  <?php for ($i = 1; $i <= 5; $i++): ?>
+                    <?php if ($i <= $rating): ?>
+                      <i class="fas fa-star"></i>
+                    <?php else: ?>
+                      <i class="far fa-star empty"></i>
+                    <?php endif; ?>
+                  <?php endfor; ?>
                 </div>
+                <span class="rating-text"><?= $ratingLabel ?></span>
               </div>
             </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="far fa-star empty"></i>
-              </div>
-              <span class="rating-text">Very Good</span>
+            <div class="review-content">
+              <p><?= $reviewText ?></p>
             </div>
           </div>
-          <div class="review-content">
-            <p>Great tour of Kandy! The guide was very professional and accommodating. We visited the Temple of the Tooth, Peradeniya Gardens, and a gem museum. The guide's knowledge of local history and culture was impressive. Would book again!</p>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- No Reviews Empty State -->
+          <div style="text-align: center; padding: 60px 20px; color: #888;">
+            <i class="fa-regular fa-star" style="font-size: 3em; margin-bottom: 15px; display: block; opacity: 0.4;"></i>
+            <h3 style="color: #666; margin-bottom: 10px;">No Reviews Yet</h3>
+            <p>You haven't received any reviews yet. Reviews from tourists will appear here after they rate your tours.</p>
           </div>
-          <div class="review-tour">
-            <div class="tour-item">
-              <i class="fa-solid fa-location-dot"></i>
-              <span>Kandy City Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-clock"></i>
-              <span>Full Day Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-users"></i>
-              <span>2 Travelers</span>
-            </div>
-            <span class="tour-type-badge"><i class="fa-solid fa-landmark"></i> Religious Sites</span>
-          </div>
-          <div class="review-actions">
-            <button class="helpful-btn">
-              <i class="fa-regular fa-thumbs-up"></i> Helpful
-            </button>
-            <span class="helpful-count">8 people found this helpful</span>
-          </div>
-        </div>
-
-        <!-- Review 3 -->
-        <div class="review-card" data-rating="5">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #e83e8c 0%, #fd7e14 100%);">MW</div>
-              <div class="reviewer-details">
-                <h4>Michael Williams</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> December 15, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Tour</span>
-                </div>
-              </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <span class="rating-text">Excellent</span>
-            </div>
-          </div>
-          <div class="review-content">
-            <p>Absolutely incredible experience! Our wildlife safari in Yala National Park was unforgettable. The guide knew exactly where to spot leopards and elephants. We saw so much wildlife - leopards, elephants, crocodiles, peacocks, and countless birds. The guide was patient and made sure everyone got great photos. Best tour of our entire Sri Lanka trip!</p>
-          </div>
-          <div class="review-tour">
-            <div class="tour-item">
-              <i class="fa-solid fa-location-dot"></i>
-              <span>Yala National Park Safari</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-clock"></i>
-              <span>Half Day Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-users"></i>
-              <span>6 Travelers</span>
-            </div>
-            <span class="tour-type-badge"><i class="fa-solid fa-paw"></i> Nature & Wildlife</span>
-          </div>
-          <div class="guide-response">
-            <div class="response-header">
-              <i class="fa-solid fa-reply"></i> Guide Response
-            </div>
-            <p>Michael, thank you for the amazing review! We were lucky to spot so many animals that day, including the elusive leopard. It was a pleasure having you on the safari. Hope to see you again for more wildlife adventures!</p>
-          </div>
-          <div class="review-actions">
-            <button class="helpful-btn active">
-              <i class="fa-solid fa-thumbs-up"></i> Helpful
-            </button>
-            <span class="helpful-count">24 people found this helpful</span>
-          </div>
-        </div>
-
-        <!-- Review 4 -->
-        <div class="review-card" data-rating="5">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #6f42c1 0%, #6610f2 100%);">AP</div>
-              <div class="reviewer-details">
-                <h4>Amanda Perera</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> December 10, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Tour</span>
-                </div>
-              </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <span class="rating-text">Excellent</span>
-            </div>
-          </div>
-          <div class="review-content">
-            <p>The culinary tour in Colombo was an amazing experience! We explored local markets, tried authentic street food, and even participated in a cooking class. The guide's passion for Sri Lankan cuisine was infectious. Learned so much about local spices and cooking techniques. A must-do experience!</p>
-          </div>
-          <div class="review-tour">
-            <div class="tour-item">
-              <i class="fa-solid fa-location-dot"></i>
-              <span>Colombo Food Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-clock"></i>
-              <span>Half Day Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-users"></i>
-              <span>3 Travelers</span>
-            </div>
-            <span class="tour-type-badge"><i class="fa-solid fa-utensils"></i> Culinary Tours</span>
-          </div>
-          <div class="review-actions">
-            <button class="helpful-btn">
-              <i class="fa-regular fa-thumbs-up"></i> Helpful
-            </button>
-            <span class="helpful-count">15 people found this helpful</span>
-          </div>
-        </div>
-
-        <!-- Review 5 -->
-        <div class="review-card" data-rating="3">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">RJ</div>
-              <div class="reviewer-details">
-                <h4>Robert Johnson</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> December 5, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Tour</span>
-                </div>
-              </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="far fa-star empty"></i>
-                <i class="far fa-star empty"></i>
-              </div>
-              <span class="rating-text">Good</span>
-            </div>
-          </div>
-          <div class="review-content">
-            <p>The tour was decent overall. The guide was knowledgeable but the pace was a bit fast for our liking. We would have appreciated more time at each location. However, the beach experience in Mirissa was beautiful and the guide helped us find a great spot for whale watching. Minor improvements would make this tour excellent.</p>
-          </div>
-          <div class="review-tour">
-            <div class="tour-item">
-              <i class="fa-solid fa-location-dot"></i>
-              <span>Southern Beaches Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-clock"></i>
-              <span>Full Day Tour</span>
-            </div>
-            <div class="tour-item">
-              <i class="fa-solid fa-users"></i>
-              <span>2 Travelers</span>
-            </div>
-            <span class="tour-type-badge"><i class="fa-solid fa-umbrella-beach"></i> Beach & Coastal</span>
-          </div>
-          <div class="guide-response">
-            <div class="response-header">
-              <i class="fa-solid fa-reply"></i> Guide Response
-            </div>
-            <p>Thank you for your feedback, Robert. I appreciate your honest review and will definitely take note of the pacing for future tours. I'm glad you enjoyed the whale watching experience in Mirissa. Your suggestions are valuable and will help me improve. Hope to provide a better experience next time!</p>
-          </div>
-          <div class="review-actions">
-            <button class="helpful-btn">
-              <i class="fa-regular fa-thumbs-up"></i> Helpful
-            </button>
-            <span class="helpful-count">5 people found this helpful</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Load More Button -->
-      <div class="load-more">
-        <button class="load-more-btn">
-          <i class="fa-solid fa-plus"></i> Load More Reviews
-        </button>
+        <?php endif; ?>
       </div>
 
     </div>
@@ -468,7 +247,6 @@
         sidebarOverlay.addEventListener('click', closeSidebar);
       }
       
-      // Close sidebar when clicking on a link (mobile)
       const sidebarLinks = document.querySelectorAll('.sidebar ul li a');
       sidebarLinks.forEach(link => {
         link.addEventListener('click', function() {
@@ -478,7 +256,6 @@
         });
       });
       
-      // Close sidebar on window resize
       window.addEventListener('resize', function() {
         if (window.innerWidth > 768) {
           closeSidebar();
@@ -500,43 +277,6 @@
       if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
         dropdown.classList.remove('show');
       }
-    });
-
-    // Filter button functionality
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        // Remove active class from all buttons
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        // Add active class to clicked button
-        this.classList.add('active');
-        
-        const filter = this.dataset.filter;
-        const reviews = document.querySelectorAll('.review-card');
-        
-        reviews.forEach(review => {
-          if (filter === 'all' || filter === 'recent') {
-            review.style.display = 'block';
-          } else {
-            const rating = review.dataset.rating;
-            review.style.display = (rating === filter) ? 'block' : 'none';
-          }
-        });
-      });
-    });
-
-    // Helpful button functionality
-    document.querySelectorAll('.helpful-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        this.classList.toggle('active');
-        const icon = this.querySelector('i');
-        if (this.classList.contains('active')) {
-          icon.classList.remove('fa-regular');
-          icon.classList.add('fa-solid');
-        } else {
-          icon.classList.remove('fa-solid');
-          icon.classList.add('fa-regular');
-        }
-      });
     });
 
     // Animate progress bars on scroll

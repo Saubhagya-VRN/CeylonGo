@@ -82,34 +82,39 @@
       </div>
 
       <!-- Quick Stats Row -->
+      <?php
+        $confirmedCount = is_array($confirmed_bookings) ? count($confirmed_bookings) : 0;
+        $pendingCount = is_array($pending_bookings) ? count($pending_bookings) : 0;
+        $totalTrips = $confirmedCount;
+      ?>
       <div class="quick-stats-row">
         <div class="stat-card trips">
           <div class="stat-icon">
             <i class="fa-solid fa-car-side"></i>
           </div>
           <div class="stat-content">
-            <h3>156</h3>
-            <p>Total Trips</p>
+            <h3><?= $totalTrips ?></h3>
+            <p>Confirmed Trips</p>
           </div>
         </div>
 
         <div class="stat-card customers">
           <div class="stat-icon">
-            <i class="fa-solid fa-users"></i>
+            <i class="fa-regular fa-clock"></i>
           </div>
           <div class="stat-content">
-            <h3>89</h3>
-            <p>Customers Served</p>
+            <h3><?= $pendingCount ?></h3>
+            <p>Pending Bookings</p>
           </div>
         </div>
 
         <div class="stat-card distance">
           <div class="stat-icon">
-            <i class="fa-solid fa-road"></i>
+            <i class="fa-solid fa-calendar-check"></i>
           </div>
           <div class="stat-content">
-            <h3>12,450</h3>
-            <p>Kilometers Traveled</p>
+            <h3><?= $confirmedCount + $pendingCount ?></h3>
+            <p>Total Bookings</p>
           </div>
         </div>
 
@@ -118,7 +123,7 @@
             <i class="fa-solid fa-star"></i>
           </div>
           <div class="stat-content">
-            <h3>4.7</h3>
+            <h3>-</h3>
             <p>Average Rating</p>
           </div>
         </div>
@@ -135,9 +140,9 @@
 
           <div class="calendar-body">
             <div class="calendar-month">
-              <button id="prevMonth"><span class="icon icon-chevron-left"></span></button>
+              <button id="prevMonth" type="button" style="cursor:pointer;"><i class="fa-solid fa-chevron-left"></i></button>
               <span id="monthYear"></span>
-              <button id="nextMonth"><span class="icon icon-chevron-right"></span></button>
+              <button id="nextMonth" type="button" style="cursor:pointer;"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
 
             <div class="calendar-grid" id="calendarGrid"></div>
@@ -161,130 +166,43 @@
           return bookingDate < today;
         }
 
-        // 🔴 BOOKING DATA (from backend later)
-        const allBookingData = [
-          {
-            date: "2025-12-25",
-            status: "upcoming",
-            customerName: "John Silva",
-            vehicleType: "Car",
-            pickupTime: "09:00 AM",
-            pickupLocation: "Bandaranaike Airport",
-            dropoffLocation: "Galle Fort",
-            numPeople: 4,
-            notes: "Please be on time"
-          },
-          {
-            date: "2025-12-28",
-            status: "upcoming",
-            customerName: "Sarah Fernando",
-            vehicleType: "Van",
-            pickupTime: "02:00 PM",
-            pickupLocation: "Colombo Hotel",
-            dropoffLocation: "Kandy",
-            numPeople: 8,
-            notes: "Family trip"
-          },
-          {
-            date: "2026-01-05",
-            status: "upcoming",
-            customerName: "David Perera",
-            vehicleType: "Tuk",
-            pickupTime: "11:30 AM",
-            pickupLocation: "Dehiwala",
-            dropoffLocation: "Negombo Beach",
-            numPeople: 3,
-            notes: ""
-          },
-          {
-            date: "2025-12-30",
-            status: "cancelled",
-            customerName: "Emma Rajapaksa",
-            vehicleType: "Car",
-            pickupTime: "08:00 AM",
-            pickupLocation: "Galle",
-            dropoffLocation: "Colombo",
-            numPeople: 2,
-            notes: "Cancelled due to weather"
-          },
-          {
-            date: "2026-01-10",
-            status: "cancelled",
-            customerName: "Michael De Silva",
-            vehicleType: "Van",
-            pickupTime: "03:00 PM",
-            pickupLocation: "Negombo",
-            dropoffLocation: "Airport",
-            numPeople: 6,
-            notes: "Customer cancelled"
-          },
-          {
-            date: "2026-01-15",
-            status: "upcoming",
-            customerName: "Amara Jayawardena",
-            vehicleType: "Van",
-            pickupTime: "08:30 AM",
-            pickupLocation: "Colombo Fort",
-            dropoffLocation: "Ella",
-            numPeople: 10,
-            notes: "Group tour - 3 days trip"
-          },
-          {
-            date: "2026-01-18",
-            status: "upcoming",
-            customerName: "Ranjith Wickramasinghe",
-            vehicleType: "Van",
-            pickupTime: "06:00 AM",
-            pickupLocation: "Mount Lavinia Hotel",
-            dropoffLocation: "Sigiriya",
-            numPeople: 12,
-            notes: "Corporate team outing"
-          },
-          {
-            date: "2026-01-22",
-            status: "upcoming",
-            customerName: "Linda Thompson",
-            vehicleType: "Van",
-            pickupTime: "10:00 AM",
-            pickupLocation: "Bandaranaike Airport",
-            dropoffLocation: "Nuwara Eliya",
-            numPeople: 7,
-            notes: "Tourist group from UK"
-          },
-          {
-            date: "2026-02-01",
-            status: "upcoming",
-            customerName: "Kasun Bandara",
-            vehicleType: "Van",
-            pickupTime: "07:00 AM",
-            pickupLocation: "Kandy City",
-            dropoffLocation: "Trincomalee Beach",
-            numPeople: 9,
-            notes: "Beach holiday - need AC"
-          },
-          {
-            date: "2026-01-12",
-            status: "cancelled",
-            customerName: "Priya Mendis",
-            vehicleType: "Van",
-            pickupTime: "09:00 AM",
-            pickupLocation: "Galle Face Hotel",
-            dropoffLocation: "Yala National Park",
-            numPeople: 8,
-            notes: "Cancelled - schedule conflict"
-          },
-          {
-            date: "2026-01-20",
-            status: "cancelled",
-            customerName: "Robert Anderson",
-            vehicleType: "Van",
-            pickupTime: "11:00 AM",
-            pickupLocation: "Colombo Airport",
-            dropoffLocation: "Mirissa",
-            numPeople: 6,
-            notes: "Flight cancelled"
+        // Real booking data from the database
+        const allBookingData = <?php
+          $calendarData = [];
+          if (is_array($confirmed_bookings)) {
+            foreach ($confirmed_bookings as $b) {
+              $calendarData[] = [
+                'date' => $b['date'],
+                'status' => 'upcoming',
+                'customerName' => $b['customer_name'],
+                'vehicleType' => $b['vehicle_type'],
+                'pickupTime' => date('h:i A', strtotime($b['pickup_time'])),
+                'pickupLocation' => $b['pickup_location'],
+                'dropoffLocation' => $b['dropoff_location'],
+                'numPeople' => $b['num_people'],
+                'notes' => $b['notes'] ?? '',
+                'bookingId' => $b['id']
+              ];
+            }
           }
-        ];
+          if (is_array($pending_bookings)) {
+            foreach ($pending_bookings as $b) {
+              $calendarData[] = [
+                'date' => $b['date'],
+                'status' => 'pending',
+                'customerName' => $b['customer_name'],
+                'vehicleType' => $b['vehicle_type'],
+                'pickupTime' => date('h:i A', strtotime($b['pickup_time'])),
+                'pickupLocation' => $b['pickup_location'],
+                'dropoffLocation' => $b['dropoff_location'],
+                'numPeople' => $b['num_people'],
+                'notes' => $b['notes'] ?? '',
+                'bookingId' => $b['id']
+              ];
+            }
+          }
+          echo json_encode($calendarData);
+        ?>;
 
         // Filter out past dates - only show future bookings
         const bookingData = allBookingData.filter(booking => !isPastDate(booking.date));
@@ -333,13 +251,13 @@
             // Check if this date has bookings
             const bookingsOnDate = bookingData.filter(b => b.date === fullDate);
             if (bookingsOnDate.length > 0) {
-              // Determine status - if any cancelled, show red, otherwise green
-              const hasCancelled = bookingsOnDate.some(b => b.status === "cancelled");
+              // Determine status
+              const hasPending = bookingsOnDate.some(b => b.status === "pending");
               const hasUpcoming = bookingsOnDate.some(b => b.status === "upcoming");
               
-              if (hasCancelled && hasUpcoming) {
+              if (hasPending && hasUpcoming) {
                 dateDiv.classList.add("booking-mixed");
-              } else if (hasCancelled) {
+              } else if (hasPending) {
                 dateDiv.classList.add("booking-cancelled");
               } else {
                 dateDiv.classList.add("booking-upcoming");
@@ -415,8 +333,7 @@
           
           modal.style.display = "flex";
         }
-        
-        renderCalendar(currentDate);
+        // Calendar already rendered above
         </script>
 
         <!-- Pending Booking Requests -->
@@ -431,23 +348,23 @@
           </div>
           
           <script>
-            // Populate pending bookings list (only future dates)
+            // Populate pending bookings list from real DB data
             function populatePendingBookings() {
               const pendingRequestsBody = document.getElementById('pendingRequestsBody');
               
-              // Filter for only upcoming bookings (not cancelled) and future dates
-              const pendingBookings = bookingData.filter(booking => 
-                booking.status === 'upcoming' && !isPastDate(booking.date)
+              // Filter for only pending bookings and future dates
+              const pendingList = bookingData.filter(booking => 
+                booking.status === 'pending' && !isPastDate(booking.date)
               );
               
-              if (pendingBookings.length === 0) {
+              if (pendingList.length === 0) {
                 pendingRequestsBody.innerHTML = '<p style="text-align: center; padding: 20px; color: #666;">No pending bookings</p>';
                 return;
               }
               
               pendingRequestsBody.innerHTML = '';
               
-              pendingBookings.forEach((booking, index) => {
+              pendingList.forEach((booking) => {
                 const bookingDate = new Date(booking.date);
                 const formattedDate = bookingDate.toLocaleDateString('en-US', { 
                   month: 'short', 
@@ -456,7 +373,7 @@
                 });
                 
                 const requestCard = document.createElement('a');
-                requestCard.href = `/CeylonGo/public/transporter/pending#request-${index + 1}`;
+                requestCard.href = `/CeylonGo/public/transporter/pending_info?id=${booking.bookingId}`;
                 requestCard.className = 'pending-request-card';
                 requestCard.innerHTML = `
                   <div class="request-header">
@@ -586,7 +503,7 @@
         dropdown.classList.remove('show');
       }
     });
-
+  </script>
 
 </body>
 </html>

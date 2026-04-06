@@ -233,6 +233,13 @@
 .input-with-icon--dest,
 .input-with-icon--date {
   position: relative;
+  display: block;
+.trip-step-card--dest-dates .input-with-icon--dest {
+  display: block;
+  width: 100%;
+}
+
+  width: 100%;
 }
 
 .input-with-icon--dest .input-icon--left {
@@ -258,15 +265,18 @@
 .input-with-icon--dest .input-icon--right,
 .input-with-icon--date .input-icon--right {
   position: absolute;
+  left: auto !important;
   right: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #555;
   font-size: 12px;
   pointer-events: none;
+  z-index: 2;
 }
 
-.input-with-icon--dest select {
+.input-with-icon--dest select,
+.input-with-icon--dest input[type="text"] {
   width: 100%;
   padding: 12px 40px 12px 42px;
   border: 1px solid #e0e0e0;
@@ -276,6 +286,7 @@
   color: #333;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .input-with-icon--date input {
@@ -288,6 +299,7 @@
   color: #333;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .input-with-icon--dest select {
@@ -297,17 +309,69 @@
 }
 
 .input-with-icon--dest select:focus,
+.input-with-icon--dest input[type="text"]:focus,
 .input-with-icon--date input:focus {
   outline: none;
   border-color: #2c5530;
   box-shadow: 0 0 0 2px rgba(44, 85, 48, 0.2);
 }
 
+.trip-dest-input-wrap {
+  position: relative;
+}
+
+.trip-dest-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid var(--trip-border, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 20;
+  text-align: left;
+}
+
+.trip-dest-suggestion-item {
+  padding: 10px 12px 10px 36px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--trip-text, #333);
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+  position: relative;
+}
+
+.trip-dest-suggestion-item::before {
+  content: "\f3c5";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 12px;
+  color: #666;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.trip-dest-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.trip-dest-suggestion-item:hover {
+  background: rgba(44, 85, 48, 0.08);
+}
+
 .dest-dates-row {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   margin-bottom: 20px;
-  max-width: 520px;
+  max-width: 560px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -315,6 +379,12 @@
 .dest-dates-row .form-group {
   flex: 1;
   min-width: 0;
+}
+
+/* Start/End date row: prevent overlap, keep label above each input */
+.dest-dates-row .form-group.trip-date-group {
+  flex: 1 1 0;
+  min-width: 180px;
 }
 
 .trip-date-group {
@@ -361,6 +431,18 @@
 .trip-dest-row-single .trip-dest-group {
   flex: 0 1 calc((100% - 16px) / 2);
   min-width: 0;
+}
+
+/* Destination row has only one field: make it full width so dropdown arrow stays at right */
+.trip-dest-row-single.dest-dates-row .trip-dest-group {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+/* Remove any line/divider below the destination dropdown */
+.trip-dest-row-single.dest-dates-row,
+.trip-step-card--dest-dates .input-with-icon--dest.trip-dest-input-wrap {
+  border-bottom: none;
 }
 .trip-step-card--dest-dates .trip-dest-row-single .trip-dest-group label {
   font-size: 13px;
@@ -412,6 +494,7 @@
   color: #fff;
   border-radius: 10px;
   text-decoration: none;
+  border-top: 1px solid var(--trip-border, #e0e0e0);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -503,6 +586,23 @@
 }
 .trip-stop-location-group {
   max-width: 360px;
+  position: relative;
+}
+.trip-stop-location-input-wrap {
+  position: relative;
+}
+.trip-stop-location-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 14px;
+  pointer-events: none;
+}
+.trip-stop-card .trip-stop-location-group .trip-stop-location {
+  padding-left: 38px;
+  box-sizing: border-box;
 }
 .trip-stop-card input[type="text"] {
   width: 100%;
@@ -511,6 +611,42 @@
   border-radius: 8px;
   font-size: 14px;
 }
+.trip-stop-location-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid var(--trip-border, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 9999;
+  display: none;
+}
+.trip-stop-location-suggestion-item {
+  padding: 10px 12px 10px 36px;
+  font-size: 14px;
+  color: var(--trip-text, #333);
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+}
+.trip-stop-location-suggestion-item::before {
+  content: "\f3c5";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-size: 12px;
+  color: #666;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.trip-stop-location-suggestion-item:last-child { border-bottom: none; }
+.trip-stop-location-suggestion-item:hover { background: rgba(44, 85, 48, 0.08); }
 .trip-stop-options {
   margin-top: 16px;
   display: flex;
@@ -529,7 +665,6 @@
   font-weight: 500;
   color: var(--trip-text);
   margin-bottom: 8px;
-  text-align: left;
 }
 .trip-toggle-btns {
   display: flex;
@@ -700,6 +835,13 @@
   color: var(--trip-text-light);
   font-size: 14px;
   pointer-events: none;
+}
+
+/* Destination/date fields: full-width block so right chevron stays at right edge */
+.trip-step-card--dest-dates .input-with-icon--dest,
+.trip-step-card--dest-dates .input-with-icon--date {
+  display: block;
+  width: 100%;
 }
 
 .trip-step-card .input-with-icon input,
@@ -1204,10 +1346,22 @@
 .trip-modal-close:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+.trip-modal-form-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .trip-modal-form {
   padding: 24px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+}
+.trip-modal-btn-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 .trip-modal-instruction {
   margin: 0 0 20px 0;
@@ -1265,6 +1419,22 @@
 .trip-modal-input-wrap input {
   padding-right: 36px;
 }
+.trip-modal-location-wrap {
+  position: relative;
+}
+.trip-modal-location-wrap .trip-modal-location-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 14px;
+  pointer-events: none;
+}
+.trip-modal-location-wrap input {
+  padding-left: 38px;
+  padding-right: 12px;
+}
 .trip-modal-input-icon {
   position: absolute;
   right: 12px;
@@ -1302,6 +1472,28 @@
 }
 .trip-modal-btn-calculate:hover {
   background: #234a27;
+}
+.trip-modal-fare-breakdown {
+  margin-top: 16px;
+  padding: 16px;
+  background: #e8f5e9;
+  border-radius: 8px;
+  border: 1px solid rgba(44, 85, 48, 0.2);
+}
+.trip-modal-fare-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 14px;
+}
+.trip-modal-fare-label {
+  color: #333;
+  font-weight: 500;
+}
+.trip-modal-fare-total {
+  font-weight: 700;
+  color: #2c5530;
 }
 .trip-modal-footer {
   display: flex;

@@ -60,11 +60,21 @@
     <!-- Main Content -->
     <main class="main-content">
       
+      <?php if (!$booking): ?>
+        <div class="page-header">
+          <h1><i class="fa-solid fa-route"></i> Tour Details</h1>
+          <a href="/CeylonGo/public/guide/upcoming" class="back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </a>
+        </div>
+        <p style="text-align:center;padding:40px;color:#888;">Booking not found.</p>
+      <?php else: ?>
+
       <!-- Page Header -->
       <div class="page-header">
         <h1><i class="fa-solid fa-route"></i> Tour Details</h1>
         <a href="/CeylonGo/public/guide/upcoming" class="back-btn">
-          <i class="fa-solid fa-arrow-left"></i> Back to List
+          <i class="fa-solid fa-arrow-left"></i> Back
         </a>
       </div>
 
@@ -77,7 +87,7 @@
             <p>This tour has been confirmed and is scheduled</p>
           </div>
         </div>
-        <span class="booking-id">#TG001</span>
+        <span class="booking-id">#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></span>
       </div>
 
       <!-- Tourist Information -->
@@ -88,28 +98,28 @@
             <div class="icon-box"><i class="fa-solid fa-user"></i></div>
             <div class="detail-text">
               <label>Tourist Name</label>
-              <p>John Silva</p>
+              <p><?= htmlspecialchars($booking['customerName']) ?></p>
             </div>
           </div>
           <div class="tourist-detail-item">
             <div class="icon-box"><i class="fa-solid fa-phone"></i></div>
             <div class="detail-text">
               <label>Contact Number</label>
-              <p>+94 77 123 4567</p>
+              <p><?= htmlspecialchars($booking['contactNumber']) ?></p>
             </div>
           </div>
           <div class="tourist-detail-item">
-            <div class="icon-box"><i class="fa-solid fa-envelope"></i></div>
+            <div class="icon-box"><i class="fa-solid fa-language"></i></div>
             <div class="detail-text">
-              <label>Email Address</label>
-              <p>john.silva@email.com</p>
+              <label>Language</label>
+              <p><?= htmlspecialchars($booking['language']) ?></p>
             </div>
           </div>
           <div class="tourist-detail-item">
-            <div class="icon-box"><i class="fa-solid fa-globe"></i></div>
+            <div class="icon-box"><i class="fa-solid fa-calendar-check"></i></div>
             <div class="detail-text">
-              <label>Country</label>
-              <p>United Kingdom</p>
+              <label>Approved On</label>
+              <p><?= $booking['approved_at'] ? date('M d, Y h:i A', strtotime($booking['approved_at'])) : 'N/A' ?></p>
             </div>
           </div>
         </div>
@@ -120,108 +130,44 @@
         <div class="tour-card">
           <div class="card-icon date"><i class="fa-regular fa-calendar"></i></div>
           <h4>Tour Date</h4>
-          <p>January 20, 2026</p>
-          <p class="small">Monday</p>
+          <p><?= date('F d, Y', strtotime($booking['date'])) ?></p>
+          <p class="small"><?= date('l', strtotime($booking['date'])) ?></p>
         </div>
 
         <div class="tour-card">
           <div class="card-icon time"><i class="fa-regular fa-clock"></i></div>
           <h4>Start Time</h4>
-          <p>09:00 AM</p>
+          <p><?= date('h:i A', strtotime($booking['time'])) ?></p>
           <p class="small">Be ready 15 mins early</p>
         </div>
 
         <div class="tour-card">
           <div class="card-icon location"><i class="fa-solid fa-location-dot"></i></div>
           <h4>Location</h4>
-          <p>Sigiriya Rock Fortress</p>
-          <p class="small">UNESCO World Heritage Site</p>
+          <p><?= htmlspecialchars($booking['location']) ?></p>
         </div>
 
         <div class="tour-card">
-          <div class="card-icon tour-type"><i class="fa-solid fa-map"></i></div>
-          <h4>Tour Type</h4>
-          <p>Historical Tour</p>
-          <p class="small">Cultural Heritage</p>
-        </div>
-
-        <div class="tour-card">
-          <div class="card-icon people"><i class="fa-solid fa-user-group"></i></div>
-          <h4>Group Size</h4>
-          <p>4 People</p>
-          <p class="small">2 Adults, 2 Children</p>
-        </div>
-
-        <div class="tour-card">
-          <div class="card-icon duration"><i class="fa-solid fa-hourglass-half"></i></div>
-          <h4>Duration</h4>
-          <p>6 Hours</p>
-          <p class="small">Full day tour</p>
+          <div class="card-icon tour-type"><i class="fa-solid fa-language"></i></div>
+          <h4>Language</h4>
+          <p><?= htmlspecialchars($booking['language']) ?> Tour</p>
         </div>
       </div>
 
       <!-- Special Notes -->
       <div class="notes-section">
         <h4><i class="fa-solid fa-sticky-note"></i> Special Notes from Tourist</h4>
-        <p>We would appreciate a detailed explanation of the historical significance of each site. One person in our group has limited mobility, so please plan for accessible routes where possible. We're very interested in photography opportunities!</p>
+        <p><?= !empty($booking['notes']) ? htmlspecialchars($booking['notes']) : 'No special notes provided.' ?></p>
       </div>
 
-      <!-- Itinerary Section -->
-      <div class="itinerary-section">
-        <h3><i class="fa-solid fa-map-marked-alt"></i> Tour Itinerary</h3>
-        
-        <ul class="timeline">
-          <li class="timeline-item">
-            <div class="timeline-badge">1</div>
-            <div class="timeline-content">
-              <h4>09:00 AM - Meet & Greet</h4>
-              <p>Meet the group at the Sigiriya main entrance. Brief introduction about the day's plan and safety guidelines.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">2</div>
-            <div class="timeline-content">
-              <h4>09:30 AM - Water Gardens</h4>
-              <p>Explore the ancient water gardens and learn about the sophisticated hydraulic systems built by King Kashyapa.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">3</div>
-            <div class="timeline-content">
-              <h4>10:30 AM - Mirror Wall & Frescoes</h4>
-              <p>Visit the famous mirror wall and view the ancient Sigiriya frescoes depicting celestial maidens.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">4</div>
-            <div class="timeline-content">
-              <h4>12:00 PM - Lion's Gate & Summit</h4>
-              <p>Climb to the Lion's Gate and reach the summit to explore the palace ruins with panoramic views.</p>
-            </div>
-          </li>
-
-          <li class="timeline-item">
-            <div class="timeline-badge">5</div>
-            <div class="timeline-content">
-              <h4>02:00 PM - Lunch Break</h4>
-              <p>Enjoy a traditional Sri Lankan lunch at a local restaurant (included in the tour).</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Action Buttons -->
+      <!-- Action Buttons 
       <div class="action-buttons">
-        <button class="action-btn primary" onclick="alert('Contacting tourist...')">
+        <a href="tel:<?= htmlspecialchars($booking['contactNumber']) ?>" class="action-btn primary">
           <i class="fa-solid fa-phone"></i> Contact Tourist
-        </button>
-        <button class="action-btn danger" onclick="if(confirm('Are you sure you want to cancel this tour?')) alert('Tour cancelled')">
-          <i class="fa-solid fa-ban"></i> Cancel Tour
-        </button>
-      </div>
+        </a>
+      </div>-->
+
+      <?php endif; ?>
 
     </main>
   </div>

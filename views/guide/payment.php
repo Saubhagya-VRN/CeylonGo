@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $db = Database::getConnection();
         $bankModel = new GuideBankDetails($db);
         
-        $bankModel->id = $user_id;
+        $bankModel->ref_id = $user_id;
         $bankModel->bank_name = trim($_POST['bank_name']);
         $bankModel->acc_no = trim($_POST['acc_no']);
         $bankModel->acc_holder_name = trim($_POST['acc_holder_name']);
@@ -77,54 +77,26 @@ $bankAccount = [
     'branch' => isset($bankData['branch_name']) ? $bankData['branch_name'] : 'Not set'
 ];
 
-// Sample payment data - Replace with database queries
-$payments = [
-    [
-        'booking_id' => '#G12345',
-        'customer_name' => 'John Silva',
-        'tour_date' => '2026-01-20',
-        'payment_date' => '2026-01-21',
-        'amount' => 15000,
+// Build payments array from database data passed by controller
+// $payments is already set via view() extract — it comes from GuideRequest::getPaymentsByGuide()
+if (!isset($payments)) {
+    $payments = [];
+}
+
+// Transform DB records into the format used by the view
+$formattedPayments = [];
+foreach ($payments as $p) {
+    $formattedPayments[] = [
+        'booking_id' => '#TG' . str_pad($p['id'], 3, '0', STR_PAD_LEFT),
+        'customer_name' => $p['customerName'],
+        'tour_date' => $p['date'],
+        'payment_date' => $p['approved_at'] ?? null,
+        'amount' => 0, // No amount column in guide_requests table
         'status' => 'paid',
-        'tour_type' => 'Historical Tour'
-    ],
-    [
-        'booking_id' => '#G77889',
-        'customer_name' => 'Sarah Fernando',
-        'tour_date' => '2026-01-25',
-        'payment_date' => '2026-01-26',
-        'amount' => 20000,
-        'status' => 'paid',
-        'tour_type' => 'Cultural Tour'
-    ],
-    [
-        'booking_id' => '#G45678',
-        'customer_name' => 'David Perera',
-        'tour_date' => '2026-02-01',
-        'payment_date' => null,
-        'amount' => 12500,
-        'status' => 'pending',
-        'tour_type' => 'Beach Tour'
-    ],
-    [
-        'booking_id' => '#G99123',
-        'customer_name' => 'Nimal Rajapaksa',
-        'tour_date' => '2026-02-05',
-        'payment_date' => '2026-02-06',
-        'amount' => 18000,
-        'status' => 'paid',
-        'tour_type' => 'Wildlife Safari'
-    ],
-    [
-        'booking_id' => '#G55667',
-        'customer_name' => 'Amara Wijesinghe',
-        'tour_date' => '2026-02-10',
-        'payment_date' => null,
-        'amount' => 14500,
-        'status' => 'pending',
-        'tour_type' => 'Adventure Tour'
-    ]
-];
+        'tour_type' => $p['language']
+    ];
+}
+$payments = $formattedPayments;
 
 // Calculate summary statistics
 $totalEarnings = array_sum(array_column($payments, 'amount'));
@@ -308,7 +280,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                             <th>Payment Date</th>
                             <th>Amount</th>
                             <th>Status</th>
-                            <th>Actions</th>
+
                         </tr>
                     </thead>
 
@@ -326,11 +298,7 @@ $averageTour = count($payments) > 0 ? $totalEarnings / count($payments) : 0;
                                     <?= ucfirst($payment['status']) ?>
                                 </span>
                             </td>
-                            <td>
-                                <button class="action-btn" onclick="alert('View receipt for <?= $payment['booking_id'] ?>')">
-                                    <i class="fa-solid fa-receipt"></i> Receipt
-                                </button>
-                            </td>
+
                         </tr>
                         <?php endforeach; ?>
                     </tbody>

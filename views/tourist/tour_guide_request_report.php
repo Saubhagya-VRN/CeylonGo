@@ -176,6 +176,7 @@ $error = $error ?? null;
               <th>Location</th>
               <th>Language</th>
               <th>Preferred Date</th>
+              <th>Assigned Guide</th>
               <th>Status</th>
               <th>Notes</th>
             </tr>
@@ -196,10 +197,24 @@ $error = $error ?? null;
                 ?>
               </td>
               <td>
+                <?php 
+                  if (!empty($request['guide_name']) && trim($request['guide_name']) !== '') {
+                    echo htmlspecialchars($request['guide_name']);
+                  } else {
+                    echo '<span style="color:#888;">Assigning...</span>';
+                  }
+                ?>
+              </td>
+              <td>
                 <?php
                   $status = $request['status'] ?? 'pending';
-                  $statusClass = 'status-' . strtolower($status);
-                  echo '<span class="status-badge ' . $statusClass . '">' . ucfirst($status) . '</span>';
+                  if ($status === 'approved') {
+                    echo '<span class="status-badge status-approved">✓ Confirmed</span>';
+                  } elseif ($status === 'rejected') {
+                    echo '<span class="status-badge status-rejected">Rejected</span>';
+                  } else {
+                    echo '<span class="status-badge status-pending">Pending</span>';
+                  }
                 ?>
               </td>
               <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">

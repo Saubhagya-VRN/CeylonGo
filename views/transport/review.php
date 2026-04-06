@@ -1,4 +1,16 @@
-<?php require_once 'session_init.php'; ?>
+<?php require_once 'session_init.php';
+
+// Ensure data from controller
+if (!isset($reviews)) $reviews = [];
+if (!isset($stats)) $stats = [
+    'total_reviews' => 0, 'avg_rating' => 0,
+    'star_5' => 0, 'star_4' => 0, 'star_3' => 0, 'star_2' => 0, 'star_1' => 0,
+    'pct_5' => 0, 'pct_4' => 0, 'pct_3' => 0, 'pct_2' => 0, 'pct_1' => 0,
+    'positive_pct' => 0,
+];
+$avgRating = floatval($stats['avg_rating']);
+$totalReviews = intval($stats['total_reviews']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,43 +85,28 @@
       <!-- Overall Rating Card -->
       <div class="overall-rating-card">
         <div class="rating-big-score">
-          <div class="score">4.7</div>
+          <div class="score"><?= $avgRating > 0 ? number_format($avgRating, 1) : '0.0' ?></div>
           <div class="stars">
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star"></i>
-            <i class="fas fa-star-half-alt"></i>
+            <?php
+              $fullStars = floor($avgRating);
+              $halfStar = ($avgRating - $fullStars) >= 0.3;
+              $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
+              for ($i = 0; $i < $fullStars; $i++) echo '<i class="fas fa-star"></i>';
+              if ($halfStar) echo '<i class="fas fa-star-half-alt"></i>';
+              for ($i = 0; $i < $emptyStars; $i++) echo '<i class="far fa-star empty"></i>';
+            ?>
           </div>
-          <div class="total">Based on 125 reviews</div>
+          <div class="total">Based on <?= $totalReviews ?> review<?= $totalReviews !== 1 ? 's' : '' ?></div>
         </div>
 
         <div class="rating-distribution">
+          <?php for ($star = 5; $star >= 1; $star--): ?>
           <div class="rating-bar">
-            <span class="star-num">5 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 65%;"></div></div>
-            <span class="percentage">65%</span>
+            <span class="star-num"><?= $star ?> <i class="fas fa-star"></i></span>
+            <div class="progress-bar"><div class="progress-fill" style="width: <?= $stats['pct_' . $star] ?>%;"></div></div>
+            <span class="percentage"><?= $stats['pct_' . $star] ?>%</span>
           </div>
-          <div class="rating-bar">
-            <span class="star-num">4 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 20%;"></div></div>
-            <span class="percentage">20%</span>
-          </div>
-          <div class="rating-bar">
-            <span class="star-num">3 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 7%;"></div></div>
-            <span class="percentage">7%</span>
-          </div>
-          <div class="rating-bar">
-            <span class="star-num">2 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 3%;"></div></div>
-            <span class="percentage">3%</span>
-          </div>
-          <div class="rating-bar">
-            <span class="star-num">1 <i class="fas fa-star"></i></span>
-            <div class="progress-bar"><div class="progress-fill" style="width: 5%;"></div></div>
-            <span class="percentage">5%</span>
-          </div>
+          <?php endfor; ?>
         </div>
       </div>
 
@@ -118,186 +115,70 @@
 
       <!-- Reviews Container -->
       <div class="reviews-container">
-        
-        <!-- Review 1 -->
+        <?php if (!empty($reviews)): ?>
+          <?php
+            $avatarColors = [
+              'linear-gradient(135deg, #4e73df 0%, #224abe 100%)',
+              'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              'linear-gradient(135deg, #e83e8c 0%, #fd7e14 100%)',
+              'linear-gradient(135deg, #6f42c1 0%, #6610f2 100%)',
+              'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+            ];
+          ?>
+          <?php foreach ($reviews as $index => $review): ?>
+            <?php
+              $rating = intval($review['rating']);
+              $touristInfo = htmlspecialchars($review['tourist_info']);
+              $reviewText = htmlspecialchars($review['review_text']);
+              $words = explode(' ', $touristInfo);
+              $initials = '';
+              foreach (array_slice($words, 0, 2) as $w) {
+                  $initials .= strtoupper(mb_substr($w, 0, 1));
+              }
+              $avatarColor = $avatarColors[$index % count($avatarColors)];
+              if ($rating >= 5) $ratingLabel = 'Excellent';
+              elseif ($rating >= 4) $ratingLabel = 'Very Good';
+              elseif ($rating >= 3) $ratingLabel = 'Good';
+              elseif ($rating >= 2) $ratingLabel = 'Fair';
+              else $ratingLabel = 'Poor';
+            ?>
         <div class="review-card">
           <div class="review-header">
             <div class="reviewer-info">
-              <div class="reviewer-avatar">MN</div>
+              <div class="reviewer-avatar" style="background: <?= $avatarColor ?>;"><?= $initials ?></div>
               <div class="reviewer-details">
-                <h4>Malsha Nethmini</h4>
+                <h4><?= $touristInfo ?></h4>
                 <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> May 15, 2025</span>
                   <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Trip</span>
                 </div>
               </div>
             </div>
             <div class="review-rating">
               <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
+                <?php for ($i = 1; $i <= 5; $i++): ?>
+                  <?php if ($i <= $rating): ?>
+                    <i class="fas fa-star"></i>
+                  <?php else: ?>
+                    <i class="far fa-star empty"></i>
+                  <?php endif; ?>
+                <?php endfor; ?>
               </div>
-              <span class="rating-text">Excellent</span>
+              <span class="rating-text"><?= $ratingLabel ?></span>
             </div>
           </div>
           <div class="review-content">
-            <p>The transport service was excellent! The driver was punctual, the vehicle was clean and comfortable, and the ride was smooth. Highly recommend this provider for anyone needing reliable transport in the area. Will definitely book again for my next trip!</p>
-          </div>
-          <div class="review-trip">
-            <div class="trip-item">
-              <i class="fa-solid fa-route"></i>
-              <span>Kandy → Ella</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-car"></i>
-              <span>Sedan (AC)</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span>3 Day Trip</span>
-            </div>
+            <p><?= $reviewText ?></p>
           </div>
         </div>
-
-        <!-- Review 2 -->
-        <div class="review-card">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">KN</div>
-              <div class="reviewer-details">
-                <h4>Kamal Nishantha</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> April 22, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Trip</span>
-                </div>
-              </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star-half-alt"></i>
-              </div>
-              <span class="rating-text">Very Good</span>
-            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <!-- No Reviews Empty State -->
+          <div style="text-align: center; padding: 60px 20px; color: #888;">
+            <i class="fa-regular fa-star" style="font-size: 3em; margin-bottom: 15px; display: block; opacity: 0.4;"></i>
+            <h3 style="color: #666; margin-bottom: 10px;">No Reviews Yet</h3>
+            <p>You haven't received any reviews yet. Customer reviews will appear here after they rate your service.</p>
           </div>
-          <div class="review-content">
-            <p>Overall, a great experience. The driver was friendly and knowledgeable about the local attractions. The vehicle was in good condition. There was a slight delay due to traffic, but the driver communicated this effectively and made sure we reached safely.</p>
-          </div>
-          <div class="review-trip">
-            <div class="trip-item">
-              <i class="fa-solid fa-route"></i>
-              <span>Colombo → Galle</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-car"></i>
-              <span>Van (AC)</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span>1 Day Trip</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Review 3 -->
-        <div class="review-card">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #e83e8c 0%, #fd7e14 100%);">AH</div>
-              <div class="reviewer-details">
-                <h4>Avindya Himahansi</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> March 10, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Trip</span>
-                </div>
-              </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <span class="rating-text">Excellent</span>
-            </div>
-          </div>
-          <div class="review-content">
-            <p>Fantastic service! The driver was very professional and knowledgeable about the area. He gave us great recommendations for restaurants and photo spots. The vehicle was well-maintained and super comfortable. I would definitely use this service again for my future travels in Sri Lanka!</p>
-          </div>
-          <div class="review-trip">
-            <div class="trip-item">
-              <i class="fa-solid fa-route"></i>
-              <span>Negombo → Sigiriya</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-car"></i>
-              <span>SUV (AC)</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span>5 Day Trip</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Review 4 -->
-        <div class="review-card">
-          <div class="review-header">
-            <div class="reviewer-info">
-              <div class="reviewer-avatar" style="background: linear-gradient(135deg, #6f42c1 0%, #6610f2 100%);">JS</div>
-              <div class="reviewer-details">
-                <h4>John Smith</h4>
-                <div class="meta">
-                  <span><i class="fa-regular fa-calendar"></i> February 28, 2025</span>
-                  <span class="verified-badge"><i class="fa-solid fa-check"></i> Verified Trip</span>
-                </div>
-              </div>
-            </div>
-            <div class="review-rating">
-              <div class="stars">
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="fas fa-star"></i>
-                <i class="far fa-star empty"></i>
-              </div>
-              <span class="rating-text">Good</span>
-            </div>
-          </div>
-          <div class="review-content">
-            <p>Good overall experience. The driver was polite and the vehicle was comfortable. The air conditioning worked perfectly which was important for us traveling with elderly family members. Minor suggestion: it would be nice to have phone chargers available in the vehicle.</p>
-          </div>
-          <div class="review-trip">
-            <div class="trip-item">
-              <i class="fa-solid fa-route"></i>
-              <span>Colombo → Nuwara Eliya</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-car"></i>
-              <span>Van (AC)</span>
-            </div>
-            <div class="trip-item">
-              <i class="fa-solid fa-calendar-days"></i>
-              <span>2 Day Trip</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Load More Button -->
-      <div class="load-more">
-        <button class="load-more-btn">
-          <i class="fa-solid fa-plus"></i> Load More Reviews
-        </button>
+        <?php endif; ?>
       </div>
 
     </div>
@@ -312,14 +193,6 @@
   </footer>
 
   <script>
-    // Filter button functionality
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-      });
-    });
-
     // Profile dropdown functionality
     function toggleProfileDropdown() {
       const dropdown = document.getElementById('profileDropdown');

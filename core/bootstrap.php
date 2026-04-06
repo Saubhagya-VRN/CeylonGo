@@ -7,6 +7,15 @@
 
 // Start session (only if not already started)
 if (session_status() === PHP_SESSION_NONE) {
+    // Extend session lifetime to 8 hours and ensure cookie covers entire app
+    ini_set('session.gc_maxlifetime', 28800);
+    ini_set('session.cookie_lifetime', 28800);
+    session_set_cookie_params([
+        'lifetime' => 28800,
+        'path' => '/CeylonGo/',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 

@@ -38,6 +38,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($vehicle_no)) $errors[] = "Vehicle number is required.";
     if (empty($vehicle_type)) $errors[] = "Vehicle type is required.";
     if ($psg_capacity < 1) $errors[] = "Passenger capacity must be at least 1.";
+    
+    // Validate passenger capacity against vehicle type limits
+    $capacity_limits = ['1' => 3, '2' => 4, '3' => 7, '4' => 7, '5' => 20, '6' => 20];
+    $capacity_names = ['1' => 'TUK', '2' => 'Car', '3' => 'Minivan', '4' => 'Minivan AC', '5' => 'Bus', '6' => 'Bus AC'];
+    if (isset($capacity_limits[$vehicle_type]) && $psg_capacity > $capacity_limits[$vehicle_type]) {
+        $errors[] = "Maximum passenger capacity for " . $capacity_names[$vehicle_type] . " is " . $capacity_limits[$vehicle_type] . ".";
+    }
     if (empty($email)) $errors[] = "Email is required.";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match.";
 

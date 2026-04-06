@@ -341,10 +341,10 @@ body.booking-page {
 }
 
 .booking-form .required-label {
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.85rem;
-  margin-bottom: 4px;
+  font-weight: bold;
+  color: #2c5530;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
   display: block;
 }
 

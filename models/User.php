@@ -24,7 +24,8 @@ class User {
         
         $stmt = $this->conn->prepare($query);
 
-        $stmt->bindParam(":user_id", $this->user_id);
+        $trimmedUserId = trim($this->user_id);
+        $stmt->bindParam(":user_id", $trimmedUserId);
         $stmt->bindParam(":full_name", $this->full_name);
         $stmt->bindParam(":dob", $this->dob);
         $stmt->bindParam(":nic", $this->nic);
@@ -35,7 +36,7 @@ class User {
         $stmt->bindParam(":email", $this->email);
         $stmt->bindParam(":psw", $this->psw);
 
-        $_SESSION['transporter_id'] = $this->user_id;
+        $_SESSION['transporter_id'] = $trimmedUserId;
 
         return $stmt->execute();
     }

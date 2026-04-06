@@ -93,9 +93,11 @@ class TouristController {
         if ($user_name === '' && $tourist_data) {
             $user_name = trim(($tourist_data['first_name'] ?? '') . ' ' . ($tourist_data['last_name'] ?? ''));
         }
+        $placesAutocompleteUrl = (defined('BASE_URL') ? BASE_URL : '/CeylonGo/public') . '/api/places-autocomplete';
         view('tourist/trip', [
             'tourist_data' => $tourist_data,
-            'user_name' => $user_name
+            'user_name' => $user_name,
+            'places_autocomplete_url' => $placesAutocompleteUrl
         ]);
     }
 
@@ -122,22 +124,82 @@ class TouristController {
     public function transportRequest() {
         $data = $_POST;
 
-        $request = new TransportRequest($this->db);
-        $request->customerName = $data['customerName'] ?? '';
-        $request->contactNumber = $data['contactNumber'] ?? '';
-        $request->vehicleType = $data['vehicleType'] ?? '';
-        $request->date = $data['date'] ?? '';
-        $request->pickupTime = $data['pickupTime'] ?? '';
-        $request->pickupLocation = $data['pickupLocation'] ?? '';
-        $request->dropoffLocation = $data['dropoffLocation'] ?? '';
-        $request->numPeople = (int) ($data['numPeople'] ?? 1);
-        $request->notes = $data['notes'] ?? '';
+        // Validate required fields (notes is optional)
+        $required = ['customerName', 'contactNumber', 'vehicleType', 'date', 'pickupTime', 'pickupLocation', 'dropoffLocation', 'numPeople'];
+        foreach ($required as $key) {
+            $val = trim($data[$key] ?? '');
+            if ($val === '' && $key !== 'numPeople') {
+                header("Location: /CeylonGo/public/tourist/customize-trip?error=" . urlencode("Please fill all required fields before confirming."));
+                exit();
+            }
+        }
 
+        // Map tourist vehicle type string to DB vehicle_type ID
+        $vehicleTypeMap = [
+            'Tuk'        => '1',  // TUK
+            'Car'        => '2',  // VAN
+            'Minivan'    => '2',  // VAN
+            'Minivan AC' => '2',  // VAN
+            'Bus'        => '2',  // VAN
+            'Bus AC'     => '2',  // VAN
+        ];
+
+        $request = new TransportRequest($this->db);
+        $request->userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+        $request->customerName = trim($data['customerName'] ?? '');
+        $request->contactNumber = trim($data['contactNumber'] ?? '');
+        $request->vehicleType = trim($data['vehicleType'] ?? '');
+        $request->date = trim($data['date'] ?? '');
+        $pickupTime = trim($data['pickupTime'] ?? '');
+        $request->pickupTime = (strlen($pickupTime) === 5) ? $pickupTime . ':00' : $pickupTime; // HH:MM -> HH:MM:SS
+        $request->pickupLocation = trim($data['pickupLocation'] ?? '');
+        $request->dropoffLocation = trim($data['dropoffLocation'] ?? '');
+        $request->numPeople = max(1, (int) ($data['numPeople'] ?? 1));
+        $request->notes = trim($data['notes'] ?? '');
+        $request->estimatedFare = isset($data['estimatedFare']) && $data['estimatedFare'] !== '' ? $data['estimatedFare'] : null;
+        $request->distance = isset($data['distance']) && $data['distance'] !== '' ? $data['distance'] : null;
+
+        // Try to find an available vehicle and driver
+        $vehicleTypeStr = $request->vehicleType;
+        $dbTypeId = $vehicleTypeMap[$vehicleTypeStr] ?? null;
+        $assignedVehicle = null;
+
+        if ($dbTypeId) {
+            $vehicleModel = new Vehicle($this->db);
+            $assignedVehicle = $vehicleModel->findAvailableVehicle($dbTypeId, $request->date, $request->numPeople);
+        }
+
+        // Set assignment fields
+        if ($assignedVehicle) {
+            $request->assignedDriverId = trim($assignedVehicle['user_id']);
+            $request->assignedVehicleNo = $assignedVehicle['vehicle_no'];
+        }
+
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         if ($request->addRequest()) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                $response = ['success' => true, 'requestId' => $request->id];
+                if ($assignedVehicle) {
+                    $response['assigned'] = true;
+                    $response['driverName'] = $assignedVehicle['driver_name'] ?? 'Driver';
+                    $response['vehicleNo'] = $assignedVehicle['vehicle_no'];
+                } else {
+                    $response['assigned'] = false;
+                    $response['message'] = 'Request saved. No available vehicle found at the moment. We will assign one soon.';
+                }
+                echo json_encode($response);
+                exit();
+            }
             header("Location: /CeylonGo/public/tourist/transport-report");
             exit();
         } else {
-            header("Location: /CeylonGo/public/tourist/transport-services?error=" . urlencode("Failed to submit request"));
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Failed to submit transport request.']);
+                exit();
+            }
+            header("Location: /CeylonGo/public/tourist/customize-trip?error=" . urlencode("Failed to submit transport request."));
             exit();
         }
     }
@@ -254,30 +316,36 @@ class TouristController {
             $total = (int) round(($adults * $price_adult) + ($children * $price_adult * $child_ratio) + ($infants * $price_adult * $infant_ratio));
         }
 
-        $booking = [
-            'id' => uniqid('b', true),
-            'user_id' => (int) $_SESSION['user_id'],
-            'package_id' => $package_id,
-            'package_name' => isset($_POST['package_name']) ? trim($_POST['package_name']) : ($package['title'] ?? ''),
-            'travelers' => $travelers,
-            'adults' => $adults,
-            'children' => $children,
-            'infants' => $infants,
-            'travel_date' => $travel_date,
-            'fullname' => isset($_POST['fullname']) ? trim($_POST['fullname']) : '',
-            'email' => isset($_POST['email']) ? trim($_POST['email']) : '',
-            'phone' => isset($_POST['phone']) ? trim($_POST['phone']) : '',
-            'special_requests' => isset($_POST['special_requests']) ? trim($_POST['special_requests']) : '',
-            'total_amount' => $total,
-            'status' => 'pending',
-            'created_at' => date('Y-m-d H:i:s'),
-        ];
-        if (!isset($_SESSION['pending_bookings']) || !is_array($_SESSION['pending_bookings'])) {
-            $_SESSION['pending_bookings'] = [];
+        // Save booking to database
+        try {
+            $sql = "INSERT INTO package_bookings 
+                    (user_id, package_id, package_name, travelers, adults, children, infants, travel_date, 
+                     fullname, email, phone, special_requests, total_amount, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                (int) $_SESSION['user_id'],
+                $package_id,
+                isset($_POST['package_name']) ? trim($_POST['package_name']) : ($package['title'] ?? ''),
+                $travelers,
+                $adults,
+                $children,
+                $infants,
+                $travel_date,
+                isset($_POST['fullname']) ? trim($_POST['fullname']) : '',
+                isset($_POST['email']) ? trim($_POST['email']) : '',
+                isset($_POST['phone']) ? trim($_POST['phone']) : '',
+                isset($_POST['special_requests']) ? trim($_POST['special_requests']) : '',
+                $total
+            ]);
+            $booking_id = $this->db->lastInsertId();
+            header('Location: /CeylonGo/public/tourist/my-bookings?success=1');
+            exit;
+        } catch (PDOException $e) {
+            error_log("Booking save error: " . $e->getMessage());
+            header('Location: /CeylonGo/public/tourist/booking-form?package=' . $package_id . '&error=' . urlencode('Failed to save booking. Please try again.'));
+            exit;
         }
-        $_SESSION['pending_bookings'][] = $booking;
-        header('Location: /CeylonGo/public/tourist/my-bookings');
-        exit;
     }
 
     public function myBookings() {
@@ -286,55 +354,30 @@ class TouristController {
             exit;
         }
         $current_user_id = (int) $_SESSION['user_id'];
-        $bookings = isset($_SESSION['pending_bookings']) && is_array($_SESSION['pending_bookings']) ? $_SESSION['pending_bookings'] : [];
-        // Only show bookings that belong to the logged-in user (avoid one user seeing another's bookings)
-        $bookings = array_values(array_filter($bookings, function ($b) use ($current_user_id) {
-            return isset($b['user_id']) && (int) $b['user_id'] === $current_user_id;
-        }));
-        // Demo bookings for user "dee gagan": only add and tag with current user so they see only their own
-        $userName = isset($_SESSION['user_name']) ? trim((string) $_SESSION['user_name']) : '';
-        $userEmail = isset($_SESSION['user_email']) ? trim((string) $_SESSION['user_email']) : '';
-        if (stripos($userName, 'dee gagan') !== false || stripos($userEmail, 'dee gagan') !== false) {
-            $demoBookings = [
-                [
-                    'id' => 'b-demo-pending',
-                    'user_id' => $current_user_id,
-                    'package_id' => 1,
-                    'package_name' => 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla',
-                    'travelers' => 2,
-                    'adults' => 2,
-                    'children' => 0,
-                    'infants' => 0,
-                    'travel_date' => date('Y-m-d', strtotime('+5 weeks')),
-                    'fullname' => 'Dee Gagan',
-                    'email' => $userEmail ?: 'deegagan@example.com',
-                    'phone' => '0771234567',
-                    'special_requests' => '',
-                    'total_amount' => 250000,
-                    'status' => 'pending',
-                    'created_at' => date('Y-m-d H:i:s'),
-                ],
-                [
-                    'id' => 'b-demo-approved',
-                    'user_id' => $current_user_id,
-                    'package_id' => 2,
-                    'package_name' => 'Southern Coast Honeymoon: Galle, Mirissa & Unawatuna 4N/5D',
-                    'travelers' => 2,
-                    'adults' => 2,
-                    'children' => 0,
-                    'infants' => 0,
-                    'travel_date' => date('Y-m-d', strtotime('+6 weeks')),
-                    'fullname' => 'Dee Gagan',
-                    'email' => $userEmail ?: 'deegagan@example.com',
-                    'phone' => '0771234567',
-                    'special_requests' => 'Honeymoon trip',
-                    'total_amount' => 370000,
-                    'status' => 'approved',
-                    'created_at' => date('Y-m-d H:i:s'),
-                ],
-            ];
-            $bookings = array_merge($demoBookings, $bookings);
+        
+        // Fetch bookings from database
+        try {
+            $sql = "SELECT * FROM package_bookings WHERE user_id = ? ORDER BY created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$current_user_id]);
+            $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Convert database results to expected format
+            foreach ($bookings as &$booking) {
+                $booking['id'] = (string) $booking['id'];
+                $booking['user_id'] = (int) $booking['user_id'];
+                $booking['package_id'] = (int) $booking['package_id'];
+                $booking['travelers'] = (int) $booking['travelers'];
+                $booking['adults'] = (int) $booking['adults'];
+                $booking['children'] = (int) $booking['children'];
+                $booking['infants'] = (int) $booking['infants'];
+                $booking['total_amount'] = (float) $booking['total_amount'];
+            }
+        } catch (PDOException $e) {
+            error_log("Error fetching bookings: " . $e->getMessage());
+            $bookings = [];
         }
+        
         view('tourist/my_bookings', ['bookings' => $bookings]);
     }
 
@@ -366,17 +409,20 @@ class TouristController {
             exit;
         }
         $booking = null;
-        $booking_id = isset($_GET['booking_id']) ? trim($_GET['booking_id']) : '';
+        $booking_id = isset($_GET['booking_id']) ? (int) $_GET['booking_id'] : 0;
         $current_user_id = (int) $_SESSION['user_id'];
-        if ($booking_id !== '' && isset($_SESSION['pending_bookings']) && is_array($_SESSION['pending_bookings'])) {
-            foreach ($_SESSION['pending_bookings'] as $b) {
-                if (isset($b['id']) && $b['id'] === $booking_id && ($b['status'] ?? '') === 'approved'
-                    && isset($b['user_id']) && (int) $b['user_id'] === $current_user_id) {
-                    $booking = $b;
-                    break;
-                }
+        
+        if ($booking_id > 0) {
+            try {
+                $sql = "SELECT * FROM package_bookings WHERE id = ? AND user_id = ? AND status = 'approved' LIMIT 1";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$booking_id, $current_user_id]);
+                $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                error_log("Error fetching booking: " . $e->getMessage());
             }
         }
+        
         view('tourist/payment', ['booking' => $booking]);
     }
 
@@ -459,6 +505,8 @@ class TouristController {
         }
 
         try {
+            if (session_status() === PHP_SESSION_NONE) session_start();
+
             // Use the GuideRequest model
             $guideRequest = new GuideRequest($this->db);
             $guideRequest->customerName = $data['customerName'];
@@ -468,6 +516,15 @@ class TouristController {
             $guideRequest->date = $data['date'];
             $guideRequest->time = $data['time'];
             $guideRequest->notes = $data['notes'] ?? '';
+
+            // Store the logged-in tourist's ID
+            $guideRequest->tourist_id = $_SESSION['user_id'] ?? null;
+
+            // Auto-assign an available guide matching the requested language
+            $availableGuide = $guideRequest->findAvailableGuide($data['language']);
+            if ($availableGuide) {
+                $guideRequest->guide_id = $availableGuide['id'];
+            }
 
             if ($guideRequest->create()) {
                 header("Location: /CeylonGo/public/tourist/tour-guide-report");
@@ -485,15 +542,13 @@ class TouristController {
 
     public function tourGuideRequestReport() {
         try {
+            if (session_status() === PHP_SESSION_NONE) session_start();
             $guideRequest = new GuideRequest($this->db);
-            $requests = $guideRequest->getAll();
+            $requests = [];
             
-            // Filter by logged-in user if needed
+            // Filter by logged-in tourist's ID
             if (isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist') {
-                $customer_name = $_SESSION['user_name'] ?? '';
-                if (!empty($customer_name)) {
-                    $requests = $guideRequest->getByCustomerName($customer_name);
-                }
+                $requests = $guideRequest->getRequestsByTourist($_SESSION['user_id']);
             }
             
             view('tourist/tour_guide_request_report', ['requests' => $requests]);

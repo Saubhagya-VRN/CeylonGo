@@ -56,6 +56,16 @@
     </div>
 
     <div class="main-content">
+      <?php if (isset($_GET['success'])): ?>
+        <div class="alert-success" style="background:#d4edda;color:#155724;padding:12px 20px;border-radius:8px;margin-bottom:16px;border:1px solid #c3e6cb;">
+          <?= htmlspecialchars($_GET['success']) ?>
+        </div>
+      <?php endif; ?>
+      <?php if (isset($_GET['error'])): ?>
+        <div class="alert-error" style="background:#f8d7da;color:#721c24;padding:12px 20px;border-radius:8px;margin-bottom:16px;border:1px solid #f5c6cb;">
+          <?= htmlspecialchars($_GET['error']) ?>
+        </div>
+      <?php endif; ?>
       <h2 class="page-title"><i class="fa-regular fa-clock"></i> Pending Requests</h2>
 
       <!-- Desktop Table View -->
@@ -68,101 +78,79 @@
               <th>Date</th>
               <th>Time</th>
               <th>Location</th>
-              <th>Tour Type</th>
-              <th>People</th>
+              <th>Language</th>
               <th>Status</th>
               <th>Actions</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>#TG010</td>
-              <td>Robert Anderson</td>
-              <td>2026-02-15</td>
-              <td>09:00 AM</td>
-              <td>Ella Nine Arches Bridge</td>
-              <td>Nature Tour</td>
-              <td>4</td>
-              <td><span class="status-badge pending">Pending</span></td>
-              <td>
-                <button class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
-                <button class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
-              </td>
-              <td><a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG011</td>
-              <td>Linda Thompson</td>
-              <td>2026-02-18</td>
-              <td>06:00 AM</td>
-              <td>Horton Plains</td>
-              <td>Adventure Tour</td>
-              <td>6</td>
-              <td><span class="status-badge pending">Pending</span></td>
-              <td>
-                <button class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
-                <button class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
-              </td>
-              <td><a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG012</td>
-              <td>James Wilson</td>
-              <td>2026-02-20</td>
-              <td>08:00 AM</td>
-              <td>Polonnaruwa Ancient City</td>
-              <td>Historical Tour</td>
-              <td>3</td>
-              <td><span class="status-badge pending">Pending</span></td>
-              <td>
-                <button class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
-                <button class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
-              </td>
-              <td><a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
+            <?php if (!empty($bookings)): ?>
+              <?php foreach ($bookings as $booking): ?>
+              <tr>
+                <td>#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></td>
+                <td><?= htmlspecialchars($booking['customerName']) ?></td>
+                <td><?= htmlspecialchars($booking['date']) ?></td>
+                <td><?= date('h:i A', strtotime($booking['time'])) ?></td>
+                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td><?= htmlspecialchars($booking['language']) ?></td>
+                <td><span class="status-badge pending">Pending</span></td>
+                <td>
+                  <form method="POST" action="/CeylonGo/public/guide/accept-booking" style="display:inline;">
+                    <input type="hidden" name="request_id" value="<?= $booking['id'] ?>">
+                    <button type="submit" class="btn-accept" title="Accept"><i class="fa-solid fa-check"></i> Accept</button>
+                  </form>
+                  <form method="POST" action="/CeylonGo/public/guide/reject-booking" style="display:inline;">
+                    <input type="hidden" name="request_id" value="<?= $booking['id'] ?>">
+                    <button type="submit" class="btn-reject" title="Reject"><i class="fa-solid fa-xmark"></i> Reject</button>
+                  </form>
+                </td>
+                <td><a href="/CeylonGo/public/guide/pending_info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="9" style="text-align: center; padding: 30px; color: #888;">No pending requests found.</td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
 
       <!-- Mobile Card View -->
       <div class="booking-cards">
-        <div class="booking-card-item" style="border-left-color: #ffc107;">
-          <div class="card-header">
-            <span class="booking-no">#TG010</span>
-            <span class="status-badge pending">Pending</span>
+        <?php if (!empty($bookings)): ?>
+          <?php foreach ($bookings as $booking): ?>
+          <div class="booking-card-item" style="border-left-color: #ffc107;">
+            <div class="card-header">
+              <span class="booking-no">#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></span>
+              <span class="status-badge pending">Pending</span>
+            </div>
+            <div class="card-body">
+              <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span><?= htmlspecialchars($booking['customerName']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span><?= htmlspecialchars($booking['date']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span><?= date('h:i A', strtotime($booking['time'])) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span><?= htmlspecialchars($booking['location']) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-language"></i><span class="label">Language:</span><span><?= htmlspecialchars($booking['language']) ?></span></div>
+            </div>
+            <div class="card-actions">
+              <form method="POST" action="/CeylonGo/public/guide/accept-booking" style="display:inline;">
+                <input type="hidden" name="request_id" value="<?= $booking['id'] ?>">
+                <button type="submit" class="btn-accept"><i class="fa-solid fa-check"></i> Accept</button>
+              </form>
+              <form method="POST" action="/CeylonGo/public/guide/reject-booking" style="display:inline;">
+                <input type="hidden" name="request_id" value="<?= $booking['id'] ?>">
+                <button type="submit" class="btn-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
+              </form>
+              <a href="/CeylonGo/public/guide/pending_info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span>Robert Anderson</span></div>
-            <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span>2026-02-15</span></div>
-            <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span>09:00 AM</span></div>
-            <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Ella Nine Arches Bridge</span></div>
-            <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Nature Tour</span></div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="booking-card-item" style="text-align: center; padding: 30px; color: #888;">
+            <p>No pending requests found.</p>
           </div>
-          <div class="card-actions">
-            <button class="btn-accept"><i class="fa-solid fa-check"></i> Accept</button>
-            <button class="btn-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
-            <a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
-        <div class="booking-card-item" style="border-left-color: #ffc107;">
-          <div class="card-header">
-            <span class="booking-no">#TG011</span>
-            <span class="status-badge pending">Pending</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span>Linda Thompson</span></div>
-            <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span>2026-02-18</span></div>
-            <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span>06:00 AM</span></div>
-            <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Horton Plains</span></div>
-            <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Adventure Tour</span></div>
-          </div>
-          <div class="card-actions">
-            <button class="btn-accept"><i class="fa-solid fa-check"></i> Accept</button>
-            <button class="btn-reject"><i class="fa-solid fa-xmark"></i> Reject</button>
-            <a href="/CeylonGo/public/guide/pending_info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

@@ -55,6 +55,11 @@
     </div>
 
     <div class="main-content">
+      <?php if (isset($_GET['success'])): ?>
+        <div class="alert-success" style="background:#d4edda;color:#155724;padding:12px 20px;border-radius:8px;margin-bottom:16px;border:1px solid #c3e6cb;">
+          <?= htmlspecialchars($_GET['success']) ?>
+        </div>
+      <?php endif; ?>
       <h2 class="page-title"><i class="fa-regular fa-calendar"></i> Upcoming Tours</h2>
 
       <!-- Desktop Table View -->
@@ -67,100 +72,58 @@
               <th>Date</th>
               <th>Time</th>
               <th>Location</th>
-              <th>Tour Type</th>
-              <th>People</th>
+              <th>Language</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>#TG001</td>
-              <td>John Silva</td>
-              <td>2026-01-20</td>
-              <td>09:00 AM</td>
-              <td>Sigiriya Rock Fortress</td>
-              <td>Historical Tour</td>
-              <td>4</td>
-              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG002</td>
-              <td>Sarah Fernando</td>
-              <td>2026-01-25</td>
-              <td>08:00 AM</td>
-              <td>Temple of the Tooth</td>
-              <td>Cultural Tour</td>
-              <td>6</td>
-              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG003</td>
-              <td>David Perera</td>
-              <td>2026-02-01</td>
-              <td>10:00 AM</td>
-              <td>Galle Fort</td>
-              <td>Historical Tour</td>
-              <td>3</td>
-              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG004</td>
-              <td>Emma Thompson</td>
-              <td>2026-02-05</td>
-              <td>07:00 AM</td>
-              <td>Yala National Park</td>
-              <td>Wildlife Safari</td>
-              <td>8</td>
-              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
-            <tr>
-              <td>#TG005</td>
-              <td>Michael Brown</td>
-              <td>2026-02-10</td>
-              <td>06:00 AM</td>
-              <td>Adam's Peak</td>
-              <td>Adventure Tour</td>
-              <td>5</td>
-              <td><a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
-            </tr>
+            <?php if (!empty($bookings)): ?>
+              <?php foreach ($bookings as $booking): ?>
+              <tr>
+                <td>#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></td>
+                <td><?= htmlspecialchars($booking['customerName']) ?></td>
+                <td><?= htmlspecialchars($booking['date']) ?></td>
+                <td><?= date('h:i A', strtotime($booking['time'])) ?></td>
+                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td><?= htmlspecialchars($booking['language']) ?></td>
+                <td><a href="/CeylonGo/public/guide/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
+              </tr>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 30px; color: #888;">No upcoming tours found.</td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
       </div>
 
       <!-- Mobile Card View -->
       <div class="booking-cards">
-        <div class="booking-card-item">
-          <div class="card-header">
-            <span class="booking-no">#TG001</span>
-            <span class="status-badge upcoming">Upcoming</span>
+        <?php if (!empty($bookings)): ?>
+          <?php foreach ($bookings as $booking): ?>
+          <div class="booking-card-item">
+            <div class="card-header">
+              <span class="booking-no">#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></span>
+              <span class="status-badge upcoming">Upcoming</span>
+            </div>
+            <div class="card-body">
+              <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span><?= htmlspecialchars($booking['customerName']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span><?= htmlspecialchars($booking['date']) ?></span></div>
+              <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span><?= date('h:i A', strtotime($booking['time'])) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span><?= htmlspecialchars($booking['location']) ?></span></div>
+              <div class="card-row"><i class="fa-solid fa-language"></i><span class="label">Language:</span><span><?= htmlspecialchars($booking['language']) ?></span></div>
+            </div>
+            <div class="card-actions">
+              <a href="/CeylonGo/public/guide/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span>John Silva</span></div>
-            <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span>2026-01-20</span></div>
-            <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span>09:00 AM</span></div>
-            <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Sigiriya Rock Fortress</span></div>
-            <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Historical Tour</span></div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <div class="booking-card-item" style="text-align: center; padding: 30px; color: #888;">
+            <p>No upcoming tours found.</p>
           </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
-        <div class="booking-card-item">
-          <div class="card-header">
-            <span class="booking-no">#TG002</span>
-            <span class="status-badge upcoming">Upcoming</span>
-          </div>
-          <div class="card-body">
-            <div class="card-row"><i class="fa-solid fa-user"></i><span class="label">Tourist:</span><span>Sarah Fernando</span></div>
-            <div class="card-row"><i class="fa-regular fa-calendar"></i><span class="label">Date:</span><span>2026-01-25</span></div>
-            <div class="card-row"><i class="fa-regular fa-clock"></i><span class="label">Time:</span><span>08:00 AM</span></div>
-            <div class="card-row"><i class="fa-solid fa-location-dot"></i><span class="label">Location:</span><span>Temple of the Tooth</span></div>
-            <div class="card-row"><i class="fa-solid fa-map"></i><span class="label">Tour:</span><span>Cultural Tour</span></div>
-          </div>
-          <div class="card-actions">
-            <a href="/CeylonGo/public/guide/info" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a>
-          </div>
-        </div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

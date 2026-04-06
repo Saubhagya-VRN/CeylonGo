@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $packages = $packages ?? [];
 $package_count = count($packages);
 $filter_category = $filter_category ?? '';
+$is_logged_in = isset($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'tourist';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -144,7 +145,7 @@ $filter_category = $filter_category ?? '';
                         </div>
                         <div class="package-card-cta">
                             <span class="package-cta-spacer" aria-hidden="true"></span>
-                            <a href="/CeylonGo/public/tourist/booking-form?package=<?php echo (int)$p['id']; ?>" class="btn btn-outline-pkg">Book Now</a>
+                            <a href="/CeylonGo/public/tourist/booking-form?package=<?php echo (int)$p['id']; ?>" class="btn btn-outline-pkg book-now-btn" data-package-id="<?php echo (int)$p['id']; ?>">Book Now</a>
                             <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="btn btn-primary-pkg">View Details</a>
                         </div>
                     </div>
@@ -155,6 +156,30 @@ $filter_category = $filter_category ?? '';
     </div>
 
     <?php include __DIR__ . '/footer.php'; ?>
+
+    <!-- Login popup modal (only shown for non-logged-in users) -->
+    <?php if (!$is_logged_in): ?>
+    <div class="login-modal-overlay" id="login-modal" aria-hidden="true">
+        <div class="login-modal-box" role="dialog" aria-labelledby="login-modal-title" aria-modal="true">
+            <button type="button" class="login-modal-close" id="login-modal-close" aria-label="Close">&times;</button>
+            <h2 class="login-modal-title" id="login-modal-title">Login to Book Package</h2>
+            <div class="login-modal-error" id="login-modal-error" style="display: none;"></div>
+            <form class="login-modal-form" id="login-modal-form" method="POST" action="/CeylonGo/public/login">
+                <input type="hidden" name="redirect" id="login-redirect" value="">
+                <div class="form-group">
+                    <label for="login-modal-email">Email Address</label>
+                    <input type="email" id="login-modal-email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-modal-password">Password</label>
+                    <input type="password" id="login-modal-password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="login-modal-btn">Login</button>
+            </form>
+            <p class="login-modal-register">Don't have an account? <a href="/CeylonGo/public/register">Register here</a></p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <script>
     (function() {
@@ -379,6 +404,154 @@ $filter_category = $filter_category ?? '';
             applyCategoryFromUrl();
         }
     })();
+
+    // Login modal functionality for Book Now buttons
+    <?php if (!$is_logged_in): ?>
+    (function() {
+        var modal = document.getElementById('login-modal');
+        var bookNowButtons = document.querySelectorAll('.book-now-btn');
+        var closeBtn = document.getElementById('login-modal-close');
+        var loginForm = document.getElementById('login-modal-form');
+        var errorDiv = document.getElementById('login-modal-error');
+        var redirectInput = document.getElementById('login-redirect');
+        var currentPackageId = null;
+
+        function openModal(packageId) {
+            if (!modal) return;
+            currentPackageId = packageId;
+            var redirectUrl = '/CeylonGo/public/tourist/booking-form?package=' + packageId;
+            if (redirectInput) redirectInput.value = redirectUrl;
+            modal.classList.add('login-modal-open');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                errorDiv.textContent = '';
+            }
+        }
+
+        function closeModal() {
+            if (!modal) return;
+            modal.classList.remove('login-modal-open');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            currentPackageId = null;
+        }
+
+        // Handle Book Now button clicks
+        bookNowButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var packageId = btn.getAttribute('data-package-id') || btn.href.match(/package=(\d+)/)?.[1];
+                if (packageId) {
+                    openModal(packageId);
+                }
+            });
+        });
+
+        // Close modal handlers
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeModal();
+            });
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal && modal.classList.contains('login-modal-open')) {
+                closeModal();
+            }
+        });
+
+        // Handle form submission
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(loginForm);
+                var email = formData.get('email');
+                var password = formData.get('password');
+                var redirect = formData.get('redirect');
+
+                if (!email || !password) {
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Please fill in all fields.';
+                        errorDiv.style.display = 'block';
+                    }
+                    return;
+                }
+
+                // Show loading state
+                var submitBtn = loginForm.querySelector('button[type="submit"]');
+                var originalText = submitBtn ? submitBtn.textContent : 'Login';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Logging in...';
+                }
+                if (errorDiv) {
+                    errorDiv.style.display = 'none';
+                    errorDiv.textContent = '';
+                }
+
+                // Submit via fetch with redirect handling
+                fetch('/CeylonGo/public/login', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    redirect: 'follow'
+                })
+                .then(function(response) {
+                    // Check the final URL after redirects
+                    var finalUrl = response.url;
+                    
+                    // If redirected away from login page, login was successful
+                    if (finalUrl.indexOf('/login') === -1) {
+                        // Login successful - redirect to booking form
+                        closeModal();
+                        if (currentPackageId) {
+                            window.location.href = '/CeylonGo/public/tourist/booking-form?package=' + currentPackageId;
+                        } else if (redirect) {
+                            window.location.href = redirect;
+                        } else {
+                            window.location.href = '/CeylonGo/public/tourist/packages';
+                        }
+                    } else {
+                        // Still on login page - login failed
+                        return response.text().then(function(text) {
+                            var errorMsg = 'Invalid email or password. Please try again.';
+                            
+                            // Try to extract error message from response
+                            var errorMatch = text.match(/<div[^>]*class="[^"]*error[^"]*"[^>]*>([^<]+)<\/div>/i);
+                            if (errorMatch && errorMatch[1]) {
+                                errorMsg = errorMatch[1].trim();
+                            }
+                            
+                            if (errorDiv) {
+                                errorDiv.textContent = errorMsg;
+                                errorDiv.style.display = 'block';
+                            }
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = originalText;
+                            }
+                        });
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Login error:', error);
+                    if (errorDiv) {
+                        errorDiv.textContent = 'An error occurred. Please try again.';
+                        errorDiv.style.display = 'block';
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                    }
+                });
+            });
+        }
+    })();
+    <?php endif; ?>
     </script>
 </body>
 </html>

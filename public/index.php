@@ -36,6 +36,9 @@ $router->post('transporter/update-vehicle', 'TransportProviderController@updateV
 $router->get('transporter/payment', 'TransportProviderController@payment');
 $router->post('transporter/payment', 'TransportProviderController@saveBankDetails');
 $router->post('registerProvider', 'TransportProviderController@registerProvider');
+$router->post('transporter/accept-booking', 'TransportProviderController@acceptBooking');
+$router->post('transporter/reject-booking', 'TransportProviderController@rejectBooking');
+$router->get('tourist/transport-status', 'TransportProviderController@checkBookingStatus');
 
 // ========== TOURIST ROUTES ==========
 $router->get('tourist/register', 'TouristController@registerView');
@@ -71,6 +74,7 @@ $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
 $router->get('api/calculate-fare', 'GeocodeController@calculateFare');
+$router->get('api/places-autocomplete', 'GeocodeController@placesAutocomplete');
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
@@ -88,6 +92,8 @@ $router->get('guide/pending_info', 'GuideController@pendingInfo');
 $router->get('guide/cancelled_info', 'GuideController@cancelledInfo');
 $router->get('guide/payment', 'GuideController@payment');
 $router->post('guide/payment', 'GuideController@payment');
+$router->post('guide/accept-booking', 'GuideController@acceptBooking');
+$router->post('guide/reject-booking', 'GuideController@rejectBooking');
 
 // ========== HOTEL ROUTES ==========
 $router->get('hotel/register', 'HotelController@registerView');

@@ -250,11 +250,12 @@ if (isset($_SESSION['register_success'])) {
               <div class="input-wrapper">
                 <select name="vehicle_type" required>
                   <option value="">Select Vehicle Type</option>
-                  <option value="1">TUK TUK (Three Wheeler)</option>
-                  <option value="2">VAN</option>
-                  <option value="3">CAR (Sedan)</option>
-                  <option value="4">SUV</option>
-                  <option value="5">MINI BUS</option>
+                  <option value="1">TUK</option>
+                  <option value="2">Car</option>
+                  <option value="3">Minivan</option>
+                  <option value="4">Minivan AC</option>
+                  <option value="5">Bus</option>
+                  <option value="6">Bus AC</option>
                 </select>
                 <i class="fa-solid fa-car"></i>
               </div>
@@ -433,6 +434,52 @@ if (isset($_SESSION['register_success'])) {
 
     formSections.forEach((section, index) => {
       section.addEventListener('focusin', () => updateProgress(index));
+    });
+
+    // Passenger capacity limits per vehicle type
+    const capacityLimits = { '1': 3, '2': 4, '3': 7, '4': 7, '5': 20, '6': 20 };
+    const capacityNames = { '1': 'TUK', '2': 'Car', '3': 'Minivan', '4': 'Minivan AC', '5': 'Bus', '6': 'Bus AC' };
+    const vehicleTypeSelect = document.querySelector('select[name="vehicle_type"]');
+    const psgCapacityInput = document.querySelector('input[name="psg_capacity"]');
+
+    // Create error message element
+    const capacityError = document.createElement('div');
+    capacityError.style.cssText = 'color: #c62828; font-size: 13px; margin-top: 5px; display: none;';
+    psgCapacityInput.closest('.form-group').appendChild(capacityError);
+
+    function validateCapacity() {
+      const type = vehicleTypeSelect.value;
+      const capacity = parseInt(psgCapacityInput.value) || 0;
+      const maxCapacity = capacityLimits[type];
+
+      if (type && maxCapacity && capacity > maxCapacity) {
+        capacityError.textContent = `Maximum passenger capacity for ${capacityNames[type]} is ${maxCapacity}.`;
+        capacityError.style.display = 'block';
+        psgCapacityInput.style.borderColor = '#c62828';
+        return false;
+      } else {
+        capacityError.style.display = 'none';
+        psgCapacityInput.style.borderColor = '';
+        return true;
+      }
+    }
+
+    vehicleTypeSelect.addEventListener('change', function() {
+      const type = this.value;
+      if (capacityLimits[type]) {
+        psgCapacityInput.setAttribute('max', capacityLimits[type]);
+        psgCapacityInput.setAttribute('placeholder', `Max: ${capacityLimits[type]} passengers`);
+      }
+      validateCapacity();
+    });
+
+    psgCapacityInput.addEventListener('input', validateCapacity);
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+      if (!validateCapacity()) {
+        e.preventDefault();
+        psgCapacityInput.focus();
+      }
     });
   </script>
 </body>
