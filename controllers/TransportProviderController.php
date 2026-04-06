@@ -278,7 +278,8 @@ class TransportProviderController {
             exit();
         }
         if ($requestModel->updateStatus($bookingId, 'confirmed')) {
-            echo json_encode(['success' => true, 'message' => 'Booking accepted successfully!']);
+            $this->sendTransportConfirmationEmail($booking);
+            echo json_encode(['success' => true, 'message' => 'Booking accepted successfully! The tourist has been notified.']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to accept booking']);
         }
@@ -334,6 +335,42 @@ class TransportProviderController {
             echo json_encode(['success' => true, 'message' => 'Booking rejected.']);
         }
         exit();
+    }
+
+    private function sendTransportConfirmationEmail($booking) {
+        if (empty($booking['user_id'])) {
+            return false;
+        }
+
+        require_once dirname(__DIR__) . '/models/Tourist.php';
+        $touristModel = new Tourist($this->db);
+        $tourist = $touristModel->getTouristById((int) $booking['user_id']);
+        if (!$tourist || empty($tourist['email'])) {
+            return false;
+        }
+
+        $touristName = trim(($tourist['first_name'] ?? '') . ' ' . ($tourist['last_name'] ?? '')) ?: 'Customer';
+        $driverName = trim($booking['driver_name'] ?? 'Your driver');
+        $vehicleNo = trim($booking['assigned_vehicle_no'] ?? 'N/A');
+        $pickupTime = !empty($booking['pickup_time']) ? date('g:i A', strtotime($booking['pickup_time'])) : 'N/A';
+        $subject = 'Your Ceylon Go transport booking is confirmed';
+        $message = "Hello {$touristName},\n\n" .
+                   "Good news! Your transport request for {$booking['date']} has been confirmed by {$driverName}.\n\n" .
+                   "Booking details:\n" .
+                   "- Pickup: {$booking['pickup_location']}\n" .
+                   "- Dropoff: {$booking['dropoff_location']}\n" .
+                   "- Pickup time: {$pickupTime}\n" .
+                   "- Vehicle: {$booking['vehicle_type']}\n" .
+                   "- Vehicle number: {$vehicleNo}\n\n" .
+                   "If you have any questions, please contact us.\n\n" .
+                   "Thank you for booking with Ceylon Go!\n";
+
+        $headers = "From: no-reply@ceylongo.local\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/plain; charset=UTF-8\r\n";
+
+        @mail($tourist['email'], $subject, $message, $headers);
+        return true;
     }
 
     public function registerView() {
@@ -459,8 +496,8 @@ class TransportProviderController {
         $data = $_POST;
         $files = $_FILES;
 
-        // Make sure uploads folder exists
-        $uploadDir = __DIR__ . "/../uploads/";
+        // Make sure uploads folder exists in public so images can be served by the browser
+        $uploadDir = __DIR__ . "/../public/uploads/transport/";
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -474,21 +511,21 @@ class TransportProviderController {
         if (!empty($files['vehicle_image']['tmp_name'])) {
             $newFileName = $this->generateFileName($files['vehicle_image']['name']);
             $targetPath = $uploadDir . $newFileName;
-            move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath);
-            $transport_vehicle->image = $newFileName;
+            if (move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath)) {
+                $transport_vehicle->image = $newFileName;
+            }
         }
         $transport_vehicle->addVehicle();
 
         header('Location: ../../public/transporter/profile');
-
     }
 
     public function updateVehicle() {
         $data = $_POST;
         $files = $_FILES;
 
-        // Make sure uploads folder exists
-        $uploadDir = __DIR__ . "/../uploads/";
+        // Make sure uploads folder exists in public so images can be served by the browser
+        $uploadDir = __DIR__ . "/../public/uploads/transport/";
         if (!file_exists($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
@@ -502,9 +539,10 @@ class TransportProviderController {
         if (!empty($files['vehicle_image']['tmp_name'])) {
             $newFileName = $this->generateFileName($files['vehicle_image']['name']);
             $targetPath = $uploadDir . $newFileName;
-            move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath);
-            $transport_vehicle->image = $newFileName;
-        header('Location: ../../public/transporter/profile#');
+            if (move_uploaded_file($files['vehicle_image']['tmp_name'], $targetPath)) {
+                $transport_vehicle->image = $newFileName;
+            }
+            header('Location: ../../public/transporter/profile#');
         }
         $transport_vehicle->updateVehicle();
 

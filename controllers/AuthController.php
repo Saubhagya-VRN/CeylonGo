@@ -73,6 +73,12 @@ class AuthController {
                     break;
                 case 'transport':
                     $_SESSION['transporter_id'] = trim($user['ref_id']);
+                    // Get user name for transport providers
+                    $userModel = new User($this->db);
+                    $userData = $userModel->getUserById($user['ref_id']);
+                    if ($userData) {
+                        $_SESSION['user_name'] = trim($userData['full_name'] ?? 'User');
+                    }
                     header("Location: /CeylonGo/public/transporter/dashboard");
                     break;
                 case 'admin':

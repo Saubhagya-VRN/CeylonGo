@@ -448,6 +448,37 @@ INSERT INTO `transport_vehicle_types` (`type_id`, `type_name`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `transport_requests`
+--
+
+CREATE TABLE `transport_requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL COMMENT 'Tourist user ID',
+  `customer_name` varchar(100) NOT NULL,
+  `contact_number` varchar(15) NOT NULL,
+  `vehicle_type` varchar(50) NOT NULL,
+  `date` date NOT NULL,
+  `pickup_time` time NOT NULL,
+  `pickup_location` varchar(255) NOT NULL,
+  `dropoff_location` varchar(255) NOT NULL,
+  `num_people` int(11) NOT NULL DEFAULT 1,
+  `notes` varchar(500) DEFAULT NULL,
+  `estimated_fare` decimal(10, 2) DEFAULT NULL,
+  `distance` decimal(8, 2) DEFAULT NULL,
+  `assigned_driver_id` varchar(50) DEFAULT NULL COMMENT 'Transport provider user ID',
+  `assigned_vehicle_no` varchar(50) DEFAULT NULL COMMENT 'Vehicle license plate',
+  `status` enum('pending','confirmed','completed','cancelled') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `assigned_driver_id` (`assigned_driver_id`),
+  KEY `date_status` (`date`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `trip_bookings`
 --
 
@@ -660,6 +691,15 @@ ALTER TABLE `transport_users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Indexes for table `transport_requests`
+--
+ALTER TABLE `transport_requests`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `assigned_driver_id` (`assigned_driver_id`),
+  ADD KEY `date_status` (`date`, `status`);
+
+--
 -- Indexes for table `transport_vehicle`
 --
 ALTER TABLE `transport_vehicle`
@@ -762,6 +802,12 @@ ALTER TABLE `tourist_transport_requests`
 --
 ALTER TABLE `tourist_users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+
+--
+-- AUTO_INCREMENT for table `transport_requests`
+--
+ALTER TABLE `transport_requests`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `transport_vehicle_types`
