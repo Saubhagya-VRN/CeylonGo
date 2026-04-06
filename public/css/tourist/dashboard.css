@@ -417,7 +417,7 @@
 /* How It Works – booking steps section */
 .dashboard-how-it-works {
     background: #ffffff;
-    padding: 64px 32px 80px;
+    padding: 76px 32px 84px;
     text-align: center;
 }
 
@@ -433,7 +433,7 @@
 }
 
 .how-it-works-subtitle {
-    margin: 0 auto 56px;
+    margin: 0 auto 20px;
     max-width: 560px;
     font-size: 16px;
     line-height: 1.6;
@@ -444,7 +444,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 32px;
+    gap: 26px;
     max-width: 1140px;
     margin: 0 auto;
     flex-wrap: wrap;
@@ -454,7 +454,7 @@
     flex: 1;
     min-width: 240px;
     max-width: 320px;
-    padding: 0 24px;
+    padding: 0 12px;
 }
 
 .how-step-icon-wrap {
@@ -462,14 +462,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 88px;
-    height: 88px;
+    width: 78px;
+    height: 78px;
     border-radius: 18px;
-    margin-bottom: 28px;
+    margin-bottom: 12px;
 }
 
 .how-step-icon-wrap i {
-    font-size: 32px;
+    font-size: 28px;
     color: #fff;
 }
 
@@ -511,7 +511,7 @@
     width: 24px;
     min-width: 24px;
     height: 3px;
-    margin-top: 48px;
+    margin-top: 30px;
     background: linear-gradient(90deg, #4a7c59, #f59e0b, #14b8a6);
     border-radius: 2px;
     opacity: 0.6;
@@ -520,14 +520,24 @@
 /* Inquiry section */
 .dashboard-inquiry {
     max-width: 980px;
-    margin: 0 auto 28px auto;
-    padding: 34px 20px 10px;
+    margin: 18px auto 28px auto;
+    padding: 18px 16px 10px;
     text-align: initial;
 }
 
 .dashboard-inquiry .how-it-works-title,
 .dashboard-inquiry .how-it-works-subtitle {
     text-align: center;
+}
+
+.dashboard-inquiry .how-it-works-title {
+    font-size: clamp(24px, 4vw, 34px);
+    margin-bottom: 10px;
+}
+
+.dashboard-inquiry .how-it-works-subtitle {
+    margin-bottom: 14px;
+    max-width: 640px;
 }
 .dash-flash {
     margin: 14px 0;
@@ -558,8 +568,12 @@
 .dash-inquiry-row{margin-top:14px;}
 .dash-inquiry-row--split{
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap:14px;
+}
+
+.dash-inquiry-field{
+    min-width: 0;
 }
 .dash-inquiry-label-spacer{visibility:hidden;}
 .dash-inquiry-field--icon .dash-inquiry-input-icon-wrap{
@@ -567,13 +581,14 @@
 }
 .dash-inquiry-icon{
     position:absolute;
-    left:12px;
+    left:14px;
     top:50%;
     transform:translateY(-50%);
     color:#6b7280;
+    pointer-events: none;
 }
 .dash-inquiry-field--icon input{
-    padding-left:38px;
+    padding-left:60px !important;
 }
 .dash-inquiry-actions{
     margin-top:16px;
@@ -596,6 +611,7 @@
     padding: 10px 12px;
     font-size: 14px;
     outline: none;
+    box-sizing: border-box;
 }
 .dash-inquiry-field input:focus,
 .dash-inquiry-field textarea:focus {
