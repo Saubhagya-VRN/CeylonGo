@@ -78,6 +78,7 @@ $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestRep
 $router->get('tourist/contact', 'TouristController@contact');
 $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 $router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
+$router->post('tourist/inquiries', 'TouristController@inquirySubmit');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
@@ -129,6 +130,7 @@ $router->get('admin/bookings', 'AdminController@bookings');
 $router->get('admin/payments', 'AdminController@payments');
 $router->get('admin/reviews', 'AdminController@reviews');
 $router->get('admin/inquiries', 'AdminController@inquiries');
+$router->post('admin/inquiries/reply', 'AdminController@replyInquiry');
 $router->get('admin/promotions', 'AdminController@promotions');
 $router->get('admin/reports', 'AdminController@reports');
 $router->get('admin/service', 'AdminController@service');

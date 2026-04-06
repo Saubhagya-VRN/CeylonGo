@@ -17,10 +17,10 @@ class AdminController {
         }
         
         $adminModel = new Admin($this->db);
-        $admin_id = $_SESSION['user_ref_id'] ?? null;
+        $admin_id = isset($_SESSION['user_ref_id']) ? $_SESSION['user_ref_id'] : null;
         if ($admin_id) {
             $admin = $adminModel->getAdminById($admin_id);
-            view('admin/admin_profile', ['admin' => $admin]);
+            view('admin/admin_profile', array('admin' => $admin));
         } else {
             view('admin/admin_profile');
         }
@@ -28,7 +28,7 @@ class AdminController {
 
     public function updateProfile() {
         $data = $_POST;
-        $admin_id = $_SESSION['user_ref_id'] ?? null;
+        $admin_id = isset($_SESSION['user_ref_id']) ? $_SESSION['user_ref_id'] : null;
 
         if (!$admin_id) {
             header("Location: /CeylonGo/public/admin/profile?error=" . urlencode("Invalid session"));
@@ -370,7 +370,50 @@ class AdminController {
     }
 
     public function inquiries() {
-        view('admin/admin_inquiries');
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $status = isset($_GET['status']) ? trim((string)$_GET['status']) : 'all';
+        $inqModel = new Inquiry($this->db);
+        $inquiries = $inqModel->getAll($status);
+        view('admin/admin_inquiries', array(
+            'inquiries' => $inquiries,
+            'status' => $status
+        ));
+    }
+
+    public function replyInquiry() {
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/admin/inquiries');
+            exit();
+        }
+
+        $id = isset($_POST['inquiry_id']) ? (int)$_POST['inquiry_id'] : 0;
+        $reply = trim((string)($_POST['admin_reply'] ?? ''));
+        if ($id <= 0 || $reply === '') {
+            $_SESSION['error'] = 'Please enter a reply.';
+            header('Location: /CeylonGo/public/admin/inquiries');
+            exit();
+        }
+
+        $inqModel = new Inquiry($this->db);
+        try {
+            $ok = $inqModel->reply($id, $reply);
+        } catch (\Throwable $e) {
+            error_log('replyInquiry: ' . $e->getMessage());
+            $ok = false;
+        }
+
+        if ($ok) $_SESSION['success'] = 'Reply saved.';
+        else $_SESSION['error'] = 'Could not save reply.';
+
+        header('Location: /CeylonGo/public/admin/inquiries');
+        exit();
     }
 
     public function promotions() {

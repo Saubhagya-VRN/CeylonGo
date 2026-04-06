@@ -72,12 +72,12 @@ class TouristController {
         }
 
         $packageModel = new Package($this->db);
-        $trending_bar_packages = $packageModel->getAll(['trending' => true]);
+        $trending_bar_packages = $packageModel->getAll(array('trending' => true));
 
-        view('tourist/dashboard', [
+        view('tourist/dashboard', array(
             'tourist_data' => $tourist_data,
             'trending_bar_packages' => $trending_bar_packages,
-        ]);
+        ));
     }
 
     public function oldDashboard() {
@@ -96,18 +96,20 @@ class TouristController {
         $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
         $user_name = isset($_SESSION['user_name']) ? trim($_SESSION['user_name']) : '';
         if ($user_name === '' && $tourist_data) {
-            $user_name = trim(($tourist_data['first_name'] ?? '') . ' ' . ($tourist_data['last_name'] ?? ''));
+            $fn = isset($tourist_data['first_name']) ? $tourist_data['first_name'] : '';
+            $ln = isset($tourist_data['last_name']) ? $tourist_data['last_name'] : '';
+            $user_name = trim($fn . ' ' . $ln);
         }
         $placesAutocompleteUrl = (defined('BASE_URL') ? BASE_URL : '/CeylonGo/public') . '/api/places-autocomplete';
         $payhereMax = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
         $bankDetails = defined('BANK_TRANSFER_DETAILS') ? BANK_TRANSFER_DETAILS : '';
-        view('tourist/trip', [
+        view('tourist/trip', array(
             'tourist_data' => $tourist_data,
             'user_name' => $user_name,
             'places_autocomplete_url' => $placesAutocompleteUrl,
             'payhere_per_transaction_max_lkr' => $payhereMax,
             'bank_transfer_details' => $bankDetails,
-        ]);
+        ));
     }
 
     /**
@@ -410,13 +412,68 @@ class TouristController {
             $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
         }
         $packageModel = new Package($this->db);
-        $trending_bar_packages = $packageModel->getAll(['trending' => true]);
+        $trending_bar_packages = $packageModel->getAll(array('trending' => true));
 
-        view('tourist/dashboard', [
+        $inquiries = array();
+        if (isset($_SESSION['user_id']) && (isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '') === 'tourist') {
+            $inqModel = new Inquiry($this->db);
+            $inquiries = $inqModel->getByUserId((int)$_SESSION['user_id'], 5);
+        }
+
+        view('tourist/dashboard', array(
             'tourist_data' => $tourist_data,
             'is_logged_in' => isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist',
             'trending_bar_packages' => $trending_bar_packages,
-        ]);
+            'inquiries' => $inquiries
+        ));
+    }
+
+    public function inquirySubmit() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
+            exit;
+        }
+
+        $subject = trim((string)($_POST['subject'] ?? ''));
+        $message = trim((string)($_POST['message'] ?? ''));
+        if ($subject === '' || $message === '') {
+            $_SESSION['inquiry_error'] = 'Please fill subject and message.';
+            header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
+            exit;
+        }
+
+        $inqModel = new Inquiry($this->db);
+        $isTouristLogged = isset($_SESSION['user_id']) && ((isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '') === 'tourist');
+
+        $ok = false;
+        try {
+            if ($isTouristLogged) {
+                $ok = $inqModel->create((int)$_SESSION['user_id'], $subject, $message);
+            } else {
+                $fn = trim((string)($_POST['first_name'] ?? ''));
+                $ln = trim((string)($_POST['last_name'] ?? ''));
+                $email = trim((string)($_POST['email'] ?? ''));
+                $name = trim($fn . ' ' . $ln);
+                if ($name === '') $name = 'Guest';
+                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $_SESSION['inquiry_error'] = 'Please enter a valid email address so we can reply.';
+                    header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
+                    exit;
+                }
+                $ok = $inqModel->createGuest($name, $email, $subject, $message);
+            }
+        } catch (\Throwable $e) {
+            error_log('inquirySubmit: ' . $e->getMessage());
+            $ok = false;
+        }
+
+        if ($ok) {
+            $_SESSION['inquiry_info'] = 'Your inquiry was sent. Our team will reply soon.';
+        } else {
+            $_SESSION['inquiry_error'] = 'Could not send your inquiry. Please try again.';
+        }
+        header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
+        exit;
     }
 
     public function transportRequestView() {

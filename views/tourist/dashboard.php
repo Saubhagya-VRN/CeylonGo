@@ -7,27 +7,27 @@ $is_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'touri
 $user_name = $is_logged_in ? (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Tourist') : '';
 
 // Full package data for dashboard dropdowns (with image, location, duration, rating)
-$package_cards = [
-    1 => ['id' => 1, 'title' => 'Cultural Triangle', 'image' => '/CeylonGo/public/images/kandy.jpeg', 'location' => 'Kandy', 'duration' => '5D/4N', 'rating' => 4.5],
-    2 => ['id' => 2, 'title' => 'Southern Coast Honeymoon', 'image' => '/CeylonGo/public/images/beach.jpg', 'location' => 'Galle', 'duration' => '5D/4N', 'rating' => 4.5],
-    3 => ['id' => 3, 'title' => 'Hill Country Escape', 'image' => '/CeylonGo/public/images/greenary.jpg', 'location' => 'Nuwara Eliya', 'duration' => '6D/5N', 'rating' => 4.8],
-    4 => ['id' => 4, 'title' => 'Ancient Heritage Trail', 'image' => '/CeylonGo/public/images/perehara.jpeg', 'location' => 'Anuradhapura', 'duration' => '4D/3N', 'rating' => 4.6],
-    5 => ['id' => 5, 'title' => 'Wildlife Safari', 'image' => '/CeylonGo/public/images/elephant.jpg', 'location' => 'Yala', 'duration' => '4D/3N', 'rating' => 4.7],
-    6 => ['id' => 6, 'title' => 'Solo Explorer', 'image' => '/CeylonGo/public/images/train.jpg', 'location' => 'Ella', 'duration' => '6D/5N', 'rating' => 4.4],
-    7 => ['id' => 7, 'title' => 'Family Fun', 'image' => '/CeylonGo/public/images/resort.jpg', 'location' => 'Bentota', 'duration' => '5D/4N', 'rating' => 4.5],
-    8 => ['id' => 8, 'title' => 'Beach Getaway', 'image' => '/CeylonGo/public/images/sunset.jpg', 'location' => 'Hikkaduwa', 'duration' => '3D/2N', 'rating' => 4.3],
-];
-$packages_by_cat = [
-    'solo'      => [ 6 ],
-    'honeymoon' => [ 2 ],
-    'family'    => [ 7 ],
-    'cultural'  => [ 1 ],
-    'adventure' => [ 3 ],
-    'heritage'  => [ 4 ],
-    'safari'    => [ 5 ],
-    'beach'     => [ 8 ],
-];
-$trending_bar_packages = $trending_bar_packages ?? [];
+$package_cards = array(
+    1 => array('id' => 1, 'title' => 'Cultural Triangle', 'image' => '/CeylonGo/public/images/kandy.jpeg', 'location' => 'Kandy', 'duration' => '5D/4N', 'rating' => 4.5),
+    2 => array('id' => 2, 'title' => 'Southern Coast Honeymoon', 'image' => '/CeylonGo/public/images/beach.jpg', 'location' => 'Galle', 'duration' => '5D/4N', 'rating' => 4.5),
+    3 => array('id' => 3, 'title' => 'Hill Country Escape', 'image' => '/CeylonGo/public/images/greenary.jpg', 'location' => 'Nuwara Eliya', 'duration' => '6D/5N', 'rating' => 4.8),
+    4 => array('id' => 4, 'title' => 'Ancient Heritage Trail', 'image' => '/CeylonGo/public/images/perehara.jpeg', 'location' => 'Anuradhapura', 'duration' => '4D/3N', 'rating' => 4.6),
+    5 => array('id' => 5, 'title' => 'Wildlife Safari', 'image' => '/CeylonGo/public/images/elephant.jpg', 'location' => 'Yala', 'duration' => '4D/3N', 'rating' => 4.7),
+    6 => array('id' => 6, 'title' => 'Solo Explorer', 'image' => '/CeylonGo/public/images/train.jpg', 'location' => 'Ella', 'duration' => '6D/5N', 'rating' => 4.4),
+    7 => array('id' => 7, 'title' => 'Family Fun', 'image' => '/CeylonGo/public/images/resort.jpg', 'location' => 'Bentota', 'duration' => '5D/4N', 'rating' => 4.5),
+    8 => array('id' => 8, 'title' => 'Beach Getaway', 'image' => '/CeylonGo/public/images/sunset.jpg', 'location' => 'Hikkaduwa', 'duration' => '3D/2N', 'rating' => 4.3),
+);
+$packages_by_cat = array(
+    'solo'      => array(6),
+    'honeymoon' => array(2),
+    'family'    => array(7),
+    'cultural'  => array(1),
+    'adventure' => array(3),
+    'heritage'  => array(4),
+    'safari'    => array(5),
+    'beach'     => array(8),
+);
+$trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages : array();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,10 +50,10 @@ $trending_bar_packages = $trending_bar_packages ?? [];
             <div class="package-bar-panel package-bar-panel--cards">
                 <?php foreach ($trending_bar_packages as $p): ?>
                 <a href="/CeylonGo/public/tourist/package-details/<?php echo (int)$p['id']; ?>" class="package-bar-card">
-                    <img src="<?php echo htmlspecialchars($p['image'] ?? ''); ?>" alt="" class="package-bar-card-img">
+                    <img src="<?php echo htmlspecialchars(isset($p['image']) ? $p['image'] : ''); ?>" alt="" class="package-bar-card-img">
                     <div class="package-bar-card-body">
-                        <span class="package-bar-card-title"><?php echo htmlspecialchars($p['title'] ?? ''); ?></span>
-                        <span class="package-bar-card-meta"><?php echo htmlspecialchars($p['location'] ?? ''); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars($p['duration_short'] ?? $p['duration'] ?? ''); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars((string)($p['rating'] ?? '')); ?></span></span>
+                        <span class="package-bar-card-title"><?php echo htmlspecialchars(isset($p['title']) ? $p['title'] : ''); ?></span>
+                        <span class="package-bar-card-meta"><?php echo htmlspecialchars(isset($p['location']) ? $p['location'] : ''); ?> · <span class="package-bar-card-dur"><?php echo htmlspecialchars(isset($p['duration_short']) ? $p['duration_short'] : (isset($p['duration']) ? $p['duration'] : '')); ?></span> <span class="package-bar-card-star">★ <?php echo htmlspecialchars((string)(isset($p['rating']) ? $p['rating'] : '')); ?></span></span>
                     </div>
                 </a>
                 <?php endforeach; ?>
@@ -184,9 +184,103 @@ $trending_bar_packages = $trending_bar_packages ?? [];
                         <span class="how-step-num">3</span>
                     </div>
                     <h3 class="how-step-title">You Travel Stress-Free</h3>
-                    <p class="how-step-desc">Everything's handled – from flight tickets to hotel bookings to 24/7 travel support.</p>
+                    <p class="how-step-desc">Everything's handled – from itinerary planning to hotel and transport bookings to 24/7 travel support.</p>
                 </div>
             </div>
+        </section>
+
+        <section class="dashboard-inquiry" id="inquiry">
+            <h2 class="how-it-works-title">Contact <span class="how-it-works-accent">Inquiry Form</span></h2>
+            <p class="how-it-works-subtitle">Ask a question about your trip, bookings, or payments. Our team will reply here.</p>
+
+            <?php
+              $inquiries = isset($inquiries) ? $inquiries : array();
+              $inqErr = isset($_SESSION['inquiry_error']) ? $_SESSION['inquiry_error'] : '';
+              $inqInfo = isset($_SESSION['inquiry_info']) ? $_SESSION['inquiry_info'] : '';
+              unset($_SESSION['inquiry_error'], $_SESSION['inquiry_info']);
+            ?>
+
+            <?php if ($inqErr): ?>
+              <div class="dash-flash dash-flash--error"><?php echo htmlspecialchars($inqErr); ?></div>
+            <?php endif; ?>
+            <?php if ($inqInfo): ?>
+              <div class="dash-flash dash-flash--info"><?php echo htmlspecialchars($inqInfo); ?></div>
+            <?php endif; ?>
+
+            <div class="dash-inquiry-card">
+                <form class="dash-inquiry-form" method="post" action="/CeylonGo/public/tourist/inquiries">
+                  <div class="dash-inquiry-row dash-inquiry-row--split">
+                    <div class="dash-inquiry-field">
+                      <label for="inq_first_name">1. Full name</label>
+                      <input type="text" id="inq_first_name" name="first_name" placeholder="First Name" autocomplete="given-name">
+                    </div>
+                    <div class="dash-inquiry-field">
+                      <label class="dash-inquiry-label-spacer" aria-hidden="true">&nbsp;</label>
+                      <input type="text" id="inq_last_name" name="last_name" placeholder="Last Name" autocomplete="family-name">
+                    </div>
+                  </div>
+
+                  <div class="dash-inquiry-row">
+                    <div class="dash-inquiry-field dash-inquiry-field--icon">
+                      <label for="inq_email">2. Email</label>
+                      <div class="dash-inquiry-input-icon-wrap">
+                        <span class="dash-inquiry-icon"><i class="fa-regular fa-envelope"></i></span>
+                        <input type="email" id="inq_email" name="email" placeholder="Email" autocomplete="email" <?php echo $is_logged_in ? '' : 'required'; ?>>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="dash-inquiry-row">
+                    <div class="dash-inquiry-field">
+                      <label for="inq_type">3. Inquiry type</label>
+                      <input type="text" id="inq_type" name="subject" placeholder="Type" required maxlength="150">
+                    </div>
+                  </div>
+
+                  <div class="dash-inquiry-row">
+                    <div class="dash-inquiry-field">
+                      <label for="inq_message">4. Message</label>
+                      <textarea id="inq_message" name="message" rows="4" placeholder="Message" required></textarea>
+                    </div>
+                  </div>
+
+                  <div class="dash-inquiry-actions">
+                    <button type="submit" class="dash-inquiry-btn">Submit</button>
+                  </div>
+                </form>
+              </div>
+
+              <?php if ($is_logged_in): ?>
+                <div class="dash-inquiry-list">
+                  <h3 class="dash-inquiry-list-title">Your recent inquiries</h3>
+                  <?php if (empty($inquiries)): ?>
+                    <p class="dash-inquiry-empty">No inquiries yet.</p>
+                  <?php else: ?>
+                    <?php foreach ($inquiries as $inq): ?>
+                      <?php $st = isset($inq['status']) ? $inq['status'] : 'pending'; ?>
+                      <article class="dash-inquiry-item">
+                        <div class="dash-inquiry-item-head">
+                          <strong><?php echo htmlspecialchars(isset($inq['subject']) ? $inq['subject'] : ''); ?></strong>
+                          <span class="dash-inquiry-status <?php echo ($st === 'replied') ? 'dash-inquiry-status--replied' : 'dash-inquiry-status--pending'; ?>">
+                            <?php echo htmlspecialchars(ucfirst($st)); ?>
+                          </span>
+                        </div>
+                        <div class="dash-inquiry-item-body"><?php echo nl2br(htmlspecialchars(isset($inq['message']) ? $inq['message'] : '')); ?></div>
+                        <?php if (!empty($inq['admin_reply'])): ?>
+                          <div class="dash-inquiry-reply">
+                            <strong>Admin reply:</strong>
+                            <div><?php echo nl2br(htmlspecialchars($inq['admin_reply'])); ?></div>
+                          </div>
+                        <?php else: ?>
+                          <div class="dash-inquiry-reply dash-inquiry-reply--muted">No reply yet.</div>
+                        <?php endif; ?>
+                      </article>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </div>
+              <?php else: ?>
+                <p style="max-width:560px;margin:12px auto 0;color:#6b7280;">Tip: Log in to view your inquiry history and admin replies inside your dashboard.</p>
+              <?php endif; ?>
         </section>
     </main>
 
