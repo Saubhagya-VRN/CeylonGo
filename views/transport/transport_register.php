@@ -130,7 +130,7 @@ if (isset($_SESSION['register_success'])) {
             <div class="form-group">
               <label>Date of Birth <span class="required">*</span></label>
               <div class="input-wrapper">
-                <input type="date" name="dob" required>
+                <input type="date" name="dob" required max="<?php echo date('Y-m-d'); ?>">
                 <i class="fa-solid fa-calendar"></i>
               </div>
             </div>
@@ -197,7 +197,7 @@ if (isset($_SESSION['register_success'])) {
             <div class="form-group">
               <label>License Expiry Date <span class="required">*</span></label>
               <div class="input-wrapper">
-                <input type="date" name="license_exp_date" required>
+                <input type="date" name="license_exp_date" required min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>">
                 <i class="fa-solid fa-calendar-xmark"></i>
               </div>
             </div>

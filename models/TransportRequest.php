@@ -18,6 +18,7 @@ class TransportRequest {
     public $distance;
     public $assignedDriverId;
     public $assignedVehicleNo;
+    public $status;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -25,8 +26,8 @@ class TransportRequest {
 
     public function addRequest() {
         $query = "INSERT INTO " . $this->table . "
-                  (user_id, customer_name, contact_number, vehicle_type, date, pickup_time, pickup_location, dropoff_location, num_people, notes, estimated_fare, distance, assigned_driver_id, assigned_vehicle_no)
-                  VALUES (:user_id, :customer_name, :contact_number, :vehicle_type, :date, :pickup_time, :pickup_location, :dropoff_location, :num_people, :notes, :estimated_fare, :distance, :assigned_driver_id, :assigned_vehicle_no)";
+                  (user_id, customer_name, contact_number, vehicle_type, date, pickup_time, pickup_location, dropoff_location, num_people, notes, estimated_fare, distance, assigned_driver_id, assigned_vehicle_no, status)
+                  VALUES (:user_id, :customer_name, :contact_number, :vehicle_type, :date, :pickup_time, :pickup_location, :dropoff_location, :num_people, :notes, :estimated_fare, :distance, :assigned_driver_id, :assigned_vehicle_no, :status)";
         
         $stmt = $this->conn->prepare($query);
 
@@ -35,6 +36,7 @@ class TransportRequest {
         $distance = $this->distance !== null && $this->distance !== '' ? (float) $this->distance : null;
         $assignedDriverId = $this->assignedDriverId ?: null;
         $assignedVehicleNo = $this->assignedVehicleNo ?: null;
+        $status = $this->status ?? 'pending';
 
         $stmt->bindParam(":user_id", $this->userId);
         $stmt->bindParam(":customer_name", $this->customerName);
@@ -50,6 +52,7 @@ class TransportRequest {
         $stmt->bindParam(":distance", $distance);
         $stmt->bindParam(":assigned_driver_id", $assignedDriverId);
         $stmt->bindParam(":assigned_vehicle_no", $assignedVehicleNo);
+        $stmt->bindParam(":status", $status);
 
         if ($stmt->execute()) {
             $this->id = $this->conn->lastInsertId();

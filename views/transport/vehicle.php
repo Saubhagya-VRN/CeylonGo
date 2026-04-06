@@ -5,8 +5,8 @@ require_once "../models/Vehicle.php";
 require_once "../models/VehicleType.php";
 require_once "session_init.php";
 
-$user_id = $_SESSION['transporter_id'];
-$user_id = $_SESSION['transporter_id'];
+$user_id = trim($_SESSION['transporter_id']);
+$user_id = trim($_SESSION['transporter_id']);
 $message = "";
 $error = "";
 
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Handle file upload
             $image = '';
             if (isset($_FILES['vehicle_image']) && $_FILES['vehicle_image']['error'] == 0) {
-                $uploadDir = __DIR__ . '/CeylonGo/uploads/';
+                $uploadDir = dirname(__DIR__, 2) . '/public/uploads/transport/';
                 if (!file_exists($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
@@ -134,62 +134,88 @@ try {
     </div>
 
     <div class="main-content">
-        <h2>Please fill in your vehicle details below to register.</h2>
+        <div style="margin-bottom: 30px;">
+          <h2 style="color: #2c5530; font-size: 24px; margin-bottom: 8px;">
+            <i class="fa-solid fa-car" style="color: #4CAF50; margin-right: 10px;"></i>
+            Add Your Vehicle
+          </h2>
+          <p style="color: #666; font-size: 16px;">Please fill in your vehicle details below to register.</p>
+        </div>
 
         <!-- Success/Error Messages -->
         <?php if ($message): ?>
-            <div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                <?= $message ?>
-                <br><small>Redirecting to profile page...</small>
+            <div style="background: linear-gradient(135deg, #d4edda, #c3e6cb); color: #155724; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #28a745; display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-circle-check" style="font-size: 20px;"></i>
+                <div>
+                  <strong><?= $message ?></strong>
+                  <br><small>Redirecting to profile page...</small>
+                </div>
             </div>
         <?php endif; ?>
 
         <?php if ($error): ?>
-            <div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                <?= $error ?>
+            <div style="background: linear-gradient(135deg, #f8d7da, #f5c6cb); color: #721c24; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #dc3545; display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size: 20px;"></i>
+                <strong><?= $error ?></strong>
             </div>
         <?php endif; ?>
 
   <!-- Registration Form -->
-  <main class="form-container">
+  <div class="form-container">
+    <h2><i class="fa-solid fa-clipboard"></i> Vehicle Information</h2>
     <form method="POST" enctype="multipart/form-data" action="vehicle">
 
-      <label>Vehicle Type</label>
-      <select name="vehicle_type" required>
-        <option value="">Select Vehicle Type</option>
-        <?php foreach($vehicleTypes as $type): ?>
-          <option value="<?= $type['type_id'] ?>"><?= $type['type_name'] ?></option>
-        <?php endforeach; ?>
-      </select>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="vehicle_type">Vehicle Type <span style="color: #c62828;">*</span></label>
+          <select name="vehicle_type" id="vehicle_type" required>
+            <option value="">Select Vehicle Type</option>
+            <?php foreach($vehicleTypes as $type): ?>
+              <option value="<?= $type['type_id'] ?>"><?= $type['type_name'] ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
 
-        <script>
-    // Handle successful form submission
-    <?php if ($message): ?>
-      setTimeout(function() {
-        window.location.href = 'profile';
-      }, 2000);
-    <?php endif; ?>
-  </script>
+        <div class="form-group">
+          <label for="vehicle_no">Vehicle Number/License Plate <span style="color: #c62828;">*</span></label>
+          <input type="text" id="vehicle_no" name="vehicle_no" placeholder="e.g., ABC-1234" required>
+        </div>
 
-      <label>Vehicle Number</label>
-      <input type="text" name="vehicle_no" placeholder="Enter your Vehicle Number" required>
+        <div class="form-group">
+          <label for="psg_capacity">Passenger Capacity <span style="color: #c62828;">*</span></label>
+          <input type="number" id="psg_capacity" name="psg_capacity" min="1" value="1" placeholder="Enter passenger capacity" required>
+          <div id="capacityError" style="color: #c62828; font-size: 13px; margin-top: 5px; display: none;"></div>
+        </div>
 
-      <label>Upload Vehicle Photo</label>
-      <input type="file" name="vehicle_image" accept="image/*">
-
-      <label>Passenger Capacity</label>
-      <input type="number" name="psg_capacity" min="1" value="1" placeholder="Enter your Vehicle's Passenger Capacity" required>
+        <div class="form-group full-width">
+          <label for="vehicle_image">Upload Vehicle Photo <span style="color: #999;">(Optional)</span></label>
+          <div class="upload-box" id="uploadBox">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p><strong>Drag and drop</strong> or <strong>click</strong> to upload an image</p>
+            <small style="color: #999;">JPEG, PNG, or WebP (Max 5MB)</small>
+            <input type="file" id="vehicle_image" name="vehicle_image" accept="image/*" style="display: none;">
+          </div>
+          <div id="fileName" style="margin-top: 10px; color: #666; font-size: 14px;"></div>
+        </div>
+      </div>
 
       <input type="hidden" name="user_id" value="<?=$user_id?>">
 
       <div class="buttons">
-        <button type="submit" class="register-btn">Add Vehicle</button>
+        <button type="button" class="btn-cancel" onclick="window.history.back()">
+          <i class="fa-solid fa-arrow-left"></i> Cancel
+        </button>
+        <button type="submit" class="btn-save">
+          <i class="fa-solid fa-plus"></i> Add Vehicle
+        </button>
       </div>
 
     </form>
-  </main>
+  </div>
 
-  
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
     <ul>
@@ -203,17 +229,25 @@ try {
 </html>
 
 <script>
+  // Handle successful form submission
+  <?php if ($message): ?>
+    setTimeout(function() {
+      window.location.href = 'profile';
+    }, 2000);
+  <?php endif; ?>
+
   // Passenger capacity limits per vehicle type
   const capacityLimits = { '1': 3, '2': 4, '3': 7, '4': 7, '5': 20, '6': 20 };
   const capacityNames = { '1': 'TUK', '2': 'Car', '3': 'Minivan', '4': 'Minivan AC', '5': 'Bus', '6': 'Bus AC' };
-  const vehicleTypeSelect = document.querySelector('select[name="vehicle_type"]');
-  const psgCapacityInput = document.querySelector('input[name="psg_capacity"]');
+  
+  const vehicleTypeSelect = document.getElementById('vehicle_type');
+  const psgCapacityInput = document.getElementById('psg_capacity');
+  const capacityError = document.getElementById('capacityError');
+  const vehicleImageInput = document.getElementById('vehicle_image');
+  const uploadBox = document.getElementById('uploadBox');
+  const fileNameDisplay = document.getElementById('fileName');
 
-  // Create error message element
-  const capacityError = document.createElement('div');
-  capacityError.style.cssText = 'color: #c62828; font-size: 13px; margin-top: 5px; display: none;';
-  psgCapacityInput.parentNode.insertBefore(capacityError, psgCapacityInput.nextSibling);
-
+  // Validate capacity
   function validateCapacity() {
     const type = vehicleTypeSelect.value;
     const capacity = parseInt(psgCapacityInput.value) || 0;
@@ -241,6 +275,43 @@ try {
 
   psgCapacityInput.addEventListener('input', validateCapacity);
 
+  // File upload with drag and drop
+  uploadBox.addEventListener('click', () => vehicleImageInput.click());
+
+  vehicleImageInput.addEventListener('change', updateFileName);
+
+  uploadBox.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadBox.style.borderColor = '#4CAF50';
+    uploadBox.style.background = 'rgba(76, 175, 80, 0.1)';
+  });
+
+  uploadBox.addEventListener('dragleave', () => {
+    uploadBox.style.borderColor = '#bbb';
+    uploadBox.style.background = '#f9f9f9';
+  });
+
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.style.borderColor = '#bbb';
+    uploadBox.style.background = '#f9f9f9';
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      vehicleImageInput.files = files;
+      updateFileName();
+    }
+  });
+
+  function updateFileName() {
+    if (vehicleImageInput.files && vehicleImageInput.files[0]) {
+      const fileName = vehicleImageInput.files[0].name;
+      const fileSize = (vehicleImageInput.files[0].size / 1024 / 1024).toFixed(2);
+      fileNameDisplay.innerHTML = `<i class="fa-solid fa-check-circle" style="color: #4CAF50; margin-right: 8px;"></i><strong>${fileName}</strong> (${fileSize} MB)`;
+    }
+  }
+
+  // Form submission validation
   document.querySelector('form').addEventListener('submit', function(e) {
     if (!validateCapacity()) {
       e.preventDefault();

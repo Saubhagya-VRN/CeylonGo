@@ -36,6 +36,11 @@ try {
     // Store user name for display
     $user_name = $user_data['full_name'] ?? 'User';
     
+    // Override with session user_name if set (from login)
+    if (isset($_SESSION['user_name']) && !empty($_SESSION['user_name'])) {
+        $user_name = $_SESSION['user_name'];
+    }
+    
 } catch (Exception $e) {
     // Fallback to default image if there's an error
     $profile_picture = "/CeylonGo/public/images/profile.jpg";

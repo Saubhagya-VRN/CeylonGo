@@ -129,19 +129,25 @@ class TouristController {
         foreach ($required as $key) {
             $val = trim($data[$key] ?? '');
             if ($val === '' && $key !== 'numPeople') {
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => "Please fill all required fields before confirming."]);
+                    exit();
+                }
                 header("Location: /CeylonGo/public/tourist/customize-trip?error=" . urlencode("Please fill all required fields before confirming."));
                 exit();
             }
         }
 
         // Map tourist vehicle type string to DB vehicle_type ID
+        // TUK: type_id=1, CAR: type_id=2, MINIVAN: type_id=3, BUS: type_id=4, etc
         $vehicleTypeMap = [
             'Tuk'        => '1',  // TUK
-            'Car'        => '2',  // VAN
-            'Minivan'    => '2',  // VAN
-            'Minivan AC' => '2',  // VAN
-            'Bus'        => '2',  // VAN
-            'Bus AC'     => '2',  // VAN
+            'Car'        => '2',  // CAR
+            'Minivan'    => '3',  // MINIVAN
+            'Minivan AC' => '3',  // MINIVAN
+            'Bus'        => '4',  // BUS
+            'Bus AC'     => '4',  // BUS
         ];
 
         $request = new TransportRequest($this->db);
@@ -167,14 +173,16 @@ class TouristController {
         if ($dbTypeId) {
             $vehicleModel = new Vehicle($this->db);
             $assignedVehicle = $vehicleModel->findAvailableVehicle($dbTypeId, $request->date, $request->numPeople);
+            
+            if ($assignedVehicle) {
+                $request->assignedDriverId = trim($assignedVehicle['user_id']);
+                $request->assignedVehicleNo = $assignedVehicle['vehicle_no'];
+            }
         }
 
-        // Set assignment fields
-        if ($assignedVehicle) {
-            $request->assignedDriverId = trim($assignedVehicle['user_id']);
-            $request->assignedVehicleNo = $assignedVehicle['vehicle_no'];
-        }
-
+        // Keep all new bookings in pending state until the transporter confirms them
+        $request->status = 'pending';
+        
         $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         if ($request->addRequest()) {
             if ($isAjax) {
@@ -184,6 +192,7 @@ class TouristController {
                     $response['assigned'] = true;
                     $response['driverName'] = $assignedVehicle['driver_name'] ?? 'Driver';
                     $response['vehicleNo'] = $assignedVehicle['vehicle_no'];
+                    $response['message'] = 'Request saved and sent to the assigned driver. Waiting for driver confirmation.';
                 } else {
                     $response['assigned'] = false;
                     $response['message'] = 'Request saved. No available vehicle found at the moment. We will assign one soon.';
