@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 // Check if user is logged in
 $is_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist';
-$user_name = $is_logged_in ? ($_SESSION['user_name'] ?? 'Tourist') : '';
+$user_name = $is_logged_in ? (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Tourist') : '';
 
 // Full package data for dashboard dropdowns (with image, location, duration, rating)
 $package_cards = [
@@ -201,7 +201,7 @@ $trending_bar_packages = $trending_bar_packages ?? [];
                 <div class="login-modal-error"><?php echo htmlspecialchars($loginError); ?></div>
             <?php endif; ?>
             <form class="login-modal-form" method="POST" action="/CeylonGo/public/login">
-                <input type="hidden" name="redirect" value="/CeylonGo/public/tourist/dashboard">
+                <input type="hidden" name="redirect" value="/CeylonGo/public/tourist/customize-trip">
                 <div class="form-group">
                     <label for="login-modal-email">Email Address</label>
                     <input type="email" id="login-modal-email" name="email" placeholder="Enter your email" required>
@@ -222,11 +222,13 @@ $trending_bar_packages = $trending_bar_packages ?? [];
         var openBtn = document.getElementById('customise-trip-btn');
         var closeBtn = document.getElementById('login-modal-close');
         function openModal() {
+            if (!modal) return;
             modal.classList.add('login-modal-open');
             modal.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
         }
         function closeModal() {
+            if (!modal) return;
             modal.classList.remove('login-modal-open');
             modal.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
@@ -235,6 +237,12 @@ $trending_bar_packages = $trending_bar_packages ?? [];
         if (closeBtn) closeBtn.addEventListener('click', closeModal);
         if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('login-modal-open')) closeModal(); });
+
+        // If coming from header "Customize Trip" as guest, open modal automatically
+        try {
+            var params = new URLSearchParams(window.location.search || '');
+            if (params.get('openLogin') === '1') openModal();
+        } catch (e) {}
     })();
     </script>
     <?php endif; ?>

@@ -1,12 +1,17 @@
 <?php
-$user_name = $user_name ?? '';
-$tourist_data = $tourist_data ?? null;
-$places_autocomplete_url = $places_autocomplete_url ?? '/CeylonGo/public/api/places-autocomplete';
-$user_email = ($tourist_data['email'] ?? $_SESSION['user_email'] ?? '');
+$user_name = isset($user_name) ? $user_name : '';
+$tourist_data = isset($tourist_data) ? $tourist_data : null;
+$places_autocomplete_url = isset($places_autocomplete_url) ? $places_autocomplete_url : '/CeylonGo/public/api/places-autocomplete';
+$user_email = '';
+if (is_array($tourist_data) && isset($tourist_data['email'])) {
+    $user_email = $tourist_data['email'];
+} elseif (isset($_SESSION['user_email'])) {
+    $user_email = $_SESSION['user_email'];
+}
 $payhere_per_transaction_max_lkr = isset($payhere_per_transaction_max_lkr) ? (int) $payhere_per_transaction_max_lkr : 0;
-$bank_transfer_details = $bank_transfer_details ?? '';
+$bank_transfer_details = isset($bank_transfer_details) ? $bank_transfer_details : '';
 $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
-$steps = [
+$steps = array(
     'Travel Group',
     'Destination & Dates',
     'Accommodation',
@@ -18,10 +23,11 @@ $steps = [
     'Third Stay',
     'Budget',
     'Trip Review & Submit',
+    'Verify bookings',
     'Payments',
     'Review & Submit'
-];
-$districts = [
+);
+$districts = array(
     'ampara' => 'Ampara', 'anuradhapura' => 'Anuradhapura', 'badulla' => 'Badulla', 'batticaloa' => 'Batticaloa',
     'colombo' => 'Colombo', 'galle' => 'Galle', 'gampaha' => 'Gampaha', 'hambantota' => 'Hambantota',
     'jaffna' => 'Jaffna', 'kalutara' => 'Kalutara', 'kandy' => 'Kandy', 'kegalle' => 'Kegalle',
@@ -29,9 +35,9 @@ $districts = [
     'matara' => 'Matara', 'monaragala' => 'Monaragala', 'mullaitivu' => 'Mullaitivu', 'nuwara-eliya' => 'Nuwara Eliya',
     'polonnaruwa' => 'Polonnaruwa', 'puttalam' => 'Puttalam', 'ratnapura' => 'Ratnapura',
     'trincomalee' => 'Trincomalee', 'vavuniya' => 'Vavuniya'
-];
+);
 // Main cities for destination autocomplete (display name => district key for form/API)
-$main_cities = [
+$main_cities = array(
     'Colombo' => 'colombo', 'Kandy' => 'kandy', 'Galle' => 'galle', 'Negombo' => 'gampaha', 'Jaffna' => 'jaffna',
     'Trincomalee' => 'trincomalee', 'Batticaloa' => 'batticaloa', 'Matara' => 'matara', 'Anuradhapura' => 'anuradhapura',
     'Nuwara Eliya' => 'nuwara-eliya', 'Bentota' => 'kalutara', 'Ella' => 'badulla', 'Sigiriya' => 'matale',
@@ -41,7 +47,7 @@ $main_cities = [
     'Ampara' => 'ampara', 'Matale' => 'matale', 'Kegalle' => 'kegalle', 'Puttalam' => 'puttalam',
     'Vavuniya' => 'vavuniya', 'Mannar' => 'mannar', 'Kilinochchi' => 'kilinochchi', 'Mullaitivu' => 'mullaitivu',
     'Monaragala' => 'monaragala', 'Mount Lavinia' => 'colombo', 'Galle Fort' => 'galle', 'Yala' => 'hambantota'
-];
+);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -68,7 +74,7 @@ $main_cities = [
     </div>
     <nav class="nav-links">
       <a href="/CeylonGo/public/tourist/dashboard">Dashboard</a>
-      <a href="/CeylonGo/public/tourist/recommended-packages">Packages</a>
+      <a href="/CeylonGo/public/tourist/packages">Packages</a>
       <a href="/CeylonGo/public/tourist/customize-trip">Customise Trip</a>
       <a href="/CeylonGo/public/tourist/profile">Profile</a>
       <a href="/CeylonGo/public/logout">Logout</a>
@@ -129,7 +135,7 @@ $main_cities = [
             $isSecondLeg = ($stepNum === 5 || $stepNum === 6);
             $isThirdPrompt = ($stepNum === 7);
             $isThirdLeg = ($stepNum === 8 || $stepNum === 9);
-            $stepClasses = ['trip-step'];
+            $stepClasses = array('trip-step');
             if ($isSecondLeg) {
                 $stepClasses[] = 'trip-step--second-leg';
                 $stepClasses[] = 'trip-step--second-leg-hidden';
@@ -457,11 +463,23 @@ $main_cities = [
         </div>
       </div>
       <div class="trip-step-panel" data-step="12">
+        <div class="trip-step-card trip-step-card--verify-bookings">
+          <header class="trip-sum-page-intro">
+            <div class="trip-sum-page-intro-icon" aria-hidden="true"><i class="fa-solid fa-clipboard-list"></i></div>
+            <div>
+              <h2 class="trip-sum-page-title">Verify bookings</h2>
+              <p class="trip-sum-page-lead">Review the current status of your transport and hotel bookings before proceeding to payment.</p>
+            </div>
+          </header>
+          <div id="tripVerifyBookingsMount" class="trip-summary-itinerary-root" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="trip-step-panel" data-step="13">
         <div class="trip-step-card trip-step-card--payments">
           <?php include __DIR__ . '/_trip_payment_step.php'; ?>
         </div>
       </div>
-      <div class="trip-step-panel" data-step="13">
+      <div class="trip-step-panel" data-step="14">
         <div class="trip-step-card trip-step-card--placeholder">
           <div class="step-icon"><i class="fa-solid fa-clipboard-check"></i></div>
           <h2 class="step-heading">Review &amp; Submit</h2>
@@ -503,7 +521,7 @@ $main_cities = [
       if (window.innerWidth > 768) closeSidebar();
     });
 
-    var currentStep = 1, totalSteps = 13;
+    var currentStep = 1, totalSteps = 14;
     var panels = document.querySelectorAll('.trip-step-panel');
     var stepLabels = document.querySelectorAll('#tripStepperSteps .trip-step');
     var btnPrev = document.querySelector('.btn-prev');
@@ -1009,17 +1027,7 @@ $main_cities = [
             var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
             var tYes = trYes && trYes.classList.contains('selected');
             if (!tYes) return;
-            var td = dateKeyFromIso(((card.querySelector('.trip-stop-tr-date') || {}).value || '').trim());
-            var fareNum = parseFareFromStop(card);
-            var onDay = td ? (td === dk) : isFirst;
-            if (!onDay) return;
-            var pu = ((card.querySelector('.trip-stop-pickup') || {}).value || '').trim();
-            var dof = ((card.querySelector('.trip-stop-dropoff') || {}).value || '').trim();
-            var veh = ((card.querySelector('.trip-stop-tr-vehicle') || {}).value || '').trim();
-            var line = 'Transport' + (stopCards.length > 1 ? ' (stop ' + (si + 1) + ')' : '') + ': ' + (pu || '—') + ' → ' + (dof || '—');
-            if (veh) line += ' · ' + veh;
-            if (fareNum) line += ' · est. ' + formatLkr(fareNum);
-            bullets.push(line);
+            // Transport details are intentionally omitted from the itinerary bullets.
           });
         }
 
@@ -1228,7 +1236,7 @@ $main_cities = [
           '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
           '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
           '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
-          '<p class="trip-sum-budget-footnote">Please wait up to 24 hours for the provider to confirm your booking—we will notify you by email when it is confirmed.</p>' +
+          '<p class="trip-sum-budget-footnote">Please carefully review your trip before submitting. After submission, you won’t be able to modify it. If you need changes, please contact our team.</p>' +
           '<div class="trip-sum-booking-submit-wrap">' +
           '<button type="button" class="trip-sum-booking-submit-btn" id="tripWizardSubmitBtn">Submit trip</button>' +
           '<p class="trip-sum-booking-submit-success" id="tripWizardSubmitSuccess" hidden>Your trip was submitted successfully.</p>' +
@@ -1271,7 +1279,48 @@ $main_cities = [
     var tripWizardSubmitUrl = '/CeylonGo/public/tourist/trip-submit';
     var tripWizardSubmittedKey = 'ceylonTripWizardSubmitted';
     var tripWizardTripIdKey = 'ceylonTripWizardTripId';
+    var tripWizardFingerprintKey = 'ceylonTripWizardFingerprint';
+    var tripWizardProceedKey = 'ceylonTripWizardProceededToPayment';
+
+    function tripWizardFingerprint() {
+      var d1 = ((document.getElementById('dest_primary') || {}).value || '').trim();
+      var s1 = ((document.getElementById('start_date') || {}).value || '').trim();
+      var e1 = ((document.getElementById('end_date') || {}).value || '').trim();
+      var d2 = ((document.getElementById('dest_primary_2') || {}).value || '').trim();
+      var s2 = ((document.getElementById('start_date_2') || {}).value || '').trim();
+      var e2 = ((document.getElementById('end_date_2') || {}).value || '').trim();
+      var d3 = ((document.getElementById('dest_primary_3') || {}).value || '').trim();
+      var s3 = ((document.getElementById('start_date_3') || {}).value || '').trim();
+      var e3 = ((document.getElementById('end_date_3') || {}).value || '').trim();
+      var a = ((document.getElementById('adults') || {}).value || '').trim();
+      var c = ((document.getElementById('children') || {}).value || '').trim();
+      var inf = ((document.getElementById('infants') || {}).value || '').trim();
+      var sec = ((document.getElementById('add_another_destination') || {}).value || '').trim();
+      var thr = ((document.getElementById('add_third_destination') || {}).value || '').trim();
+      return [
+        'd1=' + d1, 's1=' + s1, 'e1=' + e1,
+        'sec=' + sec, 'd2=' + d2, 's2=' + s2, 'e2=' + e2,
+        'thr=' + thr, 'd3=' + d3, 's3=' + s3, 'e3=' + e3,
+        'a=' + a, 'c=' + c, 'i=' + inf
+      ].join('|');
+    }
+
+    function syncTripWizardSubmissionState() {
+      // Prevent "Submitted" from carrying over to a different trip in the same tab/session.
+      try {
+        var currentFp = tripWizardFingerprint();
+        var storedFp = sessionStorage.getItem(tripWizardFingerprintKey) || '';
+        var submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
+        if (submitted && storedFp && storedFp !== currentFp) {
+          sessionStorage.removeItem(tripWizardSubmittedKey);
+          sessionStorage.removeItem(tripWizardTripIdKey);
+          sessionStorage.removeItem(tripWizardProceedKey);
+        }
+        sessionStorage.setItem(tripWizardFingerprintKey, currentFp);
+      } catch (e) {}
+    }
     function bindTripWizardSubmitButton() {
+      syncTripWizardSubmissionState();
       var btn = document.getElementById('tripWizardSubmitBtn');
       var okEl = document.getElementById('tripWizardSubmitSuccess');
       if (!btn) return;
@@ -1322,6 +1371,7 @@ $main_cities = [
           .then(function (data) {
             if (data && data.success) {
               sessionStorage.setItem(tripWizardSubmittedKey, '1');
+              try { sessionStorage.setItem(tripWizardFingerprintKey, tripWizardFingerprint()); } catch (e) {}
               if (data.trip_id != null) {
                 sessionStorage.setItem(tripWizardTripIdKey, String(data.trip_id));
               }
@@ -1331,6 +1381,8 @@ $main_cities = [
               if (data.budget_persisted === false && data.message) {
                 console.warn(data.message);
               }
+              // After submitting, move to Verify bookings step (before Payments).
+              try { showStep(12); } catch (e) {}
             } else {
               btn.disabled = false;
               btn.textContent = 'Submit trip';
@@ -1345,6 +1397,7 @@ $main_cities = [
       };
     }
     function showStep(step) {
+      syncTripWizardSubmissionState();
       currentStep = step;
       panels.forEach(function (p) { p.classList.toggle('active', parseInt(p.getAttribute('data-step'), 10) === step); });
       stepLabels.forEach(function (el, i) {
@@ -1375,9 +1428,133 @@ $main_cities = [
       }
       if (step === 10) renderTripSummaryBudget();
       if (step === 11) renderTripSummaryItinerary();
-      if (step === 12) {
+      if (step === 12) renderVerifyBookingsStep();
+      if (step === 13) {
         initTripPaymentStepUi();
         renderTripPaymentsStep();
+      }
+    }
+
+    function renderVerifyBookingsStep() {
+      var mount = document.getElementById('tripVerifyBookingsMount');
+      if (!mount) return;
+
+      // Never leave this step visually empty.
+      mount.innerHTML =
+        '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Verify bookings">' +
+        '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
+        '<p style="margin:14px 0 0 0; color:#555; line-height:1.5;">Loading…</p>' +
+        '</div>';
+
+      try {
+        syncTripWizardSubmissionState();
+        var submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
+
+        // Build booking status list (transport/tour guide per stop + hotel per destination).
+        // For now, do not depend on mapBookingStatus; keep it simple.
+        var pendingCount = 0;
+        function bumpPending() { pendingCount++; }
+
+        var rows = [];
+        var globalStopIdx = 0;
+        var legs = [];
+        legs.push({ num: 1, stopsId: 'tripStopsList', accBodyId: 'tripAccommodationSummaryBody' });
+        if (typeof wantsSecondDestination === 'function' && wantsSecondDestination()) {
+          legs.push({ num: 2, stopsId: 'tripStopsList_2', accBodyId: 'trip2AccommodationSummaryBody' });
+        }
+        if (typeof wantsThirdDestination === 'function' && wantsThirdDestination()) {
+          legs.push({ num: 3, stopsId: 'tripStopsList_3', accBodyId: 'trip3AccommodationSummaryBody' });
+        }
+
+        legs.forEach(function (leg) {
+          var stopsEl = document.getElementById(leg.stopsId);
+          if (stopsEl) {
+            stopsEl.querySelectorAll('.trip-stop-card').forEach(function (card) {
+              globalStopIdx++;
+              var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
+              var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
+              var trOn = trYes && trYes.classList.contains('selected');
+              var gOn = gYes && gYes.classList.contains('selected');
+              if (trOn) {
+                bumpPending();
+                rows.push({ label: 'Stop ' + globalStopIdx + ' — Transport provider', disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+              }
+              if (gOn) {
+                bumpPending();
+                rows.push({ label: 'Stop ' + globalStopIdx + ' — Tour guide', disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+              }
+            });
+          }
+
+          var accBody = document.getElementById(leg.accBodyId);
+          var items = accBody ? accBody.querySelectorAll('.trip-accommodation-summary-item') : [];
+          if (!items.length) {
+            rows.push({
+              label: 'Destination ' + leg.num + ' — Hotel',
+              disp: { text: 'Not booked', cls: 'trip-sum-status--muted' }
+            });
+          } else {
+            items.forEach(function (item) {
+              var ps = item.querySelectorAll('p');
+              var hn = '';
+              for (var pi = 0; pi < ps.length; pi++) {
+                var tx = (ps[pi].textContent || '');
+                if (/^Hotel:/i.test(tx)) {
+                  hn = tx.replace(/^Hotel:\s*/i, '').trim();
+                  break;
+                }
+              }
+              var bid = item.getAttribute('data-booking-id');
+              var lab = 'Destination ' + leg.num + ' — ' + (hn ? hn : 'Hotel');
+              if (bid) {
+                bumpPending();
+                rows.push({ label: lab, disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+              } else {
+                rows.push({ label: lab, disp: { text: 'Not booked', cls: 'trip-sum-status--muted' } });
+              }
+            });
+          }
+        });
+
+        var linesHtml = rows.map(function (r) {
+          return '<li><span>' + escSummaryHtml(r.label) + '</span><strong class="trip-sum-status ' + r.disp.cls + '">' + escSummaryHtml(r.disp.text) + '</strong></li>';
+        }).join('');
+        var summaryText = pendingCount ? (pendingCount + ' pending') : 'No pending items';
+
+        var topNote = '<p class="trip-sum-budget-footnote">Please carefully review your trip before submitting. After submission, you won’t be able to modify it. If you need changes, please contact our team.</p>';
+
+        mount.innerHTML =
+          '<div style="max-width: 520px; margin: 0 auto; width: 100%;">' +
+            '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Status of bookings">' +
+              '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
+              '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
+              '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
+              topNote +
+              '<div class="trip-sum-booking-submit-wrap">' +
+                '<button type="button" class="trip-sum-booking-submit-btn" id="tripVerifyProceedBtn">Proceed to Payment</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        var proceedBtn = document.getElementById('tripVerifyProceedBtn');
+        if (proceedBtn) {
+          proceedBtn.onclick = function () {
+            var tid = sessionStorage.getItem(tripWizardTripIdKey) || '';
+            if (!tid) {
+              alert('Please click "Submit trip" first, then proceed to payment.');
+              showStep(11);
+              return;
+            }
+            try { sessionStorage.setItem(tripWizardProceedKey, String(tid)); } catch (e) {}
+            showStep(13);
+          };
+        }
+      } catch (e) {
+        mount.innerHTML =
+          '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Verify bookings">' +
+          '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
+          '<p style="margin:14px 0 0 0; color:#b91c1c; line-height:1.5;">Could not load booking status. ' + escSummaryHtml(e && e.message ? e.message : 'Unknown error') + '</p>' +
+          '</div>';
       }
     }
     function fmtTripLkr(n) {
@@ -1946,6 +2123,32 @@ $main_cities = [
       if (currentStep === 5 && !validateStep5SecondDestination()) return;
       if (currentStep === 7 && !validateStep7ThirdChoice()) return;
       if (currentStep === 8 && !validateStep8ThirdDestination()) return;
+      // Do not allow proceeding past Trip Review & Submit until trip is submitted.
+      if (currentStep === 11) {
+        try { syncTripWizardSubmissionState(); } catch (e) {}
+        var tid = '';
+        try { tid = sessionStorage.getItem(tripWizardTripIdKey) || ''; } catch (e) {}
+        if (!tid) {
+          alert('Please submit your trip first.');
+          return;
+        }
+      }
+      // Do not allow proceeding to Payments unless "Proceed to Payment" was clicked.
+      if (currentStep === 12) {
+        var tid2 = '';
+        var proceeded = '';
+        try { tid2 = sessionStorage.getItem(tripWizardTripIdKey) || ''; } catch (e) {}
+        try { proceeded = sessionStorage.getItem(tripWizardProceedKey) || ''; } catch (e) {}
+        if (!tid2) {
+          alert('Please submit your trip first.');
+          showStep(11);
+          return;
+        }
+        if (proceeded !== String(tid2)) {
+          alert('Please click "Proceed to Payment" to continue.');
+          return;
+        }
+      }
       var next = computeNextStep(currentStep);
       if (next !== currentStep) showStep(next);
     });
@@ -2038,7 +2241,7 @@ $main_cities = [
     var infantsInput = document.getElementById('infants');
     var tripUserName = <?php echo json_encode($user_name); ?>;
     var tripUserEmail = <?php echo json_encode($user_email); ?>;
-    var tripUserContact = <?php echo json_encode($tourist_data['contact_number'] ?? ''); ?>;
+    var tripUserContact = <?php echo json_encode((is_array($tourist_data) && isset($tourist_data['contact_number'])) ? $tourist_data['contact_number'] : ''); ?>;
     function applyAdultLimitForTripType(type) {
       if (!adultsInput) return;
       if (type === 'solo') {
@@ -2422,6 +2625,8 @@ $main_cities = [
       var dofEl = document.getElementById('tr_dropoffLocation');
       var puH = card.querySelector('.trip-stop-pickup');
       var dofH = card.querySelector('.trip-stop-dropoff');
+      var stopLocInput = card.querySelector('.trip-stop-location');
+      var stopLoc = stopLocInput ? (stopLocInput.value || '').trim() : '';
       if (puEl && puH) {
         puEl.value = puH.value || '';
         if (puH.dataset && puH.dataset.placeId) puEl.dataset.placeId = puH.dataset.placeId; else delete puEl.dataset.placeId;
@@ -2429,6 +2634,15 @@ $main_cities = [
       if (dofEl && dofH) {
         dofEl.value = dofH.value || '';
         if (dofH.dataset && dofH.dataset.placeId) dofEl.dataset.placeId = dofH.dataset.placeId; else delete dofEl.dataset.placeId;
+      }
+      // Prefill dropoff with the stop location (if dropoff is empty).
+      if (dofEl && (!dofEl.value || !String(dofEl.value).trim()) && stopLoc) {
+        dofEl.value = stopLoc;
+        if (stopLocInput && stopLocInput.dataset && stopLocInput.dataset.placeId) {
+          dofEl.dataset.placeId = stopLocInput.dataset.placeId;
+        } else if (dofEl.dataset) {
+          delete dofEl.dataset.placeId;
+        }
       }
       var leg3 = isStopCardInLeg3(card);
       var leg2 = isStopCardInLeg2(card);
@@ -3143,7 +3357,7 @@ $main_cities = [
 
     var trBtnCalculate = document.getElementById('tr_btnCalculate');
     var trEstimatedFare = document.getElementById('tr_estimatedFare');
-    var placesAutocompleteUrl = '<?php echo htmlspecialchars($places_autocomplete_url ?? '/CeylonGo/public/api/places-autocomplete', ENT_QUOTES, 'UTF-8'); ?>';
+    var placesAutocompleteUrl = '<?php echo htmlspecialchars($places_autocomplete_url ? $places_autocomplete_url : '/CeylonGo/public/api/places-autocomplete', ENT_QUOTES, 'UTF-8'); ?>';
     var calculateFareUrl = (placesAutocompleteUrl.split('/api/')[0] || '') + '/api/calculate-fare';
     if (trBtnCalculate && trEstimatedFare) {
       trBtnCalculate.addEventListener('click', function () {

@@ -1,6 +1,6 @@
 <?php
 // Tour guide request modal – included by trip.php. Expects $tourist_data, $user_name in scope.
-$guide_modal_customer_name = $user_name ?? '';
+$guide_modal_customer_name = isset($user_name) ? $user_name : '';
 $guide_modal_contact = (isset($tourist_data['contact_number']) ? $tourist_data['contact_number'] : '') ?: ($_SESSION['tourist_contact'] ?? '');
 $languages = [
     '' => 'Select language',
@@ -19,7 +19,7 @@ $time_slots = ['', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
       <button type="button" class="trip-modal-close" id="tourGuideRequestModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
     </header>
     <form action="/CeylonGo/public/tourist/tour-guide-submit" method="post" class="trip-modal-form" id="tourGuideRequestForm">
-      <p class="trip-modal-instruction">Provide your preferences to request a tour guide.</p>
+      <p class="trip-modal-instruction">Provide your preferences to request a tour guide. Tour guide price per location is <strong>LKR 2,500</strong>.</p>
       <div class="trip-modal-form-grid">
         <div class="trip-modal-col">
           <div class="trip-modal-field">
