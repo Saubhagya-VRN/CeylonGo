@@ -626,8 +626,67 @@ class AdminController {
         exit();
     }
 
-    public function inquiries() {
-        view('admin/inquiries');
+    public function inquiries()
+    {
+        $inquiryModel = new Inquiry($this->db);
+ 
+        $status = $_GET['status'] ?? 'all';
+        $search = trim($_GET['search'] ?? '');
+ 
+        $inquiries = $inquiryModel->getAllInquiries($status, $search);
+        $stats     = $inquiryModel->getInquiryStats();
+ 
+        view('admin/inquiries', [
+            'inquiries'      => $inquiries,
+            'selectedStatus' => $status,
+            'search'         => $search,
+            'stats'          => $stats,
+        ]);
+    }
+ 
+    public function deleteInquiry()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+ 
+        $inquiryId    = intval($_POST['inquiry_id'] ?? 0);
+        $inquiryModel = new Inquiry($this->db);
+        $success      = $inquiryModel->deleteInquiry($inquiryId);
+ 
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+ 
+    public function replyToInquiry()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+ 
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+ 
+        $inquiryId = intval($_POST['inquiry_id'] ?? 0);
+        $reply     = trim($_POST['reply'] ?? '');
+ 
+        if ($inquiryId === 0 || $reply === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false]);
+            exit();
+        }
+ 
+        $inquiryModel = new Inquiry($this->db);
+        $success      = $inquiryModel->saveAdminReply($inquiryId, $reply);
+ 
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
     }
 
     public function reports() {

@@ -3,12 +3,12 @@
         header("Location: /CeylonGo/public/login");
         exit();
     }
-
+ 
     // ── Server-side filtering ──────────────────────────────────
     $paySearch         = $_GET['pay_search'] ?? '';
     $paySelectedStatus = $_GET['pay_status'] ?? 'all';
     $payDate           = $_GET['pay_date']   ?? '';
-
+ 
     $filteredPayments = array_filter($payments ?? [], function($p) use ($paySearch, $paySelectedStatus, $payDate) {
         if ($paySelectedStatus !== 'all' && strtolower($p['status']) !== $paySelectedStatus) return false;
         if ($payDate) {
@@ -18,8 +18,7 @@
         if ($paySearch) {
             $q = strtolower($paySearch);
             $haystack = strtolower(
-                $p['id'] . ' ' . $p['fullname'] . ' ' . $p['email'] . ' ' .
-                $p['package_name'] . ' ' . ($p['payhere_payment_id'] ?? '')
+                $p['fullname'] . ' ' . $p['email'] . ' ' . $p['package_name']
             );
             if (strpos($haystack, $q) === false) return false;
         }
@@ -31,7 +30,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+ 
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/payments.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
@@ -39,10 +38,10 @@
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
+ 
         <title>Payments Management</title>
     </head>
-
+ 
     <body>
         <!-- Navbar -->
         <header class="navbar">
@@ -61,11 +60,11 @@
                 </div>
             </nav>
         </header>
-
+ 
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
+ 
         <div class="page-wrapper">
-
+ 
             <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
@@ -80,19 +79,19 @@
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
-
+ 
             <div class="main-content">
                 <div class="payments-management">
-
+ 
                     <h2 class="page-title">Payments Management</h2>
                     <br>
-
+ 
                     <!-- Search, Filter & Date toolbar -->
                     <form method="GET" action="/CeylonGo/public/admin/payments">
                         <div class="toolbar">
                             <div class="search-section">
                                 <input type="text" name="pay_search"
-                                    placeholder="Search by ID, customer or package"
+                                    placeholder="Search by customer/ package"
                                     class="search-input"
                                     value="<?= htmlspecialchars($paySearch) ?>">
                                 <button type="submit" class="search-btn">🔍</button>
@@ -120,20 +119,44 @@
                             </div>
                         </div>
                     </form>
-
+ 
                     <!-- Stats -->
                     <div class="stats-section">
-                        <div class="stat-card">Total Payments<span><?= $payStats['total'] ?? 0 ?></span></div>
-                        <div class="stat-card">Paid<span><?= $payStats['paid'] ?? 0 ?></span></div>
-                        <div class="stat-card">Approved<span><?= $payStats['approved'] ?? 0 ?></span></div>
-                        <div class="stat-card">Pending<span><?= $payStats['pending'] ?? 0 ?></span></div>
-                        <div class="stat-card">Rejected<span><?= $payStats['rejected'] ?? 0 ?></span></div>
-                        <div class="stat-card">Cancelled<span><?= $payStats['cancelled'] ?? 0 ?></span></div>
-                        <?php if (($payStats['refund_requested'] ?? 0) > 0): ?>
-                            <div class="stat-card refund-card">Refund Requests<span><?= $payStats['refund_requested'] ?></span></div>
-                        <?php endif; ?>
+                        <h4>Payment Statistics</h4><br>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong>Total Payments</strong><br>
+                                <span><?= $payStats['total'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Paid</strong><br>
+                                <span><?= $payStats['paid'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Approved</strong><br>
+                                <span><?= $payStats['approved'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Pending</strong><br>
+                                <span><?= $payStats['pending'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Rejected</strong><br>
+                                <span><?= $payStats['rejected'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Cancelled</strong><br>
+                                <span><?= $payStats['cancelled'] ?? 0 ?></span>
+                            </div>
+                            <?php if (($payStats['refund_requested'] ?? 0) > 0): ?>
+                                <div class="stat-box refund-card">
+                                    <strong>Refund Requests</strong><br>
+                                    <span><?= $payStats['refund_requested'] ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
-
+ 
                     <!-- Payments Table -->
                     <div class="payments-section">
                         <table class="payments-table">
@@ -201,13 +224,13 @@
                                             <button class="icon-btn pay-view-btn"
                                                     data-id="<?= (int)$p['id'] ?>"
                                                     title="View Details">👁️</button>
-
+ 
                                             <?php if ($status === 'pending' && !$hasSlip): ?>
                                                 <!-- Pending with no slip: admin manually marks paid -->
                                                 <button class="icon-btn pay-verify-btn"
                                                         data-id="<?= (int)$p['id'] ?>"
                                                         title="Mark as Paid">✅</button>
-
+ 
                                             <?php elseif ($hasSlip && in_array($status, ['pending','approved']) && empty($p['paid_at'])): ?>
                                                 <!-- Bank slip submitted, awaiting admin approval -->
                                                 <button class="icon-btn pay-slip-approve-btn"
@@ -215,7 +238,7 @@
                                                         data-slip="<?= htmlspecialchars($p['bank_transfer_slip_path']) ?>"
                                                         title="Approve Bank Transfer">🏦✅</button>
                                             <?php endif; ?>
-
+ 
                                             <?php if ($hasRefund && empty($p['refund_approved_at'])): ?>
                                                 <!-- Refund requested, awaiting admin approval -->
                                                 <button class="icon-btn pay-refund-approve-btn"
@@ -230,16 +253,16 @@
                             </tbody>
                         </table>
                     </div>
-
+ 
                     <div class="footer-buttons">
                         <button class="footer-btn black" id="exportPayBtn">Export Payments</button>
                     </div>
-
+ 
                 </div><!-- /payments-management -->
             </div><!-- /main-content -->
-
+ 
         </div><!-- /page-wrapper -->
-
+ 
         <!-- Payment Details Modal — outside page-wrapper so it isn't caught in flex layout -->
         <div id="paymentModal" class="modal" style="display:none;">
             <div class="modal-content">
@@ -248,7 +271,7 @@
                 <div id="paymentDetailsContent">Loading...</div>
             </div>
         </div>
-
+ 
         <!-- Footer -->
         <footer>
             <ul>
@@ -257,7 +280,7 @@
                 <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
             </ul>
         </footer>
-
+ 
         <script>
             // ── Navbar dropdown ───────────────────────────────────
             function toggleProfileDropdown() {
@@ -271,7 +294,7 @@
                     dropdown.classList.remove('show');
                 }
             });
-
+ 
             // ── Embed payment data ────────────────────────────────
             const paymentsData = <?= json_encode(array_values(array_map(function($p) {
                 return [
@@ -297,32 +320,32 @@
                     'created_at'                 => $p['created_at'],
                 ];
             }, $filteredPayments)), JSON_UNESCAPED_UNICODE) ?>;
-
+ 
             // ── Modal setup ───────────────────────────────────────
             const paymentModal   = document.getElementById('paymentModal');
             const paymentContent = document.getElementById('paymentDetailsContent');
             const payModalClose  = paymentModal.querySelector('.pay-modal-close');
-
+ 
             payModalClose.onclick = () => paymentModal.style.display = 'none';
             window.onclick = e => { if (e.target == paymentModal) paymentModal.style.display = 'none'; };
-
+ 
             // ── View payment details ──────────────────────────────
             document.querySelectorAll('.pay-view-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = parseInt(this.dataset.id);
                     const p  = paymentsData.find(x => x.id === id);
                     if (!p) return;
-
+ 
                     let method = '—';
                     if (p.payhere_payment_id)          method = 'Online (PayHere)';
                     else if (p.bank_transfer_submitted_at) method = 'Bank Transfer';
-
+ 
                     let html = '';
                     html += `<p><strong>Booking ID:</strong> #${p.id}</p>`;
                     html += `<p><strong>Customer:</strong> ${p.fullname}</p>`;
                     html += `<p><strong>Status:</strong> ${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</p>`;
                     html += `<p><strong>Submitted:</strong> ${p.created_at}</p>`;
-
+ 
                     // Refund alert banner
                     if (p.refund_requested_at) {
                         html += `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px;margin:10px 0;">
@@ -331,7 +354,7 @@
                             ${p.refund_reason ? `<em>"${p.refund_reason}"</em>` : ''}
                         </div>`;
                     }
-
+ 
                     html += `<h4>Payment Details</h4>`;
                     html += `<table>
                         <tr><th>Field</th><th>Details</th></tr>
@@ -355,25 +378,25 @@
                         ${p.refund_requested_at ? `<tr><td style="color:#e65100;font-weight:bold;">Refund Requested</td><td>${p.refund_requested_at}</td></tr>` : ''}
                         ${p.refund_reason ? `<tr><td style="color:#e65100;">Refund Reason</td><td>${p.refund_reason}</td></tr>` : ''}
                     </table>`;
-
+ 
                     paymentContent.innerHTML = html;
                     paymentModal.style.display = 'block';
                 });
             });
-
+ 
             // ── Approve bank transfer slip ────────────────────────
             document.querySelectorAll('.pay-slip-approve-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id   = parseInt(this.dataset.id);
                     const slip = this.dataset.slip;
                     const slipUrl = '/CeylonGo/public/uploads/' + slip;
-
+ 
                     if (!confirm(
                         'Approve bank transfer payment for booking #' + id + '?\n\n' +
                         'Make sure you have reviewed the slip before approving.\n' +
                         'Slip: ' + slipUrl
                     )) return;
-
+ 
                     fetch('/CeylonGo/public/admin/payment/approve-slip', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -387,19 +410,19 @@
                     .catch(() => alert('Server error. Please try again.'));
                 });
             });
-
+ 
             // ── Approve refund request ────────────────────────────
             document.querySelectorAll('.pay-refund-approve-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id     = parseInt(this.dataset.id);
                     const reason = this.dataset.reason;
-
+ 
                     if (!confirm(
                         'Approve refund for booking #' + id + '?\n\n' +
                         'Customer reason: "' + (reason || 'No reason given') + '"\n\n' +
                         'This will mark the booking as Cancelled.'
                     )) return;
-
+ 
                     fetch('/CeylonGo/public/admin/payment/approve-refund', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -413,13 +436,13 @@
                     .catch(() => alert('Server error. Please try again.'));
                 });
             });
-
+ 
             // ── Mark as paid (manual, no slip) ────────────────────
             document.querySelectorAll('.pay-verify-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = parseInt(this.dataset.id);
                     if (!confirm('Mark this payment as Paid? This confirms the bank transfer was received.')) return;
-
+ 
                     fetch('/CeylonGo/public/admin/payment/verify', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -433,20 +456,20 @@
                     .catch(() => alert('Server error. Please try again.'));
                 });
             });
-
+ 
             // ── Export payments report ────────────────────────────
             document.getElementById('exportPayBtn').addEventListener('click', function() {
                 if (!paymentsData || paymentsData.length === 0) {
                     alert('No payments to export!');
                     return;
                 }
-
+ 
                 const sep    = '='.repeat(70);
                 const subSep = '-'.repeat(70);
                 const now    = new Date();
                 const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
                 const timeStr = now.toLocaleTimeString('en-GB');
-
+ 
                 let report = '';
                 report += sep + '\n';
                 report += '        CEYLON GO — PAYMENTS REPORT\n';
@@ -454,21 +477,21 @@
                 report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
                 report += '  Total Records  : ' + paymentsData.length + '\n';
                 report += sep + '\n\n';
-
+ 
                 paymentsData.forEach(function(p, index) {
                     let method = '—';
                     if (p.payhere_payment_id)          method = 'Online (PayHere)';
                     else if (p.bank_transfer_submitted_at) method = 'Bank Transfer';
-
+ 
                     report += 'PAYMENT ' + (index + 1) + ' OF ' + paymentsData.length + '\n';
                     report += sep + '\n';
-
+ 
                     report += '  CUSTOMER\n';
                     report += '  ' + subSep + '\n';
                     report += '  Name         : ' + p.fullname + '\n';
                     report += '  Email        : ' + p.email + '\n';
                     report += '  Phone        : ' + p.phone + '\n\n';
-
+ 
                     report += '  BOOKING\n';
                     report += '  ' + subSep + '\n';
                     report += '  Booking ID   : #' + p.id + '\n';
@@ -478,7 +501,7 @@
                     if (p.children > 0) report += ' / ' + p.children + ' Child' + (p.children != 1 ? 'ren' : '');
                     if (p.infants  > 0) report += ' / ' + p.infants + ' Infant' + (p.infants != 1 ? 's' : '');
                     report += ')\n\n';
-
+ 
                     report += '  PAYMENT\n';
                     report += '  ' + subSep + '\n';
                     report += '  Total Amount : LKR ' + Number(p.total_amount).toLocaleString() + '\n';
@@ -490,22 +513,22 @@
                     if (p.bank_transfer_slip_path)    report += '  Bank Slip    : /uploads/' + p.bank_transfer_slip_path + '\n';
                     if (p.approved_at)                report += '  Approved At  : ' + p.approved_at + '\n';
                     report += '  Submitted On : ' + p.created_at + '\n';
-
+ 
                     if (p.refund_requested_at) {
                         report += '\n  REFUND REQUEST\n';
                         report += '  ' + subSep + '\n';
                         report += '  Requested At : ' + p.refund_requested_at + '\n';
                         if (p.refund_reason) report += '  Reason       : ' + p.refund_reason + '\n';
                     }
-
+ 
                     report += '\n' + sep + '\n\n';
                 });
-
+ 
                 report += sep + '\n';
                 report += '  END OF REPORT\n';
                 report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
                 report += sep + '\n';
-
+ 
                 const blob = new Blob([report], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);

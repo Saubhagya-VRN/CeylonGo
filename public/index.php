@@ -134,6 +134,8 @@ $router->post('admin/review/delete', 'AdminController@deleteReview');
 $router->post('admin/review/reply', 'AdminController@replyToReview');
 $router->post('admin/review/approve', 'AdminController@approveReview');
 $router->get('admin/inquiries', 'AdminController@inquiries');
+$router->post('admin/inquiry/delete', 'AdminController@deleteInquiry');
+$router->post('admin/inquiry/reply',  'AdminController@replyToInquiry');
 $router->get('admin/reports', 'AdminController@reports');
 $router->get('admin/service', 'AdminController@service');
 $router->post('admin/provider/status', 'AdminController@toggleProviderStatus');
