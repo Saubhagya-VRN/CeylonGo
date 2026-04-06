@@ -23,13 +23,13 @@ $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
   <header class="trip-navbar">
     <div class="branding">
       <button class="hamburger-btn" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
-      <a href="/CeylonGo/public/tourist/dashboard" class="trip-branding-link">
+      <a href="/CeylonGo/public/tourist/dashboard-side" class="trip-branding-link">
         <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
         <span class="logo-text">Ceylon Go</span>
       </a>
     </div>
     <nav class="nav-links">
-      <a href="/CeylonGo/public/tourist/dashboard">Dashboard</a>
+      <a href="/CeylonGo/public/tourist/dashboard-side">Dashboard</a>
       <a href="/CeylonGo/public/tourist/recommended-packages">Packages</a>
       <a href="/CeylonGo/public/tourist/customize-trip">Customise Trip</a>
       <a href="/CeylonGo/public/tourist/profile">Profile</a>
@@ -43,7 +43,7 @@ $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
     <aside class="trip-sidebar" id="tripSidebar">
       <div class="trip-sidebar-nav">
         <ul>
-          <li><a href="/CeylonGo/public/tourist/dashboard"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/customize-trip"><i class="fa-solid fa-wand-magic-sparkles"></i> <span class="sidebar-link-text">Customise Your Trip <span class="sidebar-sub">Plan Custom Trips</span></span></a></li>
           <li class="active"><a href="/CeylonGo/public/tourist/transport-report"><i class="fa-solid fa-car-side"></i> <span class="sidebar-link-text">Transport Requests <span class="sidebar-sub">Request Transport</span></span></a></li>
           <li><a href="#"><i class="fa-regular fa-message"></i> <span class="sidebar-link-text">Queries <span class="sidebar-sub">Active Requests</span></span></a></li>
@@ -129,8 +129,8 @@ $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
       </div>
 
       <div style="margin-top: 20px; display:flex; gap: 12px;">
-        <a href="/CeylonGo/public/tourist/dashboard?open_transport=1" class="btn">Submit Another Request</a>
-        <a href="/CeylonGo/public/tourist/dashboard" class="btn btn-black">Back to Dashboard</a>
+        <a href="/CeylonGo/public/tourist/customize-trip" class="btn">Submit Another Request</a>
+        <a href="/CeylonGo/public/tourist/dashboard-side" class="btn btn-black">Back to Dashboard</a>
       </div>
     </div>
   </section>

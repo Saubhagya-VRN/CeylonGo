@@ -322,7 +322,7 @@ class TouristController {
 
         $hash = PayHere::checkoutHash($merchantId, $orderId, $amount, $currency, $secret);
 
-        $fullname = trim((string) ($tourist['first_name'] ?? '') . ' ' . ($tourist['last_name'] ?? ''));
+        $fullname = trim((string) (isset($tourist['first_name']) ? $tourist['first_name'] : '') . ' ' . (isset($tourist['last_name']) ? $tourist['last_name'] : ''));
         if ($fullname === '') {
             $fullname = 'Customer';
         }
@@ -698,6 +698,32 @@ class TouristController {
             'is_logged_in' => isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist',
             'trending_bar_packages' => $trending_bar_packages,
             'inquiries' => $inquiries
+        ));
+    }
+
+    /**
+     * Tourist sidebar dashboard (welcome + stats). Separate from /tourist/dashboard (marketing / inquiry page).
+     */
+    public function dashboardSide() {
+        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
+            header('Location: /CeylonGo/public/tourist/dashboard');
+            exit;
+        }
+
+        $touristModel = new Tourist($this->db);
+        $tourist_data = $touristModel->getTouristById((int) $_SESSION['user_id']);
+
+        $dashboard_stats = array(
+            'total_bookings' => 0,
+            'upcoming_trips' => 0,
+            'total_spent_lkr' => 0.0,
+            'completed_trips' => 0,
+        );
+
+        view('tourist/dashboard_sidebar', array(
+            'tourist_data' => $tourist_data,
+            'dashboard_stats' => $dashboard_stats,
         ));
     }
 

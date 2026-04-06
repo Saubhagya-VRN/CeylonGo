@@ -41,6 +41,7 @@ $router->post('registerProvider', 'TransportProviderController@registerProvider'
 $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboardNew');
+$router->get('tourist/dashboard-side', 'TouristController@dashboardSide');
 $router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
 $router->post('tourist/trip-submit', 'TouristController@tripSubmit');

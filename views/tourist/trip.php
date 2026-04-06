@@ -73,7 +73,7 @@ $main_cities = array(
     <aside class="trip-sidebar" id="tripSidebar">
       <div class="trip-sidebar-nav">
         <ul>
-          <li><a href="/CeylonGo/public/tourist/dashboard"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
           <li class="active"><a href="/CeylonGo/public/tourist/customize-trip"><i class="fa-solid fa-wand-magic-sparkles"></i> <span class="sidebar-link-text">Customise Your Trip <span class="sidebar-sub">Plan Custom Trips</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/transport-report"><i class="fa-solid fa-car-side"></i> <span class="sidebar-link-text">Transport Requests <span class="sidebar-sub">Request Transport</span></span></a></li>
           <li><a href="#"><i class="fa-regular fa-message"></i> <span class="sidebar-link-text">Queries <span class="sidebar-sub">Active Requests</span></span></a></li>
@@ -98,7 +98,7 @@ $main_cities = array(
     <main class="trip-main-content">
       <button class="hamburger-btn trip-hamburger" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
       <div class="trip-breadcrumbs">
-        <a href="/CeylonGo/public/tourist/dashboard"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-house"></i> Dashboard</a>
         <span>&gt;</span>
         <span>customise-your-trip</span>
       </div>
