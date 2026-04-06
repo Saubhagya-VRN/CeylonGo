@@ -45,6 +45,7 @@ $router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
 $router->post('tourist/trip-submit', 'TouristController@tripSubmit');
 $router->post('tourist/trip-payment-checkout', 'TouristController@tripPaymentCheckout');
+$router->get('tourist/trip-payment-status/{id}', 'TouristController@tripPaymentStatus');
 $router->get('tourist/transport-services', 'TouristController@transportRequestView');
 $router->post('tourist/transport-services', 'TouristController@transportRequest');
 $router->get('tourist/transport-report', 'TouristController@transportReport');

@@ -1,12 +1,13 @@
 <?php
-$asset_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+$asset_base = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
 if ($asset_base === '' || $asset_base === '/') {
   $asset_base = '/CeylonGo/public';
 }
 $payhere_per_transaction_max_lkr = isset($payhere_per_transaction_max_lkr) ? (int) $payhere_per_transaction_max_lkr : 0;
-$bank_transfer_details = $bank_transfer_details ?? '';
-$pm_error = $_SESSION['payment_error'] ?? null;
-$pm_info = $_SESSION['payment_info'] ?? null;
+$bank_transfer_details = isset($bank_transfer_details) ? $bank_transfer_details : '';
+$pm_error = isset($_SESSION['payment_error']) ? $_SESSION['payment_error'] : null;
+$pm_info = isset($_SESSION['payment_info']) ? $_SESSION['payment_info'] : null;
 unset($_SESSION['payment_error'], $_SESSION['payment_info']);
 $payhero = htmlspecialchars($asset_base . '/images/pay.jpg', ENT_QUOTES, 'UTF-8');
 ?>
@@ -52,7 +53,7 @@ $payhero = htmlspecialchars($asset_base . '/images/pay.jpg', ENT_QUOTES, 'UTF-8'
 
         <p class="trip-payment-hint" id="tripPaymentTripHint">Submit your trip on <strong>Trip Review &amp; Submit</strong> first — your trip reference is required to pay.</p>
 
-        <form method="post" action="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/tourist/trip-payment-checkout" id="tripPaymentForm" enctype="multipart/form-data">
+        <form method="post" action="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/tourist/trip-payment-checkout" id="tripPaymentForm" enctype="multipart/form-data" onsubmit="try{sessionStorage.setItem('ceylonTripWizardReturnToReview','1')}catch(e){}">
           <input type="hidden" name="trip_id" id="trip_payment_trip_id" value="">
 
           <div class="payment-method">

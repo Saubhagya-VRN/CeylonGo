@@ -6,6 +6,69 @@ class TouristController {
         $this->db = Database::getConnection();
     }
 
+    private function tripSubmissionUpsert($tripId, $userId, $tripArr) {
+        $tripId = (int) $tripId;
+        $userId = (int) $userId;
+        if ($tripId <= 0 || $userId <= 0) return;
+        if (!is_array($tripArr)) $tripArr = array();
+        $paymentStatus = isset($tripArr['payment_status']) ? trim((string) $tripArr['payment_status']) : '';
+        if ($paymentStatus === '') $paymentStatus = 'pending';
+        $json = json_encode($tripArr, JSON_UNESCAPED_UNICODE);
+        if ($json === false) $json = '{}';
+        try {
+            $stmt = $this->db->prepare(
+                'INSERT INTO trip_submissions (trip_id, user_id, trip_json, payment_status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, NOW(), NOW())
+                 ON DUPLICATE KEY UPDATE trip_json = VALUES(trip_json), payment_status = VALUES(payment_status), updated_at = NOW()'
+            );
+            $stmt->execute(array($tripId, $userId, $json, $paymentStatus));
+        } catch (PDOException $e) {
+            error_log('tripSubmissionUpsert: ' . $e->getMessage());
+        }
+    }
+
+    private function tripSubmissionSetPaymentStatus($tripId, $userId, $status) {
+        $tripId = (int) $tripId;
+        $userId = (int) $userId;
+        $status = trim((string) $status);
+        if ($tripId <= 0 || $userId <= 0 || $status === '') return;
+        try {
+            $stmt = $this->db->prepare('SELECT trip_json FROM trip_submissions WHERE trip_id = ? AND user_id = ? LIMIT 1');
+            $stmt->execute(array($tripId, $userId));
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $arr = array();
+            if ($row && isset($row['trip_json'])) {
+                $dec = json_decode((string) $row['trip_json'], true);
+                if (is_array($dec)) $arr = $dec;
+            }
+            $arr['payment_status'] = $status;
+            $arr['payment_status_updated_at'] = date('c');
+            $this->tripSubmissionUpsert($tripId, $userId, $arr);
+        } catch (PDOException $e) {
+            error_log('tripSubmissionSetPaymentStatus: ' . $e->getMessage());
+        }
+    }
+
+    private function getTripBudgetFromSubmission($tripId, $userId) {
+        $tripId = (int) $tripId;
+        $userId = (int) $userId;
+        if ($tripId <= 0 || $userId <= 0) return 0.0;
+        try {
+            $stmt = $this->db->prepare('SELECT trip_json FROM trip_submissions WHERE trip_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1');
+            $stmt->execute(array($tripId, $userId));
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row || !isset($row['trip_json'])) return 0.0;
+            $dec = json_decode((string) $row['trip_json'], true);
+            if (!is_array($dec)) return 0.0;
+            $b = isset($dec['budget_lkr']) ? (float) $dec['budget_lkr'] : 0.0;
+            if ($b < 0 || $b > 999999999) return 0.0;
+            return $b;
+        } catch (\Throwable $e) {
+            error_log('getTripBudgetFromSubmission: ' . $e->getMessage());
+            return 0.0;
+        }
+    }
+
     public function registerView() {
         view('tourist/tourist_register');
     }
@@ -103,12 +166,14 @@ class TouristController {
         $placesAutocompleteUrl = (defined('BASE_URL') ? BASE_URL : '/CeylonGo/public') . '/api/places-autocomplete';
         $payhereMax = defined('PAYHERE_PER_TRANSACTION_MAX_LKR') ? (int) PAYHERE_PER_TRANSACTION_MAX_LKR : 0;
         $bankDetails = defined('BANK_TRANSFER_DETAILS') ? BANK_TRANSFER_DETAILS : '';
+        $lastTripId = isset($_SESSION['last_trip_id']) ? (int) $_SESSION['last_trip_id'] : 0;
         view('tourist/trip', array(
             'tourist_data' => $tourist_data,
             'user_name' => $user_name,
             'places_autocomplete_url' => $placesAutocompleteUrl,
             'payhere_per_transaction_max_lkr' => $payhereMax,
             'bank_transfer_details' => $bankDetails,
+            'last_trip_id' => $lastTripId,
         ));
     }
 
@@ -116,7 +181,8 @@ class TouristController {
      * Pay for a customise-trip row: card (PayHere) or bank transfer. POST trip_id, payment_method.
      */
     public function tripPaymentCheckout() {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
             header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/customize-trip'));
             exit;
         }
@@ -135,17 +201,28 @@ class TouristController {
             exit;
         }
 
+        $trip = null;
         try {
             $stmt = $this->db->prepare(
                 'SELECT id, user_id, budget_lkr, status, payhere_payment_id FROM trips WHERE id = ? AND user_id = ? LIMIT 1'
             );
-            $stmt->execute([$tripId, $userId]);
+            $stmt->execute(array($tripId, $userId));
             $trip = $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
-            error_log('tripPaymentCheckout: ' . $e->getMessage());
-            $_SESSION['payment_error'] = 'Could not load your trip. Try again.';
-            header('Location: /CeylonGo/public/tourist/customize-trip');
-            exit;
+            // Some installs have an older `trips` table without payment columns.
+            error_log('tripPaymentCheckout select trips (full): ' . $e->getMessage());
+            try {
+                $stmt2 = $this->db->prepare(
+                    'SELECT id, user_id, status FROM trips WHERE id = ? AND user_id = ? LIMIT 1'
+                );
+                $stmt2->execute(array($tripId, $userId));
+                $trip = $stmt2->fetch(PDO::FETCH_ASSOC);
+            } catch (\Throwable $e2) {
+                error_log('tripPaymentCheckout select trips (fallback): ' . $e2->getMessage());
+                $_SESSION['payment_error'] = 'Could not load your trip. Try again.';
+                header('Location: /CeylonGo/public/tourist/customize-trip');
+                exit;
+            }
         }
 
         if (!$trip) {
@@ -156,12 +233,18 @@ class TouristController {
 
         $budget = isset($trip['budget_lkr']) ? (float) $trip['budget_lkr'] : 0.0;
         if ($budget <= 0) {
+            // Fall back to the snapshot table if budget column isn't available or not populated.
+            $budget = $this->getTripBudgetFromSubmission($tripId, $userId);
+        }
+        if ($budget <= 0) {
             $_SESSION['payment_error'] = 'This trip has no budget total saved. Re-submit your trip from Trip Summary (run database/alter_trips_payment_columns.sql if needed).';
             header('Location: /CeylonGo/public/tourist/customize-trip');
             exit;
         }
 
-        if (!empty($trip['payhere_payment_id']) || ($trip['status'] ?? '') === 'confirmed') {
+        $tripStatus = isset($trip['status']) ? (string) $trip['status'] : '';
+        $payId = isset($trip['payhere_payment_id']) ? (string) $trip['payhere_payment_id'] : '';
+        if ($payId !== '' || $tripStatus === 'confirmed') {
             $_SESSION['payment_info'] = 'This trip is already paid or confirmed.';
             header('Location: /CeylonGo/public/tourist/customize-trip');
             exit;
@@ -169,7 +252,8 @@ class TouristController {
 
         if ($method === 'bank-transfer') {
             $file = isset($_FILES['bank_transfer_slip']) ? $_FILES['bank_transfer_slip'] : null;
-            if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            $fileErr = ($file && isset($file['error'])) ? $file['error'] : UPLOAD_ERR_NO_FILE;
+            if (!$file || $fileErr === UPLOAD_ERR_NO_FILE) {
                 $_SESSION['payment_error'] = 'Please upload a screenshot of your bank transfer slip.';
                 header('Location: /CeylonGo/public/tourist/customize-trip');
                 exit;
@@ -184,7 +268,7 @@ class TouristController {
                 $upd = $this->db->prepare(
                     'UPDATE trips SET bank_transfer_submitted_at = NOW(), bank_transfer_slip_path = ? WHERE id = ? AND user_id = ? AND status = \'pending\''
                 );
-                $upd->execute([$slipPath, $tripId, $userId]);
+                $upd->execute(array($slipPath, $tripId, $userId));
             } catch (\Throwable $e) {
                 error_log('tripPaymentCheckout bank: ' . $e->getMessage());
                 @unlink((defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__) . '/public/uploads')) . '/' . str_replace('\\', '/', $slipPath));
@@ -193,7 +277,9 @@ class TouristController {
                 exit;
             }
             $_SESSION['payment_info'] = 'We have recorded your bank transfer. We will confirm within 1–2 business days.';
-            header('Location: /CeylonGo/public/tourist/customize-trip');
+            // Also record status in trip_submissions table.
+            $this->tripSubmissionSetPaymentStatus($tripId, $userId, 'payment_submitted');
+            header('Location: /CeylonGo/public/tourist/customize-trip?afterPayment=1&trip_id=' . (int) $tripId);
             exit;
         }
 
@@ -204,13 +290,13 @@ class TouristController {
 
         $touristModel = new Tourist($this->db);
         $tourist = $touristModel->getTouristById($userId);
-        $email = trim((string) ($tourist['email'] ?? ''));
+        $email = trim((string) (isset($tourist['email']) ? $tourist['email'] : ''));
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $_SESSION['payment_error'] = 'Add a valid email in your profile before paying online.';
             header('Location: /CeylonGo/public/tourist/customize-trip');
             exit;
         }
-        $phoneDigits = preg_replace('/\D/', '', (string) ($tourist['contact_number'] ?? ''));
+        $phoneDigits = preg_replace('/\D/', '', (string) (isset($tourist['contact_number']) ? $tourist['contact_number'] : ''));
         if (strlen($phoneDigits) < 9) {
             $_SESSION['payment_error'] = 'Add a valid phone number in your profile (at least 9 digits) before paying online.';
             header('Location: /CeylonGo/public/tourist/customize-trip');
@@ -285,6 +371,64 @@ class TouristController {
     }
 
     /**
+     * JSON: payment status for a custom trip (used by customise-trip UI).
+     */
+    public function tripPaymentStatus($id) {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
+            http_response_code(401);
+            echo json_encode(array('success' => false, 'error' => 'Unauthenticated.'));
+            exit;
+        }
+
+        $tripId = (int) $id;
+        if ($tripId <= 0) {
+            http_response_code(400);
+            echo json_encode(array('success' => false, 'error' => 'Invalid trip id.'));
+            exit;
+        }
+
+        $uid = (int) $_SESSION['user_id'];
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT id, user_id, destination, start_date, number_of_people, budget_lkr, status, payhere_payment_id, paid_at, bank_transfer_submitted_at
+                 FROM trips
+                 WHERE id = ? AND user_id = ?
+                 LIMIT 1'
+            );
+            $stmt->execute(array($tripId, $uid));
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
+                http_response_code(404);
+                echo json_encode(array('success' => false, 'error' => 'Trip not found.'));
+                exit;
+            }
+            echo json_encode(array(
+                'success' => true,
+                'trip' => array(
+                    'id' => (int) $row['id'],
+                    'destination' => isset($row['destination']) ? (string) $row['destination'] : '',
+                    'start_date' => isset($row['start_date']) ? (string) $row['start_date'] : '',
+                    'number_of_people' => isset($row['number_of_people']) ? (int) $row['number_of_people'] : 0,
+                    'budget_lkr' => isset($row['budget_lkr']) ? (float) $row['budget_lkr'] : 0.0,
+                    'status' => isset($row['status']) ? (string) $row['status'] : '',
+                    'payhere_payment_id' => isset($row['payhere_payment_id']) ? (string) $row['payhere_payment_id'] : '',
+                    'paid_at' => isset($row['paid_at']) ? (string) $row['paid_at'] : '',
+                    'bank_transfer_submitted_at' => isset($row['bank_transfer_submitted_at']) ? (string) $row['bank_transfer_submitted_at'] : '',
+                ),
+            ));
+            exit;
+        } catch (PDOException $e) {
+            error_log('tripPaymentStatus: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(array('success' => false, 'error' => 'Could not load trip status.'));
+            exit;
+        }
+    }
+
+    /**
      * Final submit from Trip Summary wizard (AJAX). Stores a summary row in `trips` when the table exists.
      */
     public function tripSubmit() {
@@ -294,10 +438,11 @@ class TouristController {
             header('Content-Type: application/json; charset=utf-8');
         }
 
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
             if ($ajax) {
                 http_response_code(401);
-                echo json_encode(['success' => false, 'error' => 'Please log in as a tourist to submit your trip.']);
+                echo json_encode(array('success' => false, 'error' => 'Please log in as a tourist to submit your trip.'));
                 exit;
             }
             header('Location: /CeylonGo/public/tourist/dashboard');
@@ -305,24 +450,49 @@ class TouristController {
         }
 
         $userId = (int) $_SESSION['user_id'];
-        $destination = trim((string) ($_POST['destination'] ?? ''));
-        $startDate = trim((string) ($_POST['start_date'] ?? ''));
-        $endDate = trim((string) ($_POST['end_date'] ?? ''));
-        $customerName = trim((string) ($_POST['customer_name'] ?? ''));
+        $destination = trim((string) (isset($_POST['destination']) ? $_POST['destination'] : ''));
+        $startDate = trim((string) (isset($_POST['start_date']) ? $_POST['start_date'] : ''));
+        $endDate = trim((string) (isset($_POST['end_date']) ? $_POST['end_date'] : ''));
+        $customerName = trim((string) (isset($_POST['customer_name']) ? $_POST['customer_name'] : ''));
         if ($customerName === '') {
-            $customerName = trim((string) ($_SESSION['user_name'] ?? 'Tourist'));
+            $customerName = trim((string) (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Tourist'));
         }
-        $numPeople = max(1, (int) ($_POST['number_of_people'] ?? 1));
-        $numDays = max(1, (int) ($_POST['number_of_days'] ?? 1));
+        $numPeople = max(1, (int) (isset($_POST['number_of_people']) ? $_POST['number_of_people'] : 1));
+        $numDays = max(1, (int) (isset($_POST['number_of_days']) ? $_POST['number_of_days'] : 1));
         $budgetLkr = isset($_POST['budget_lkr']) ? (float) $_POST['budget_lkr'] : 0.0;
         if ($budgetLkr < 0 || $budgetLkr > 999999999) {
             $budgetLkr = 0.0;
         }
 
+        // Guide requests are queued on the trip wizard and only persisted after "Submit trip".
+        $guideReqRaw = isset($_POST['guide_requests']) ? (string) $_POST['guide_requests'] : '';
+        $guideReqs = array();
+        if ($guideReqRaw !== '') {
+            $decodedG = json_decode($guideReqRaw, true);
+            if (is_array($decodedG)) {
+                foreach ($decodedG as $row) {
+                    if (!is_array($row)) continue;
+                    $loc = isset($row['location']) ? trim((string) $row['location']) : '';
+                    $dt = isset($row['date']) ? trim((string) $row['date']) : '';
+                    $lang = isset($row['language']) ? trim((string) $row['language']) : '';
+                    $tm = isset($row['time']) ? trim((string) $row['time']) : '';
+                    $notes = isset($row['notes']) ? trim((string) $row['notes']) : '';
+                    if ($loc === '' || $dt === '' || $lang === '' || $tm === '') continue;
+                    $guideReqs[] = array(
+                        'location' => $loc,
+                        'date' => $dt,
+                        'language' => $lang,
+                        'time' => $tm,
+                        'notes' => $notes,
+                    );
+                }
+            }
+        }
+
         if ($destination === '' || $startDate === '') {
             if ($ajax) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'error' => 'Please complete destination and dates before submitting.']);
+                echo json_encode(array('success' => false, 'error' => 'Please complete destination and dates before submitting.'));
                 exit;
             }
             header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Complete your trip details first.'));
@@ -333,7 +503,7 @@ class TouristController {
             $sql = 'INSERT INTO trips (user_id, customer_name, number_of_people, start_date, destination, number_of_days, budget_lkr, status)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([
+            $stmt->execute(array(
                 $userId,
                 $customerName,
                 $numPeople,
@@ -342,10 +512,63 @@ class TouristController {
                 $numDays,
                 $budgetLkr > 0 ? round($budgetLkr, 2) : null,
                 'pending',
-            ]);
+            ));
             $tripId = (int) $this->db->lastInsertId();
+            $_SESSION['last_trip_id'] = $tripId;
+
+            // Record submission snapshot + initial payment status in trip_submissions.
+            $this->tripSubmissionUpsert($tripId, $userId, array(
+                'trip_id' => $tripId,
+                'user_id' => $userId,
+                'destination' => $destination,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'customer_name' => $customerName,
+                'number_of_people' => $numPeople,
+                'number_of_days' => $numDays,
+                'budget_lkr' => $budgetLkr,
+                'payment_status' => 'pending',
+                'submitted_at' => date('c'),
+            ));
+
+            $createdGuideRequests = 0;
+            if ($tripId > 0 && count($guideReqs) > 0) {
+                try {
+                    $contact = '';
+                    try {
+                        $touristModel = new Tourist($this->db);
+                        $tourist = $touristModel->getTouristById($userId);
+                        if (is_array($tourist) && isset($tourist['contact_number'])) {
+                            $contact = trim((string) $tourist['contact_number']);
+                        }
+                    } catch (\Throwable $eT) {
+                        // Ignore and fall back to session.
+                    }
+                    if ($contact === '' && isset($_SESSION['user_contact'])) $contact = trim((string) $_SESSION['user_contact']);
+                    if ($contact === '' && isset($_SESSION['user_phone'])) $contact = trim((string) $_SESSION['user_phone']);
+                    if ($contact === '' && isset($_SESSION['contact_number'])) $contact = trim((string) $_SESSION['contact_number']);
+                    if ($contact === '') $contact = 'N/A';
+
+                    $gr = new GuideRequest($this->db);
+                    foreach ($guideReqs as $g) {
+                        $gr->customerName = $customerName;
+                        $gr->contactNumber = $contact;
+                        $gr->location = $g['location'];
+                        $gr->language = $g['language'];
+                        $gr->date = $g['date'];
+                        $gr->time = $g['time'];
+                        $gr->notes = $g['notes'];
+                        $gr->status = 'pending';
+                        if ($gr->create()) {
+                            $createdGuideRequests++;
+                        }
+                    }
+                } catch (\Throwable $eG) {
+                    error_log('tripSubmit create guide requests: ' . $eG->getMessage());
+                }
+            }
             if ($ajax) {
-                echo json_encode(['success' => true, 'trip_id' => $tripId]);
+                echo json_encode(array('success' => true, 'trip_id' => $tripId, 'created_guide_requests' => $createdGuideRequests));
                 exit;
             }
             header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Trip submitted.'));
@@ -357,7 +580,7 @@ class TouristController {
                     $sql = 'INSERT INTO trips (user_id, customer_name, number_of_people, start_date, destination, number_of_days, status)
                             VALUES (?, ?, ?, ?, ?, ?, ?)';
                     $stmt = $this->db->prepare($sql);
-                    $stmt->execute([
+                    $stmt->execute(array(
                         $userId,
                         $customerName,
                         $numPeople,
@@ -365,15 +588,65 @@ class TouristController {
                         $destination,
                         $numDays,
                         'pending',
-                    ]);
+                    ));
                     $tripId = (int) $this->db->lastInsertId();
+                    $_SESSION['last_trip_id'] = $tripId;
+
+                    // Record submission snapshot + initial payment status in trip_submissions (fallback insert path).
+                    $this->tripSubmissionUpsert($tripId, $userId, array(
+                        'trip_id' => $tripId,
+                        'user_id' => $userId,
+                        'destination' => $destination,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'customer_name' => $customerName,
+                        'number_of_people' => $numPeople,
+                        'number_of_days' => $numDays,
+                        'budget_lkr' => $budgetLkr,
+                        'payment_status' => 'pending',
+                        'submitted_at' => date('c'),
+                    ));
+                    $createdGuideRequests = 0;
+                    if ($tripId > 0 && count($guideReqs) > 0) {
+                        try {
+                            $contact = '';
+                            try {
+                                $touristModel = new Tourist($this->db);
+                                $tourist = $touristModel->getTouristById($userId);
+                                if (is_array($tourist) && isset($tourist['contact_number'])) {
+                                    $contact = trim((string) $tourist['contact_number']);
+                                }
+                            } catch (\Throwable $eT2) {
+                                // Ignore and fall back to session.
+                            }
+                            if ($contact === '' && isset($_SESSION['user_contact'])) $contact = trim((string) $_SESSION['user_contact']);
+                            if ($contact === '' && isset($_SESSION['user_phone'])) $contact = trim((string) $_SESSION['user_phone']);
+                            if ($contact === '' && isset($_SESSION['contact_number'])) $contact = trim((string) $_SESSION['contact_number']);
+                            if ($contact === '') $contact = 'N/A';
+                            $gr = new GuideRequest($this->db);
+                            foreach ($guideReqs as $g) {
+                                $gr->customerName = $customerName;
+                                $gr->contactNumber = $contact;
+                                $gr->location = $g['location'];
+                                $gr->language = $g['language'];
+                                $gr->date = $g['date'];
+                                $gr->time = $g['time'];
+                                $gr->notes = $g['notes'];
+                                $gr->status = 'pending';
+                                if ($gr->create()) $createdGuideRequests++;
+                            }
+                        } catch (\Throwable $eG2) {
+                            error_log('tripSubmit fallback create guide requests: ' . $eG2->getMessage());
+                        }
+                    }
                     if ($ajax) {
-                        echo json_encode([
+                        echo json_encode(array(
                             'success' => true,
                             'trip_id' => $tripId,
                             'budget_persisted' => false,
                             'message' => 'Run database/alter_trips_payment_columns.sql to save your budget for online payment.',
-                        ]);
+                            'created_guide_requests' => $createdGuideRequests,
+                        ));
                         exit;
                     }
                     header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Trip submitted.'));
@@ -385,15 +658,15 @@ class TouristController {
             }
             if ($ajax) {
                 if (stripos($e->getMessage(), 'trips') !== false || stripos($e->getMessage(), 'Base table') !== false) {
-                    echo json_encode([
+                    echo json_encode(array(
                         'success' => true,
                         'persisted' => false,
                         'message' => 'Trip submitted (database trips table not available).',
-                    ]);
+                    ));
                     exit;
                 }
                 http_response_code(500);
-                echo json_encode(['success' => false, 'error' => 'Could not save your trip. Please try again.']);
+                echo json_encode(array('success' => false, 'error' => 'Could not save your trip. Please try again.'));
                 exit;
             }
             header('Location: /CeylonGo/public/tourist/customize-trip?error=' . urlencode('Could not submit trip.'));
@@ -1068,6 +1341,15 @@ class TouristController {
         $q = $this->payHereCollectReturnParams();
 
         $applied = false;
+        $returnTripId = 0;
+        try {
+            $oid = isset($q['order_id']) ? trim((string) $q['order_id']) : '';
+            if ($oid !== '' && preg_match('/^CTRIP(\d+)T\d+$/', $oid, $m)) {
+                $returnTripId = (int) $m[1];
+            }
+        } catch (\Throwable $eOid) {
+            $returnTripId = 0;
+        }
         if (!empty($q['md5sig']) && PayHere::notifyValid($q, (string) PAYHERE_MERCHANT_SECRET)) {
             if ((int) ($q['status_code'] ?? 0) === 2) {
                 $applied = $this->payHereCompleteCustomTripPayment($q);
@@ -1117,13 +1399,28 @@ class TouristController {
 
         error_log('PayHERE return: method=' . ($_SERVER['REQUEST_METHOD'] ?? '') . ' qs=' . ($_SERVER['QUERY_STRING'] ?? '') . ' keys=' . implode(',', array_keys($q)));
 
+        // If this return is for a custom trip, always go back to Trip Overview.
+        if ($returnTripId > 0) {
+            // Only tourists can view customise-trip; otherwise force login.
+            $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+            if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
+                header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/customize-trip?afterPayment=1&trip_id=' . $returnTripId));
+                exit;
+            }
+            header('Location: /CeylonGo/public/tourist/customize-trip?afterPayment=1&trip_id=' . (int) $returnTripId);
+            exit;
+        }
+
         if (!empty($_SESSION['payhere_pending_trip_id'])) {
+            $paidTripId = (int) $_SESSION['payhere_pending_trip_id'];
             unset($_SESSION['payhere_pending_trip_order_id'], $_SESSION['payhere_pending_trip_id']);
-            if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'tourist') {
+            $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
+            if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
                 header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/customize-trip'));
                 exit;
             }
-            header('Location: /CeylonGo/public/tourist/customize-trip');
+            // Send user back to Review & Submit after returning from PayHere.
+            header('Location: /CeylonGo/public/tourist/customize-trip?afterPayment=1&trip_id=' . (int) $paidTripId);
             exit;
         }
 
@@ -1203,7 +1500,10 @@ class TouristController {
                 error_log('payHereMessageAfterEmptyReturn: ' . $e->getMessage());
             }
         }
-        $_SESSION['payment_message'] = 'We could not confirm this payment automatically. Refresh My Bookings in a moment. On a real server, set a public notify URL in PayHere so status updates without this message.';
+        // Do not show technical PayHere/notify details to end users.
+        // On localhost/sandbox, return often has no parameters and notify cannot reach.
+        // If status isn't updated yet, just show a neutral message.
+        $_SESSION['payment_message'] = 'Payment received. If your booking status has not updated yet, please refresh in a moment.';
     }
 
     private function payHereNormalizeParams(array $raw): array {
@@ -1235,7 +1535,7 @@ class TouristController {
             $stmt = $this->db->prepare(
                 'SELECT id, budget_lkr, status, payhere_payment_id FROM trips WHERE id = ? LIMIT 1'
             );
-            $stmt->execute([$tripId]);
+            $stmt->execute(array($tripId));
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) {
                 return false;
@@ -1255,8 +1555,21 @@ class TouristController {
             $upd = $this->db->prepare(
                 'UPDATE trips SET status = \'confirmed\', payhere_payment_id = ?, paid_at = NOW() WHERE id = ? AND status = \'pending\''
             );
-            $upd->execute([$paymentId, $tripId]);
-            return $upd->rowCount() > 0;
+            $upd->execute(array($paymentId, $tripId));
+            $ok = $upd->rowCount() > 0;
+            if ($ok) {
+                try {
+                    $stmtU = $this->db->prepare('SELECT user_id FROM trips WHERE id = ? LIMIT 1');
+                    $stmtU->execute(array($tripId));
+                    $urow = $stmtU->fetch(PDO::FETCH_ASSOC);
+                    $uid = $urow && isset($urow['user_id']) ? (int) $urow['user_id'] : 0;
+                    if ($uid > 0) {
+                        $this->tripSubmissionSetPaymentStatus($tripId, $uid, 'completed');
+                    }
+                } catch (\Throwable $e2) {
+                }
+            }
+            return $ok;
         } catch (PDOException $e) {
             error_log('payHereCompleteCustomTripPayment: ' . $e->getMessage());
             return false;

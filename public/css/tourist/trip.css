@@ -2114,6 +2114,90 @@
   line-height: 1.4;
 }
 
+/* After payment: compact completion card (Trip Overview sidebar) */
+.trip-paid-card {
+  margin: 0 14px 14px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.trip-paid-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.trip-paid-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.trip-paid-card__date {
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.trip-paid-card__title {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.trip-paid-card__meta {
+  margin: 0;
+  padding-left: 18px;
+  color: #111827;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.trip-paid-card__meta li {
+  margin: 6px 0;
+}
+
+.trip-paid-card__note {
+  margin: 12px 0 0;
+  color: #111827;
+  font-size: 0.9rem;
+}
+
+.trip-paid-card__actions {
+  margin-top: 12px;
+}
+
+.trip-paid-card__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 2px solid #93c5fd;
+  color: #1d4ed8;
+  background: #ffffff;
+  font-weight: 800;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.trip-paid-card__btn:hover {
+  background: #eff6ff;
+}
+
 /* Payments step — mirrors public/tourist/payment.php layout */
 .trip-step-card--payments {
   max-width: 100%;
