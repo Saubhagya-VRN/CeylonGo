@@ -40,7 +40,6 @@ body {
 .page-wrapper {
   display: flex;
   flex: 1;
-  min-height: calc(100vh - var(--navbar-height));
   position: relative;
 }
 
@@ -48,10 +47,8 @@ body {
   flex: 1;
   margin-left: var(--sidebar-width);
   padding: 30px;
-  padding-bottom: 100px;
   background: var(--bg-light);
   transition: margin-left 0.3s ease;
-  min-height: calc(100vh - var(--navbar-height));
 }
 
 /* ===== WELCOME SECTION ===== */

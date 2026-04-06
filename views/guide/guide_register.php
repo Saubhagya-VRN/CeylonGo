@@ -151,6 +151,14 @@ if (isset($_SESSION['register_success'])) {
               </div>
             </div>
 
+            <div class="form-group">
+              <label>Date of Birth <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <input type="date" name="dob" required max="<?php echo date('Y-m-d'); ?>">
+                <i class="fa-solid fa-calendar"></i>
+              </div>
+            </div>
+
             <div class="form-group full-width">
               <label>Profile Photo <span class="required">*</span></label>
               <div class="file-upload">

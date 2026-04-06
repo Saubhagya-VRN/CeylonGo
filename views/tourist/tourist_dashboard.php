@@ -623,7 +623,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                   <div class="box-title">Add a Tour Guide?</div>
                   <div class="btn-group">
                     <input type="hidden" name="guide[]" class="guide-value" value="No">
-                    <button type="button" class="btn-white guide-yes-btn" onclick="goToGuideRequestForm()">
+                    <button type="button" class="btn-white guide-yes-btn" onclick="goToGuideRequestForm(this)">
                       <span class="btn-icon">✓</span>
                       <span>Yes</span>
                     </button>
@@ -2148,8 +2148,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Guide Modal Functions
     let currentGuideGroup = null;
 
-    function goToGuideRequestForm() {
-      currentGuideGroup = event.target.closest('.trip-group');
+    function goToGuideRequestForm(button) {
+      if (button && button.closest) {
+        currentGuideGroup = button.closest('.trip-group');
+      } else if (typeof event !== 'undefined' && event.target) {
+        currentGuideGroup = event.target.closest('.trip-group');
+      }
       
       // Set minimum date to today
       const today = new Date().toISOString().split('T')[0];

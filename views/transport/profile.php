@@ -107,6 +107,8 @@ $uploadDir = dirname(__DIR__, 2) . "/uploads/";
             try {
                 if ($userModel->updateUser()) {
                     $_SESSION['profile_message'] = "Profile updated successfully!";
+                    // Update session user_name
+                    $_SESSION['user_name'] = trim($_POST['full_name']);
                 } else {
                     $_SESSION['profile_error'] = "Failed to update profile. No rows affected.";
                 }

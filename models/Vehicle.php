@@ -162,19 +162,63 @@ class Vehicle {
                   ORDER BY avg_rating DESC, review_count DESC, completed_trips DESC, v.psg_capacity ASC
                   LIMIT 1";
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":vehicle_type", $vehicleTypeId);
-        $stmt->bindParam(":num_people", $numPeople, PDO::PARAM_INT);
-        $stmt->bindParam(":booking_date", $date);
-        
-        // Bind exclude params
-        foreach ($excludeDrivers as $i => $id) {
-            $stmt->bindValue(":exclude_$i", trim($id));
+        try {
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":vehicle_type", $vehicleTypeId);
+            $stmt->bindParam(":num_people", $numPeople, PDO::PARAM_INT);
+            $stmt->bindParam(":booking_date", $date);
+
+            // Bind exclude params
+            foreach ($excludeDrivers as $i => $id) {
+                $stmt->bindValue(":exclude_$i", trim($id));
+            }
+
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ?: null;
+        } catch (PDOException $e) {
+            // If transport_reviews is missing, retry without review aggregation.
+            if (strpos($e->getMessage(), 'transport_reviews') !== false) {
+                $fallbackQuery = "SELECT v.vehicle_no, v.user_id, v.vehicle_type, v.psg_capacity, v.image AS vehicle_image,
+                                  tu.full_name AS driver_name, tu.contact_no AS driver_contact, tu.profile_image AS driver_image,
+                                  0 AS avg_rating,
+                                  0 AS review_count,
+                                  COALESCE(ct.completed_trips, 0) AS completed_trips
+                                  FROM " . $this->table . " v
+                                  INNER JOIN transport_users tu ON TRIM(v.user_id) = TRIM(tu.user_id)
+                                  LEFT JOIN (
+                                      SELECT assigned_driver_id, COUNT(*) AS completed_trips
+                                      FROM transport_requests
+                                      WHERE status = 'completed'
+                                      GROUP BY assigned_driver_id
+                                  ) ct ON TRIM(v.user_id) = TRIM(ct.assigned_driver_id)
+                                  WHERE v.vehicle_type = :vehicle_type
+                                    AND v.psg_capacity >= :num_people
+                                    AND TRIM(v.user_id) NOT IN (
+                                        SELECT TRIM(tr.assigned_driver_id)
+                                        FROM transport_requests tr
+                                        WHERE tr.assigned_driver_id IS NOT NULL
+                                          AND tr.status IN ('confirmed', 'pending')
+                                          AND tr.date = :booking_date
+                                    )
+                                    $excludeClause
+                                  ORDER BY completed_trips DESC, v.psg_capacity ASC
+                                  LIMIT 1";
+
+                $stmt = $this->conn->prepare($fallbackQuery);
+                $stmt->bindParam(":vehicle_type", $vehicleTypeId);
+                $stmt->bindParam(":num_people", $numPeople, PDO::PARAM_INT);
+                $stmt->bindParam(":booking_date", $date);
+                foreach ($excludeDrivers as $i => $id) {
+                    $stmt->bindValue(":exclude_$i", trim($id));
+                }
+                $stmt->execute();
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                return $result ?: null;
+            }
+
+            error_log('Error selecting available vehicle: ' . $e->getMessage());
+            return null;
         }
-        
-        $stmt->execute();
-        
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ?: null;
     }
 }
