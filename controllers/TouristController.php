@@ -49,6 +49,96 @@ class TouristController {
         }
     }
 
+    /**
+     * Create transport_requests rows from the trip wizard snapshot (after trip submit), like guide_requests.
+     *
+     * @param int   $userId
+     * @param string $customerName
+     * @param array|null $wizDecoded decoded wizard_snapshot
+     * @return int number of rows inserted
+     */
+    private function persistTransportRequestsFromWizard($userId, $customerName, $wizDecoded) {
+        $created = 0;
+        if (!is_array($wizDecoded) || !isset($wizDecoded['legs']) || !is_array($wizDecoded['legs'])) {
+            return $created;
+        }
+        $userId = (int) $userId;
+        $customerName = trim((string) $customerName);
+        if ($userId <= 0 || $customerName === '') {
+            return $created;
+        }
+        try {
+            $contact = '';
+            try {
+                $touristModel = new Tourist($this->db);
+                $tourist = $touristModel->getTouristById($userId);
+                if (is_array($tourist) && isset($tourist['contact_number'])) {
+                    $contact = trim((string) $tourist['contact_number']);
+                }
+            } catch (\Throwable $eT) {
+                // Ignore and fall back to session.
+            }
+            if ($contact === '' && isset($_SESSION['user_contact'])) {
+                $contact = trim((string) $_SESSION['user_contact']);
+            }
+            if ($contact === '' && isset($_SESSION['user_phone'])) {
+                $contact = trim((string) $_SESSION['user_phone']);
+            }
+            if ($contact === '' && isset($_SESSION['contact_number'])) {
+                $contact = trim((string) $_SESSION['contact_number']);
+            }
+            if ($contact === '') {
+                $contact = 'N/A';
+            }
+
+            $req = new TransportRequest($this->db);
+            foreach ($wizDecoded['legs'] as $leg) {
+                if (!isset($leg['stops']) || !is_array($leg['stops'])) {
+                    continue;
+                }
+                foreach ($leg['stops'] as $stop) {
+                    $t = isset($stop['transport']) ? $stop['transport'] : null;
+                    if (!is_array($t) || !empty($t['notRequested'])) {
+                        continue;
+                    }
+                    $pickup = isset($t['pickup']) ? trim((string) $t['pickup']) : '';
+                    $dropoff = isset($t['dropoff']) ? trim((string) $t['dropoff']) : '';
+                    $date = isset($t['date']) ? trim((string) $t['date']) : '';
+                    $vehicle = isset($t['vehicle']) ? trim((string) $t['vehicle']) : '';
+                    $time = isset($t['time']) ? trim((string) $t['time']) : '';
+                    $people = isset($t['people']) ? max(1, (int) $t['people']) : 1;
+                    $notes = isset($t['notes']) ? trim((string) $t['notes']) : '';
+                    $fareRaw = isset($t['fare']) ? $t['fare'] : null;
+                    $distRaw = isset($t['distance']) ? $t['distance'] : null;
+                    if ($pickup === '' || $dropoff === '' || $date === '' || $vehicle === '' || $time === '') {
+                        continue;
+                    }
+                    $req->userId = $userId;
+                    $req->customerName = $customerName;
+                    $req->contactNumber = $contact;
+                    $req->vehicleType = $vehicle;
+                    $req->date = $date;
+                    $req->pickupTime = (strlen($time) === 5) ? $time . ':00' : $time;
+                    $req->pickupLocation = $pickup;
+                    $req->dropoffLocation = $dropoff;
+                    $req->numPeople = $people;
+                    $req->notes = $notes;
+                    $req->estimatedFare = ($fareRaw !== null && $fareRaw !== '')
+                        ? (string) (float) $fareRaw : null;
+                    $req->distance = ($distRaw !== null && $distRaw !== '')
+                        ? (string) (float) $distRaw : null;
+                    $req->status = 'pending';
+                    if ($req->addRequest()) {
+                        $created++;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('persistTransportRequestsFromWizard: ' . $e->getMessage());
+        }
+        return $created;
+    }
+
     private function getTripBudgetFromSubmission($tripId, $userId) {
         $tripId = (int) $tripId;
         $userId = (int) $userId;
@@ -194,6 +284,19 @@ class TouristController {
         } catch (\Throwable $e) {
             error_log('trip latest id: ' . $e->getMessage());
         }
+
+        // If the latest trip has a submission snapshot, we can resume the wizard after logout/login.
+        $hasSubmittedSnapshot = false;
+        try {
+            if ($lastTripId > 0) {
+                $stmtS = $this->db->prepare('SELECT 1 FROM trip_submissions WHERE trip_id = ? AND user_id = ? LIMIT 1');
+                $stmtS->execute(array((int) $lastTripId, $uidTripPage));
+                $hasSubmittedSnapshot = (bool) $stmtS->fetchColumn();
+            }
+        } catch (\Throwable $eS) {
+            // trip_submissions may not exist in older installs; don't block the page.
+            $hasSubmittedSnapshot = false;
+        }
         view('tourist/trip', array(
             'tourist_data' => $tourist_data,
             'user_name' => $user_name,
@@ -201,6 +304,7 @@ class TouristController {
             'payhere_per_transaction_max_lkr' => $payhereMax,
             'bank_transfer_details' => $bankDetails,
             'last_trip_id' => $lastTripId,
+            'has_submitted_snapshot' => $hasSubmittedSnapshot,
         ));
     }
 
@@ -525,6 +629,7 @@ class TouristController {
         }
 
         $snapshot = null;
+        $guideStatuses = array();
         try {
             $stmtJ = $this->db->prepare(
                 'SELECT trip_json FROM trip_submissions WHERE trip_id = ? AND user_id = ? ORDER BY id DESC LIMIT 1'
@@ -539,6 +644,50 @@ class TouristController {
             }
         } catch (\Throwable $e) {
             error_log('tripPaymentStatus snapshot: ' . $e->getMessage());
+        }
+
+        // Also return guide request statuses so the tourist can see Approved/Rejected after logout/login.
+        try {
+            if (is_array($snapshot)
+                && isset($snapshot['wizard_snapshot'])
+                && is_array($snapshot['wizard_snapshot'])
+                && isset($snapshot['wizard_snapshot']['legs'])
+                && is_array($snapshot['wizard_snapshot']['legs'])) {
+                foreach ($snapshot['wizard_snapshot']['legs'] as $leg) {
+                    if (!is_array($leg) || !isset($leg['stops']) || !is_array($leg['stops'])) continue;
+                    foreach ($leg['stops'] as $stop) {
+                        if (!is_array($stop) || !isset($stop['guide']) || !is_array($stop['guide'])) continue;
+                        $g = $stop['guide'];
+                        if (!empty($g['notRequested'])) continue;
+                        $loc = isset($g['location']) ? trim((string) $g['location']) : '';
+                        $dt = isset($g['date']) ? trim((string) $g['date']) : '';
+                        $lang = isset($g['language']) ? trim((string) $g['language']) : '';
+                        $tm = isset($g['time']) ? trim((string) $g['time']) : '';
+                        if ($loc === '' || $dt === '' || $lang === '' || $tm === '') continue;
+                        // Latest matching request for this tourist.
+                        $st = '';
+                        try {
+                            $stmtGs = $this->db->prepare(
+                                'SELECT status FROM guide_requests WHERE tourist_id = ? AND location = ? AND language = ? AND date = ? AND time = ? ORDER BY id DESC LIMIT 1'
+                            );
+                            $stmtGs->execute(array($uid, $loc, $lang, $dt, $tm));
+                            $st = (string) ($stmtGs->fetchColumn() ?: '');
+                        } catch (\Throwable $eGs) {
+                            // Ignore if table missing in some installs.
+                            $st = '';
+                        }
+                        $guideStatuses[] = array(
+                            'location' => $loc,
+                            'date' => $dt,
+                            'language' => $lang,
+                            'time' => $tm,
+                            'status' => $st !== '' ? $st : 'pending',
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $eGAll) {
+            error_log('tripPaymentStatus guide statuses: ' . $eGAll->getMessage());
         }
 
         $stLc = strtolower((string) (isset($row['status']) ? $row['status'] : ''));
@@ -567,6 +716,7 @@ class TouristController {
                 'payment_state' => $paymentState,
             ),
             'snapshot' => $snapshot,
+            'guide_statuses' => $guideStatuses,
         ));
         exit;
     }
@@ -682,6 +832,10 @@ class TouristController {
             // Record submission snapshot + initial payment status in trip_submissions.
             $this->tripSubmissionUpsert($tripId, $userId, $submissionArr);
 
+            $wizForTransport = (isset($submissionArr['wizard_snapshot']) && is_array($submissionArr['wizard_snapshot']))
+                ? $submissionArr['wizard_snapshot'] : null;
+            $createdTransportRequests = $this->persistTransportRequestsFromWizard($userId, $customerName, $wizForTransport);
+
             $createdGuideRequests = 0;
             if ($tripId > 0 && count($guideReqs) > 0) {
                 try {
@@ -702,6 +856,9 @@ class TouristController {
 
                     $gr = new GuideRequest($this->db);
                     foreach ($guideReqs as $g) {
+                        // Assign an available guide so it appears in guide pending lists.
+                        $assigned = null;
+                        try { $assigned = $gr->findAvailableGuide($g['language']); } catch (\Throwable $eAsn) { $assigned = null; }
                         $gr->customerName = $customerName;
                         $gr->contactNumber = $contact;
                         $gr->location = $g['location'];
@@ -710,6 +867,8 @@ class TouristController {
                         $gr->time = $g['time'];
                         $gr->notes = $g['notes'];
                         $gr->status = 'pending';
+                        $gr->tourist_id = $userId;
+                        $gr->guide_id = (is_array($assigned) && isset($assigned['id'])) ? (int) $assigned['id'] : null;
                         if ($gr->create()) {
                             $createdGuideRequests++;
                         }
@@ -719,7 +878,12 @@ class TouristController {
                 }
             }
             if ($ajax) {
-                echo json_encode(array('success' => true, 'trip_id' => $tripId, 'created_guide_requests' => $createdGuideRequests));
+                echo json_encode(array(
+                    'success' => true,
+                    'trip_id' => $tripId,
+                    'created_guide_requests' => $createdGuideRequests,
+                    'created_transport_requests' => $createdTransportRequests,
+                ));
                 exit;
             }
             header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Trip submitted.'));
@@ -765,6 +929,11 @@ class TouristController {
                     }
                     // Record submission snapshot + initial payment status in trip_submissions (fallback insert path).
                     $this->tripSubmissionUpsert($tripId, $userId, $submissionArrFb);
+
+                    $wizForTransportFb = (isset($submissionArrFb['wizard_snapshot']) && is_array($submissionArrFb['wizard_snapshot']))
+                        ? $submissionArrFb['wizard_snapshot'] : null;
+                    $createdTransportRequests = $this->persistTransportRequestsFromWizard($userId, $customerName, $wizForTransportFb);
+
                     $createdGuideRequests = 0;
                     if ($tripId > 0 && count($guideReqs) > 0) {
                         try {
@@ -784,6 +953,9 @@ class TouristController {
                             if ($contact === '') $contact = 'N/A';
                             $gr = new GuideRequest($this->db);
                             foreach ($guideReqs as $g) {
+                                // Assign an available guide so it appears in guide pending lists.
+                                $assigned = null;
+                                try { $assigned = $gr->findAvailableGuide($g['language']); } catch (\Throwable $eAsn2) { $assigned = null; }
                                 $gr->customerName = $customerName;
                                 $gr->contactNumber = $contact;
                                 $gr->location = $g['location'];
@@ -792,6 +964,8 @@ class TouristController {
                                 $gr->time = $g['time'];
                                 $gr->notes = $g['notes'];
                                 $gr->status = 'pending';
+                                $gr->tourist_id = $userId;
+                                $gr->guide_id = (is_array($assigned) && isset($assigned['id'])) ? (int) $assigned['id'] : null;
                                 if ($gr->create()) $createdGuideRequests++;
                             }
                         } catch (\Throwable $eG2) {
@@ -805,6 +979,7 @@ class TouristController {
                             'budget_persisted' => false,
                             'message' => 'Run database/alter_trips_payment_columns.sql to save your budget for online payment.',
                             'created_guide_requests' => $createdGuideRequests,
+                            'created_transport_requests' => $createdTransportRequests,
                         ));
                         exit;
                     }
@@ -1025,6 +1200,8 @@ class TouristController {
             }
         }
 
+        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
         $request = new TransportRequest($this->db);
         $request->userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
         $request->customerName = trim($data['customerName'] ?? '');
@@ -1040,7 +1217,6 @@ class TouristController {
         $request->estimatedFare = isset($data['estimatedFare']) && $data['estimatedFare'] !== '' ? $data['estimatedFare'] : null;
         $request->distance = isset($data['distance']) && $data['distance'] !== '' ? $data['distance'] : null;
 
-        $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         if ($request->addRequest()) {
             if ($isAjax) {
                 header('Content-Type: application/json');
@@ -2492,6 +2668,12 @@ class TouristController {
             $guideRequest->date = $data['date'];
             $guideRequest->time = $data['time'];
             $guideRequest->notes = $data['notes'] ?? '';
+            $guideRequest->status = 'pending';
+            $guideRequest->tourist_id = (isset($_SESSION['user_id']) && ($_SESSION['user_role'] ?? '') === 'tourist') ? (int) $_SESSION['user_id'] : null;
+            // Assign an available guide so the request appears under that guide's pending list.
+            $assigned = null;
+            try { $assigned = $guideRequest->findAvailableGuide($guideRequest->language); } catch (\Throwable $eAsn) { $assigned = null; }
+            $guideRequest->guide_id = (is_array($assigned) && isset($assigned['id'])) ? (int) $assigned['id'] : null;
 
             if ($guideRequest->create()) {
                 if ($isAjax) {

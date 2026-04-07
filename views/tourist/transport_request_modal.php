@@ -20,6 +20,7 @@ $vehicle_types = [
     </header>
     <div id="tr_formWrap" class="trip-modal-form-wrap">
     <form action="/CeylonGo/public/tourist/transport-services" method="post" class="trip-modal-form" id="transportRequestForm">
+      <input type="hidden" name="trip_id" id="transportRequestTripId" value="<?php echo isset($last_trip_id) ? (int) $last_trip_id : ''; ?>">
       <div class="trip-modal-form-grid">
         <div class="trip-modal-col">
           <div class="trip-modal-field">

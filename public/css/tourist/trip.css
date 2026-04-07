@@ -52,6 +52,29 @@
   text-align: right;
 }
 
+.trip-clear-all-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.06);
+  color: #b91c1c;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+}
+.trip-clear-all-btn:hover {
+  background: rgba(220, 38, 38, 0.10);
+  border-color: rgba(220, 38, 38, 0.5);
+}
+.trip-clear-all-btn:active {
+  transform: translateY(1px);
+}
+
 .trip-page-title.trip-title-centered {
   flex: 1;
   min-width: 0;
@@ -652,6 +675,19 @@
   z-index: 9999;
   display: none;
 }
+
+/* Transport / tour-guide modals: avoid overflow + grid breaking absolute positioning */
+.trip-stop-location-suggestions.trip-stop-location-suggestions--modal-fixed {
+  position: fixed;
+  margin-top: 0;
+  top: auto;
+  left: auto;
+  right: auto;
+  z-index: 10050;
+  max-height: min(220px, calc(100vh - 32px));
+}
+
+/* (modal-flow removed) */
 .trip-stop-location-suggestion-item {
   padding: 10px 12px 10px 36px;
   font-size: 14px;

@@ -91,6 +91,7 @@ $main_cities = array(
           <i class="fa-solid fa-wand-magic-sparkles"></i> Customise Your Dream Trip
         </h1>
         <div class="trip-stepper-next">
+          <button type="button" class="trip-clear-all-btn" id="tripClearAllDataBtn" title="Clear all data">Clear all data</button>
           <button type="button" class="btn-next">Next <i class="fa-solid fa-chevron-right"></i></button>
         </div>
       </div>
@@ -464,6 +465,7 @@ $main_cities = array(
   <script>
   document.addEventListener('DOMContentLoaded', function () {
     var serverLastTid = <?php echo (int) $last_trip_id; ?>;
+    var serverHasSubmittedSnapshot = <?php echo !empty($has_submitted_snapshot) ? 'true' : 'false'; ?>;
     try {
       var paramsBoot = new URLSearchParams(window.location.search || '');
       var urlTidBoot = parseInt(paramsBoot.get('trip_id') || '0', 10) || 0;
@@ -482,9 +484,40 @@ $main_cities = array(
         sessionStorage.setItem('ceylonTripWizardTripId', String(serverLastTid));
       }
     } catch (e0) {}
+
+    // Robust resume after logout/login: if server says the latest trip has a submission snapshot,
+    // jump to Verify bookings and restore snapshot (even if browser storage was cleared/mismatched).
+    try {
+      if (serverHasSubmittedSnapshot && serverLastTid > 0) {
+        sessionStorage.setItem('ceylonTripWizardTripId', String(serverLastTid));
+        // Don't force submitted=1 here; we will set it after snapshot restore.
+      }
+    } catch (eSrv) {}
     var hamburger = document.getElementById('tripHamburgerBtn');
     var sidebar = document.getElementById('tripSidebar');
     var overlay = document.getElementById('tripSidebarOverlay');
+
+    var clearAllBtn = document.getElementById('tripClearAllDataBtn');
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', function () {
+        var ok = confirm('Clear all trip wizard data on this device?\n\nThis will remove your saved draft and reset the wizard to Step 1. Submitted trips remain in the database.');
+        if (!ok) return;
+        try { localStorage.removeItem('ceylonTripWizardDraftV2'); } catch (e1) {}
+        try {
+          sessionStorage.removeItem('ceylonTripWizardSubmitted');
+          sessionStorage.removeItem('ceylonTripWizardTripId');
+          sessionStorage.removeItem('ceylonTripWizardFingerprint');
+          sessionStorage.removeItem('ceylonTripWizardProceededToPayment');
+        } catch (e2) {}
+        try {
+          // Hard reset via reload into step 1 so all fields/steps are empty.
+          window.location.href = '/CeylonGo/public/tourist/customize-trip?step=1';
+        } catch (e3) {
+          window.location.href = '/CeylonGo/public/tourist/customize-trip';
+        }
+      });
+    }
+
     function toggleSidebar() {
       if (hamburger) hamburger.classList.toggle('active');
       if (sidebar) sidebar.classList.toggle('active');
@@ -621,6 +654,8 @@ $main_cities = array(
           var row = { location: loc, transport: null, guide: null };
           if (tYes) {
             var fareNum = parseFareFromStop(card);
+            var distEl = card.querySelector('.trip-stop-tr-distance');
+            var distVal = distEl && distEl.value ? parseFloat(String(distEl.value).replace(/[^0-9.]/g, '')) : NaN;
             row.transport = {
               pickup: ((card.querySelector('.trip-stop-pickup') || {}).value || '').trim(),
               dropoff: ((card.querySelector('.trip-stop-dropoff') || {}).value || '').trim(),
@@ -628,6 +663,8 @@ $main_cities = array(
               vehicle: ((card.querySelector('.trip-stop-tr-vehicle') || {}).value || '').trim(),
               time: ((card.querySelector('.trip-stop-tr-time') || {}).value || '').trim(),
               people: ((card.querySelector('.trip-stop-tr-people') || {}).value || '').trim(),
+              notes: ((card.querySelector('.trip-stop-tr-notes') || {}).value || '').trim(),
+              distance: isNaN(distVal) ? null : distVal,
               fare: fareNum
             };
           } else if (tNo) {
@@ -1376,6 +1413,7 @@ $main_cities = array(
       function mapBookingStatus(raw) {
         var s = (raw || '').toString().trim().toLowerCase();
         if (!s) return { text: '—', cls: 'trip-sum-status--muted' };
+        if (s === 'queued') return { text: 'Pending', cls: 'trip-sum-status--pending' };
         if (s === 'pending') return { text: 'Pending', cls: 'trip-sum-status--pending' };
         if (s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted') {
           return { text: 'Accepted', cls: 'trip-sum-status--accepted' };
@@ -1515,6 +1553,15 @@ $main_cities = array(
     var tripWizardPendingInitialStep = 1;
     var tripWizardUrlForcedStep = false;
     var tripWizardDraftTimer = null;
+
+    function syncTransportRequestTripIdHidden() {
+      var hid = document.getElementById('transportRequestTripId');
+      if (!hid) return;
+      try {
+        var tid = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim();
+        if (tid) hid.value = tid;
+      } catch (e) {}
+    }
 
     function fmtTripRefundLabels(paidAtRaw) {
       var paidLabel = '—';
@@ -1927,6 +1974,14 @@ $main_cities = array(
               if (data.trip_id != null) {
                 sessionStorage.setItem(tripWizardTripIdKey, String(data.trip_id));
               }
+              try {
+                document.querySelectorAll('.trip-stop-card').forEach(function (card) {
+                  var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
+                  if (!trYes || !trYes.classList.contains('selected')) return;
+                  var ts = (card.getAttribute('data-transport-booking-status') || '').trim();
+                  if (ts === 'queued') card.setAttribute('data-transport-booking-status', 'pending');
+                });
+              } catch (eTr) {}
               btn.disabled = true;
               btn.textContent = 'Submitted';
               if (okEl) { okEl.hidden = false; }
@@ -2028,6 +2083,8 @@ $main_cities = array(
         trVehicle: tv('.trip-stop-tr-vehicle'),
         trTime: tv('.trip-stop-tr-time'),
         trPeople: tv('.trip-stop-tr-people'),
+        trNotes: tv('.trip-stop-tr-notes'),
+        trDistance: tv('.trip-stop-tr-distance'),
         guideLocation: tv('.trip-stop-guide-location'),
         guideDate: tv('.trip-stop-guide-date'),
         guideLanguage: tv('.trip-stop-guide-language'),
@@ -2101,6 +2158,8 @@ $main_cities = array(
       set('.trip-stop-tr-vehicle', d.trVehicle);
       set('.trip-stop-tr-time', d.trTime);
       set('.trip-stop-tr-people', d.trPeople);
+      set('.trip-stop-tr-notes', d.trNotes);
+      set('.trip-stop-tr-distance', d.trDistance);
       set('.trip-stop-guide-date', d.guideDate);
       set('.trip-stop-guide-language', d.guideLanguage);
       set('.trip-stop-guide-time', d.guideTime);
@@ -2195,6 +2254,143 @@ $main_cities = array(
         updateStopsHeading3();
       } catch (eH) {}
     }
+
+    function applyWizardSnapshotToUI(ws) {
+      if (!ws || !Array.isArray(ws.legs)) return false;
+
+      function setVal(id, v) {
+        var el = document.getElementById(id);
+        if (el) el.value = v != null ? String(v) : '';
+      }
+      function syncChoiceCards(panelSel, cardSel, attr, value) {
+        try {
+          var p = document.querySelector(panelSel);
+          if (!p) return;
+          p.querySelectorAll(cardSel).forEach(function (c) {
+            var on = (c.getAttribute(attr) || '') === value;
+            c.classList.toggle('selected', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+          });
+        } catch (e) {}
+      }
+
+      // Party + type
+      setVal('trip_type', ws.trip_type || '');
+      syncChoiceCards('.trip-step-panel[data-step="1"]', '.trip-type-card', 'data-type', String(ws.trip_type || ''));
+      setVal('adults', ws.adults != null ? ws.adults : '');
+      setVal('children', ws.children != null ? ws.children : '');
+      setVal('infants', ws.infants != null ? ws.infants : '');
+
+      // Destinations toggles
+      var legCount = ws.legs.length || 1;
+      setVal('add_another_destination', legCount >= 2 ? 'yes' : 'no');
+      syncChoiceCards('.trip-step-panel[data-step="4"]', '.trip-another-dest-card', 'data-value', legCount >= 2 ? 'yes' : 'no');
+      setVal('add_third_destination', legCount >= 3 ? 'yes' : 'no');
+      syncChoiceCards('.trip-step-panel[data-step="7"]', '.trip-another-dest-card', 'data-value', legCount >= 3 ? 'yes' : 'no');
+
+      // Leg 1
+      if (ws.legs[0]) {
+        setVal('dest_primary', ws.legs[0].destination || '');
+        setVal('start_date', ws.legs[0].start_date || '');
+        setVal('end_date', ws.legs[0].end_date || '');
+      }
+      // Leg 2
+      if (ws.legs[1]) {
+        setVal('dest_primary_2', ws.legs[1].destination || '');
+        setVal('start_date_2', ws.legs[1].start_date || '');
+        setVal('end_date_2', ws.legs[1].end_date || '');
+      }
+      // Leg 3
+      if (ws.legs[2]) {
+        setVal('dest_primary_3', ws.legs[2].destination || '');
+        setVal('start_date_3', ws.legs[2].start_date || '');
+        setVal('end_date_3', ws.legs[2].end_date || '');
+      }
+
+      // Rebuild stops from snapshot
+      function clearList(listId) {
+        var list = document.getElementById(listId);
+        if (list) list.innerHTML = '';
+      }
+      clearList('tripStopsList');
+      clearList('tripStopsList_2');
+      clearList('tripStopsList_3');
+      stopIndex = 0;
+      stopIndex2 = 0;
+      stopIndex3 = 0;
+
+      function listIdForLeg(n) {
+        if (n === 2) return 'tripStopsList_2';
+        if (n === 3) return 'tripStopsList_3';
+        return 'tripStopsList';
+      }
+
+      ws.legs.forEach(function (leg, li) {
+        var lid = listIdForLeg(li + 1);
+        var stops = Array.isArray(leg && leg.stops) ? leg.stops : [];
+        stops.forEach(function (st) {
+          st = st || {};
+          var t = st.transport;
+          var g = st.guide;
+          var tNeeded = '';
+          if (t && typeof t === 'object') tNeeded = t.notRequested ? 'no' : 'yes';
+          var gNeeded = '';
+          if (g && typeof g === 'object') gNeeded = g.notRequested ? 'no' : 'yes';
+
+          addStopCard({
+            location: st.location || '',
+            transportNeeded: tNeeded,
+            tourGuideNeeded: gNeeded,
+            pickup: (t && t.pickup) ? t.pickup : '',
+            dropoff: (t && t.dropoff) ? t.dropoff : '',
+            guideLocation: (g && g.location) ? g.location : '',
+            fareAmount: (t && t.fare != null) ? String(t.fare) : ''
+          }, { listId: lid });
+
+          var list = document.getElementById(lid);
+          if (!list) return;
+          var cards = list.querySelectorAll('.trip-stop-card');
+          var card = cards[cards.length - 1];
+          if (!card) return;
+
+          function setH(sel, v) {
+            var el = card.querySelector(sel);
+            if (el) el.value = v != null ? String(v).trim() : '';
+          }
+
+          if (t && typeof t === 'object' && !t.notRequested) {
+            setH('.trip-stop-tr-date', t.date || '');
+            setH('.trip-stop-tr-vehicle', t.vehicle || '');
+            setH('.trip-stop-tr-time', t.time || '');
+            setH('.trip-stop-tr-people', t.people || '');
+            setH('.trip-stop-tr-notes', t.notes || '');
+            setH('.trip-stop-tr-distance', t.distance != null ? String(t.distance) : '');
+            card.setAttribute('data-transport-booking-status', 'pending');
+          }
+          if (g && typeof g === 'object' && !g.notRequested) {
+            setH('.trip-stop-guide-location', g.location || '');
+            setH('.trip-stop-guide-date', g.date || '');
+            setH('.trip-stop-guide-language', g.language || '');
+            setH('.trip-stop-guide-time', g.time || '');
+            setH('.trip-stop-guide-notes', g.notes || '');
+            card.setAttribute('data-guide-booking-status', 'pending');
+            card.setAttribute('data-guide-queued', '0');
+          }
+
+          try { syncStopCardFields(card); } catch (eS) {}
+          try { updateStopCardSummary(card); } catch (eU) {}
+        });
+      });
+
+      try {
+        updateStopsHeading();
+        updateStopsHeading2();
+        updateStopsHeading3();
+      } catch (eH) {}
+      try { updateLegStepperVisibility(); } catch (eV) {}
+      try { updateAddStopsButtonLabel(); } catch (eB) {}
+      return true;
+    }
     function loadTripWizardDraft() {
       try {
         var s = localStorage.getItem(tripWizardDraftKey);
@@ -2219,106 +2415,174 @@ $main_cities = array(
       try {
         syncTripWizardSubmissionState();
         var submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
+        var tid = '';
+        try { tid = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (eTid) { tid = ''; }
+        if (!tid && typeof serverLastTid !== 'undefined' && serverLastTid > 0) tid = String(serverLastTid);
 
-        // Build booking status list (transport/tour guide per stop + hotel per destination).
-        // For now, do not depend on mapBookingStatus; keep it simple.
-        var pendingCount = 0;
-        function bumpPending() { pendingCount++; }
-
-        var rows = [];
-        var globalStopIdx = 0;
-        var legs = [];
-        legs.push({ num: 1, stopsId: 'tripStopsList', accBodyId: 'tripAccommodationSummaryBody' });
-        if (typeof wantsSecondDestination === 'function' && wantsSecondDestination()) {
-          legs.push({ num: 2, stopsId: 'tripStopsList_2', accBodyId: 'trip2AccommodationSummaryBody' });
-        }
-        if (typeof wantsThirdDestination === 'function' && wantsThirdDestination()) {
-          legs.push({ num: 3, stopsId: 'tripStopsList_3', accBodyId: 'trip3AccommodationSummaryBody' });
-        }
-
-        legs.forEach(function (leg) {
-          var stopsEl = document.getElementById(leg.stopsId);
-          if (stopsEl) {
-            stopsEl.querySelectorAll('.trip-stop-card').forEach(function (card) {
-              globalStopIdx++;
-              var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
-              var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
-              var trOn = trYes && trYes.classList.contains('selected');
-              var gOn = gYes && gYes.classList.contains('selected');
-              if (trOn) {
-                bumpPending();
-                rows.push({ label: 'Stop ' + globalStopIdx + ' — Transport provider', disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
-              }
-              if (gOn) {
-                bumpPending();
-                rows.push({ label: 'Stop ' + globalStopIdx + ' — Tour guide', disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
-              }
-            });
+        function mapStatusLocal(raw) {
+          var s = (raw || '').toString().trim().toLowerCase();
+          if (!s) return { text: '—', cls: 'trip-sum-status--muted' };
+          if (s === 'queued') return { text: 'Pending', cls: 'trip-sum-status--pending' };
+          if (s === 'pending') return { text: 'Pending', cls: 'trip-sum-status--pending' };
+          if (s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted') {
+            return { text: 'Approved', cls: 'trip-sum-status--accepted' };
           }
+          if (s === 'cancelled' || s === 'canceled' || s === 'rejected') {
+            return { text: 'Cancelled', cls: 'trip-sum-status--cancelled' };
+          }
+          return { text: String(raw), cls: 'trip-sum-status--muted' };
+        }
 
-          var accBody = document.getElementById(leg.accBodyId);
-          var items = accBody ? accBody.querySelectorAll('.trip-accommodation-summary-item') : [];
-          if (!items.length) {
-            rows.push({
-              label: 'Destination ' + leg.num + ' — Hotel',
-              disp: { text: 'Not booked', cls: 'trip-sum-status--muted' }
-            });
-          } else {
-            items.forEach(function (item) {
-              var ps = item.querySelectorAll('p');
-              var hn = '';
-              for (var pi = 0; pi < ps.length; pi++) {
-                var tx = (ps[pi].textContent || '');
-                if (/^Hotel:/i.test(tx)) {
-                  hn = tx.replace(/^Hotel:\s*/i, '').trim();
+        function applyServerGuideStatuses(list) {
+          if (!Array.isArray(list) || !list.length) return;
+          try {
+            var cards = document.querySelectorAll('.trip-stop-card');
+            cards.forEach(function (card) {
+              var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
+              if (!gYes || !gYes.classList.contains('selected')) return;
+              var loc = ((card.querySelector('.trip-stop-guide-location') || {}).value || '').trim();
+              var dt = ((card.querySelector('.trip-stop-guide-date') || {}).value || '').trim();
+              var lang = ((card.querySelector('.trip-stop-guide-language') || {}).value || '').trim();
+              var tm = ((card.querySelector('.trip-stop-guide-time') || {}).value || '').trim();
+              if (!loc || !dt || !lang || !tm) return;
+              for (var i = 0; i < list.length; i++) {
+                var r = list[i] || {};
+                if ((r.location || '') === loc && (r.date || '') === dt && (r.language || '') === lang && (r.time || '') === tm) {
+                  var st = String(r.status || '').trim();
+                  if (st) {
+                    card.setAttribute('data-guide-booking-status', st);
+                  }
                   break;
                 }
               }
-              var bid = item.getAttribute('data-booking-id');
-              var lab = 'Destination ' + leg.num + ' — ' + (hn ? hn : 'Hotel');
-              if (bid) {
-                bumpPending();
-                rows.push({ label: lab, disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
-              } else {
-                rows.push({ label: lab, disp: { text: 'Not booked', cls: 'trip-sum-status--muted' } });
-              }
             });
-          }
-        });
-
-        var linesHtml = rows.map(function (r) {
-          return '<li><span>' + escSummaryHtml(r.label) + '</span><strong class="trip-sum-status ' + r.disp.cls + '">' + escSummaryHtml(r.disp.text) + '</strong></li>';
-        }).join('');
-        var summaryText = pendingCount ? (pendingCount + ' pending') : 'No pending items';
-
-        var topNote = '<p class="trip-sum-budget-footnote">Please carefully review your trip before submitting. After submission, you won’t be able to modify it. If you need changes, please contact our team.</p>';
-
-        mount.innerHTML =
-          '<div style="max-width: 520px; margin: 0 auto; width: 100%;">' +
-            '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Status of bookings">' +
-              '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
-              '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
-              '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
-              topNote +
-              '<div class="trip-sum-booking-submit-wrap">' +
-                '<button type="button" class="trip-sum-booking-submit-btn" id="tripVerifyProceedBtn">Proceed to Payment</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-        var proceedBtn = document.getElementById('tripVerifyProceedBtn');
-        if (proceedBtn) {
-          proceedBtn.onclick = function () {
-            var tid = sessionStorage.getItem(tripWizardTripIdKey) || '';
-            if (!tid) {
-              alert('Please click "Submit trip" first, then proceed to payment.');
-              showStep(11);
-              return;
-            }
-            try { sessionStorage.setItem(tripWizardProceedKey, String(tid)); } catch (e) {}
-            showStep(13);
-          };
+          } catch (e) {}
         }
+
+        function buildAndRender() {
+          // Build booking status list (transport/tour guide per stop + hotel per destination).
+          var pendingCount = 0;
+          function bump(st) { if ((st || '').toString().trim().toLowerCase() === 'pending') pendingCount++; }
+
+          var rows = [];
+          var globalStopIdx = 0;
+          var legs = [];
+          legs.push({ num: 1, stopsId: 'tripStopsList', accBodyId: 'tripAccommodationSummaryBody' });
+          if (typeof wantsSecondDestination === 'function' && wantsSecondDestination()) {
+            legs.push({ num: 2, stopsId: 'tripStopsList_2', accBodyId: 'trip2AccommodationSummaryBody' });
+          }
+          if (typeof wantsThirdDestination === 'function' && wantsThirdDestination()) {
+            legs.push({ num: 3, stopsId: 'tripStopsList_3', accBodyId: 'trip3AccommodationSummaryBody' });
+          }
+
+          legs.forEach(function (leg) {
+            var stopsEl = document.getElementById(leg.stopsId);
+            if (stopsEl) {
+              stopsEl.querySelectorAll('.trip-stop-card').forEach(function (card) {
+                globalStopIdx++;
+                var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
+                var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
+                var trOn = trYes && trYes.classList.contains('selected');
+                var gOn = gYes && gYes.classList.contains('selected');
+                if (trOn) {
+                  var ts = (card.getAttribute('data-transport-booking-status') || 'pending').trim();
+                  var dispT = mapStatusLocal(ts);
+                  bump(ts);
+                  rows.push({ label: 'Stop ' + globalStopIdx + ' — Transport provider', disp: dispT });
+                }
+                if (gOn) {
+                  var gs = (card.getAttribute('data-guide-booking-status') || 'pending').trim();
+                  var dispG = mapStatusLocal(gs);
+                  bump(gs);
+                  rows.push({ label: 'Stop ' + globalStopIdx + ' — Tour guide', disp: dispG });
+                }
+              });
+            }
+
+            var accBody = document.getElementById(leg.accBodyId);
+            var items = accBody ? accBody.querySelectorAll('.trip-accommodation-summary-item') : [];
+            if (!items.length) {
+              rows.push({
+                label: 'Destination ' + leg.num + ' — Hotel',
+                disp: { text: 'Not booked', cls: 'trip-sum-status--muted' }
+              });
+            } else {
+              items.forEach(function (item) {
+                var ps = item.querySelectorAll('p');
+                var hn = '';
+                for (var pi = 0; pi < ps.length; pi++) {
+                  var tx = (ps[pi].textContent || '');
+                  if (/^Hotel:/i.test(tx)) {
+                    hn = tx.replace(/^Hotel:\s*/i, '').trim();
+                    break;
+                  }
+                }
+                var bid = item.getAttribute('data-booking-id');
+                var lab = 'Destination ' + leg.num + ' — ' + (hn ? hn : 'Hotel');
+                if (bid) {
+                  bump('pending');
+                  rows.push({ label: lab, disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+                } else {
+                  rows.push({ label: lab, disp: { text: 'Not booked', cls: 'trip-sum-status--muted' } });
+                }
+              });
+            }
+          });
+
+          var linesHtml = rows.map(function (r) {
+            return '<li><span>' + escSummaryHtml(r.label) + '</span><strong class="trip-sum-status ' + r.disp.cls + '">' + escSummaryHtml(r.disp.text) + '</strong></li>';
+          }).join('');
+          var summaryText = pendingCount ? (pendingCount + ' pending') : 'No pending items';
+
+          var topNote = '<p class="trip-sum-budget-footnote">Please review the current status of your bookings. If something looks wrong, please contact our team.</p>';
+
+          mount.innerHTML =
+            '<div style="max-width: 520px; margin: 0 auto; width: 100%;">' +
+              '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Status of bookings">' +
+                '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
+                '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
+                '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
+                topNote +
+                '<div class="trip-sum-booking-submit-wrap">' +
+                  '<button type="button" class="trip-sum-booking-submit-btn" id="tripVerifyProceedBtn">Proceed to Payment</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+
+          var proceedBtn = document.getElementById('tripVerifyProceedBtn');
+          if (proceedBtn) {
+            proceedBtn.onclick = function () {
+              var tid2 = sessionStorage.getItem(tripWizardTripIdKey) || '';
+              if (!tid2) {
+                alert('Please click "Submit trip" first, then proceed to payment.');
+                return;
+              }
+              sessionStorage.setItem(tripWizardProceedKey, String(tid2));
+              showStep(13);
+            };
+          }
+        }
+
+        // Render immediately so the page never gets stuck on "Loading…".
+        buildAndRender();
+
+        // Then refresh from server (approved/rejected/etc) and re-render.
+        if (tid) {
+          fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tid), {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+          })
+            .then(function (r) { return r.json().catch(function () { return null; }); })
+            .then(function (data) {
+              if (data && data.success) {
+                applyServerGuideStatuses(data.guide_statuses || []);
+              }
+              buildAndRender();
+            })
+            .catch(function () {});
+        }
+
       } catch (e) {
         mount.innerHTML =
           '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Verify bookings">' +
@@ -3308,7 +3572,7 @@ $main_cities = array(
       if (pu) { pu.value = ''; delete pu.dataset.placeId; }
       if (dof) { dof.value = ''; delete dof.dataset.placeId; }
       if (fare) fare.value = '';
-      ['.trip-stop-tr-date', '.trip-stop-tr-vehicle', '.trip-stop-tr-time', '.trip-stop-tr-people'].forEach(function (sel) {
+      ['.trip-stop-tr-date', '.trip-stop-tr-vehicle', '.trip-stop-tr-time', '.trip-stop-tr-people', '.trip-stop-tr-notes', '.trip-stop-tr-distance'].forEach(function (sel) {
         var el = card.querySelector(sel);
         if (el) el.value = '';
       });
@@ -3473,7 +3737,11 @@ $main_cities = array(
       var ptEl = document.getElementById('tr_pickupTime');
       if (ptEl && ttH && ttH.value) ptEl.value = ttH.value;
       if (trNumPeopleEl && tpH && tpH.value) trNumPeopleEl.value = tpH.value;
+      var tnH = card.querySelector('.trip-stop-tr-notes');
+      var trNotesOpen = document.getElementById('tr_notes');
+      if (trNotesOpen && tnH) trNotesOpen.value = tnH.value || '';
       if (typeof showTransportForm === 'function') showTransportForm();
+      syncTransportRequestTripIdHidden();
       overlay.classList.add('trip-modal-open');
       overlay.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -3546,6 +3814,15 @@ $main_cities = array(
       setStopHid('.trip-stop-tr-vehicle', 'tr_vehicleType');
       setStopHid('.trip-stop-tr-time', 'tr_pickupTime');
       setStopHid('.trip-stop-tr-people', 'tr_numPeople');
+      var tnH = card.querySelector('.trip-stop-tr-notes');
+      var trNotesEl = document.getElementById('tr_notes');
+      if (tnH && trNotesEl) tnH.value = (trNotesEl.value || '').trim();
+      var tdDist = card.querySelector('.trip-stop-tr-distance');
+      var distIn = document.getElementById('tr_distanceValue');
+      if (tdDist && distIn) tdDist.value = (distIn.value || '').trim();
+      card.removeAttribute('data-transport-request-id');
+      // Keep DB insert deferred until submit, but show as Pending in UI.
+      card.setAttribute('data-transport-booking-status', 'pending');
       updateStopCardSummary(card);
       if (isStopCardInLeg3(card)) clearTripStopsStepError3();
       else if (isStopCardInLeg2(card)) clearTripStopsStepError2();
@@ -3603,6 +3880,8 @@ $main_cities = array(
         '<input type="hidden" class="trip-stop-tr-vehicle" value="">' +
         '<input type="hidden" class="trip-stop-tr-time" value="">' +
         '<input type="hidden" class="trip-stop-tr-people" value="">' +
+        '<input type="hidden" class="trip-stop-tr-notes" value="">' +
+        '<input type="hidden" class="trip-stop-tr-distance" value="">' +
         '</div>' +
         '<div class="trip-stop-guide-yes-fields" style="display:none">' +
         '<input type="hidden" class="trip-stop-guide-location" value="' + gl + '">' +
@@ -3631,17 +3910,59 @@ $main_cities = array(
       if (!inputEl || inputEl.dataset.placesInit === 'true') return;
       inputEl.dataset.placesInit = 'true';
       districtHiddenId = districtHiddenId || 'dest_district_hidden';
+      var modalEl = inputEl.closest('.trip-modal');
+      var useModalFixed = !!modalEl;
       var dropdown = document.createElement('div');
-      dropdown.className = 'trip-stop-location-suggestions';
+      dropdown.className = 'trip-stop-location-suggestions' + (useModalFixed ? ' trip-stop-location-suggestions--modal-fixed' : '');
       dropdown.setAttribute('role', 'listbox');
       dropdown.setAttribute('aria-hidden', 'true');
-      var wrap = inputEl.closest('.trip-stop-location-input-wrap') || inputEl.parentNode;
-      wrap.style.position = 'relative';
-      wrap.appendChild(dropdown);
+      if (useModalFixed) {
+        modalEl.appendChild(dropdown);
+      } else {
+        var wrap = inputEl.closest('.trip-stop-location-input-wrap') || inputEl.parentNode;
+        wrap.style.position = 'relative';
+        wrap.appendChild(dropdown);
+      }
+      function syncModalDropdownGeometry() {
+        if (!useModalFixed || dropdown.style.display !== 'block') return;
+        var r = inputEl.getBoundingClientRect();
+        var gap = 6;
+        var pad = 16;
+        var spaceBelow = Math.max(0, window.innerHeight - r.bottom - pad);
+        var spaceAbove = Math.max(0, r.top - pad);
+        var preferBelow = spaceBelow >= 160 || spaceBelow >= spaceAbove;
+        var maxH = Math.max(120, Math.min(260, (preferBelow ? spaceBelow : spaceAbove) - gap));
+        dropdown.style.position = 'fixed';
+        dropdown.style.left = Math.round(r.left) + 'px';
+        dropdown.style.width = Math.max(120, Math.round(r.width)) + 'px';
+        dropdown.style.right = 'auto';
+        dropdown.style.maxHeight = Math.round(maxH) + 'px';
+        if (preferBelow) {
+          dropdown.style.top = Math.round(r.bottom + gap) + 'px';
+        } else {
+          dropdown.style.top = Math.max(pad, Math.round(r.top - gap - maxH)) + 'px';
+        }
+      }
+      function onModalDropdownReposition() {
+        syncModalDropdownGeometry();
+      }
+      if (useModalFixed) {
+        window.addEventListener('scroll', onModalDropdownReposition, true);
+        window.addEventListener('resize', onModalDropdownReposition);
+        var modalFormScroll = modalEl.querySelector('.trip-modal-form');
+        if (modalFormScroll) modalFormScroll.addEventListener('scroll', onModalDropdownReposition);
+      }
       function hideDropdown() {
         dropdown.innerHTML = '';
         dropdown.style.display = 'none';
         dropdown.setAttribute('aria-hidden', 'true');
+        if (useModalFixed) {
+          dropdown.style.left = '';
+          dropdown.style.top = '';
+          dropdown.style.width = '';
+          dropdown.style.right = '';
+          dropdown.style.maxHeight = '';
+        }
       }
       function showSuggestions(predictions) {
         dropdown.innerHTML = '';
@@ -3666,6 +3987,12 @@ $main_cities = array(
         });
         dropdown.style.display = 'block';
         dropdown.setAttribute('aria-hidden', 'false');
+        if (useModalFixed) {
+          requestAnimationFrame(function () {
+            syncModalDropdownGeometry();
+            requestAnimationFrame(syncModalDropdownGeometry);
+          });
+        }
       }
       function fetchSuggestions(query, done) {
         if (placesAutocompleteAbort) placesAutocompleteAbort.abort();
@@ -4125,6 +4452,36 @@ $main_cities = array(
           errorEl.style.display = 'block';
           return;
         }
+        if (tripStopCardForTransport) {
+          var trDateEl = document.getElementById('tr_date');
+          var trPuEl = document.getElementById('tr_pickupLocation');
+          var trDoEl = document.getElementById('tr_dropoffLocation');
+          var trTimeEl = document.getElementById('tr_pickupTime');
+          var fareValCk = document.getElementById('tr_estimatedFareValue');
+          if (!trDateEl || !String(trDateEl.value || '').trim()) {
+            alert('Please choose a date for transport.');
+            return;
+          }
+          if (!trPuEl || !String(trPuEl.value || '').trim() || !trDoEl || !String(trDoEl.value || '').trim()) {
+            alert('Please enter pickup and dropoff locations.');
+            return;
+          }
+          if (!vehicle) {
+            alert('Please select a vehicle type.');
+            return;
+          }
+          if (!trTimeEl || !String(trTimeEl.value || '').trim()) {
+            alert('Please choose a pickup time.');
+            return;
+          }
+          if (!fareValCk || !String(fareValCk.value || '').trim() || !(parseFloat(String(fareValCk.value), 10) > 0)) {
+            alert('Please calculate the estimated fare before confirming.');
+            return;
+          }
+          applyTransportModalToStopCard();
+          return;
+        }
+        syncTransportRequestTripIdHidden();
         var submitBtn = transportForm.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;
         var formData = new FormData(transportForm);
@@ -4754,6 +5111,40 @@ $main_cities = array(
           try { console.warn('Trip wizard draft restore failed', eApp); } catch (eL) {}
         }
       }
+
+      // Restore last submitted trip after logout/login using server snapshot.
+      // (Draft is cleared on submit, so without this the wizard looks empty.)
+      try {
+        var submittedNow = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
+        var tid = '';
+        try { tid = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (eTid) { tid = ''; }
+        if (!tid && typeof serverLastTid !== 'undefined' && serverLastTid > 0) tid = String(serverLastTid);
+
+        var shouldRestore = (!submittedNow && tid && !draft) || (typeof serverHasSubmittedSnapshot !== 'undefined' && serverHasSubmittedSnapshot && tid);
+        if (shouldRestore) {
+          fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tid), {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+          })
+            .then(function (r) { return r.json().catch(function () { return null; }); })
+            .then(function (data) {
+              var ws = data && data.snapshot && data.snapshot.wizard_snapshot ? data.snapshot.wizard_snapshot : null;
+              if (!ws) return;
+              if (!applyWizardSnapshotToUI(ws)) return;
+              try { sessionStorage.setItem(tripWizardTripIdKey, String(tid)); } catch (eSt) {}
+              try { sessionStorage.setItem(tripWizardSubmittedKey, '1'); } catch (eSs) {}
+              try { sessionStorage.setItem(tripWizardFingerprintKey, tripWizardFingerprint()); } catch (eFp) {}
+              if (!tripWizardUrlForcedStep) {
+                tripWizardPendingInitialStep = 12;
+                try { showStep(12); } catch (eSh) {}
+              }
+              try { bindTripWizardSubmitButton(); } catch (eBn) {}
+            })
+            .catch(function () {});
+        }
+      } catch (eBoot) {}
+
       var list1 = document.getElementById('tripStopsList');
       if (list1 && list1.querySelectorAll('.trip-stop-card').length === 0) {
         addStopCard();

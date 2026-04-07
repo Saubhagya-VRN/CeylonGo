@@ -7,6 +7,15 @@
   min-height: 100vh;
 }
 
+.my-bookings-page .my-bookings-main {
+  flex: 1 0 auto;
+}
+
+/* Custom bookings view uses the customise-trip layout wrapper */
+.my-bookings-page .trip-page-wrapper {
+  flex: 1 0 auto;
+}
+
 .my-bookings-main {
   max-width: 800px;
   margin: 0 auto;

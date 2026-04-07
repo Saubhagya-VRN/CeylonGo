@@ -26,7 +26,7 @@ $b = function ($path) use ($asset_base) {
       </div>
       <div class="trip-sidebar-footer">
         <div class="trip-sidebar-user">
-          <div class="trip-sidebar-user-avatar"><?php echo htmlspecialchars($avatar_initial ?? 'T', ENT_QUOTES, 'UTF-8'); ?></div>
+          <div class="trip-sidebar-user-avatar"><?php echo htmlspecialchars(isset($avatar_initial) ? $avatar_initial : 'T', ENT_QUOTES, 'UTF-8'); ?></div>
           <div class="trip-sidebar-user-info">
             <div class="trip-sidebar-user-name"><?php echo htmlspecialchars($user_name ?? 'Tourist', ENT_QUOTES, 'UTF-8'); ?></div>
             <div class="trip-sidebar-user-email"><?php
