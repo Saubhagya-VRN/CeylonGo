@@ -6,6 +6,7 @@
       exit();
   }
   $packages = $packages ?? [];
+  $customTripsWithDestinations = $customTripsWithDestinations ?? [];
   $success  = $success  ?? null;
   $error    = $error    ?? null;
 ?>
@@ -67,7 +68,7 @@
           <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
           <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
           <li class="active"><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-box-open"></i> Packages</a></li>
-          <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+          <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
           <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
         </ul>
       </div>
@@ -88,6 +89,9 @@
             <a href="/CeylonGo/public/admin/packages/new" class="footer-btn black">+ Add New Package</a>
           </div>
           <br>
+          
+          <h3 class="page-title" style="font-size:18px;">Tour packages (catalog)</h3>
+          <p class="sub-text" style="color:#555;margin:8px 0 12px;">Fixed packages available for booking.</p>
 
           <div class="users-section">
             <table class="user-table" id="packagesTable">
@@ -135,7 +139,24 @@
             </table>
           </div>
 
-          <div class="footer-buttons">
+          <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+            <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <label for="exportTimelinePresetPkg">Report period:</label>
+              <select id="exportTimelinePresetPkg" class="search-input" style="max-width:220px;padding:6px 8px;">
+                <option value="all">All time</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
+                <option value="ytd">Year to date</option>
+                <option value="custom">Custom range</option>
+              </select>
+              <span id="exportCustomRangeWrapPkg" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span class="export-range-label">From</span>
+                <div class="date-filter"><input type="date" id="exportDateFromPkg" class="date-input"></div>
+                <span class="export-range-label">To</span>
+                <div class="date-filter"><input type="date" id="exportDateToPkg" class="date-input"></div>
+              </span>
+            </div>
             <button class="footer-btn black" id="exportBtn">Export Packages</button>
           </div>
         </div>
@@ -165,6 +186,16 @@
     </footer>
 
     <script>
+      const customTripsData = <?= json_encode(array_map(function($b) {
+          return [
+              'booking_id'   => $b['booking_id'],
+              'user_name'    => $b['user_name'],
+              'status'       => $b['status'],
+              'created_at'   => $b['created_at'],
+              'destinations' => $b['destinations'] ?? [],
+          ];
+      }, $customTripsWithDestinations), JSON_UNESCAPED_UNICODE) ?>;
+
       const packagesData = <?= json_encode(array_map(function($p) {
           return [
               'id'                 => $p['id'],
@@ -180,6 +211,7 @@
               'rating'             => $p['rating'],
               'reviews'            => $p['reviews'] ?? 0,
               'trending'           => !empty($p['trending']) ? 'Yes' : 'No',
+              'created_at'         => $p['created_at'] ?? '',
               'overview'           => $p['overview'] ?? [],
               'highlights'         => $p['highlights'] ?? [],
               'itinerary'          => $p['itinerary'] ?? [],
@@ -189,10 +221,146 @@
           ];
       }, $packages), JSON_UNESCAPED_UNICODE) ?>;
 
-      // ── Export Packages Report ─────────────────────────────────
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function ymdLocal(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+      function bindExportPreset(presetId, wrapId) {
+        const presetEl = document.getElementById(presetId);
+        const wrap = document.getElementById(wrapId);
+        function toggle() {
+          if (!presetEl || !wrap) return;
+          wrap.style.display = presetEl.value === 'custom' ? 'inline-flex' : 'none';
+        }
+        if (presetEl) {
+          presetEl.addEventListener('change', toggle);
+          toggle();
+        }
+      }
+      bindExportPreset('exportTimelinePresetTrip', 'exportCustomRangeWrapTrip');
+      bindExportPreset('exportTimelinePresetPkg', 'exportCustomRangeWrapPkg');
+
+      function resolveExportRange(prefix) {
+        const presetEl = document.getElementById('exportTimelinePreset' + prefix);
+        const v = presetEl ? presetEl.value : 'all';
+        if (v === 'custom') {
+          const f = document.getElementById('exportDateFrom' + prefix).value;
+          const t = document.getElementById('exportDateTo' + prefix).value;
+          if (!f || !t) { alert('Please select both From and To dates for a custom range.'); return null; }
+          if (f > t) { alert('From date must be before or equal to To date.'); return null; }
+          return { start: f, end: t };
+        }
+        if (v === 'all') return { start: null, end: null };
+        const today = new Date();
+        const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        let start = new Date(end);
+        if (v === '7d') start.setDate(start.getDate() - 6);
+        else if (v === '30d') start.setDate(start.getDate() - 29);
+        else if (v === '90d') start.setDate(start.getDate() - 89);
+        else if (v === 'ytd') start = new Date(today.getFullYear(), 0, 1);
+        else return { start: null, end: null };
+        return { start: ymdLocal(start), end: ymdLocal(end) };
+      }
+
+      function inDateRange(dateStr, range) {
+        if (!range || (!range.start && !range.end)) return true;
+        const d = (dateStr && String(dateStr).trim().slice(0, 10)) || '';
+        if (!d) return false;
+        if (range.start && d < range.start) return false;
+        if (range.end && d > range.end) return false;
+        return true;
+      }
+
+      function periodLabel(range) {
+        if (!range || (!range.start && !range.end)) return 'All time';
+        return range.start + ' to ' + range.end;
+      }
+
+      // ── Export customized trips (trip bookings) ──────────────
+      document.getElementById('exportTripBtn').addEventListener('click', function () {
+        if (!customTripsData || customTripsData.length === 0) {
+          alert('No customized trips to export!');
+          return;
+        }
+        const range = resolveExportRange('Trip');
+        if (range === null) return;
+        const list = customTripsData.filter(function (b) {
+          return inDateRange((b.created_at || '').slice(0, 10), range);
+        });
+        if (!list.length) {
+          alert('No customized trips in the selected period.');
+          return;
+        }
+
+        const sep = '='.repeat(70);
+        const subSep = '-'.repeat(70);
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-GB');
+
+        let report = '';
+        report += sep + '\n';
+        report += '     CEYLON GO — CUSTOMIZED TRIP BOOKINGS REPORT\n';
+        report += sep + '\n';
+        report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
+        report += '  Report period  : ' + periodLabel(range) + '\n';
+        report += '  Total Bookings : ' + list.length + '\n';
+        report += sep + '\n\n';
+
+        list.forEach(function (b, index) {
+          report += 'BOOKING ' + (index + 1) + ' OF ' + list.length + '\n';
+          report += sep + '\n';
+          report += '  BOOKING DETAILS\n';
+          report += '  ' + subSep + '\n';
+          report += '  Booking ID   : ' + b.booking_id + '\n';
+          report += '  Customer     : ' + b.user_name + '\n';
+          report += '  Status       : ' + b.status.charAt(0).toUpperCase() + b.status.slice(1) + '\n';
+          report += '  Submitted On : ' + b.created_at + '\n\n';
+
+          if (b.destinations && b.destinations.length > 0) {
+            report += '  DESTINATIONS (' + b.destinations.length + ')\n';
+            report += '  ' + subSep + '\n';
+            b.destinations.forEach(function (d, di) {
+              report += '  Destination ' + (di + 1) + '\n';
+              report += '    Location   : ' + d.destination + '\n';
+              report += '    People     : ' + d.people_count + '\n';
+              report += '    Days       : ' + d.days + '\n';
+              if (d.hotel && String(d.hotel).trim() !== '') report += '    Hotel      : ' + d.hotel + '\n';
+              report += '    Transport  : ' + d.transport + '\n';
+            });
+          } else {
+            report += '  DESTINATIONS\n';
+            report += '  ' + subSep + '\n';
+            report += '  No destination details recorded.\n';
+          }
+          report += '\n' + sep + '\n\n';
+        });
+
+        report += sep + '\n';
+        report += '  END OF REPORT\n';
+        report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
+        report += sep + '\n';
+
+        const blob = new Blob([report], { type: 'text/plain' });
+        const link = document.createElement('a');
+        const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
+        link.href = URL.createObjectURL(blob);
+        link.download = 'ceylongo_customized_trips_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
+        link.click();
+      });
+
+      // ── Export catalog packages ──────────────────────────────
       document.getElementById('exportBtn').addEventListener('click', function () {
         if (packagesData.length === 0) {
           alert('No packages to export!');
+          return;
+        }
+        const range = resolveExportRange('Pkg');
+        if (range === null) return;
+        const list = packagesData.filter(function (p) {
+          return inDateRange((p.created_at || '').slice(0, 10), range);
+        });
+        if (!list.length) {
+          alert('No packages in the selected period (by catalog created date).');
           return;
         }
 
@@ -209,13 +377,14 @@
         report += '          CEYLON GO — TOUR PACKAGES REPORT\n';
         report += '='.repeat(70) + '\n';
         report += '  Generated on  : ' + dateStr + ' at ' + timeStr + '\n';
-        report += '  Total Packages: ' + packagesData.length + '\n';
+        report += '  Report period : ' + periodLabel(range) + '\n';
+        report += '  Total Packages: ' + list.length + '\n';
         report += '='.repeat(70) + '\n\n';
 
-        packagesData.forEach(function (p, index) {
+        list.forEach(function (p, index) {
 
           // ── Package header ──
-          report += 'PACKAGE ' + (index + 1) + ' OF ' + packagesData.length + '\n';
+          report += 'PACKAGE ' + (index + 1) + ' OF ' + list.length + '\n';
           report += sep + '\n';
           report += '  Title    : ' + p.title + '\n';
           report += '  Category : ' + p.category + '\n';
@@ -323,8 +492,9 @@
         const blob = new Blob([report], { type: 'text/plain' });
         const link = document.createElement('a');
         const fileDate = now.toISOString().slice(0, 10);
+        const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
         link.href = URL.createObjectURL(blob);
-        link.download = 'ceylongo_packages_' + fileDate + '.txt';
+        link.download = 'ceylongo_packages_' + tag + '_' + fileDate + '.txt';
         link.click();
       });
 

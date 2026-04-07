@@ -75,7 +75,7 @@
                     <li class="active"><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                     <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                     <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-box-open"></i> Packages</a></li>
-                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
@@ -254,7 +254,24 @@
                         </table>
                     </div>
  
-                    <div class="footer-buttons">
+                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label for="exportTimelinePreset">Report period:</label>
+                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
+                                <option value="all">All time</option>
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d">Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="ytd">Year to date</option>
+                                <option value="custom">Custom range</option>
+                            </select>
+                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="export-range-label">From</span>
+                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
+                                <span class="export-range-label">To</span>
+                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
+                            </span>
+                        </div>
                         <button class="footer-btn black" id="exportPayBtn">Export Payments</button>
                     </div>
  
@@ -320,6 +337,56 @@
                     'created_at'                 => $p['created_at'],
                 ];
             }, $filteredPayments)), JSON_UNESCAPED_UNICODE) ?>;
+
+            (function() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const wrap = document.getElementById("exportCustomRangeWrap");
+                function toggleCustom() {
+                    if (!presetEl || !wrap) return;
+                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
+                }
+                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
+            })();
+
+            function paymentExportSortDate(p) {
+                const s = p.paid_at || p.bank_transfer_submitted_at || p.created_at || "";
+                return String(s).slice(0, 10);
+            }
+            function resolvePaymentsExportRange() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const v = presetEl ? presetEl.value : "all";
+                if (v === "custom") {
+                    const f = document.getElementById("exportDateFrom").value;
+                    const t = document.getElementById("exportDateTo").value;
+                    if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
+                    if (f > t) { alert("From date must be before or equal to To date."); return null; }
+                    return { start: f, end: t };
+                }
+                if (v === "all") return { start: null, end: null };
+                const today = new Date();
+                const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                let start = new Date(end);
+                if (v === "7d") start.setDate(start.getDate() - 6);
+                else if (v === "30d") start.setDate(start.getDate() - 29);
+                else if (v === "90d") start.setDate(start.getDate() - 89);
+                else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
+                else return { start: null, end: null };
+                const pad = function(n) { return String(n).padStart(2, "0"); };
+                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+                return { start: ymd(start), end: ymd(end) };
+            }
+            function inPaymentsDateRange(dateStr, range) {
+                if (!range || (!range.start && !range.end)) return true;
+                const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
+                if (!d) return false;
+                if (range.start && d < range.start) return false;
+                if (range.end && d > range.end) return false;
+                return true;
+            }
+            function paymentsPeriodLabel(range) {
+                if (!range || (!range.start && !range.end)) return "All time";
+                return range.start + " to " + range.end;
+            }
  
             // ── Modal setup ───────────────────────────────────────
             const paymentModal   = document.getElementById('paymentModal');
@@ -463,6 +530,15 @@
                     alert('No payments to export!');
                     return;
                 }
+                const range = resolvePaymentsExportRange();
+                if (range === null) return;
+                const list = paymentsData.filter(function(p) {
+                    return inPaymentsDateRange(paymentExportSortDate(p), range);
+                });
+                if (!list.length) {
+                    alert('No payments in the selected period.');
+                    return;
+                }
  
                 const sep    = '='.repeat(70);
                 const subSep = '-'.repeat(70);
@@ -475,15 +551,16 @@
                 report += '        CEYLON GO — PAYMENTS REPORT\n';
                 report += sep + '\n';
                 report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Total Records  : ' + paymentsData.length + '\n';
+                report += '  Report period  : ' + paymentsPeriodLabel(range) + '\n';
+                report += '  Total Records  : ' + list.length + '\n';
                 report += sep + '\n\n';
  
-                paymentsData.forEach(function(p, index) {
+                list.forEach(function(p, index) {
                     let method = '—';
                     if (p.payhere_payment_id)          method = 'Online (PayHere)';
                     else if (p.bank_transfer_submitted_at) method = 'Bank Transfer';
  
-                    report += 'PAYMENT ' + (index + 1) + ' OF ' + paymentsData.length + '\n';
+                    report += 'PAYMENT ' + (index + 1) + ' OF ' + list.length + '\n';
                     report += sep + '\n';
  
                     report += '  CUSTOMER\n';
@@ -532,7 +609,8 @@
                 const blob = new Blob([report], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'ceylongo_payments_' + now.toISOString().slice(0, 10) + '.txt';
+                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
+                link.download = 'ceylongo_payments_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
                 link.click();
             });
         </script>

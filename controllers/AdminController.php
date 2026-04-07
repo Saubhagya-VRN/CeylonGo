@@ -210,36 +210,32 @@ class AdminController {
         $status   = $_GET['status'] ?? 'all';
         $searchId = $_GET['search'] ?? null;
         $date     = $_GET['date']   ?? null;
-
-        // Trip bookings
+ 
         $bookingModel = new Booking($this->db);
         $bookings     = $bookingModel->getAllBookingsWithUsers($status, $searchId, $date);
         $stats        = $bookingModel->getBookingStats();
-
-        // Pre-load ALL destinations for every trip booking (needed for export report)
+ 
+        // Pre-load trip details for every booking (used in export report)
         $bookingsWithDestinations = [];
         foreach ($bookings as $b) {
             $destinations = $bookingModel->getBookingDestinations($b['booking_id']);
             $bookingsWithDestinations[] = array_merge($b, ['destinations' => $destinations]);
         }
-
+ 
         // Package bookings
         $pkgStmt = $this->db->prepare("
-            SELECT *
-            FROM package_bookings
-            ORDER BY created_at DESC
+            SELECT * FROM package_bookings ORDER BY created_at DESC
         ");
         $pkgStmt->execute();
         $packageBookings = $pkgStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Package booking stats
+ 
         $pkgStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0];
         foreach ($packageBookings as $pb) {
             $pkgStats['total']++;
             $s = strtolower($pb['status']);
             if (isset($pkgStats[$s])) $pkgStats[$s]++;
         }
-
+ 
         view('admin/bookings', [
             'bookings'                 => $bookings,
             'bookingsWithDestinations' => $bookingsWithDestinations,
@@ -251,34 +247,31 @@ class AdminController {
             'pkgStats'                 => $pkgStats,
         ]);
     }
-
+ 
     public function getBookingDetails() {
         if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_GET['booking_id'])) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Booking ID missing']);
             exit;
         }
-
-        $bookingId = intval($_GET['booking_id']);
+ 
+        $bookingId    = intval($_GET['booking_id']);
         $bookingModel = new Booking($this->db);
-
-        // Fetch booking info
-        $booking = $bookingModel->getBookingById($bookingId);
-
+        $booking      = $bookingModel->getBookingById($bookingId);
+ 
         if (!$booking) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Booking not found']);
             exit;
         }
-
-        // Fetch destinations
+ 
         $destinations = $bookingModel->getBookingDestinations($bookingId);
-
+ 
         header('Content-Type: application/json');
         echo json_encode([
-            'success' => true,
-            'booking' => $booking,
-            'destinations' => $destinations
+            'success'      => true,
+            'booking'      => $booking,
+            'destinations' => $destinations,
         ]);
         exit;
     }
@@ -733,7 +726,8 @@ class AdminController {
                 CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
                 u.email,
                 u.role,
-                g.is_active
+                g.is_active,
+                u.created_at AS registered_at
             FROM users u
             JOIN guide_users g ON u.ref_id = g.id
             WHERE u.role = 'guide' $whereStatus
@@ -744,7 +738,8 @@ class AdminController {
                 t.full_name AS provider_name,
                 u.email,
                 u.role,
-                t.is_active
+                t.is_active,
+                u.created_at AS registered_at
             FROM users u
             JOIN transport_users t ON u.ref_id = t.user_id
             WHERE u.role = 'transport' $whereStatus
@@ -755,7 +750,8 @@ class AdminController {
                 h.hotel_name AS provider_name,
                 u.email,
                 u.role,
-                h.is_active
+                h.is_active,
+                u.created_at AS registered_at
             FROM users u
             JOIN hotel_users h ON u.ref_id = h.id
             WHERE u.role = 'hotel' $whereStatus
@@ -823,10 +819,19 @@ class AdminController {
         $this->requireAdmin();
         $packageModel = new Package($this->db);
         $packages = $packageModel->getAll();
+
+        $bookingModel = new Booking($this->db);
+        $customTrips = $bookingModel->getAllBookingsWithUsers('all', null, null);
+        $customTripsWithDestinations = [];
+        foreach ($customTrips as $b) {
+            $destinations = $bookingModel->getBookingDestinations($b['booking_id']);
+            $customTripsWithDestinations[] = array_merge($b, ['destinations' => $destinations]);
+        }
+
         $success = $_SESSION['pkg_success'] ?? null;
         $error   = $_SESSION['pkg_error']   ?? null;
         unset($_SESSION['pkg_success'], $_SESSION['pkg_error']);
-        view('admin/packages', compact('packages', 'success', 'error'));
+        view('admin/packages', compact('packages', 'success', 'error', 'customTripsWithDestinations'));
     }
 
     // ─── SHOW add form ───────────────────────────────────────

@@ -1,11 +1,5 @@
 @import url("common.css");
 
-.date-filter .date-input {
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
 .booking-table {
   width: 100%;
   border-collapse: collapse;
@@ -116,4 +110,20 @@
 
 #bookingDetailsContent th {
     background-color: #f2f2f2;
+}
+
+.filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.small-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.page-info {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #555;
 }
