@@ -208,5 +208,44 @@ class TransportRequest {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Get monthly revenue and booking count for reporting
+     */
+    public function getReportData($driverId) {
+        try {
+            // Get total bookings (confirmed or completed)
+            $queryTotal = "SELECT COUNT(*) as total_bookings, IFNULL(SUM(estimated_fare), 0) as total_revenue 
+                          FROM " . $this->table . " 
+                          WHERE TRIM(assigned_driver_id) = TRIM(?) 
+                            AND status IN ('confirmed', 'completed')";
+            $stmtTotal = $this->conn->prepare($queryTotal);
+            $stmtTotal->execute([$driverId]);
+            $overall = $stmtTotal->fetch(PDO::FETCH_ASSOC);
+
+            // Get monthly breakdown for last 12 months
+            $queryMonthly = "SELECT 
+                                DATE_FORMAT(date, '%Y-%m') as month,
+                                COUNT(*) as bookings,
+                                IFNULL(SUM(estimated_fare), 0) as revenue
+                             FROM " . $this->table . "
+                             WHERE TRIM(assigned_driver_id) = TRIM(?)
+                               AND status IN ('confirmed', 'completed')
+                               AND date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                             GROUP BY month
+                             ORDER BY month ASC";
+            $stmtMonthly = $this->conn->prepare($queryMonthly);
+            $stmtMonthly->execute([$driverId]);
+            $monthly = $stmtMonthly->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'overall' => $overall,
+                'monthly' => $monthly
+            ];
+        } catch (PDOException $e) {
+            error_log("Error fetching transport report data: " . $e->getMessage());
+            return ['overall' => ['total_bookings' => 0, 'total_revenue' => 0], 'monthly' => []];
+        }
+    }
 }
 ?>

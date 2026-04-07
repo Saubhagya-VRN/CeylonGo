@@ -184,6 +184,23 @@ class GuideController {
         view('guide/profile');
     }
 
+    public function report() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        if (!$user_id || ($_SESSION['user_role'] ?? '') !== 'guide') {
+            header("Location: /CeylonGo/public/login");
+            exit();
+        }
+
+        $guideRequest = new GuideRequest($this->db);
+        $reportData = $guideRequest->getReportData($user_id);
+
+        view('guide/report', [
+            'overall' => $reportData['overall'],
+            'monthly' => $reportData['monthly']
+        ]);
+    }
+
     public function places() {
         view('guide/places');
     }
