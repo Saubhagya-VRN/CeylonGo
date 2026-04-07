@@ -44,7 +44,7 @@ class Package {
      * Returns same shape as listing page expects: id, title, location, locations, duration, image, trending, rating, reviews, meals, category, price.
      */
     public function getAll($filters = []) {
-        $sql = "SELECT id, title, location, locations, duration, duration_short, image, category, price, price_child_ratio, price_infant_ratio, rating, reviews, trending FROM " . $this->table . " ORDER BY id ASC";
+        $sql = "SELECT id, title, location, locations, duration, duration_short, image, category, price, price_child_ratio, price_infant_ratio, rating, reviews, trending, created_at FROM " . $this->table . " ORDER BY id ASC";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

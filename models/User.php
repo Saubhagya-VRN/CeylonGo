@@ -53,7 +53,7 @@ class User {
 
     // Export all users for status filter in admin panel
     public function getAllUsers($status = 'all') {
-        $sql = "SELECT id, first_name, last_name, contact_number, email, is_active 
+        $sql = "SELECT id, first_name, last_name, contact_number, email, is_active, created_at 
                 FROM tourist_users";
 
         if ($status === 'active') {

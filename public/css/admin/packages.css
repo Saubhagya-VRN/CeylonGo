@@ -44,6 +44,17 @@
   color: red;
 }
 
+.status {
+  font-weight: bold;
+}
+.status.pending { color: orange; }
+.status.completed { color: green; }
+.status.cancelled { color: red; }
+
+.sub-text {
+  font-size: 14px;
+}
+
 .modal {
   display: none;
   position: fixed;

@@ -64,7 +64,7 @@
                     <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                     <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                     <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
-                    <li class="active"><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+                    <li class="active"><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
@@ -73,8 +73,6 @@
                 <div class="reviews-management">
 
                     <h2 class="page-title">Reviews Management</h2>
-                    <br>
-
                     
                     <h4>Overall Ratings</h4><br>
                     <p class="sub-text">Service Performance Metrics</p>
@@ -100,7 +98,7 @@
                             <b><?= $metrics['positive_percentage'] ?>%</b>
                         </button>
                     </div>
-                    <br><br>
+                    <br>
 
                     <form method="GET" action="/CeylonGo/public/admin/reviews">
                         <div class="toolbar">
@@ -119,7 +117,6 @@
                             </div>
                         </div>
                     </form>
-                    <br>
 
                     <div class="users-section">
                         <table class="user-table">
@@ -137,7 +134,8 @@
                             <tbody id="reviewTableBody">
                                 <?php if(count($reviews) > 0): ?>
                                     <?php foreach($reviews as $review): ?>
-                                        <tr data-id="<?= $review['id'] ?>">
+                                        <tr data-id="<?= $review['id'] ?>"
+                                            data-created-at="<?= htmlspecialchars(substr($review['created_at'] ?? '', 0, 10)) ?>">
                                             <td><?= htmlspecialchars($review['user_id']) ?></td>
                                             <td><?= htmlspecialchars($review['tourist_name']) ?></td>
                                             <td><?= htmlspecialchars($review['review_text']) ?></td>
@@ -182,10 +180,26 @@
                             </tbody>
                         </table>
                     </div>
-                    <br>
 
-                    <div class="footer-buttons">
-                        <button class="footer-btn black"id="exportBtn">Export Reviews</button>
+                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label for="exportTimelinePreset">Report period:</label>
+                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
+                                <option value="all">All time</option>
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d">Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="ytd">Year to date</option>
+                                <option value="custom">Custom range</option>
+                            </select>
+                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="export-range-label">From</span>
+                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
+                                <span class="export-range-label">To</span>
+                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
+                            </span>
+                        </div>
+                        <button class="footer-btn black" id="exportBtn">Export Reviews</button>
                     </div>
 
                 </div>
@@ -290,35 +304,79 @@
                 }
             });
 
-            // Export Reviews
-            document.getElementById("exportBtn").addEventListener("click", () => {
-                const rows = document.querySelectorAll("#reviewTableBody tr");
-                if(rows.length === 0) return alert("No reviews to export!");
+            (function() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const wrap = document.getElementById("exportCustomRangeWrap");
+                function pad(n) { return String(n).padStart(2, "0"); }
+                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+                function toggleCustom() {
+                    if (!presetEl || !wrap) return;
+                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
+                }
+                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
 
-                // Column headers
-                let txt = "User ID\tUser Name\tComment\tRating\tStatus\n";
-
-                rows.forEach(row => {
-                    if(row.style.display !== "none") { // Only visible rows (filters/search)
-                        const cells = [...row.cells];
-                        const userId = cells[0].innerText.trim();
-                        const userName = cells[1].innerText.trim();
-                        const comment = cells[2].innerText.trim();
-                        const rating = cells[3].innerText.trim();
-                        const status = cells[4].innerText.trim();
-
-                        txt += [userId, userName, comment, rating, status].join("\t") + "\n";
+                function resolveExportRange() {
+                    const v = presetEl ? presetEl.value : "all";
+                    if (v === "custom") {
+                        const f = document.getElementById("exportDateFrom").value;
+                        const t = document.getElementById("exportDateTo").value;
+                        if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
+                        if (f > t) { alert("From date must be before or equal to To date."); return null; }
+                        return { start: f, end: t };
                     }
+                    if (v === "all") return { start: null, end: null };
+                    const today = new Date();
+                    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                    let start = new Date(end);
+                    if (v === "7d") start.setDate(start.getDate() - 6);
+                    else if (v === "30d") start.setDate(start.getDate() - 29);
+                    else if (v === "90d") start.setDate(start.getDate() - 89);
+                    else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
+                    else return { start: null, end: null };
+                    return { start: ymd(start), end: ymd(end) };
+                }
+                function inRange(dateStr, range) {
+                    if (!range || (!range.start && !range.end)) return true;
+                    const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
+                    if (!d) return false;
+                    if (range.start && d < range.start) return false;
+                    if (range.end && d > range.end) return false;
+                    return true;
+                }
+
+                document.getElementById("exportBtn").addEventListener("click", () => {
+                    const range = resolveExportRange();
+                    if (range === null) return;
+
+                    const rows = document.querySelectorAll("#reviewTableBody tr");
+                    if (rows.length === 0) return alert("No reviews to export!");
+
+                    let txt = "User ID\tUser Name\tComment\tRating\tStatus\tReview date\n";
+                    let count = 0;
+                    rows.forEach(row => {
+                        if (row.style.display !== "none" && inRange(row.dataset.createdAt, range)) {
+                            const cells = [...row.cells];
+                            const userId = cells[0].innerText.trim();
+                            const userName = cells[1].innerText.trim();
+                            const comment = cells[2].innerText.trim();
+                            const rating = cells[3].innerText.trim();
+                            const status = cells[4].innerText.trim();
+                            const revDate = row.dataset.createdAt || "—";
+                            txt += [userId, userName, comment, rating, status, revDate].join("\t") + "\n";
+                            count++;
+                        }
+                    });
+                    if (count === 0) { alert("No reviews in the selected period."); return; }
+
+                    const blob = new Blob([txt], { type: "text/plain" });
+                    const link = document.createElement("a");
+                    const stamp = new Date().toISOString().slice(0, 10);
+                    const tag = range.start && range.end ? `${range.start}_to_${range.end}` : "all_time";
+                    link.download = `reviews_${tag}_${stamp}.txt`;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
                 });
-
-                const blob = new Blob([txt], { type: "text/plain" });
-                const link = document.createElement("a");
-
-                const date = new Date().toISOString().slice(0,10); // YYYY-MM-DD
-                link.download = `reviews_${date}.txt`;
-                link.href = URL.createObjectURL(blob);
-                link.click();
-            });
+            })();
         </script>
     </body>
 </html>

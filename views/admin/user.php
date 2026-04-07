@@ -66,7 +66,7 @@
                     <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                     <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                     <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
-                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
@@ -130,7 +130,7 @@
                             <tbody id="userTableBody">
                             <?php if(count($users)>0): ?>
                                 <?php foreach($users as $user): ?>
-                                    <tr data-id="<?= $user['id'] ?>">
+                                    <tr data-id="<?= $user['id'] ?>" data-created-at="<?= htmlspecialchars(substr($user['created_at'] ?? '', 0, 10)) ?>">
                                         <td><?= htmlspecialchars($user['first_name']) ?></td>
                                         <td><?= htmlspecialchars($user['last_name']) ?></td>
                                         <td><?= htmlspecialchars($user['contact_number']) ?></td>
@@ -157,7 +157,24 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons">
+                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label for="exportTimelinePreset">Report period:</label>
+                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
+                                <option value="all">All time</option>
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d">Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="ytd">Year to date</option>
+                                <option value="custom">Custom range</option>
+                            </select>
+                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="export-range-label">From</span>
+                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
+                                <span class="export-range-label">To</span>
+                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
+                            </span>
+                        </div>
                         <button class="footer-btn black" id="exportBtn">Export Users</button>
                     </div>
                 </div>
@@ -296,29 +313,77 @@
             //auto search
             document.getElementById("searchInput").addEventListener("input", applySearch);
 
-            // Export Users
-            document.getElementById("exportBtn").addEventListener("click", () => {
-                const rows = document.querySelectorAll("#userTableBody tr");
-                if(rows.length === 0) { alert("No users to export!"); return; }
+            (function() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const wrap = document.getElementById("exportCustomRangeWrap");
+                function pad(n) { return String(n).padStart(2, "0"); }
+                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+                function toggleCustom() {
+                    if (!presetEl || !wrap) return;
+                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
+                }
+                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
 
-                let txtContent = "First Name\tLast Name\tContact Number\tEmail\n";
-                rows.forEach(row => {
-                    if(row.style.display !== "none"){
+                function resolveExportRange() {
+                    const v = presetEl ? presetEl.value : "all";
+                    if (v === "custom") {
+                        const f = document.getElementById("exportDateFrom").value;
+                        const t = document.getElementById("exportDateTo").value;
+                        if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
+                        if (f > t) { alert("From date must be before or equal to To date."); return null; }
+                        return { start: f, end: t };
+                    }
+                    if (v === "all") return { start: null, end: null };
+                    const today = new Date();
+                    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                    let start = new Date(end);
+                    if (v === "7d") start.setDate(start.getDate() - 6);
+                    else if (v === "30d") start.setDate(start.getDate() - 29);
+                    else if (v === "90d") start.setDate(start.getDate() - 89);
+                    else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
+                    else return { start: null, end: null };
+                    return { start: ymd(start), end: ymd(end) };
+                }
+                function inRange(dateStr, range) {
+                    if (!range || (!range.start && !range.end)) return true;
+                    const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
+                    if (!d) return false;
+                    if (range.start && d < range.start) return false;
+                    if (range.end && d > range.end) return false;
+                    return true;
+                }
+
+                document.getElementById("exportBtn").addEventListener("click", () => {
+                    const range = resolveExportRange();
+                    if (range === null) return;
+
+                    const rows = document.querySelectorAll("#userTableBody tr");
+                    if (rows.length === 0) { alert("No users to export!"); return; }
+
+                    let txtContent = "First Name\tLast Name\tContact Number\tEmail\tRegistered (date)\n";
+                    let count = 0;
+                    rows.forEach(row => {
+                        if (row.style.display === "none") return;
+                        const created = row.dataset.createdAt || "";
+                        if (!inRange(created, range)) return;
                         const fn = row.cells[0].innerText;
                         const ln = row.cells[1].innerText;
                         const cn = row.cells[2].innerText;
                         const em = row.cells[3].innerText;
-                        txtContent += `${fn}\t${ln}\t${cn}\t${em}\n`;
-                    }
-                });
+                        txtContent += `${fn}\t${ln}\t${cn}\t${em}\t${created || "—"}\n`;
+                        count++;
+                    });
+                    if (count === 0) { alert("No users in the selected period."); return; }
 
-                const blob = new Blob([txtContent], { type: "text/plain" });
-                const link = document.createElement("a");
-                const date = new Date().toISOString().slice(0,10);
-                link.href = URL.createObjectURL(blob);
-                link.download = `tourist_users_${date}.txt`;
-                link.click();
-            });
+                    const blob = new Blob([txtContent], { type: "text/plain" });
+                    const link = document.createElement("a");
+                    const stamp = new Date().toISOString().slice(0, 10);
+                    const tag = range.start && range.end ? `${range.start}_to_${range.end}` : "all_time";
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `tourist_users_${tag}_${stamp}.txt`;
+                    link.click();
+                });
+            })();
         </script>
     </body>
 </html>
