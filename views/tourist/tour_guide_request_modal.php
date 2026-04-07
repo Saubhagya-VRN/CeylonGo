@@ -23,18 +23,18 @@ $time_slots = ['', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
       <div class="trip-modal-form-grid">
         <div class="trip-modal-col">
           <div class="trip-modal-field">
-            <label for="tg_customerName">Customer Name</label>
+            <label for="tg_customerName">Customer Name<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="text" id="tg_customerName" name="customerName" value="<?php echo htmlspecialchars($guide_modal_customer_name); ?>" required>
           </div>
           <div class="trip-modal-field">
-            <label for="tg_location">Location</label>
+            <label for="tg_location">Location<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-location-wrap">
               <i class="fa-solid fa-location-dot trip-modal-location-icon" aria-hidden="true"></i>
               <input type="text" id="tg_location" name="location" placeholder="Type to search a place" autocomplete="off" required>
             </div>
           </div>
           <div class="trip-modal-field">
-            <label for="tg_date">Preferred Date</label>
+            <label for="tg_date">Preferred Date<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-input-wrap trip-modal-input-wrap--date">
               <input type="date" id="tg_date" name="date" required>
             </div>
@@ -42,11 +42,11 @@ $time_slots = ['', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
         </div>
         <div class="trip-modal-col">
           <div class="trip-modal-field">
-            <label for="tg_contact">Contact Number</label>
+            <label for="tg_contact">Contact Number<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="text" id="tg_contact" name="contact" value="<?php echo htmlspecialchars($guide_modal_contact); ?>" required>
           </div>
           <div class="trip-modal-field">
-            <label for="tg_language">Preferred Language</label>
+            <label for="tg_language">Preferred Language<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-input-wrap trip-modal-select-wrap">
               <select id="tg_language" name="language" required>
                 <?php foreach ($languages as $val => $label): ?>
@@ -57,7 +57,7 @@ $time_slots = ['', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00'
             </div>
           </div>
           <div class="trip-modal-field">
-            <label for="tg_time">Preferred Time</label>
+            <label for="tg_time">Preferred Time<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-input-wrap trip-modal-select-wrap">
               <select id="tg_time" name="time" required>
                 <option value="">Select time</option>

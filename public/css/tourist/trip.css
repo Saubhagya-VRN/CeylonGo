@@ -38,6 +38,8 @@
   gap: 16px;
   margin-bottom: 20px;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .trip-stepper-prev,
@@ -52,6 +54,7 @@
 
 .trip-page-title.trip-title-centered {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,15 +113,23 @@
 /* Stepper steps strip – subtle shadow, active = thick green underline */
 .trip-stepper-steps-wrap {
   margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  -webkit-overflow-scrolling: touch;
 }
 
 .trip-stepper-steps {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0;
+  width: max-content;
   min-width: min-content;
 }
 
@@ -170,6 +181,9 @@
 /* Step panels */
 .trip-step-panel {
   display: none;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .trip-step-panel.active {
@@ -182,6 +196,8 @@
   padding: 28px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--trip-border);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Destination & Dates step – centered, green accent, reference layout */
@@ -2902,6 +2918,12 @@ body.trip-page-body {
   font-size: 13px;
   font-weight: 600;
   color: #333;
+}
+
+.trip-required-star {
+  color: #c62828;
+  font-weight: 700;
+  margin-left: 3px;
 }
 .trip-modal-field input,
 .trip-modal-field select {

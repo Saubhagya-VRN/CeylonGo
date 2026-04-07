@@ -23,15 +23,15 @@ $vehicle_types = [
       <div class="trip-modal-form-grid">
         <div class="trip-modal-col">
           <div class="trip-modal-field">
-            <label for="tr_customerName">Customer Name</label>
+            <label for="tr_customerName">Customer Name<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="text" id="tr_customerName" name="customerName" value="<?php echo htmlspecialchars($modal_customer_name); ?>" required>
           </div>
           <div class="trip-modal-field">
-            <label for="tr_date">Date</label>
+            <label for="tr_date">Date<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="date" id="tr_date" name="date" placeholder="mm/dd/yyyy" required>
           </div>
           <div class="trip-modal-field">
-            <label for="tr_vehicleType">Vehicle Type</label>
+            <label for="tr_vehicleType">Vehicle Type<span class="trip-required-star" aria-hidden="true">*</span></label>
             <p class="trip-modal-field-error" id="tr_vehicleError" role="alert" aria-live="polite" style="display:none; color:#c62828; font-size:13px; margin:4px 0 0 0;"></p>
             <div class="trip-modal-input-wrap trip-modal-select-wrap">
               <select id="tr_vehicleType" name="vehicleType" required>
@@ -43,7 +43,7 @@ $vehicle_types = [
             </div>
           </div>
           <div class="trip-modal-field">
-            <label for="tr_pickupTime">Pickup Time</label>
+            <label for="tr_pickupTime">Pickup Time<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="time" id="tr_pickupTime" name="pickupTime" placeholder=" --:-- -- " required>
           </div>
           <div class="trip-modal-field">
@@ -53,29 +53,29 @@ $vehicle_types = [
         </div>
         <div class="trip-modal-col">
           <div class="trip-modal-field">
-            <label for="tr_contactNumber">Contact Number</label>
+            <label for="tr_contactNumber">Contact Number<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="text" id="tr_contactNumber" name="contactNumber" value="<?php echo htmlspecialchars($modal_contact); ?>" required>
           </div>
           <div class="trip-modal-field">
-            <label for="tr_numPeople">No. of People</label>
+            <label for="tr_numPeople">No. of People<span class="trip-required-star" aria-hidden="true">*</span></label>
             <input type="number" id="tr_numPeople" name="numPeople" min="1" value="1" required>
           </div>
           <div class="trip-modal-field trip-modal-location-field">
-            <label for="tr_pickupLocation">Pickup Location</label>
+            <label for="tr_pickupLocation">Pickup Location<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-location-wrap">
               <i class="fa-solid fa-map-pin trip-modal-location-icon"></i>
               <input type="text" id="tr_pickupLocation" name="pickupLocation" placeholder="Bandaranaike Airport" autocomplete="off" required>
             </div>
           </div>
           <div class="trip-modal-field trip-modal-location-field">
-            <label for="tr_dropoffLocation">Dropoff Location</label>
+            <label for="tr_dropoffLocation">Dropoff Location<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-location-wrap">
               <i class="fa-solid fa-map-pin trip-modal-location-icon"></i>
               <input type="text" id="tr_dropoffLocation" name="dropoffLocation" placeholder="Galle Fort" autocomplete="off" required>
             </div>
           </div>
           <div class="trip-modal-field trip-modal-estimated-fare">
-            <label for="tr_estimatedFare">Estimated Fare</label>
+            <label for="tr_estimatedFare">Estimated Fare<span class="trip-required-star" aria-hidden="true">*</span></label>
             <div class="trip-modal-fare-row">
               <input type="text" id="tr_estimatedFare" value="LKR 0.00" readonly class="trip-modal-fare-input">
               <input type="hidden" id="tr_estimatedFareValue" name="estimatedFare" value="">
