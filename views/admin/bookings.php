@@ -260,6 +260,26 @@
                     <br>
 
                     <div class="bookings-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                            
+                            <!-- LEFT -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+
+                                <select id="pkgRowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+
+                            <!-- RIGHT -->
+                            <div id="pkgPaginationControls" class="filter-buttons"></div>
+
+                        </div>
                         <table class="booking-table">
                             <thead>
                                 <tr>
@@ -836,6 +856,73 @@
 
             // Initialize
             renderTable();
+
+            // ── PAGINATION FOR PACKAGE BOOKINGS ───────────────────
+
+            // Get all rows
+            const allPkgRows = Array.from(document.querySelectorAll("#pkgBookingsTableBody tr"))
+                .filter(row => row.children.length > 1); // ignore "no data" row
+            const pkgRowsPerPageSelect = document.getElementById("pkgRowsPerPage");
+            const pkgPaginationControls = document.getElementById("pkgPaginationControls");
+
+            let pkgCurrentPage = 1;
+            let pkgRowsPerPage = parseInt(pkgRowsPerPageSelect.value);
+
+            // Render table
+            function renderPkgTable() {
+                const tbody = document.getElementById("pkgBookingsTableBody");
+                tbody.innerHTML = "";
+
+                const start = (pkgCurrentPage - 1) * pkgRowsPerPage;
+                const end = start + pkgRowsPerPage;
+
+                const pageRows = allPkgRows.slice(start, end);
+
+                pageRows.forEach(row => tbody.appendChild(row));
+
+                renderPkgPagination();
+            }
+
+            // Pagination UI
+            function renderPkgPagination() {
+                const totalPages = Math.ceil(allPkgRows.length / pkgRowsPerPage);
+
+                pkgPaginationControls.innerHTML = `
+                    <button class="filter-btn small-btn" ${pkgCurrentPage === 1 ? "disabled" : ""} onclick="pkgPrevPage()">Prev</button>
+
+                    <span class="page-info">
+                        Page ${pkgCurrentPage} of ${totalPages}
+                    </span>
+
+                    <button class="filter-btn small-btn" ${pkgCurrentPage === totalPages ? "disabled" : ""} onclick="pkgNextPage()">Next</button>
+                `;
+            }
+
+            // Navigation
+            function pkgNextPage() {
+                const totalPages = Math.ceil(allPkgRows.length / pkgRowsPerPage);
+                if (pkgCurrentPage < totalPages) {
+                    pkgCurrentPage++;
+                    renderPkgTable();
+                }
+            }
+
+            function pkgPrevPage() {
+                if (pkgCurrentPage > 1) {
+                    pkgCurrentPage--;
+                    renderPkgTable();
+                }
+            }
+
+            // Change rows
+            pkgRowsPerPageSelect.addEventListener("change", function() {
+                pkgRowsPerPage = parseInt(this.value);
+                pkgCurrentPage = 1;
+                renderPkgTable();
+            });
+
+            // Initialize
+            renderPkgTable();
         </script>
     </body>
 </html>

@@ -3,12 +3,12 @@
         header("Location: /CeylonGo/public/login");
         exit();
     }
- 
-    // ── Server-side filtering ──────────────────────────────────
+
+    // ── Package Payments: Server-side filtering ────────────────
     $paySearch         = $_GET['pay_search'] ?? '';
     $paySelectedStatus = $_GET['pay_status'] ?? 'all';
     $payDate           = $_GET['pay_date']   ?? '';
- 
+
     $filteredPayments = array_filter($payments ?? [], function($p) use ($paySearch, $paySelectedStatus, $payDate) {
         if ($paySelectedStatus !== 'all' && strtolower($p['status']) !== $paySelectedStatus) return false;
         if ($payDate) {
@@ -24,13 +24,34 @@
         }
         return true;
     });
+
+    // ── Trip Payments: Server-side filtering ───────────────────
+    $tripPaySearch         = $_GET['trip_pay_search'] ?? '';
+    $tripPaySelectedStatus = $_GET['trip_pay_status'] ?? 'all';
+    $tripPayDate           = $_GET['trip_pay_date']   ?? '';
+
+    $filteredTripPayments = array_filter($tripPayments ?? [], function($t) use ($tripPaySearch, $tripPaySelectedStatus, $tripPayDate) {
+        if ($tripPaySelectedStatus !== 'all' && strtolower($t['status']) !== $tripPaySelectedStatus) return false;
+        if ($tripPayDate) {
+            $checkDate = $t['paid_at'] ?? ($t['bank_transfer_submitted_at'] ?? $t['created_at']);
+            if (!$checkDate || date('Y-m-d', strtotime($checkDate)) !== $tripPayDate) return false;
+        }
+        if ($tripPaySearch) {
+            $q = strtolower($tripPaySearch);
+            $haystack = strtolower(
+                $t['id'] . ' ' . $t['customer_name'] . ' ' . $t['destination']
+            );
+            if (strpos($haystack, $q) === false) return false;
+        }
+        return true;
+    });
 ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
- 
+
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/payments.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
@@ -38,10 +59,10 @@
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
- 
+
         <title>Payments Management</title>
     </head>
- 
+
     <body>
         <!-- Navbar -->
         <header class="navbar">
@@ -60,11 +81,11 @@
                 </div>
             </nav>
         </header>
- 
+
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
- 
+
         <div class="page-wrapper">
- 
+
             <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
@@ -79,19 +100,227 @@
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
- 
+
             <div class="main-content">
                 <div class="payments-management">
- 
+
                     <h2 class="page-title">Payments Management</h2>
                     <br>
- 
+
+                    <h4 class="page-title" style="font-size:16px;">Customized Booking Payments</h4>
+
+                    <!-- Search, Filter & Date toolbar (trip payments) -->
+                    <form method="GET" action="/CeylonGo/public/admin/payments">
+                        <!-- Preserve package-payments filters across submits -->
+                        <input type="hidden" name="pay_search" value="<?= htmlspecialchars($paySearch) ?>">
+                        <input type="hidden" name="pay_status" value="<?= htmlspecialchars($paySelectedStatus) ?>">
+                        <input type="hidden" name="pay_date"   value="<?= htmlspecialchars($payDate) ?>">
+                        <div class="toolbar">
+                            <div class="search-section">
+                                <input type="text" name="trip_pay_search"
+                                    placeholder="Search by ID, customer or destination"
+                                    class="search-input"
+                                    value="<?= htmlspecialchars($tripPaySearch) ?>">
+                                <button type="submit" class="search-btn">🔍</button>
+                            </div>
+                            <div class="filter-buttons">
+                                <?php
+                                    $tripPayStatuses = [
+                                        'all'       => 'All',
+                                        'completed' => 'Completed',
+                                        'pending'   => 'Pending',
+                                        'cancelled' => 'Cancelled',
+                                    ];
+                                    foreach ($tripPayStatuses as $val => $label):
+                                        $active = $tripPaySelectedStatus === $val ? 'active' : '';
+                                        echo "<button type='submit' name='trip_pay_status' value='{$val}' class='filter-btn {$active}'>{$label}</button>";
+                                    endforeach;
+                                ?>
+                            </div>
+                            <div class="date-filter">
+                                <input type="date" name="trip_pay_date" class="date-input"
+                                    value="<?= htmlspecialchars($tripPayDate) ?>"
+                                    onchange="this.form.submit()">
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Trip Payment Stats -->
+                    <div class="stats-section">
+                        <h4>Trip Payment Statistics</h4><br>
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong>Total</strong><br>
+                                <span><?= $tripPayStats['total'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Completed</strong><br>
+                                <span><?= $tripPayStats['completed'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Pending</strong><br>
+                                <span><?= $tripPayStats['pending'] ?? 0 ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Cancelled</strong><br>
+                                <span><?= $tripPayStats['cancelled'] ?? 0 ?></span>
+                            </div>
+                            <?php if (($tripPayStats['refund_requested'] ?? 0) > 0): ?>
+                                <div class="stat-box refund-card">
+                                    <strong>Refund Requests</strong><br>
+                                    <span><?= $tripPayStats['refund_requested'] ?></span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- Trip Payments Table -->
+                    <div class="payments-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                            <!-- LEFT: Show entries -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+                                <select id="tripPayRowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+                            <!-- RIGHT: Pagination -->
+                            <div id="tripPayPaginationControls" class="filter-buttons"></div>
+                        </div>
+
+                        <table class="payments-table">
+                            <thead>
+                                <tr>
+                                    <th>Trip ID</th>
+                                    <th>Customer</th>
+                                    <th>Destination</th>
+                                    <th>Amount (LKR)</th>
+                                    <th>Method</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tripPaymentsTableBody">
+                                <?php if (empty($filteredTripPayments)): ?>
+                                    <tr><td colspan="8" style="text-align:center;">No trip payments found.</td></tr>
+                                <?php else: ?>
+                                    <?php foreach ($filteredTripPayments as $t):
+                                        $tStatus = strtolower($t['status']);
+                                        switch ($tStatus) {
+                                            case 'completed': $tsc = 'completed'; break;
+                                            case 'confirmed': $tsc = 'approved';  break;
+                                            case 'pending':   $tsc = 'pending';   break;
+                                            case 'cancelled': $tsc = 'canceled';  break;
+                                            default:          $tsc = '';
+                                        }
+                                        if (!empty($t['payhere_payment_id'])) {
+                                            $tMethod = 'Online';
+                                        } elseif (!empty($t['bank_transfer_submitted_at'])) {
+                                            $tMethod = 'Bank Transfer';
+                                        } else {
+                                            $tMethod = '—';
+                                        }
+                                        $tDisplayDate = $t['paid_at']
+                                            ?? ($t['bank_transfer_submitted_at']
+                                            ?? $t['created_at']);
+                                        $tHasRefund = !empty($t['refund_requested_at']);
+                                        $tHasSlip   = !empty($t['bank_transfer_slip_path']);
+                                    ?>
+                                    <tr>
+                                        <td>#<?= (int)$t['id'] ?></td>
+                                        <td><?= htmlspecialchars($t['customer_name']) ?></td>
+                                        <td><?= htmlspecialchars($t['destination']) ?></td>
+                                        <td>
+                                            <?= $t['budget_lkr'] ? number_format((float)$t['budget_lkr'], 2) : '—' ?>
+                                        </td>
+                                        <td>
+                                            <?= $tMethod ?>
+                                            <?php if ($tHasSlip): ?>
+                                                <br><small><a href="/CeylonGo/public/uploads/<?= htmlspecialchars($t['bank_transfer_slip_path']) ?>"
+                                                    target="_blank" style="color:#007bff;">View Slip</a></small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <span class="status <?= $tsc ?>"><?= ucfirst($t['status']) ?></span>
+                                            <?php if ($tHasRefund): ?>
+                                                <br><span class="refund-badge" title="Refund requested: <?= htmlspecialchars($t['refund_reason'] ?? '') ?>">⚠️ Refund</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?= $tDisplayDate ? date('Y-m-d', strtotime($tDisplayDate)) : '—' ?></td>
+                                        <td class="actions">
+                                            <!-- View details — always shown -->
+                                            <button class="icon-btn trip-pay-view-btn"
+                                                    data-id="<?= (int)$t['id'] ?>"
+                                                    title="View Details">👁️</button>
+
+                                            <?php if ($tStatus === 'pending' && !$tHasSlip): ?>
+                                                <!-- Pending with no slip: admin manually marks paid -->
+                                                <button class="icon-btn trip-pay-verify-btn"
+                                                        data-id="<?= (int)$t['id'] ?>"
+                                                        title="Mark as Paid">✅</button>
+
+                                            <?php elseif ($tHasSlip && $tStatus === 'pending' && empty($t['paid_at'])): ?>
+                                                <!-- Bank slip submitted, awaiting admin approval -->
+                                                <button class="icon-btn trip-pay-slip-approve-btn"
+                                                        data-id="<?= (int)$t['id'] ?>"
+                                                        data-slip="<?= htmlspecialchars($t['bank_transfer_slip_path']) ?>"
+                                                        title="Approve Bank Transfer">🏦✅</button>
+                                            <?php endif; ?>
+
+                                            <?php if ($tHasRefund && empty($t['refund_approved_at'])): ?>
+                                                <!-- Refund requested, awaiting admin approval -->
+                                                <button class="icon-btn trip-pay-refund-approve-btn"
+                                                        data-id="<?= (int)$t['id'] ?>"
+                                                        data-reason="<?= htmlspecialchars($t['refund_reason'] ?? '') ?>"
+                                                        title="Approve Refund">↩️✅</button>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label for="tripExportTimelinePreset">Report period (Trip Payments):</label>
+                            <select id="tripExportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
+                                <option value="all">All time</option>
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d">Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="ytd">Year to date</option>
+                                <option value="custom">Custom range</option>
+                            </select>
+                            <span id="tripExportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="export-range-label">From</span>
+                                <div class="date-filter"><input type="date" id="tripExportDateFrom" class="date-input"></div>
+                                <span class="export-range-label">To</span>
+                                <div class="date-filter"><input type="date" id="tripExportDateTo" class="date-input"></div>
+                            </span>
+                        </div>
+                        <button class="footer-btn black" id="exportTripPayBtn">Export Trip Payments</button>
+                    </div>
+
+                    <br><br>
+                    <h4 class="page-title" style="font-size:16px;">Package Booking Payments</h4>
+
                     <!-- Search, Filter & Date toolbar -->
                     <form method="GET" action="/CeylonGo/public/admin/payments">
+                        <!-- Preserve trip-payments filters across submits -->
+                        <input type="hidden" name="trip_pay_search" value="<?= htmlspecialchars($tripPaySearch) ?>">
+                        <input type="hidden" name="trip_pay_status" value="<?= htmlspecialchars($tripPaySelectedStatus) ?>">
+                        <input type="hidden" name="trip_pay_date"   value="<?= htmlspecialchars($tripPayDate) ?>">
                         <div class="toolbar">
                             <div class="search-section">
                                 <input type="text" name="pay_search"
-                                    placeholder="Search by customer/ package"
+                                    placeholder="Search by customer / package"
                                     class="search-input"
                                     value="<?= htmlspecialchars($paySearch) ?>">
                                 <button type="submit" class="search-btn">🔍</button>
@@ -119,7 +348,7 @@
                             </div>
                         </div>
                     </form>
- 
+
                     <!-- Stats -->
                     <div class="stats-section">
                         <h4>Payment Statistics</h4><br>
@@ -156,9 +385,25 @@
                             <?php endif; ?>
                         </div>
                     </div>
- 
-                    <!-- Payments Table -->
+
+                    <!-- Package Payments Table -->
                     <div class="payments-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                            <!-- LEFT: Show entries -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+                                <select id="payRowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+                            <!-- RIGHT: Pagination -->
+                            <div id="payPaginationControls" class="filter-buttons"></div>
+                        </div>
+
                         <table class="payments-table">
                             <thead>
                                 <tr>
@@ -224,13 +469,13 @@
                                             <button class="icon-btn pay-view-btn"
                                                     data-id="<?= (int)$p['id'] ?>"
                                                     title="View Details">👁️</button>
- 
+
                                             <?php if ($status === 'pending' && !$hasSlip): ?>
                                                 <!-- Pending with no slip: admin manually marks paid -->
                                                 <button class="icon-btn pay-verify-btn"
                                                         data-id="<?= (int)$p['id'] ?>"
                                                         title="Mark as Paid">✅</button>
- 
+
                                             <?php elseif ($hasSlip && in_array($status, ['pending','approved']) && empty($p['paid_at'])): ?>
                                                 <!-- Bank slip submitted, awaiting admin approval -->
                                                 <button class="icon-btn pay-slip-approve-btn"
@@ -238,7 +483,7 @@
                                                         data-slip="<?= htmlspecialchars($p['bank_transfer_slip_path']) ?>"
                                                         title="Approve Bank Transfer">🏦✅</button>
                                             <?php endif; ?>
- 
+
                                             <?php if ($hasRefund && empty($p['refund_approved_at'])): ?>
                                                 <!-- Refund requested, awaiting admin approval -->
                                                 <button class="icon-btn pay-refund-approve-btn"
@@ -253,10 +498,10 @@
                             </tbody>
                         </table>
                     </div>
- 
+
                     <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
                         <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period:</label>
+                            <label for="exportTimelinePreset">Report period (Package Payments):</label>
                             <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
                                 <option value="all">All time</option>
                                 <option value="7d">Last 7 days</option>
@@ -272,15 +517,15 @@
                                 <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportPayBtn">Export Payments</button>
+                        <button class="footer-btn black" id="exportPayBtn">Export Package Payments</button>
                     </div>
- 
+
                 </div><!-- /payments-management -->
             </div><!-- /main-content -->
- 
+
         </div><!-- /page-wrapper -->
- 
-        <!-- Payment Details Modal — outside page-wrapper so it isn't caught in flex layout -->
+
+        <!-- Package Payment Details Modal -->
         <div id="paymentModal" class="modal" style="display:none;">
             <div class="modal-content">
                 <span class="pay-modal-close">&times;</span>
@@ -288,7 +533,16 @@
                 <div id="paymentDetailsContent">Loading...</div>
             </div>
         </div>
- 
+
+        <!-- Trip Payment Details Modal -->
+        <div id="tripPaymentModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="trip-pay-modal-close">&times;</span>
+                <u><h3>Trip Payment Details</h3></u>
+                <div id="tripPaymentDetailsContent">Loading...</div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <footer>
             <ul>
@@ -297,7 +551,7 @@
                 <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
             </ul>
         </footer>
- 
+
         <script>
             // ── Navbar dropdown ───────────────────────────────────
             function toggleProfileDropdown() {
@@ -311,7 +565,11 @@
                     dropdown.classList.remove('show');
                 }
             });
- 
+
+            // ══════════════════════════════════════════════════════
+            //  PACKAGE PAYMENTS DATA & LOGIC
+            // ══════════════════════════════════════════════════════
+
             // ── Embed payment data ────────────────────────────────
             const paymentsData = <?= json_encode(array_values(array_map(function($p) {
                 return [
@@ -338,82 +596,109 @@
                 ];
             }, $filteredPayments)), JSON_UNESCAPED_UNICODE) ?>;
 
-            (function() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const wrap = document.getElementById("exportCustomRangeWrap");
-                function toggleCustom() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
-            })();
+            // ── Embed trip payments data ──────────────────────────
+            const tripPaymentsData = <?= json_encode(array_values(array_map(function($t) {
+                return [
+                    'id'                         => $t['id'],
+                    'customer_name'              => $t['customer_name'],
+                    'destination'                => $t['destination'],
+                    'number_of_people'           => $t['number_of_people'],
+                    'number_of_days'             => $t['number_of_days'],
+                    'start_date'                 => $t['start_date'],
+                    'budget_lkr'                 => $t['budget_lkr'] ?? '',
+                    'status'                     => $t['status'],
+                    'payhere_payment_id'         => $t['payhere_payment_id'] ?? '',
+                    'paid_at'                    => $t['paid_at'] ?? '',
+                    'bank_transfer_submitted_at' => $t['bank_transfer_submitted_at'] ?? '',
+                    'bank_transfer_slip_path'    => $t['bank_transfer_slip_path'] ?? '',
+                    'refund_requested_at'        => $t['refund_requested_at'] ?? '',
+                    'refund_reason'              => $t['refund_reason'] ?? '',
+                    'created_at'                 => $t['created_at'],
+                ];
+            }, $filteredTripPayments)), JSON_UNESCAPED_UNICODE) ?>;
 
-            function paymentExportSortDate(p) {
-                const s = p.paid_at || p.bank_transfer_submitted_at || p.created_at || "";
-                return String(s).slice(0, 10);
+            // ── Shared date helpers ───────────────────────────────
+            function pad(n) { return String(n).padStart(2, "0"); }
+            function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+            function inDateRange(dateStr, range) {
+                if (!range || (!range.start && !range.end)) return true;
+                const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
+                if (!d) return false;
+                if (range.start && d < range.start) return false;
+                if (range.end   && d > range.end)   return false;
+                return true;
             }
-            function resolvePaymentsExportRange() {
-                const presetEl = document.getElementById("exportTimelinePreset");
+            function periodLabel(range) {
+                if (!range || (!range.start && !range.end)) return "All time";
+                return range.start + " to " + range.end;
+            }
+            function resolveExportRange(presetId, fromId, toId) {
+                const presetEl = document.getElementById(presetId);
                 const v = presetEl ? presetEl.value : "all";
                 if (v === "custom") {
-                    const f = document.getElementById("exportDateFrom").value;
-                    const t = document.getElementById("exportDateTo").value;
+                    const f = document.getElementById(fromId).value;
+                    const t = document.getElementById(toId).value;
                     if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
-                    if (f > t) { alert("From date must be before or equal to To date."); return null; }
+                    if (f > t)   { alert("From date must be before or equal to To date."); return null; }
                     return { start: f, end: t };
                 }
                 if (v === "all") return { start: null, end: null };
                 const today = new Date();
                 const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                 let start = new Date(end);
-                if (v === "7d") start.setDate(start.getDate() - 6);
+                if      (v === "7d")  start.setDate(start.getDate() - 6);
                 else if (v === "30d") start.setDate(start.getDate() - 29);
                 else if (v === "90d") start.setDate(start.getDate() - 89);
                 else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
                 else return { start: null, end: null };
-                const pad = function(n) { return String(n).padStart(2, "0"); };
-                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
                 return { start: ymd(start), end: ymd(end) };
             }
-            function inPaymentsDateRange(dateStr, range) {
-                if (!range || (!range.start && !range.end)) return true;
-                const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
-                if (!d) return false;
-                if (range.start && d < range.start) return false;
-                if (range.end && d > range.end) return false;
-                return true;
-            }
-            function paymentsPeriodLabel(range) {
-                if (!range || (!range.start && !range.end)) return "All time";
-                return range.start + " to " + range.end;
-            }
- 
-            // ── Modal setup ───────────────────────────────────────
+
+            // ── Package payments: export preset toggle ────────────
+            (function() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const wrap     = document.getElementById("exportCustomRangeWrap");
+                function toggle() {
+                    if (!presetEl || !wrap) return;
+                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
+                }
+                if (presetEl) { presetEl.addEventListener("change", toggle); toggle(); }
+            })();
+
+            // ── Trip payments: export preset toggle ───────────────
+            (function() {
+                const presetEl = document.getElementById("tripExportTimelinePreset");
+                const wrap     = document.getElementById("tripExportCustomRangeWrap");
+                function toggle() {
+                    if (!presetEl || !wrap) return;
+                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
+                }
+                if (presetEl) { presetEl.addEventListener("change", toggle); toggle(); }
+            })();
+
+            // ── Package payment modal ─────────────────────────────
             const paymentModal   = document.getElementById('paymentModal');
             const paymentContent = document.getElementById('paymentDetailsContent');
             const payModalClose  = paymentModal.querySelector('.pay-modal-close');
- 
+
             payModalClose.onclick = () => paymentModal.style.display = 'none';
-            window.onclick = e => { if (e.target == paymentModal) paymentModal.style.display = 'none'; };
- 
-            // ── View payment details ──────────────────────────────
+
             document.querySelectorAll('.pay-view-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = parseInt(this.dataset.id);
                     const p  = paymentsData.find(x => x.id === id);
                     if (!p) return;
- 
+
                     let method = '—';
-                    if (p.payhere_payment_id)          method = 'Online (PayHere)';
+                    if (p.payhere_payment_id)              method = 'Online (PayHere)';
                     else if (p.bank_transfer_submitted_at) method = 'Bank Transfer';
- 
+
                     let html = '';
                     html += `<p><strong>Booking ID:</strong> #${p.id}</p>`;
                     html += `<p><strong>Customer:</strong> ${p.fullname}</p>`;
                     html += `<p><strong>Status:</strong> ${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</p>`;
                     html += `<p><strong>Submitted:</strong> ${p.created_at}</p>`;
- 
-                    // Refund alert banner
+
                     if (p.refund_requested_at) {
                         html += `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px;margin:10px 0;">
                             <strong>⚠️ Refund Requested</strong><br>
@@ -421,49 +706,102 @@
                             ${p.refund_reason ? `<em>"${p.refund_reason}"</em>` : ''}
                         </div>`;
                     }
- 
-                    html += `<h4>Payment Details</h4>`;
-                    html += `<table>
-                        <tr><th>Field</th><th>Details</th></tr>
-                        <tr><td>Package</td><td>${p.package_name}</td></tr>
-                        <tr><td>Email</td><td>${p.email}</td></tr>
-                        <tr><td>Phone</td><td>${p.phone}</td></tr>
-                        <tr><td>Travel Date</td><td>${p.travel_date}</td></tr>
-                        <tr><td>Travelers</td><td>
-                            ${p.travelers} total
-                            (${p.adults} Adult${p.adults != 1 ? 's' : ''}
-                            ${p.children > 0 ? ' / ' + p.children + ' Child' + (p.children != 1 ? 'ren' : '') : ''}
-                            ${p.infants  > 0 ? ' / ' + p.infants  + ' Infant' + (p.infants != 1 ? 's' : '') : ''})
-                        </td></tr>
-                        <tr><td>Total Amount</td><td>LKR ${Number(p.total_amount).toLocaleString()}</td></tr>
-                        <tr><td>Payment Method</td><td>${method}</td></tr>
-                        ${p.payhere_payment_id ? `<tr><td>PayHere ID</td><td>${p.payhere_payment_id}</td></tr>` : ''}
-                        ${p.paid_at ? `<tr><td>Paid At</td><td>${p.paid_at}</td></tr>` : ''}
-                        ${p.bank_transfer_submitted_at ? `<tr><td>Bank Transfer Submitted</td><td>${p.bank_transfer_submitted_at}</td></tr>` : ''}
-                        ${p.bank_transfer_slip_path ? `<tr><td>Bank Slip</td><td><a href="/CeylonGo/public/uploads/${p.bank_transfer_slip_path}" target="_blank" style="color:#007bff;">View Slip</a></td></tr>` : ''}
-                        ${p.approved_at ? `<tr><td>Approved At</td><td>${p.approved_at}</td></tr>` : ''}
-                        ${p.refund_requested_at ? `<tr><td style="color:#e65100;font-weight:bold;">Refund Requested</td><td>${p.refund_requested_at}</td></tr>` : ''}
-                        ${p.refund_reason ? `<tr><td style="color:#e65100;">Refund Reason</td><td>${p.refund_reason}</td></tr>` : ''}
-                    </table>`;
- 
+
+                    html += `<h4>Payment Details</h4>
+                        <table>
+                            <tr><th>Field</th><th>Details</th></tr>
+                            <tr><td>Package</td><td>${p.package_name}</td></tr>
+                            <tr><td>Email</td><td>${p.email}</td></tr>
+                            <tr><td>Phone</td><td>${p.phone}</td></tr>
+                            <tr><td>Travel Date</td><td>${p.travel_date}</td></tr>
+                            <tr><td>Travelers</td><td>
+                                ${p.travelers} total
+                                (${p.adults} Adult${p.adults != 1 ? 's' : ''}
+                                ${p.children > 0 ? ' / ' + p.children + ' Child' + (p.children != 1 ? 'ren' : '') : ''}
+                                ${p.infants  > 0 ? ' / ' + p.infants  + ' Infant' + (p.infants != 1 ? 's' : '') : ''})
+                            </td></tr>
+                            <tr><td>Total Amount</td><td>LKR ${Number(p.total_amount).toLocaleString()}</td></tr>
+                            <tr><td>Payment Method</td><td>${method}</td></tr>
+                            ${p.payhere_payment_id ? `<tr><td>PayHere ID</td><td>${p.payhere_payment_id}</td></tr>` : ''}
+                            ${p.paid_at ? `<tr><td>Paid At</td><td>${p.paid_at}</td></tr>` : ''}
+                            ${p.bank_transfer_submitted_at ? `<tr><td>Bank Transfer Submitted</td><td>${p.bank_transfer_submitted_at}</td></tr>` : ''}
+                            ${p.bank_transfer_slip_path ? `<tr><td>Bank Slip</td><td><a href="/CeylonGo/public/uploads/${p.bank_transfer_slip_path}" target="_blank" style="color:#007bff;">View Slip</a></td></tr>` : ''}
+                            ${p.approved_at ? `<tr><td>Approved At</td><td>${p.approved_at}</td></tr>` : ''}
+                            ${p.refund_requested_at ? `<tr><td style="color:#e65100;font-weight:bold;">Refund Requested</td><td>${p.refund_requested_at}</td></tr>` : ''}
+                            ${p.refund_reason ? `<tr><td style="color:#e65100;">Refund Reason</td><td>${p.refund_reason}</td></tr>` : ''}
+                        </table>`;
+
                     paymentContent.innerHTML = html;
                     paymentModal.style.display = 'block';
                 });
             });
- 
-            // ── Approve bank transfer slip ────────────────────────
+
+            // ── Trip payment modal ────────────────────────────────
+            const tripPaymentModal   = document.getElementById('tripPaymentModal');
+            const tripPaymentContent = document.getElementById('tripPaymentDetailsContent');
+            const tripPayModalClose  = tripPaymentModal.querySelector('.trip-pay-modal-close');
+
+            tripPayModalClose.onclick = () => tripPaymentModal.style.display = 'none';
+
+            document.querySelectorAll('.trip-pay-view-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id);
+                    const t  = tripPaymentsData.find(x => x.id === id);
+                    if (!t) return;
+
+                    let method = '—';
+                    if (t.payhere_payment_id)              method = 'Online (PayHere)';
+                    else if (t.bank_transfer_submitted_at) method = 'Bank Transfer';
+
+                    let html = '';
+                    html += `<p><strong>Trip ID:</strong> #${t.id}</p>`;
+                    html += `<p><strong>Customer:</strong> ${t.customer_name}</p>`;
+                    html += `<p><strong>Status:</strong> ${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</p>`;
+                    html += `<p><strong>Submitted:</strong> ${t.created_at}</p>`;
+
+                    if (t.refund_requested_at) {
+                        html += `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px;margin:10px 0;">
+                            <strong>⚠️ Refund Requested</strong><br>
+                            <small>On: ${t.refund_requested_at}</small><br>
+                            ${t.refund_reason ? `<em>"${t.refund_reason}"</em>` : ''}
+                        </div>`;
+                    }
+
+                    html += `<h4>Trip Payment Details</h4>
+                        <table>
+                            <tr><th>Field</th><th>Details</th></tr>
+                            <tr><td>Destination</td><td>${t.destination}</td></tr>
+                            <tr><td>Start Date</td><td>${t.start_date}</td></tr>
+                            <tr><td>People</td><td>${t.number_of_people}</td></tr>
+                            <tr><td>Days</td><td>${t.number_of_days}</td></tr>
+                            <tr><td>Amount (Budget)</td><td>${t.budget_lkr ? 'LKR ' + Number(t.budget_lkr).toLocaleString() : '—'}</td></tr>
+                            <tr><td>Payment Method</td><td>${method}</td></tr>
+                            ${t.payhere_payment_id ? `<tr><td>PayHere ID</td><td>${t.payhere_payment_id}</td></tr>` : ''}
+                            ${t.paid_at ? `<tr><td>Paid At</td><td>${t.paid_at}</td></tr>` : ''}
+                            ${t.bank_transfer_submitted_at ? `<tr><td>Bank Transfer Submitted</td><td>${t.bank_transfer_submitted_at}</td></tr>` : ''}
+                            ${t.bank_transfer_slip_path ? `<tr><td>Bank Slip</td><td><a href="/CeylonGo/public/uploads/${t.bank_transfer_slip_path}" target="_blank" style="color:#007bff;">View Slip</a></td></tr>` : ''}
+                            ${t.refund_requested_at ? `<tr><td style="color:#e65100;font-weight:bold;">Refund Requested</td><td>${t.refund_requested_at}</td></tr>` : ''}
+                            ${t.refund_reason ? `<tr><td style="color:#e65100;">Refund Reason</td><td>${t.refund_reason}</td></tr>` : ''}
+                        </table>`;
+
+                    tripPaymentContent.innerHTML = html;
+                    tripPaymentModal.style.display = 'block';
+                });
+            });
+
+            // ── Approve bank transfer slip (package) ──────────────
             document.querySelectorAll('.pay-slip-approve-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const id   = parseInt(this.dataset.id);
-                    const slip = this.dataset.slip;
+                    const id      = parseInt(this.dataset.id);
+                    const slip    = this.dataset.slip;
                     const slipUrl = '/CeylonGo/public/uploads/' + slip;
- 
+
                     if (!confirm(
                         'Approve bank transfer payment for booking #' + id + '?\n\n' +
                         'Make sure you have reviewed the slip before approving.\n' +
                         'Slip: ' + slipUrl
                     )) return;
- 
+
                     fetch('/CeylonGo/public/admin/payment/approve-slip', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -477,19 +815,46 @@
                     .catch(() => alert('Server error. Please try again.'));
                 });
             });
- 
-            // ── Approve refund request ────────────────────────────
+
+            // ── Approve bank transfer slip (trip) ─────────────────
+            document.querySelectorAll('.trip-pay-slip-approve-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id      = parseInt(this.dataset.id);
+                    const slip    = this.dataset.slip;
+                    const slipUrl = '/CeylonGo/public/uploads/' + slip;
+
+                    if (!confirm(
+                        'Approve bank transfer payment for trip #' + id + '?\n\n' +
+                        'Make sure you have reviewed the slip before approving.\n' +
+                        'Slip: ' + slipUrl
+                    )) return;
+
+                    fetch('/CeylonGo/public/admin/trip-payment/approve-slip', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `trip_id=${id}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('Failed: ' + (data.message || 'Unknown error'));
+                    })
+                    .catch(() => alert('Server error. Please try again.'));
+                });
+            });
+
+            // ── Approve refund (package) ──────────────────────────
             document.querySelectorAll('.pay-refund-approve-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id     = parseInt(this.dataset.id);
                     const reason = this.dataset.reason;
- 
+
                     if (!confirm(
                         'Approve refund for booking #' + id + '?\n\n' +
                         'Customer reason: "' + (reason || 'No reason given') + '"\n\n' +
                         'This will mark the booking as Cancelled.'
                     )) return;
- 
+
                     fetch('/CeylonGo/public/admin/payment/approve-refund', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -503,13 +868,39 @@
                     .catch(() => alert('Server error. Please try again.'));
                 });
             });
- 
-            // ── Mark as paid (manual, no slip) ────────────────────
+
+            // ── Approve refund (trip) ─────────────────────────────
+            document.querySelectorAll('.trip-pay-refund-approve-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id     = parseInt(this.dataset.id);
+                    const reason = this.dataset.reason;
+
+                    if (!confirm(
+                        'Approve refund for trip #' + id + '?\n\n' +
+                        'Customer reason: "' + (reason || 'No reason given') + '"\n\n' +
+                        'This will mark the trip as Cancelled.'
+                    )) return;
+
+                    fetch('/CeylonGo/public/admin/trip-payment/approve-refund', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `trip_id=${id}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('Failed: ' + (data.message || 'Unknown error'));
+                    })
+                    .catch(() => alert('Server error. Please try again.'));
+                });
+            });
+
+            // ── Mark as paid — package ────────────────────────────
             document.querySelectorAll('.pay-verify-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = parseInt(this.dataset.id);
                     if (!confirm('Mark this payment as Paid? This confirms the bank transfer was received.')) return;
- 
+
                     fetch('/CeylonGo/public/admin/payment/verify', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -523,64 +914,144 @@
                     .catch(() => alert('Server error. Please try again.'));
                 });
             });
- 
-            // ── Export payments report ────────────────────────────
+
+            // ── Mark as paid — trip ───────────────────────────────
+            document.querySelectorAll('.trip-pay-verify-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id);
+                    if (!confirm('Mark this trip payment as Paid? This confirms the bank transfer was received.')) return;
+
+                    fetch('/CeylonGo/public/admin/trip-payment/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `trip_id=${id}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('Failed to update: ' + (data.message || 'Unknown error'));
+                    })
+                    .catch(() => alert('Server error. Please try again.'));
+                });
+            });
+
+            // ── Close modals on outside click ─────────────────────
+            window.onclick = e => {
+                if (e.target == paymentModal)     paymentModal.style.display     = 'none';
+                if (e.target == tripPaymentModal) tripPaymentModal.style.display = 'none';
+            };
+
+            // ══════════════════════════════════════════════════════
+            //  PAGINATION — PACKAGE PAYMENTS
+            // ══════════════════════════════════════════════════════
+
+            const allPayRows       = Array.from(document.querySelectorAll('#paymentsTableBody tr'))
+                                         .filter(r => r.children.length > 1);
+            const payRPSel         = document.getElementById('payRowsPerPage');
+            const payPagCtrl       = document.getElementById('payPaginationControls');
+            let   payPage          = 1;
+            let   payRPP           = parseInt(payRPSel.value);
+
+            function renderPayTable() {
+                const tbody = document.getElementById('paymentsTableBody');
+                tbody.innerHTML = '';
+                const start = (payPage - 1) * payRPP;
+                allPayRows.slice(start, start + payRPP).forEach(r => tbody.appendChild(r));
+                renderPayPagination();
+            }
+            function renderPayPagination() {
+                const total = Math.ceil(allPayRows.length / payRPP);
+                payPagCtrl.innerHTML =
+                    `<button class="filter-btn small-btn" ${payPage === 1     ? 'disabled' : ''} onclick="payPrev()">Prev</button>` +
+                    `<span class="page-info">Page ${payPage} of ${total || 1}</span>` +
+                    `<button class="filter-btn small-btn" ${payPage === total || total === 0 ? 'disabled' : ''} onclick="payNext()">Next</button>`;
+            }
+            function payNext() { const t = Math.ceil(allPayRows.length / payRPP); if (payPage < t) { payPage++; renderPayTable(); } }
+            function payPrev() { if (payPage > 1) { payPage--; renderPayTable(); } }
+            payRPSel.addEventListener('change', function() { payRPP = parseInt(this.value); payPage = 1; renderPayTable(); });
+            renderPayTable();
+
+            // ══════════════════════════════════════════════════════
+            //  PAGINATION — TRIP PAYMENTS
+            // ══════════════════════════════════════════════════════
+
+            const allTripPayRows   = Array.from(document.querySelectorAll('#tripPaymentsTableBody tr'))
+                                         .filter(r => r.children.length > 1);
+            const tripPayRPSel     = document.getElementById('tripPayRowsPerPage');
+            const tripPayPagCtrl   = document.getElementById('tripPayPaginationControls');
+            let   tripPayPage      = 1;
+            let   tripPayRPP       = parseInt(tripPayRPSel.value);
+
+            function renderTripPayTable() {
+                const tbody = document.getElementById('tripPaymentsTableBody');
+                tbody.innerHTML = '';
+                const start = (tripPayPage - 1) * tripPayRPP;
+                allTripPayRows.slice(start, start + tripPayRPP).forEach(r => tbody.appendChild(r));
+                renderTripPayPagination();
+            }
+            function renderTripPayPagination() {
+                const total = Math.ceil(allTripPayRows.length / tripPayRPP);
+                tripPayPagCtrl.innerHTML =
+                    `<button class="filter-btn small-btn" ${tripPayPage === 1     ? 'disabled' : ''} onclick="tripPayPrev()">Prev</button>` +
+                    `<span class="page-info">Page ${tripPayPage} of ${total || 1}</span>` +
+                    `<button class="filter-btn small-btn" ${tripPayPage === total || total === 0 ? 'disabled' : ''} onclick="tripPayNext()">Next</button>`;
+            }
+            function tripPayNext() { const t = Math.ceil(allTripPayRows.length / tripPayRPP); if (tripPayPage < t) { tripPayPage++; renderTripPayTable(); } }
+            function tripPayPrev() { if (tripPayPage > 1) { tripPayPage--; renderTripPayTable(); } }
+            tripPayRPSel.addEventListener('change', function() { tripPayRPP = parseInt(this.value); tripPayPage = 1; renderTripPayTable(); });
+            renderTripPayTable();
+
+            // ══════════════════════════════════════════════════════
+            //  EXPORT — PACKAGE PAYMENTS
+            // ══════════════════════════════════════════════════════
+
             document.getElementById('exportPayBtn').addEventListener('click', function() {
                 if (!paymentsData || paymentsData.length === 0) {
                     alert('No payments to export!');
                     return;
                 }
-                const range = resolvePaymentsExportRange();
+                const range = resolveExportRange('exportTimelinePreset', 'exportDateFrom', 'exportDateTo');
                 if (range === null) return;
-                const list = paymentsData.filter(function(p) {
-                    return inPaymentsDateRange(paymentExportSortDate(p), range);
-                });
-                if (!list.length) {
-                    alert('No payments in the selected period.');
-                    return;
-                }
- 
+
+                const list = paymentsData.filter(p =>
+                    inDateRange((p.paid_at || p.bank_transfer_submitted_at || p.created_at || '').slice(0, 10), range)
+                );
+                if (!list.length) { alert('No payments in the selected period.'); return; }
+
                 const sep    = '='.repeat(70);
                 const subSep = '-'.repeat(70);
                 const now    = new Date();
                 const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
                 const timeStr = now.toLocaleTimeString('en-GB');
- 
-                let report = '';
-                report += sep + '\n';
-                report += '        CEYLON GO — PAYMENTS REPORT\n';
+
+                let report = sep + '\n';
+                report += '        CEYLON GO — PACKAGE PAYMENTS REPORT\n';
                 report += sep + '\n';
                 report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Report period  : ' + paymentsPeriodLabel(range) + '\n';
+                report += '  Report period  : ' + periodLabel(range) + '\n';
                 report += '  Total Records  : ' + list.length + '\n';
                 report += sep + '\n\n';
- 
-                list.forEach(function(p, index) {
+
+                list.forEach(function(p, i) {
                     let method = '—';
-                    if (p.payhere_payment_id)          method = 'Online (PayHere)';
+                    if (p.payhere_payment_id)              method = 'Online (PayHere)';
                     else if (p.bank_transfer_submitted_at) method = 'Bank Transfer';
- 
-                    report += 'PAYMENT ' + (index + 1) + ' OF ' + list.length + '\n';
+
+                    report += 'PAYMENT ' + (i + 1) + ' OF ' + list.length + '\n';
                     report += sep + '\n';
- 
-                    report += '  CUSTOMER\n';
-                    report += '  ' + subSep + '\n';
+                    report += '  CUSTOMER\n  ' + subSep + '\n';
                     report += '  Name         : ' + p.fullname + '\n';
                     report += '  Email        : ' + p.email + '\n';
                     report += '  Phone        : ' + p.phone + '\n\n';
- 
-                    report += '  BOOKING\n';
-                    report += '  ' + subSep + '\n';
+                    report += '  BOOKING\n  ' + subSep + '\n';
                     report += '  Booking ID   : #' + p.id + '\n';
                     report += '  Package      : ' + p.package_name + '\n';
                     report += '  Travel Date  : ' + p.travel_date + '\n';
                     report += '  Travelers    : ' + p.travelers + ' (' + p.adults + ' Adult' + (p.adults != 1 ? 's' : '');
                     if (p.children > 0) report += ' / ' + p.children + ' Child' + (p.children != 1 ? 'ren' : '');
-                    if (p.infants  > 0) report += ' / ' + p.infants + ' Infant' + (p.infants != 1 ? 's' : '');
+                    if (p.infants  > 0) report += ' / ' + p.infants  + ' Infant' + (p.infants != 1 ? 's' : '');
                     report += ')\n\n';
- 
-                    report += '  PAYMENT\n';
-                    report += '  ' + subSep + '\n';
+                    report += '  PAYMENT\n  ' + subSep + '\n';
                     report += '  Total Amount : LKR ' + Number(p.total_amount).toLocaleString() + '\n';
                     report += '  Status       : ' + p.status.charAt(0).toUpperCase() + p.status.slice(1) + '\n';
                     report += '  Method       : ' + method + '\n';
@@ -590,27 +1061,94 @@
                     if (p.bank_transfer_slip_path)    report += '  Bank Slip    : /uploads/' + p.bank_transfer_slip_path + '\n';
                     if (p.approved_at)                report += '  Approved At  : ' + p.approved_at + '\n';
                     report += '  Submitted On : ' + p.created_at + '\n';
- 
                     if (p.refund_requested_at) {
-                        report += '\n  REFUND REQUEST\n';
-                        report += '  ' + subSep + '\n';
+                        report += '\n  REFUND REQUEST\n  ' + subSep + '\n';
                         report += '  Requested At : ' + p.refund_requested_at + '\n';
                         if (p.refund_reason) report += '  Reason       : ' + p.refund_reason + '\n';
                     }
- 
                     report += '\n' + sep + '\n\n';
                 });
- 
-                report += sep + '\n';
-                report += '  END OF REPORT\n';
-                report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
-                report += sep + '\n';
- 
+
+                report += sep + '\n  END OF REPORT\n  Ceylon Go Admin  |  ' + dateStr + '\n' + sep + '\n';
+
                 const blob = new Blob([report], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
-                link.download = 'ceylongo_payments_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
+                link.download = 'ceylongo_package_payments_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
+                link.click();
+            });
+
+            // ══════════════════════════════════════════════════════
+            //  EXPORT — TRIP PAYMENTS
+            // ══════════════════════════════════════════════════════
+
+            document.getElementById('exportTripPayBtn').addEventListener('click', function() {
+                if (!tripPaymentsData || tripPaymentsData.length === 0) {
+                    alert('No trip payments to export!');
+                    return;
+                }
+                const range = resolveExportRange('tripExportTimelinePreset', 'tripExportDateFrom', 'tripExportDateTo');
+                if (range === null) return;
+
+                const list = tripPaymentsData.filter(t =>
+                    inDateRange((t.paid_at || t.bank_transfer_submitted_at || t.created_at || '').slice(0, 10), range)
+                );
+                if (!list.length) { alert('No trip payments in the selected period.'); return; }
+
+                const sep    = '='.repeat(70);
+                const subSep = '-'.repeat(70);
+                const now    = new Date();
+                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                const timeStr = now.toLocaleTimeString('en-GB');
+
+                let report = sep + '\n';
+                report += '      CEYLON GO — CUSTOMIZED TRIP PAYMENTS REPORT\n';
+                report += sep + '\n';
+                report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
+                report += '  Report period  : ' + periodLabel(range) + '\n';
+                report += '  Total Records  : ' + list.length + '\n';
+                report += sep + '\n\n';
+
+                list.forEach(function(t, i) {
+                    let method = '—';
+                    if (t.payhere_payment_id)              method = 'Online (PayHere)';
+                    else if (t.bank_transfer_submitted_at) method = 'Bank Transfer';
+
+                    report += 'PAYMENT ' + (i + 1) + ' OF ' + list.length + '\n';
+                    report += sep + '\n';
+                    report += '  CUSTOMER\n  ' + subSep + '\n';
+                    report += '  Name         : ' + t.customer_name + '\n\n';
+                    report += '  TRIP DETAILS\n  ' + subSep + '\n';
+                    report += '  Trip ID      : #' + t.id + '\n';
+                    report += '  Destination  : ' + t.destination + '\n';
+                    report += '  Start Date   : ' + t.start_date + '\n';
+                    report += '  People       : ' + t.number_of_people + '\n';
+                    report += '  Days         : ' + t.number_of_days + '\n\n';
+                    report += '  PAYMENT\n  ' + subSep + '\n';
+                    report += '  Amount       : ' + (t.budget_lkr ? 'LKR ' + Number(t.budget_lkr).toLocaleString() : '—') + '\n';
+                    report += '  Status       : ' + t.status.charAt(0).toUpperCase() + t.status.slice(1) + '\n';
+                    report += '  Method       : ' + method + '\n';
+                    if (t.payhere_payment_id)         report += '  PayHere ID   : ' + t.payhere_payment_id + '\n';
+                    if (t.paid_at)                    report += '  Paid At      : ' + t.paid_at + '\n';
+                    if (t.bank_transfer_submitted_at) report += '  Bank Transfer Submitted : ' + t.bank_transfer_submitted_at + '\n';
+                    if (t.bank_transfer_slip_path)    report += '  Bank Slip    : /uploads/' + t.bank_transfer_slip_path + '\n';
+                    report += '  Submitted On : ' + t.created_at + '\n';
+                    if (t.refund_requested_at) {
+                        report += '\n  REFUND REQUEST\n  ' + subSep + '\n';
+                        report += '  Requested At : ' + t.refund_requested_at + '\n';
+                        if (t.refund_reason) report += '  Reason       : ' + t.refund_reason + '\n';
+                    }
+                    report += '\n' + sep + '\n\n';
+                });
+
+                report += sep + '\n  END OF REPORT\n  Ceylon Go Admin  |  ' + dateStr + '\n' + sep + '\n';
+
+                const blob = new Blob([report], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
+                link.download = 'ceylongo_trip_payments_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
                 link.click();
             });
         </script>
