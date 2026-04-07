@@ -162,8 +162,8 @@
                                                 <?php if ($review['status'] === 'pending'): ?>
                                                     <button class="icon-btn approve-btn" title="Approve">✅</button>
                                                 <?php endif; ?>
-                                                <button class="icon-btn danger delete-btn" title="Delete">🗑️</button>
                                                 <button class="icon-btn reply-btn" title="Comment">💬</button>
+                                                <button class="icon-btn danger delete-btn" title="Delete">🗑️</button>
                                             </td>
                                             <td>
                                                 <?php if (!empty($review['admin_reply'])): ?>

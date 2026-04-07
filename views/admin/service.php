@@ -85,7 +85,7 @@
                     <form method="GET" action="/CeylonGo/public/admin/service">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" placeholder="Search by role, name or email" id="searchInput" class="search-input">
+                                <input type="text" placeholder="Search by role/ name/ email" id="searchInput" class="search-input">
                                 <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
                             </div>
 
