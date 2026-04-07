@@ -30,6 +30,81 @@
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
 
         <title>Reports and Analysis</title>
+
+        <style>
+            /* ── Download Modal ─────────────────────────────────── */
+            .modal-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,.45);
+                z-index: 1000;
+                align-items: center;
+                justify-content: center;
+            }
+            .modal-backdrop.open { display: flex; }
+
+            .modal-box {
+                background: #fff;
+                border-radius: 10px;
+                padding: 28px 32px;
+                width: 360px;
+                box-shadow: 0 8px 32px rgba(0,0,0,.2);
+            }
+            .modal-box h4 { margin-bottom: 16px; font-size: 17px; }
+
+            .modal-check-list { list-style: none; padding: 0; margin-bottom: 20px; }
+            .modal-check-list li {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 7px 0;
+                border-bottom: 1px solid #f0f0f0;
+                font-size: 14px;
+            }
+            .modal-check-list li:last-child { border-bottom: none; }
+            .modal-check-list input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+
+            .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+            .modal-btn {
+                padding: 8px 20px;
+                border-radius: 6px;
+                border: 1px solid #ccc;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            .modal-btn.primary { background: #000; color: #fff; border-color: #000; }
+            .modal-btn.secondary { background: #fff; color: #333; }
+
+            /* ── Booking-type filter tabs ──────────────────────── */
+            .type-filter-buttons {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 6px;
+            }
+            .type-btn {
+                padding: 6px 14px;
+                border: 1px solid #ccc;
+                background: #fff;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .type-btn.active {
+                background: #198754;
+                color: #fff;
+                border-color: #198754;
+            }
+
+            /* Period filter */
+            .filter-group { margin-bottom: 6px; }
+            .filter-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+
+            /* Revenue stat colour */
+            .stat-box.revenue span { color: #198754; }
+            .stat-box.cancellations span { color: #dc3545; }
+        </style>
     </head>
 
     <body>
@@ -78,33 +153,51 @@
                     <h2 class="page-title">Reports and Analysis</h2>
                     <br>
 
-                    <div class="filter-buttons">
-                        <button class="filter-btn <?= ($period === 'daily') ? 'active' : '' ?>" data-period="daily">Daily</button>
-                        <button class="filter-btn <?= ($period === 'monthly') ? 'active' : '' ?>" data-period="monthly">Monthly</button>
-                        <button class="filter-btn <?= ($period === 'yearly') ? 'active' : '' ?>" data-period="yearly">Yearly</button>
+                    <!-- ── Period Filter ─────────────────────── -->
+                    <div class="filter-group">
+                        <div class="filter-label">TIME PERIOD</div>
+                        <div class="filter-buttons">
+                            <button class="filter-btn <?= ($period === 'daily')   ? 'active' : '' ?>" data-period="daily">Daily</button>
+                            <button class="filter-btn <?= ($period === 'weekly')  ? 'active' : '' ?>" data-period="weekly">Weekly</button>
+                            <button class="filter-btn <?= ($period === 'monthly') ? 'active' : '' ?>" data-period="monthly">Monthly</button>
+                            <button class="filter-btn <?= ($period === 'yearly')  ? 'active' : '' ?>" data-period="yearly">Yearly</button>
+                        </div>
                     </div>
-                    <p class="sub-text">Choose the timeline.</p>
 
+                    <!-- ── Booking Type Filter ───────────────── -->
+                    <div class="filter-group" style="margin-top:12px;">
+                        <div class="filter-label">BOOKING TYPE</div>
+                        <div class="type-filter-buttons">
+                            <button class="type-btn <?= ($bookingType === 'both')     ? 'active' : '' ?>" data-type="both">All Bookings</button>
+                            <button class="type-btn <?= ($bookingType === 'package')  ? 'active' : '' ?>" data-type="package">Package Bookings</button>
+                            <button class="type-btn <?= ($bookingType === 'custom')   ? 'active' : '' ?>" data-type="custom">Custom Trips</button>
+                        </div>
+                    </div>
+
+                    <p class="sub-text" style="margin-top:10px;">Showing data for: <strong><?= ucfirst($period) ?></strong> · <strong><?= $bookingType === 'both' ? 'All Bookings' : ($bookingType === 'package' ? 'Package Bookings' : 'Custom Trips') ?></strong></p>
+
+                    <!-- ── Key Metrics ───────────────────────── -->
                     <div class="stats-section">
                         <h4>Key Metrics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total Bookings</strong><br>
-                                <span><?= $totalBookings ?></span>
+                                <span id="statTotalBookings"><?= $totalBookings ?></span>
                             </div>
-                            <div class="stat-box">
+                            <div class="stat-box revenue">
                                 <strong>Total Revenue</strong><br>
-                                <span>$ 100,000</span>
+                                <span id="statTotalRevenue">LKR <?= number_format($totalRevenue, 2) ?></span>
                             </div>
-                            <div class="stat-box">
+                            <div class="stat-box cancellations">
                                 <strong>Cancellations</strong><br>
-                                <span><?= $totalCancellations ?></span>
+                                <span id="statTotalCancellations"><?= $totalCancellations ?></span>
                             </div>
                         </div>
                     </div>
                     <br><br>
 
-                    <div class="chart-section">
+                    <!-- ── Bookings Chart ──────────────────────── -->
+                    <div class="chart-section" id="section-bookings">
                         <h3 class="section-title">Number of Bookings</h3>
                         <canvas id="bookingsChart" 
                                 data-labels='<?= json_encode($labels) ?>' 
@@ -112,17 +205,32 @@
                         </canvas>
                     </div>
 
-                    <div class="chart-section">
-                        <h3 class="section-title">Cancellations</h3>
+                    <!-- ── Revenue Chart ───────────────────────── -->
+                    <div class="chart-section" id="section-revenue">
+                        <h3 class="section-title">Revenue Generated (LKR)</h3>
+                        <canvas id="revenueChart" 
+                                data-labels='<?= json_encode($labels) ?>' 
+                                data-values='<?= json_encode($revenue) ?>'>
+                        </canvas>
+                    </div>
+
+                    <!-- ── Cancellations Chart ─────────────────── -->
+                    <div class="chart-section" id="section-cancellations">
+                        <h3 class="section-title">Cancellations / Refunds</h3>
                         <canvas id="cancellationsChart" 
                                 data-labels='<?= json_encode($labels) ?>' 
                                 data-values='<?= json_encode($cancellations) ?>'>
                         </canvas>
                     </div>
 
+                    <!-- ── Download Buttons ───────────────────── -->
                     <div class="footer-buttons">
-                        <button class="footer-btn black">Download PDF</button>
-                        <button class="footer-btn black">Download Excel</button>
+                        <button class="footer-btn black" onclick="openDownloadModal('pdf')">
+                            <i class="fa-solid fa-file-pdf"></i> Download PDF
+                        </button>
+                        <button class="footer-btn black" onclick="openDownloadModal('excel')">
+                            <i class="fa-solid fa-file-excel"></i> Download Excel
+                        </button>
                     </div>
                 </div>
             </div>
@@ -137,26 +245,104 @@
             </ul>
         </footer>
 
+        <!-- ── Download Modal ─────────────────────────────────── -->
+        <div class="modal-backdrop" id="downloadModal">
+            <div class="modal-box">
+                <h4 id="modalTitle">Select Charts to Download</h4>
+                <ul class="modal-check-list">
+                    <li>
+                        <input type="checkbox" id="chkBookings" checked>
+                        <label for="chkBookings"><i class="fa-solid fa-calendar-check" style="color:#0d6efd;width:18px"></i> Bookings Chart</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="chkRevenue" checked>
+                        <label for="chkRevenue"><i class="fa-solid fa-coins" style="color:#198754;width:18px"></i> Revenue Chart</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="chkCancellations" checked>
+                        <label for="chkCancellations"><i class="fa-solid fa-circle-xmark" style="color:#dc3545;width:18px"></i> Cancellations Chart</label>
+                    </li>
+                </ul>
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="closeDownloadModal()">Cancel</button>
+                    <button class="modal-btn primary" id="confirmDownloadBtn" onclick="confirmDownload()">Download</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden data for JS -->
         <script>
+            const REPORT_DATA = {
+                period:      '<?= $period ?>',
+                bookingType: '<?= $bookingType ?>',
+                labels:      <?= json_encode($labels) ?>,
+                bookings:    <?= json_encode($bookings) ?>,
+                revenue:     <?= json_encode($revenue) ?>,
+                cancellations: <?= json_encode($cancellations) ?>,
+                totalBookings:     <?= $totalBookings ?>,
+                totalRevenue:      <?= $totalRevenue ?>,
+                totalCancellations: <?= $totalCancellations ?>
+            };
+
             function toggleProfileDropdown() {
                 const dropdown = document.getElementById('profileDropdown');
                 dropdown.classList.toggle('show');
             }
 
-            // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
                 const dropdown = document.getElementById('profileDropdown');
                 const profilePic = document.querySelector('.profile-pic');
-                
                 if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
-                dropdown.classList.remove('show');
+                    dropdown.classList.remove('show');
                 }
+            });
+
+            // ── Download modal helpers ─────────────────────────
+            let _downloadFormat = 'pdf';
+
+            function openDownloadModal(format) {
+                _downloadFormat = format;
+                document.getElementById('modalTitle').textContent =
+                    format === 'pdf' ? 'Download PDF — Select Charts' : 'Download Excel — Select Charts';
+                document.getElementById('confirmDownloadBtn').textContent =
+                    format === 'pdf' ? 'Download PDF' : 'Download Excel';
+                document.getElementById('downloadModal').classList.add('open');
+            }
+
+            function closeDownloadModal() {
+                document.getElementById('downloadModal').classList.remove('open');
+            }
+
+            function confirmDownload() {
+                const selected = [];
+                if (document.getElementById('chkBookings').checked)     selected.push('bookings');
+                if (document.getElementById('chkRevenue').checked)       selected.push('revenue');
+                if (document.getElementById('chkCancellations').checked) selected.push('cancellations');
+
+                if (selected.length === 0) {
+                    alert('Please select at least one chart.');
+                    return;
+                }
+
+                closeDownloadModal();
+
+                if (_downloadFormat === 'pdf') {
+                    downloadChartsAsPDF(selected);
+                } else {
+                    downloadChartsAsExcel(selected);
+                }
+            }
+
+            // Close modal on backdrop click
+            document.getElementById('downloadModal').addEventListener('click', function(e) {
+                if (e.target === this) closeDownloadModal();
             });
         </script>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
         <script src="/CeylonGo/public/js/reports_charts.js"></script>
     </body>
 </html>

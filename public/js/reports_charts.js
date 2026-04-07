@@ -1,162 +1,311 @@
-document.addEventListener("DOMContentLoaded", function() {
+/**
+ * reports_charts.js
+ * Handles:
+ *  - Rendering Bookings, Revenue, and Cancellations charts (Chart.js)
+ *  - Period filter buttons (daily / weekly / monthly / yearly)
+ *  - Booking-type filter buttons (both / package / custom)
+ *  - Download as PDF  (html2canvas + jsPDF)
+ *  - Download as Excel (SheetJS / xlsx)
+ */
 
-    function renderBarChart(canvasId, labelText, color) {
-        const canvas = document.getElementById(canvasId);
-        
-        if (!canvas) {
-            console.error(`Canvas with ID "${canvasId}" not found`);
-            return null;
-        }
+(function () {
+    'use strict';
 
-        // Read data from canvas attributes
-        const labelsAttr = canvas.dataset.labels;
-        const valuesAttr = canvas.dataset.values;
+    /* ── Chart instances ──────────────────────────────────────────────────── */
+    let bookingsChart     = null;
+    let revenueChart      = null;
+    let cancellationsChart = null;
 
-        console.log(`${canvasId} - Labels:`, labelsAttr);
-        console.log(`${canvasId} - Values:`, valuesAttr);
+    /* ── Build / rebuild all three charts ────────────────────────────────── */
+    function buildCharts(data) {
+        const { labels, bookings, revenue, cancellations } = data;
 
-        let labels, values;
+        if (bookingsChart)      bookingsChart.destroy();
+        if (revenueChart)       revenueChart.destroy();
+        if (cancellationsChart) cancellationsChart.destroy();
 
-        try {
-            labels = JSON.parse(labelsAttr || '[]');
-            values = JSON.parse(valuesAttr || '[]');
-        } catch (e) {
-            console.error(`Error parsing data for ${canvasId}:`, e);
-            labels = [];
-            values = [];
-        }
+        bookingsChart = new Chart(
+            document.getElementById('bookingsChart').getContext('2d'),
+            {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Bookings',
+                        data: bookings,
+                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                        borderColor:     'rgba(13, 110, 253, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: chartOptions('Number of Bookings', false)
+            }
+        );
 
-        // Convert string values to numbers
-        values = values.map(v => parseInt(v) || 0);
+        revenueChart = new Chart(
+            document.getElementById('revenueChart').getContext('2d'),
+            {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Revenue (LKR)',
+                        data: revenue,
+                        borderColor:     'rgba(25, 135, 84, 1)',
+                        backgroundColor: 'rgba(25, 135, 84, 0.12)',
+                        borderWidth: 2,
+                        pointRadius: 4,
+                        pointBackgroundColor: 'rgba(25, 135, 84, 1)',
+                        fill: true,
+                        tension: 0.3,
+                    }]
+                },
+                options: chartOptions('Revenue (LKR)', true)
+            }
+        );
 
-        console.log(`${canvasId} - Parsed Labels:`, labels);
-        console.log(`${canvasId} - Parsed Values:`, values);
+        cancellationsChart = new Chart(
+            document.getElementById('cancellationsChart').getContext('2d'),
+            {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Cancellations / Refunds',
+                        data: cancellations,
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor:     'rgba(220, 53, 69, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: chartOptions('Cancellations', false)
+            }
+        );
+    }
 
-        return new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: labelText,
-                    data: values,
-                    backgroundColor: color,
-                    borderColor: color,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0
+    /* ── Shared chart options ─────────────────────────────────────────────── */
+    function chartOptions(title, isCurrency) {
+        return {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: false,
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const v = ctx.parsed.y;
+                            return isCurrency
+                                ? ' LKR ' + Number(v).toLocaleString('en-US', {minimumFractionDigits: 2})
+                                : ' ' + v;
                         }
                     }
-                },
-                plugins: {
-                    legend: {
-                        display: true
-                    },
-                    tooltip: {
-                        enabled: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: isCurrency
+                            ? v => 'LKR ' + Number(v).toLocaleString()
+                            : v => v
                     }
                 }
             }
+        };
+    }
+
+    /* ── Update stat boxes ────────────────────────────────────────────────── */
+    function updateStats(totalBookings, totalRevenue, totalCancellations) {
+        document.getElementById('statTotalBookings').textContent     = totalBookings;
+        document.getElementById('statTotalRevenue').textContent      =
+            'LKR ' + Number(totalRevenue).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('statTotalCancellations').textContent = totalCancellations;
+    }
+
+    /* ── Fetch new data from server and re-render ─────────────────────────── */
+    function fetchAndRender(period, bookingType) {
+        const url = `/CeylonGo/public/admin/reports?period=${period}&booking_type=${bookingType}&ajax=1`;
+
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(json => {
+                buildCharts(json);
+                updateStats(json.totalBookings, json.totalRevenue, json.totalCancellations);
+                // Update browser URL without reload
+                history.replaceState(null, '', `/CeylonGo/public/admin/reports?period=${period}&booking_type=${bookingType}`);
+            })
+            .catch(err => console.error('Reports fetch error:', err));
+    }
+
+    /* ── Period filter buttons ────────────────────────────────────────────── */
+    function initPeriodFilter() {
+        document.querySelectorAll('.filter-btn[data-period]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.filter-btn[data-period]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                fetchAndRender(this.dataset.period, activeBookingType());
+            });
         });
     }
 
-    // Render both charts
-    const bookingsChart = renderBarChart('bookingsChart', 'Bookings', '#2c3e50');
-    const cancellationsChart = renderBarChart('cancellationsChart', 'Cancellations', '#e74c3c');
-
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-
-            const period = this.getAttribute('data-period') || this.textContent.toLowerCase();
-            const url = new URL(window.location.href);
-            url.searchParams.set('period', period);
-            window.location.href = url.toString();
+    /* ── Booking-type filter buttons ──────────────────────────────────────── */
+    function initTypeFilter() {
+        document.querySelectorAll('.type-btn[data-type]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.type-btn[data-type]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                fetchAndRender(activePeriod(), this.dataset.type);
+            });
         });
-    });
+    }
 
-    // Export buttons
-    document.querySelectorAll('.footer-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const action = this.textContent.toLowerCase();
-            if (action.includes('pdf')) exportChartsPDF();
-            if (action.includes('excel')) exportChartsExcel();
-        });
-    });
+    function activePeriod() {
+        const btn = document.querySelector('.filter-btn[data-period].active');
+        return btn ? btn.dataset.period : 'monthly';
+    }
 
-    // PDF Export using html2canvas + jsPDF
-    function exportChartsPDF() {
+    function activeBookingType() {
+        const btn = document.querySelector('.type-btn[data-type].active');
+        return btn ? btn.dataset.type : 'both';
+    }
+
+    /* ── PDF Download ─────────────────────────────────────────────────────── */
+    window.downloadChartsAsPDF = async function (selected) {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
-        
-        const bookingsCanvas = document.getElementById('bookingsChart');
-        const cancellationsCanvas = document.getElementById('cancellationsChart');
-        
-        let chartsProcessed = 0;
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const margin = 14;
+        let y = 16;
 
-        html2canvas(bookingsCanvas).then(canvasImg => {
-            const imgData = canvasImg.toDataURL('image/png');
-            pdf.text('Number of Bookings', 10, 10);
-            pdf.addImage(imgData, 'PNG', 10, 20, 180, 90);
-            chartsProcessed++;
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Ceylon Go — Reports & Analysis', margin, y);
+        y += 8;
 
-            if (chartsProcessed === 2) {
-                pdf.save('report.pdf');
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(120);
+        const period      = activePeriod();
+        const bookingType = activeBookingType();
+        const typeLabel   = bookingType === 'both' ? 'All Bookings'
+                          : bookingType === 'package' ? 'Package Bookings' : 'Custom Trips';
+        pdf.text(`Period: ${period}   |   Booking Type: ${typeLabel}   |   Generated: ${new Date().toLocaleDateString()}`, margin, y);
+        pdf.setTextColor(0);
+        y += 10;
+
+        const sectionMap = {
+            bookings:      'section-bookings',
+            revenue:       'section-revenue',
+            cancellations: 'section-cancellations',
+        };
+
+        for (const key of selected) {
+            const el = document.getElementById(sectionMap[key]);
+            if (!el) continue;
+
+            const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            const imgW    = pageW - margin * 2;
+            const imgH    = (canvas.height / canvas.width) * imgW;
+
+            if (y + imgH > pdf.internal.pageSize.getHeight() - 10) {
+                pdf.addPage();
+                y = 14;
             }
-        });
 
-        html2canvas(cancellationsCanvas).then(canvasImg => {
-            const imgData = canvasImg.toDataURL('image/png');
-            pdf.addPage();
-            pdf.text('Cancellations', 10, 10);
-            pdf.addImage(imgData, 'PNG', 10, 20, 180, 90);
-            chartsProcessed++;
+            pdf.addImage(imgData, 'PNG', margin, y, imgW, imgH);
+            y += imgH + 8;
+        }
 
-            if (chartsProcessed === 2) {
-                pdf.save('report.pdf');
-            }
-        });
+        pdf.save(`ceylongo_reports_${period}_${bookingType}.pdf`);
+    };
+
+    /* ── Excel Download ───────────────────────────────────────────────────── */
+    window.downloadChartsAsExcel = function (selected) {
+        const wb = XLSX.utils.book_new();
+        const period      = activePeriod();
+        const bookingType = activeBookingType();
+
+        const labelEl = document.getElementById('bookingsChart');
+        const labels  = JSON.parse(labelEl.getAttribute('data-labels') || '[]');
+
+        if (selected.includes('bookings')) {
+            const bookingsData = JSON.parse(labelEl.getAttribute('data-values') || '[]');
+            const rows = [['Period', 'Bookings']];
+            labels.forEach((l, i) => rows.push([l, bookingsData[i] || 0]));
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'Bookings');
+        }
+
+        if (selected.includes('revenue')) {
+            const revEl  = document.getElementById('revenueChart');
+            const revData = JSON.parse(revEl.getAttribute('data-values') || '[]');
+            const rows = [['Period', 'Revenue (LKR)']];
+            labels.forEach((l, i) => rows.push([l, revData[i] || 0]));
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'Revenue');
+        }
+
+        if (selected.includes('cancellations')) {
+            const canEl   = document.getElementById('cancellationsChart');
+            const canData = JSON.parse(canEl.getAttribute('data-values') || '[]');
+            const rows = [['Period', 'Cancellations']];
+            labels.forEach((l, i) => rows.push([l, canData[i] || 0]));
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'Cancellations');
+        }
+
+        XLSX.writeFile(wb, `ceylongo_reports_${period}_${bookingType}.xlsx`);
+    };
+
+    /* ── AJAX endpoint support ────────────────────────────────────────────── */
+    // If AdminController detects ajax=1, it should return JSON instead of a full view.
+    // The data-* attributes on the canvas elements are the initial server-rendered values.
+    // After a filter change, we update charts directly from the JSON response.
+    // The canvas data-* attributes are refreshed below so Excel export stays in sync.
+
+    const _origFetch = window.fetchAndRender;
+    const _origBuild = buildCharts;
+
+    function patchCanvasData(json) {
+        const bookingsEl      = document.getElementById('bookingsChart');
+        const revenueEl       = document.getElementById('revenueChart');
+        const cancellationsEl = document.getElementById('cancellationsChart');
+
+        bookingsEl.setAttribute('data-labels', JSON.stringify(json.labels));
+        bookingsEl.setAttribute('data-values', JSON.stringify(json.bookings));
+        revenueEl.setAttribute('data-labels',  JSON.stringify(json.labels));
+        revenueEl.setAttribute('data-values',  JSON.stringify(json.revenue));
+        cancellationsEl.setAttribute('data-labels', JSON.stringify(json.labels));
+        cancellationsEl.setAttribute('data-values', JSON.stringify(json.cancellations));
     }
 
-    // Excel export (CSV)
-    function exportChartsExcel() {
-        const bookingsCanvas = document.getElementById('bookingsChart');
-        const cancellationsCanvas = document.getElementById('cancellationsChart');
+    // Override fetchAndRender to also patch canvas data-* attributes
+    window.fetchAndRender = function (period, bookingType) {
+        const url = `/CeylonGo/public/admin/reports?period=${period}&booking_type=${bookingType}&ajax=1`;
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(json => {
+                buildCharts(json);
+                patchCanvasData(json);
+                updateStats(json.totalBookings, json.totalRevenue, json.totalCancellations);
+                history.replaceState(null, '', `/CeylonGo/public/admin/reports?period=${period}&booking_type=${bookingType}`);
+            })
+            .catch(err => console.error('Reports fetch error:', err));
+    };
 
-        const labels = JSON.parse(bookingsCanvas.dataset.labels || '[]');
-        const bookings = JSON.parse(bookingsCanvas.dataset.values || '[]');
-        const cancellations = JSON.parse(cancellationsCanvas.dataset.values || '[]');
+    /* ── Init ─────────────────────────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initial render from server-injected data
+        buildCharts(REPORT_DATA);
+        updateStats(REPORT_DATA.totalBookings, REPORT_DATA.totalRevenue, REPORT_DATA.totalCancellations);
 
-        const table = [['Period', 'Bookings', 'Cancellations']];
+        initPeriodFilter();
+        initTypeFilter();
+    });
 
-        labels.forEach((label, i) => {
-            table.push([
-                label, 
-                bookings[i] || 0, 
-                cancellations[i] || 0
-            ]);
-        });
-
-        let csvContent = "data:text/csv;charset=utf-8,"
-            + table.map(e => e.join(",")).join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "report.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-});
+})();
