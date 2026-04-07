@@ -1,0 +1,184 @@
+/* Paid package booking — trip summary (dates, accommodation, itinerary) */
+.pkg-trip-summary-page {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  min-height: 100vh;
+}
+
+.pkg-trip-summary-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+
+.pkg-trip-summary-back {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+}
+
+.pkg-trip-summary-back a {
+  color: #2c5530;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pkg-trip-summary-back a:hover {
+  text-decoration: underline;
+}
+
+.pkg-trip-summary-h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: #111;
+}
+
+.pkg-trip-summary-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.pkg-trip-summary-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+  line-height: 1.35;
+  color: #111;
+}
+
+.pkg-trip-summary-meta {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.pkg-trip-summary-date {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.pkg-trip-summary-travelers {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.pkg-trip-summary-hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 16px 0;
+}
+
+.pkg-trip-total {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.pkg-trip-total span {
+  color: #2c5530;
+  font-size: 1.05rem;
+}
+
+.pkg-trip-section-h {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: #111;
+}
+
+.pkg-trip-accom-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pkg-trip-accom-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.pkg-trip-accom-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.pkg-trip-accom-loc {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.pkg-trip-accom-days {
+  color: #6b7280;
+}
+
+.pkg-trip-empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.pkg-trip-itin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pkg-trip-day-card {
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: #fafefa;
+}
+
+.pkg-trip-day-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pkg-trip-day-badge {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2c5530;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pkg-trip-day-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.35;
+}
+
+.pkg-trip-day-acts {
+  margin: 0;
+  padding-left: 1.35rem;
+  color: #374151;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.pkg-trip-day-acts li {
+  margin-bottom: 4px;
+}

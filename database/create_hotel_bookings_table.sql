@@ -1,0 +1,25 @@
+-- Trip flow accommodation bookings (tourist customise-trip / trip.php)
+CREATE TABLE IF NOT EXISTS `hotel_bookings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `hotel_slug` varchar(128) NOT NULL COMMENT 'e.g. sunset-beach from data-hotel-id',
+  `hotel_name` varchar(255) NOT NULL,
+  `guest_name` varchar(255) NOT NULL,
+  `contact_number` varchar(50) NOT NULL,
+  `guests` int(11) NOT NULL DEFAULT 1,
+  `adults` int(11) NOT NULL DEFAULT 0,
+  `children` int(11) NOT NULL DEFAULT 0,
+  `check_in` date NOT NULL,
+  `check_out` date NOT NULL,
+  `nights` int(11) NOT NULL DEFAULT 1,
+  `room_type` varchar(255) NOT NULL,
+  `room_count` int(11) NOT NULL DEFAULT 1,
+  `total_price` decimal(12,2) NOT NULL,
+  `currency` varchar(8) NOT NULL DEFAULT 'LKR',
+  `status` varchar(32) NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_hotel_bookings_user` (`user_id`),
+  KEY `idx_hotel_bookings_slug` (`hotel_slug`),
+  KEY `idx_hotel_bookings_dates` (`check_in`,`check_out`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

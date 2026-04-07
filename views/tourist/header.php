@@ -13,14 +13,16 @@ $is_user_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === '
   <nav class="nav-links">
     <a href="/CeylonGo/public/tourist/dashboard">Home</a>
     <a href="/CeylonGo/public/tourist/packages">Packages</a>
-    <a href="/CeylonGo/public/tourist/dashboard#customize">Customize Trip</a>
-    <a href="/CeylonGo/public/tourist/public-diaries">Travel Diaries</a>
+    <?php if ($is_user_logged_in): ?>
+      <a href="/CeylonGo/public/tourist/customize-trip">Customize Trip</a>
+    <?php else: ?>
+      <a href="/CeylonGo/public/tourist/dashboard?openLogin=1">Customize Trip</a>
+    <?php endif; ?>
     <a href="/CeylonGo/public/contact">Contact Us</a>
     
     <?php if ($is_user_logged_in): ?>
       <!-- Logged in user - show my bookings, diary, and logout -->
       <a href="/CeylonGo/public/tourist/my-bookings">My Bookings</a>
-      <a href="/CeylonGo/public/tourist/my-diary">My Diary</a>
       <a href="/CeylonGo/public/logout" class="btn-login">Logout</a>
     <?php else: ?>
       <!-- Guest user - show register and login -->

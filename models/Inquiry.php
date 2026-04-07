@@ -1,111 +1,104 @@
 <?php
 class Inquiry {
-    private $db;
+    private $conn;
+    private $table = "inquiries";
 
     public function __construct($db) {
-        $this->db = $db;
+        $this->conn = $db;
     }
 
-    /**
-     * Get all inquiries, with optional status filter and search term.
-     * Joined with tourist_users for registered users; falls back to guest_name/guest_email.
-     */
-    public function getAllInquiries(string $status = 'all', string $search = ''): array
-    {
-        $conditions = [];
-        $params     = [];
+    public function create($userId, $subject, $message) {
+        try {
+            $sql = "INSERT INTO " . $this->table . " (user_id, guest_name, guest_email, subject, message, status)
+                    VALUES (:user_id, :guest_name, :guest_email, :subject, :message, 'pending')";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute(array(
+                ':user_id' => ($userId === null ? null : (int)$userId),
+                ':guest_name' => null,
+                ':guest_email' => null,
+                ':subject' => (string)$subject,
+                ':message' => (string)$message
+            ));
+        } catch (\Throwable $e) {
+            // Table may not be created yet.
+            error_log('Inquiry::create: ' . $e->getMessage());
+            return false;
+        }
+    }
 
-        if ($status !== 'all') {
-            $conditions[] = 'i.status = :status';
+    public function createGuest($guestName, $guestEmail, $subject, $message) {
+        try {
+            $sql = "INSERT INTO " . $this->table . " (user_id, guest_name, guest_email, subject, message, status)
+                    VALUES (NULL, :guest_name, :guest_email, :subject, :message, 'pending')";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute(array(
+                ':guest_name' => (string)$guestName,
+                ':guest_email' => (string)$guestEmail,
+                ':subject' => (string)$subject,
+                ':message' => (string)$message
+            ));
+        } catch (\Throwable $e) {
+            error_log('Inquiry::createGuest: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function getByUserId($userId, $limit) {
+        try {
+            $limit = max(1, (int)$limit);
+            $sql = "SELECT id, user_id, subject, message, admin_reply, status, created_at, replied_at
+                    FROM " . $this->table . "
+                    WHERE user_id = :user_id
+                    ORDER BY created_at DESC
+                    LIMIT " . $limit;
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute(array(':user_id' => (int)$userId));
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // Table may not be created yet.
+            error_log('Inquiry::getByUserId: ' . $e->getMessage());
+            return array();
+        }
+    }
+
+    public function getAll($status) {
+        $status = (string)$status;
+        $where = "";
+        $params = array();
+        if ($status === 'pending' || $status === 'replied') {
+            $where = " WHERE i.status = :status ";
             $params[':status'] = $status;
         }
-
-        if ($search !== '') {
-            $conditions[] = '(
-                i.subject      LIKE :search
-                OR i.guest_name LIKE :search
-                OR i.guest_email LIKE :search
-                OR CONCAT(t.first_name, \' \', t.last_name) LIKE :search
-            )';
-            $params[':search'] = '%' . $search . '%';
+        $sql = "SELECT i.id, i.user_id, i.subject, i.message, i.admin_reply, i.status, i.created_at, i.replied_at,
+                       tu.first_name, tu.last_name, tu.email
+                FROM " . $this->table . " i
+                LEFT JOIN tourist_users tu ON i.user_id = tu.id
+                " . $where . "
+                ORDER BY i.created_at DESC";
+        try {
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('Inquiry::getAll: ' . $e->getMessage());
+            return array();
         }
-
-        $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
-
-        $sql = "
-            SELECT
-                i.id,
-                i.user_id,
-                i.guest_name,
-                i.guest_email,
-                i.subject,
-                i.message,
-                i.admin_reply,
-                i.status,
-                i.created_at,
-                i.replied_at,
-                CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
-            FROM inquiries i
-            LEFT JOIN tourist_users t ON i.user_id = t.id
-            $where
-            ORDER BY i.created_at DESC
-        ";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get summary statistics for the stats boxes.
-     */
-    public function getInquiryStats(): array
-    {
-        $sql = "
-            SELECT
-                COUNT(*)                                              AS total,
-                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
-                SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) AS replied,
-                SUM(CASE WHEN user_id IS NULL    THEN 1 ELSE 0 END) AS guest
-            FROM inquiries
-        ";
-
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return [
-            'total'   => (int)($row['total']   ?? 0),
-            'pending' => (int)($row['pending']  ?? 0),
-            'replied' => (int)($row['replied']  ?? 0),
-            'guest'   => (int)($row['guest']    ?? 0),
-        ];
-    }
-
-    /**
-     * Save admin reply and mark as replied.
-     */
-    public function saveAdminReply(int $inquiryId, string $reply): bool
-    {
-        $sql = "
-            UPDATE inquiries
-            SET admin_reply = :reply,
-                status      = 'replied',
-                replied_at  = NOW()
-            WHERE id = :id
-        ";
-
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute([':reply' => $reply, ':id' => $inquiryId]);
-    }
-
-    /**
-     * Permanently delete an inquiry.
-     */
-    public function deleteInquiry(int $id): bool
-    {
-        $stmt = $this->db->prepare("DELETE FROM inquiries WHERE id = ?");
-        return $stmt->execute([$id]);
+    public function reply($id, $replyText) {
+        try {
+            $sql = "UPDATE " . $this->table . "
+                    SET admin_reply = :reply, status = 'replied', replied_at = NOW()
+                    WHERE id = :id";
+            $stmt = $this->conn->prepare($sql);
+            return $stmt->execute(array(
+                ':reply' => (string)$replyText,
+                ':id' => (int)$id
+            ));
+        } catch (\Throwable $e) {
+            error_log('Inquiry::reply: ' . $e->getMessage());
+            return false;
+        }
     }
 }
-?>
+

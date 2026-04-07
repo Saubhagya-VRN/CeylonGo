@@ -7,6 +7,10 @@ if (!$p) {
     header('Location: /CeylonGo/public/tourist/packages');
     exit;
 }
+$package_reviews = $package_reviews ?? [];
+$pr_count = count($package_reviews);
+$pr_avg = $pr_count > 0 ? round(array_sum(array_column($package_reviews, 'rating')) / $pr_count, 1) : 0;
+$pr_satisfaction = $pr_count > 0 ? min(100, (int) round(($pr_avg / 5) * 100)) : 0;
 $overview = $p['overview'] ?? [];
 $highlights = $p['highlights'] ?? [];
 $itinerary = $p['itinerary'] ?? [];
@@ -190,14 +194,34 @@ $accommodation = $p['accommodation'] ?? [];
 
             <section class="pkg-section pkg-reviews">
                 <h2 class="pkg-section-title">Customer Reviews</h2>
+                <?php if ($pr_count === 0): ?>
                 <div class="pkg-reviews-empty">
-                    <p><strong>No reviews yet</strong></p>
-                    <p>Be the first to share your experience!</p>
-                    <a href="/CeylonGo/public/tourist/add-review?package=<?php echo (int)$p['id']; ?>" class="pkg-btn pkg-btn--primary">Write First Review</a>
+                    <p><strong>No published reviews yet</strong></p>
+                    <p>Be the first to share your experience! New submissions are moderated before they appear here.</p>
+                    <a href="/CeylonGo/public/tourist/add-review?package=<?php echo (int)$p['id']; ?>" class="pkg-btn pkg-btn--primary">Write a review</a>
                 </div>
+                <?php else: ?>
+                <ul class="pkg-reviews-list">
+                    <?php foreach ($package_reviews as $rev): ?>
+                    <li class="pkg-review-card">
+                        <div class="pkg-review-card__head">
+                            <strong class="pkg-review-card__name"><?php echo htmlspecialchars($rev['name'] ?? 'Traveler'); ?></strong>
+                            <span class="pkg-review-card__stars" aria-label="<?php echo (int)($rev['rating'] ?? 0); ?> out of 5 stars"><?php
+                                $rr = (int)($rev['rating'] ?? 0);
+                                for ($si = 1; $si <= 5; $si++) {
+                                    echo $si <= $rr ? '★' : '☆';
+                                }
+                            ?></span>
+                        </div>
+                        <p class="pkg-review-card__text"><?php echo nl2br(htmlspecialchars($rev['review_text'] ?? '')); ?></p>
+                        <time class="pkg-review-card__date" datetime="<?php echo htmlspecialchars($rev['created_at'] ?? ''); ?>"><?php echo !empty($rev['created_at']) ? htmlspecialchars(date('M j, Y', strtotime($rev['created_at']))) : ''; ?></time>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
                 <div class="pkg-reviews-stats">
-                    <div><span class="pkg-stat-num">0+</span><span>Reviews</span></div>
-                    <div><span class="pkg-stat-num">0%</span><span>Satisfaction</span></div>
+                    <div><span class="pkg-stat-num"><?php echo $pr_count > 0 ? (int) $pr_count : '0'; ?>+</span><span>Reviews</span></div>
+                    <div><span class="pkg-stat-num"><?php echo $pr_count > 0 ? (int) $pr_satisfaction . '%' : '0%'; ?></span><span>Satisfaction</span></div>
                     <div><span class="pkg-stat-num">24/7</span><span>Support</span></div>
                 </div>
             </section>

@@ -306,3 +306,51 @@ button.btn-primary {
 .review-form {
   animation: fadeIn 0.5s ease-out;
 }
+
+/* Success modal (after PRG redirect) */
+.review-success-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.review-success-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  cursor: pointer;
+}
+
+.review-success-modal__box {
+  position: relative;
+  max-width: 420px;
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 24px 24px;
+  box-shadow: 0 20px 50px rgba(44, 85, 48, 0.2);
+  text-align: center;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.review-success-modal__title {
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+  color: var(--color-primary);
+}
+
+.review-success-modal__text {
+  margin: 0 0 22px;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.review-success-modal__ok {
+  min-width: 120px;
+}

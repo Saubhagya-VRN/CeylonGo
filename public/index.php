@@ -44,8 +44,13 @@ $router->get('tourist/transport-status', 'TransportProviderController@checkBooki
 $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboardNew');
+$router->get('tourist/dashboard-side', 'TouristController@dashboardSide');
 $router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
+$router->get('tourist/custom-trip-summary', 'TouristController@customTripSummary');
+$router->post('tourist/trip-submit', 'TouristController@tripSubmit');
+$router->post('tourist/trip-payment-checkout', 'TouristController@tripPaymentCheckout');
+$router->get('tourist/trip-payment-status/{id}', 'TouristController@tripPaymentStatus');
 $router->get('tourist/transport-services', 'TouristController@transportRequestView');
 $router->post('tourist/transport-services', 'TouristController@transportRequest');
 $router->get('tourist/transport-report', 'TouristController@transportReport');
@@ -56,13 +61,22 @@ $router->get('tourist/booking-form', 'TouristController@bookingForm');
 $router->post('tourist/booking-form', 'TouristController@bookingFormSubmit');
 $router->get('tourist/my-bookings', 'TouristController@myBookings');
 $router->get('tourist/booking-approve', 'TouristController@bookingApprove');
+$router->post('tourist/payment/checkout', 'TouristController@paymentCheckout');
+$router->get('tourist/payment/return', 'TouristController@paymentReturn');
+$router->post('tourist/payment/return', 'TouristController@paymentReturn');
+$router->post('tourist/payment/notify', 'TouristController@paymentNotify');
 $router->get('tourist/payment', 'TouristController@payment');
 $router->get('tourist/trip-summary', 'TouristController@tripSummary');
+$router->get('tourist/booking/trip-summary', 'TouristController@packageBookingTripSummary');
+$router->get('tourist/booking/trip-summary-json', 'TouristController@packageBookingTripSummaryJson');
+$router->post('tourist/booking/refund-request', 'TouristController@packageBookingRefundRequest');
+$router->post('tourist/trip/refund-request', 'TouristController@customTripRefundRequest');
 $router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
 $router->get('tourist/packages', 'TouristController@packages');
 $router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
 $router->get('tourist/package_details', 'TouristController@packageDetailsQuery');
 $router->get('tourist/add-review', 'TouristController@addReview');
+$router->post('tourist/add-review', 'TouristController@addReview');
 $router->get('tourist/transport-providers', 'TouristController@transportProviders');
 $router->get('tourist/transport-edit/{id}', 'TouristController@transportEdit');
 $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete');
@@ -70,6 +84,8 @@ $router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSu
 $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
 $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
+$router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
+$router->post('tourist/inquiries', 'TouristController@inquirySubmit');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');

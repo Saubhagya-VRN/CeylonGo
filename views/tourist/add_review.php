@@ -4,8 +4,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Check if user is logged in
-$is_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'tourist';
+// Check if user is logged in (support user_type or user_role from Auth)
+$is_logged_in = isset($_SESSION['user_id'])
+    && (($_SESSION['user_type'] ?? '') === 'tourist' || ($_SESSION['user_role'] ?? '') === 'tourist');
 
 // Get user name and email for logged-in tourists
 $user_name = '';
@@ -20,7 +21,7 @@ if ($is_logged_in) {
     } else {
         // Fetch name from database
         try {
-            require_once '../../config/database.php';
+            require_once __DIR__ . '/../../config/database.php';
             $stmt = $conn->prepare("SELECT first_name, last_name FROM tourist_users WHERE id = ?");
             $stmt->bind_param("i", $_SESSION['user_id']);
             $stmt->execute();
@@ -43,8 +44,24 @@ if ($is_logged_in && empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-$success_message = '';
 $error_message = '';
+$success_modal_message = '';
+if (!empty($_SESSION['review_success_flash'])) {
+    $success_modal_message = (string) $_SESSION['review_success_flash'];
+    unset($_SESSION['review_success_flash']);
+}
+
+/** JSON response for AJAX submit (no page reload). */
+function add_review_json_exit($ok, $message)
+{
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode(['ok' => (bool) $ok, 'message' => $message]);
+    exit;
+}
 
 // Packages list and selected package (from controller or GET)
 $packages = $packages ?? [];
@@ -56,6 +73,7 @@ $email = '';
 $rating = 0;
 $review_text = '';
 $destination = '';
+$package_id_form = isset($selected_package_id) ? (int) $selected_package_id : 0;
 
 // If user is logged in, pre-populate with their info
 if ($is_logged_in && $_SERVER["REQUEST_METHOD"] != "POST") {
@@ -65,12 +83,23 @@ if ($is_logged_in && $_SERVER["REQUEST_METHOD"] != "POST") {
 
 // Process review submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Detect AJAX: FormData field and/or X-Requested-With (fetch sends both)
+    $ajax_submit = (!empty($_POST['ajax']) && $_POST['ajax'] === '1')
+        || (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower(trim($_SERVER['HTTP_X_REQUESTED_WITH'])) === 'xmlhttprequest');
+
     // Check if user is logged in
     if (!$is_logged_in) {
+        if ($ajax_submit) {
+            add_review_json_exit(false, 'Please login to submit a review.');
+        }
         $error_message = "Please login to submit a review. <a href='../login' style='color: #2c5530; font-weight: bold; text-decoration: underline;'>Login here</a>";
     }
     // Verify CSRF token
     elseif (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        if ($ajax_submit) {
+            add_review_json_exit(false, 'Invalid request. Please try again.');
+        }
         $error_message = "Invalid request. Please try again.";
     } else {
         // Validate and sanitize input
@@ -78,29 +107,63 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $email = isset($_POST['email']) ? htmlspecialchars(trim($_POST['email'])) : '';
         $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
         $review_text = isset($_POST['review']) ? htmlspecialchars(trim($_POST['review'])) : '';
-        $destination = isset($_POST['destination']) ? htmlspecialchars(trim($_POST['destination'])) : '';
+        $package_id_post = isset($_POST['package_id']) ? (int) $_POST['package_id'] : 0;
+        $package_id_form = $package_id_post;
+        $destination = '';
+        if ($package_id_post > 0 && !empty($packages)) {
+            foreach ($packages as $pkg) {
+                if ((int) ($pkg['id'] ?? 0) === $package_id_post) {
+                    $destination = $pkg['title'] ?? '';
+                    break;
+                }
+            }
+        }
         
         // Validation
         if (empty($name) || empty($email) || empty($review_text)) {
+            if ($ajax_submit) {
+                add_review_json_exit(false, 'Please fill in all required fields.');
+            }
             $error_message = "Please fill in all required fields.";
+        } elseif ($package_id_post <= 0) {
+            if ($ajax_submit) {
+                add_review_json_exit(false, 'Please select a package.');
+            }
+            $error_message = "Please select a package.";
         } elseif ($rating < 1 || $rating > 5) {
+            if ($ajax_submit) {
+                add_review_json_exit(false, 'Please select a valid rating (1–5 stars).');
+            }
             $error_message = "Please select a valid rating (1-5 stars).";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if ($ajax_submit) {
+                add_review_json_exit(false, 'Please enter a valid email address.');
+            }
             $error_message = "Please enter a valid email address.";
         } else {
-            // Save to database
+            // Save to database (single table: package_reviews)
             try {
-                require_once '../../config/database.php';
+                require_once __DIR__ . '/../../config/database.php';
                 
-                $stmt = $conn->prepare("INSERT INTO reviews (user_id, name, email, rating, review_text, destination, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())");
-                $stmt->bind_param("ississ", $_SESSION['user_id'], $name, $email, $rating, $review_text, $destination);
+                $stmt = $conn->prepare("INSERT INTO package_reviews (package_id, user_id, name, email, rating, review_text, destination, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
+                $stmt->bind_param("iississ", $package_id_post, $_SESSION['user_id'], $name, $email, $rating, $review_text, $destination);
                 
                 if ($stmt->execute()) {
-                    $success_message = "Thank you for your review! It will be published after moderation.";
-                    // Clear form
-                    $name = $email = $review_text = $destination = '';
-                    $rating = 0;
+                    $stmt->close();
+                    $conn->close();
+                    if ($ajax_submit) {
+                        add_review_json_exit(true, 'Review submitted successfully.');
+                    }
+                    if (!defined('BASE_URL')) {
+                        require_once __DIR__ . '/../../config/config.php';
+                    }
+                    $_SESSION['review_success_flash'] = 'Thank you for your review! It will be published after moderation.';
+                    header('Location: ' . BASE_URL . '/tourist/add-review', true, 303);
+                    exit;
                 } else {
+                    if ($ajax_submit) {
+                        add_review_json_exit(false, 'Could not save your review. Please try again.');
+                    }
                     $error_message = "An error occurred while submitting your review. Please try again.";
                 }
                 
@@ -108,6 +171,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $conn->close();
                 
             } catch (Exception $e) {
+                if ($ajax_submit) {
+                    add_review_json_exit(false, 'Could not save your review. Please try again.');
+                }
                 $error_message = "An error occurred while submitting your review. Please try again.";
                 error_log($e->getMessage());
             }
@@ -136,10 +202,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <p>Help others discover the beauty of Sri Lanka through your experiences</p>
     </div>
 
-    <?php if ($success_message): ?>
-      <div class="alert alert-success"><?= $success_message ?></div>
-    <?php endif; ?>
-    
+    <div id="reviewAjaxError" class="alert alert-error" style="display:none;" role="alert"></div>
+
     <?php if ($error_message): ?>
       <div class="alert alert-error"><?= $error_message ?></div>
     <?php endif; ?>
@@ -154,7 +218,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="" id="reviewForm" class="review-form">
+    <form method="POST" action="<?= htmlspecialchars(defined('BASE_URL') ? (BASE_URL . '/tourist/add-review') : '/CeylonGo/public/tourist/add-review') ?>" id="reviewForm" class="review-form">
       <?php if ($is_logged_in): ?>
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
       <?php endif; ?>
@@ -173,10 +237,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
       <div class="form-group">
         <label for="destination">Package Selected</label>
-        <select id="destination" name="destination" <?= !$is_logged_in ? 'disabled' : '' ?>>
+        <select id="destination" name="package_id" <?= !$is_logged_in ? 'disabled' : '' ?> required>
           <option value="">Select a package</option>
           <?php foreach ($packages as $pkg): ?>
-          <option value="<?= htmlspecialchars($pkg['title']) ?>" <?= ($selected_package_id && (int)$pkg['id'] === (int)$selected_package_id) || $destination === $pkg['title'] ? 'selected' : '' ?>><?= htmlspecialchars($pkg['title']) ?></option>
+          <option value="<?= (int)$pkg['id'] ?>" <?= ($package_id_form && (int)$pkg['id'] === (int)$package_id_form) ? 'selected' : '' ?>><?= htmlspecialchars($pkg['title']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -233,7 +297,127 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <!-- Footer include -->
   <?php include 'footer.php'; ?>
 
+  <?php if ($success_modal_message !== ''): ?>
+  <div id="reviewSuccessModal" class="review-success-modal" role="dialog" aria-modal="true" aria-labelledby="reviewSuccessModalTitle">
+    <div class="review-success-modal__backdrop js-review-success-close" tabindex="-1"></div>
+    <div class="review-success-modal__box">
+      <h2 id="reviewSuccessModalTitle" class="review-success-modal__title">Thank you</h2>
+      <p class="review-success-modal__text"><?= htmlspecialchars($success_modal_message) ?></p>
+      <button type="button" class="review-success-modal__ok btn-primary js-review-success-ok">OK</button>
+    </div>
+  </div>
+  <?php endif; ?>
+
   <script>
+    <?php if ($is_logged_in): ?>
+    (function () {
+      var form = document.getElementById('reviewForm');
+      var errBox = document.getElementById('reviewAjaxError');
+      var prefName = <?= json_encode($user_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+      var prefEmail = <?= json_encode($user_email, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+      function showReviewSubmittedModal(message) {
+        var wrap = document.createElement('div');
+        wrap.className = 'review-success-modal';
+        wrap.setAttribute('role', 'dialog');
+        wrap.setAttribute('aria-modal', 'true');
+        wrap.innerHTML =
+          '<div class="review-success-modal__backdrop js-ajax-success-close" tabindex="-1"></div>' +
+          '<div class="review-success-modal__box">' +
+          '<h2 class="review-success-modal__title">Review submitted</h2>' +
+          '<p class="review-success-modal__text"></p>' +
+          '<button type="button" class="review-success-modal__ok btn-primary js-ajax-success-ok">OK</button>' +
+          '</div>';
+        wrap.querySelector('.review-success-modal__text').textContent = message;
+        document.body.appendChild(wrap);
+        document.body.style.overflow = 'hidden';
+        function closeOnly() {
+          wrap.remove();
+          document.body.style.overflow = '';
+        }
+        function closeAndGoBack() {
+          closeOnly();
+          window.history.back();
+        }
+        wrap.querySelector('.review-success-modal__backdrop').addEventListener('click', closeOnly);
+        wrap.querySelector('.js-ajax-success-ok').addEventListener('click', closeAndGoBack);
+        document.addEventListener('keydown', function esc(e) {
+          if (e.key === 'Escape') {
+            closeOnly();
+            document.removeEventListener('keydown', esc);
+          }
+        });
+      }
+
+      if (!form) return;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (errBox) {
+          errBox.style.display = 'none';
+          errBox.textContent = '';
+        }
+        var fd = new FormData(form);
+        fd.set('ajax', '1');
+        var actionUrl = form.getAttribute('action');
+        if (!actionUrl || actionUrl === '') {
+          actionUrl = window.location.pathname + window.location.search;
+        }
+        fetch(actionUrl, {
+          method: 'POST',
+          body: fd,
+          credentials: 'include',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+          .then(function (r) {
+            return r.text().then(function (text) {
+              var data;
+              try {
+                data = JSON.parse(text);
+              } catch (e) {
+                console.error('add-review: expected JSON, got:', text.substring(0, 600));
+                throw new Error('Server did not return JSON (status ' + r.status + ').');
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            if (data.ok) {
+              showReviewSubmittedModal(data.message || 'Review submitted successfully.');
+              form.reset();
+              var nameEl = document.getElementById('name');
+              var emailEl = document.getElementById('email');
+              if (nameEl) nameEl.value = prefName;
+              if (emailEl) emailEl.value = prefEmail;
+              var params = new URLSearchParams(window.location.search);
+              var pkg = params.get('package');
+              var dest = document.getElementById('destination');
+              if (pkg && dest) dest.value = pkg;
+              var ta = document.getElementById('review');
+              var cc = document.getElementById('charCount');
+              if (ta && cc) cc.textContent = String(ta.value.length);
+            } else {
+              if (errBox) {
+                errBox.textContent = data.message || 'Something went wrong.';
+                errBox.style.display = 'block';
+                errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              } else {
+                alert(data.message || 'Something went wrong.');
+              }
+            }
+          })
+          .catch(function (err) {
+            var msg = (err && err.message) ? err.message : 'Could not submit. Check your connection and try again.';
+            if (errBox) {
+              errBox.textContent = msg;
+              errBox.style.display = 'block';
+            } else {
+              alert(msg);
+            }
+          });
+      });
+    })();
+    <?php endif; ?>
+
     // Character counter
     const reviewTextarea = document.getElementById('review');
     const charCount = document.getElementById('charCount');
@@ -254,6 +438,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       reviewTextarea.setAttribute('maxlength', '500');
     }
     
+    (function () {
+      var modal = document.getElementById('reviewSuccessModal');
+      if (!modal) return;
+      function closeOnly() {
+        modal.remove();
+        document.body.style.overflow = '';
+      }
+      function closeAndGoBack() {
+        closeOnly();
+        window.history.back();
+      }
+      var backdrop = modal.querySelector('.js-review-success-close');
+      if (backdrop) backdrop.addEventListener('click', closeOnly);
+      var okBtn = modal.querySelector('.js-review-success-ok');
+      if (okBtn) okBtn.addEventListener('click', closeAndGoBack);
+      document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') {
+          closeOnly();
+          document.removeEventListener('keydown', esc);
+        }
+      });
+      document.body.style.overflow = 'hidden';
+    })();
+
     // Star rating hover effect
     const stars = document.querySelectorAll('.star-rating label');
     stars.forEach((star, index) => {

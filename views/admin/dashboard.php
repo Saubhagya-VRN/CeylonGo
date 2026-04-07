@@ -56,10 +56,10 @@
   $latestReviews = [];
   try {
       $sqlReviews = "
-          SELECT r.review_text, r.rating, r.created_at, CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
-          FROM reviews r
-          JOIN tourist_users t ON r.user_id = t.id
-          ORDER BY r.created_at DESC
+          SELECT pr.review_text, pr.rating, pr.created_at, CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
+          FROM package_reviews pr
+          JOIN tourist_users t ON pr.user_id = t.id
+          ORDER BY pr.created_at DESC
           LIMIT 5
       ";
       $stmtReviews = $conn->prepare($sqlReviews);

@@ -8,8 +8,50 @@ class Package {
     private $conn;
     private $table = 'packages';
 
+    /** @var int[]|null Package IDs with most bookings (computed), ordered by popularity */
+    private $trendingPackageIdsCache = null;
+
+    /** How many packages show the Trending badge (top N by booking count). */
+    const TRENDING_TOP_N = 5;
+
     public function __construct($db) {
         $this->conn = $db;
+    }
+
+    /**
+     * Package IDs that count as "trending": top TRENDING_TOP_N by paid booking volume.
+     * Only rows with status = paid in package_bookings are counted.
+     */
+    public function getTrendingPackageIds()
+    {
+        if ($this->trendingPackageIdsCache !== null) {
+            return $this->trendingPackageIdsCache;
+        }
+        $ids = [];
+        $n = (int) self::TRENDING_TOP_N;
+        if ($n < 1) {
+            $this->trendingPackageIdsCache = [];
+            return [];
+        }
+        try {
+            $sql = "SELECT package_id, COUNT(*) AS cnt
+                    FROM package_bookings
+                    WHERE status = 'paid'
+                    GROUP BY package_id
+                    HAVING cnt > 0
+                    ORDER BY cnt DESC
+                    LIMIT " . $n;
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute();
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $ids[] = (int) $row['package_id'];
+            }
+        } catch (PDOException $e) {
+            error_log('Package::getTrendingPackageIds: ' . $e->getMessage());
+            $ids = [];
+        }
+        $this->trendingPackageIdsCache = $ids;
+        return $this->trendingPackageIdsCache;
     }
 
     /**
@@ -20,6 +62,7 @@ class Package {
         $row['id'] = (int) $row['id'];
         $row['price'] = (int) $row['price'];
         $row['reviews'] = (int) (isset($row['reviews']) ? $row['reviews'] : 0);
+        // trending may be pre-set from DB (admin) or computed from bookings in getAll/getById
         $row['trending'] = !empty($row['trending']);
         if (isset($row['rating'])) $row['rating'] = $row['rating'] !== null ? (float) $row['rating'] : null;
 
@@ -48,12 +91,26 @@ class Package {
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $trendingIds = $this->getTrendingPackageIds();
+        $trendingRank = [];
+        foreach ($trendingIds as $rank => $pid) {
+            $trendingRank[(int) $pid] = $rank;
+        }
         $list = [];
         foreach ($rows as $row) {
+            $pid = (int) $row['id'];
+            $row['trending'] = isset($trendingRank[$pid]) ? 1 : 0;
             $p = $this->normalizeRow($row, true);
             if (!empty($filters['trending']) && !$p['trending']) continue;
             if (!empty($filters['category']) && strtolower(trim($p['category'])) !== strtolower(trim($filters['category']))) continue;
             $list[] = $p;
+        }
+        if (!empty($filters['trending']) && count($list) > 1) {
+            usort($list, function ($a, $b) use ($trendingRank) {
+                $ra = $trendingRank[$a['id']] ?? 999;
+                $rb = $trendingRank[$b['id']] ?? 999;
+                return $ra - $rb;
+            });
         }
         return $list;
     }
@@ -66,7 +123,13 @@ class Package {
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([(int) $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row ? $this->normalizeRow($row, false) : null;
+        if (!$row) {
+            return null;
+        }
+        $pid = (int) $row['id'];
+        $trendingIds = $this->getTrendingPackageIds();
+        $row['trending'] = in_array($pid, $trendingIds, true) ? 1 : 0;
+        return $this->normalizeRow($row, false);
     }
 
     /**

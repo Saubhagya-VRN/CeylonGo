@@ -17,7 +17,7 @@ class AdminController {
         }
         
         $adminModel = new Admin($this->db);
-        $admin_id = $_SESSION['user_ref_id'] ?? null;
+        $admin_id = isset($_SESSION['user_ref_id']) ? $_SESSION['user_ref_id'] : null;
         if ($admin_id) {
             $admin = $adminModel->getAdminById($admin_id);
             view('admin/profile', ['admin' => $admin]);
@@ -28,7 +28,7 @@ class AdminController {
 
     public function updateProfile() {
         $data = $_POST;
-        $admin_id = $_SESSION['user_ref_id'] ?? null;
+        $admin_id = isset($_SESSION['user_ref_id']) ? $_SESSION['user_ref_id'] : null;
 
         if (!$admin_id) {
             header("Location: /CeylonGo/public/admin/profile?error=" . urlencode("Invalid session"));

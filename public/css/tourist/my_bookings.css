@@ -26,6 +26,56 @@
   font-size: 1rem;
 }
 
+.my-bookings-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 6px;
+}
+
+.my-bookings-section-title--spaced {
+  margin-top: 36px;
+}
+
+.my-bookings-section-lead {
+  color: #6b7280;
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.my-bookings-list--custom {
+  margin-bottom: 8px;
+}
+
+/* Custom bookings cards reuse .my-booking-card (same as package My Bookings). */
+.my-booking-custom-actions {
+  margin-top: 12px;
+  text-align: right;
+}
+
+.my-bookings-refund-window-note {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Custom bookings (?view=custom): title row aligned with customise-trip */
+.my-bookings-custom-header {
+  margin-top: 4px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.my-bookings-custom-header .trip-header-row {
+  margin-bottom: 0;
+}
+
+.my-bookings-page.trip-page-body .my-bookings-main {
+  padding-top: 8px;
+}
+
 .my-bookings-empty {
   background: #fff;
   border-radius: 12px;
@@ -95,6 +145,45 @@
   border: 1px solid #bbf7d0;
 }
 
+.my-booking-status--paid {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+/* Same pill treatment as .my-booking-status--approved; distinct purple accent */
+.my-booking-status--awaiting-bank {
+  display: inline-block;
+  background: #ede9fe;
+  color: #5b21b6;
+  border: 1px solid #c4b5fd;
+}
+
+.my-bookings-flash {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.my-bookings-flash--ok {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.my-bookings-flash--err {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.my-bookings-flash--info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
 .my-booking-btn-payment {
   display: inline-block;
   margin-top: 12px;
@@ -112,6 +201,509 @@
   filter: brightness(1.05);
   box-shadow: 0 4px 12px rgba(44, 85, 48, 0.35);
   color: #fff;
+}
+
+/* Paid: 2×2 grid — Contact | Request refund (row 1), Payment note | View trip summary (row 2) */
+.my-booking-paid-footer {
+  margin-top: 0;
+}
+
+.my-booking-refund-status--above {
+  margin: 0 0 8px;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: #92400e;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.my-booking-paid-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  /* Space between Request refund and View trip summary; also tight spacing between Contact and payment line */
+  row-gap: 10px;
+  /* Top-align cells: center was stretching row 1 to button height and centering Contact, creating a fake gap */
+  align-items: start;
+  /* Padding lives on .my-booking-details inside cells so Contact uses a real <li> bullet aligned with Travelers/Total */
+  padding-left: 0;
+}
+
+.my-booking-cell--contact {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+.my-booking-cell--refund {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
+}
+
+.my-booking-cell--trip {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  align-self: start;
+}
+
+.my-booking-details.my-booking-details--contact-only {
+  margin: 0;
+  list-style-type: disc;
+}
+
+/* Outside the indented <ul> — flush left in this column (no list padding) */
+.my-booking-cell--contact .my-booking-paymsg-line {
+  margin: 10px 0 0;
+  padding: 0;
+  text-align: left;
+}
+
+.my-booking-refund-note--below {
+  margin: 8px 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.my-booking-btn-refund {
+  display: inline-block;
+  padding: 10px 18px;
+  background: #fff;
+  color: #9a3412;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid #fdba74;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.my-booking-btn-refund:hover {
+  background: #fff7ed;
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+.my-booking-btn-trip-summary {
+  display: inline-block;
+  margin: 0;
+  padding: 10px 18px;
+  background: #fff;
+  color: #1e40af;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 8px;
+  border: 2px solid #93c5fd;
+  transition: background 0.2s, border-color 0.2s;
+  box-sizing: border-box;
+}
+
+a.my-booking-btn-trip-summary:visited {
+  color: #1e40af;
+}
+
+.my-booking-btn-trip-summary:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+/* Refund modal */
+.refund-modal[hidden] {
+  display: none !important;
+}
+
+.refund-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.refund-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  cursor: pointer;
+}
+
+.refund-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  max-height: min(88vh, 720px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.refund-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.refund-modal__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.refund-modal__close {
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.refund-modal__close:hover {
+  background: #e5e7eb;
+}
+
+.refund-modal__body {
+  padding: 16px 18px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.refund-policy {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.refund-facts {
+  margin: 0 0 14px;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.refund-hint {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.refund-confirm-line {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.refund-label {
+  display: block;
+  margin: 12px 0 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.refund-textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.refund-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.refund-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.refund-btn--ghost {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.refund-btn--ghost:hover {
+  background: #e5e7eb;
+}
+
+.refund-btn--primary {
+  background: linear-gradient(to right, #9a3412, #c2410c);
+  color: #fff;
+}
+
+.refund-btn--primary:hover {
+  filter: brightness(1.05);
+}
+
+.refund-step--success .refund-success-msg {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  color: #166534;
+  line-height: 1.5;
+}
+
+/* Trip summary modal (paid bookings) */
+.trip-summary-modal[hidden] {
+  display: none !important;
+}
+
+.trip-summary-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.trip-summary-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  cursor: pointer;
+}
+
+.trip-summary-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 640px;
+  max-height: min(90vh, 900px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.trip-summary-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.trip-summary-modal__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.trip-summary-modal__close {
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.trip-summary-modal__close:hover {
+  background: #e5e7eb;
+}
+
+.trip-summary-modal__body {
+  padding: 16px 18px 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.trip-summary-modal__loading {
+  margin: 0;
+  color: #6b7280;
+  text-align: center;
+  padding: 24px;
+}
+
+.trip-sum-card {
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.trip-sum-card:last-child {
+  margin-bottom: 0;
+}
+
+.trip-sum-h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.35;
+}
+
+.trip-sum-meta {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.trip-sum-line {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+  color: #374151;
+}
+
+.trip-sum-hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 12px 0;
+}
+
+.trip-sum-total {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: #111;
+}
+
+.trip-sum-total span {
+  color: #2c5530;
+}
+
+.trip-sum-h4 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.trip-sum-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trip-sum-li {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.45;
+}
+
+.trip-sum-li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.trip-sum-muted {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.trip-sum-days {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trip-sum-day {
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fafefa;
+}
+
+.trip-sum-day-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.trip-sum-badge {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #2c5530;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trip-sum-day-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.35;
+}
+
+.trip-sum-acts {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.trip-sum-err {
+  margin: 0;
+  color: #b91c1c;
+  text-align: center;
+  padding: 16px;
 }
 
 .my-booking-approve-link {
@@ -148,8 +740,21 @@
   line-height: 1.6;
 }
 
+/* Must come after .my-booking-details — a later rule was resetting margin-bottom to 12px */
+.my-booking-details.my-booking-details--paid-follow {
+  margin-bottom: 0;
+}
+
+.my-booking-details.my-booking-details--paid-follow li:last-child {
+  margin-bottom: 0;
+}
+
 .my-booking-details li {
   margin-bottom: 4px;
+}
+
+.my-booking-details.my-booking-details--contact-only li {
+  margin-bottom: 0;
 }
 
 .my-booking-note {
