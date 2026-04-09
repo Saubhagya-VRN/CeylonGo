@@ -6,7 +6,85 @@ class AdminController {
         $this->db = Database::getConnection();
     }
 
-    public function dashboard() {
+    public function dashboard()
+    {
+        // ── Support AJAX chart refresh from the dashboard ────────────────────
+        $isAjax = !empty($_GET['ajax']) || !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
+ 
+        if ($isAjax) {
+            // Reuse the same chart-data logic as reports(), but return JSON
+            $period      = in_array($_GET['period']       ?? '', ['weekly','monthly','yearly'])
+                           ? $_GET['period'] : 'monthly';
+            $bookingType = in_array($_GET['booking_type'] ?? '', ['both','package','custom'])
+                           ? $_GET['booking_type'] : 'both';
+ 
+            switch ($period) {
+                case 'weekly':
+                    $bucketExpr = "CONCAT(YEAR(created_at),'-W',LPAD(WEEK(created_at,1),2,'0'))";
+                    break;
+                case 'yearly':
+                    $bucketExpr = "YEAR(created_at)";
+                    break;
+                default: // monthly
+                    $bucketExpr = "DATE_FORMAT(created_at,'%Y-%m')";
+            }
+ 
+            $rows = [];
+ 
+            if ($bookingType === 'package' || $bookingType === 'both') {
+                $sql = "
+                    SELECT {$bucketExpr} AS period,
+                           COUNT(*) AS total,
+                           COALESCE(SUM(total_amount),0) AS revenue,
+                           SUM(status='cancelled') AS cancelled
+                    FROM package_bookings
+                    GROUP BY period ORDER BY period ASC
+                ";
+                $stmt = $this->db->query($sql);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $k = (string)$r['period'];
+                    if (!isset($rows[$k])) $rows[$k] = ['period'=>$k,'total'=>0,'revenue'=>0.0,'cancelled'=>0];
+                    $rows[$k]['total']     += (int)$r['total'];
+                    $rows[$k]['revenue']   += (float)$r['revenue'];
+                    $rows[$k]['cancelled'] += (int)$r['cancelled'];
+                }
+            }
+ 
+            if ($bookingType === 'custom' || $bookingType === 'both') {
+                $sql = "
+                    SELECT {$bucketExpr} AS period,
+                           COUNT(*) AS total,
+                           COALESCE(SUM(CASE WHEN status='completed' THEN budget_lkr ELSE 0 END),0) AS revenue,
+                           SUM(status='cancelled' OR refund_requested_at IS NOT NULL) AS cancelled
+                    FROM trips
+                    GROUP BY period ORDER BY period ASC
+                ";
+                $stmt = $this->db->query($sql);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                    $k = (string)$r['period'];
+                    if (!isset($rows[$k])) $rows[$k] = ['period'=>$k,'total'=>0,'revenue'=>0.0,'cancelled'=>0];
+                    $rows[$k]['total']     += (int)$r['total'];
+                    $rows[$k]['revenue']   += (float)$r['revenue'];
+                    $rows[$k]['cancelled'] += (int)$r['cancelled'];
+                }
+            }
+ 
+            ksort($rows);
+            $rows = array_values($rows);
+ 
+            header('Content-Type: application/json');
+            echo json_encode([
+                'labels'        => array_column($rows, 'period'),
+                'bookings'      => array_column($rows, 'total'),
+                'revenue'       => array_map('floatval', array_column($rows, 'revenue')),
+                'cancellations' => array_column($rows, 'cancelled'),
+            ]);
+            exit();
+        }
+ 
+        // ── Full page render: just delegate to the view ──────────────────────
+        // All PHP data fetching is done inside the view itself (dashboard.php)
+        // so that the view stays self-contained (existing project pattern).
         view('admin/dashboard');
     }
 

@@ -127,6 +127,26 @@
                     </form>
 
                     <div class="inquiries-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+    
+                            <!-- LEFT: Show entries -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+
+                                <select id="rowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+
+                            <!-- RIGHT: Pagination -->
+                            <div id="paginationControls" class="filter-buttons"></div>
+
+                        </div>
                         <table class="inquiry-table">
                             <thead>
                                 <tr>
@@ -364,6 +384,74 @@
                     link.click();
                 });
             })();
+
+            // ── PAGINATION FOR USERS ───────────────────
+
+            // Get all rows initially rendered by PHP
+            const allUserRows = Array.from(document.querySelectorAll("#inquiryTableBody tr"))
+                .filter(row => row.children.length > 1); // ignore "no data" row
+
+            const rowsPerPageSelect = document.getElementById("rowsPerPage");
+            const paginationControls = document.getElementById("paginationControls");
+
+            let currentPage = 1;
+            let rowsPerPage = parseInt(rowsPerPageSelect.value);
+
+            // Render table based on page
+            function renderTable() {
+                const tbody = document.getElementById("inquiryTableBody");
+                tbody.innerHTML = "";
+
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+
+                const pageRows = allUserRows.slice(start, end);
+
+                pageRows.forEach(row => tbody.appendChild(row));
+
+                renderPagination();
+            }
+
+            // Pagination buttons
+            function renderPagination() {
+                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
+
+                paginationControls.innerHTML = `
+                    <button class="filter-btn small-btn" ${currentPage === 1 ? "disabled" : ""} onclick="prevPage()">Prev</button>
+
+                    <span class="page-info">
+                        Page ${currentPage} of ${totalPages}
+                    </span>
+
+                    <button class="filter-btn small-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
+                `;
+            }
+
+            // Navigation
+            function nextPage() {
+                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            }
+
+            function prevPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            }
+
+            // Change rows per page
+            rowsPerPageSelect.addEventListener("change", function() {
+                rowsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
+
+            // Initialize
+            renderTable();
         </script>
     </body>
 </html>

@@ -176,7 +176,7 @@
 
                     <!-- Trip Payments Table -->
                     <div class="payments-section">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                             <!-- LEFT: Show entries -->
                             <div class="filter-buttons" style="align-items:center;">
                                 <span style="font-size:14px;">Show</span>

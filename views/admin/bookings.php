@@ -260,7 +260,7 @@
                     <br>
 
                     <div class="bookings-section">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                             
                             <!-- LEFT -->
                             <div class="filter-buttons" style="align-items:center;">
