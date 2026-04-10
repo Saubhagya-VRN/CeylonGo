@@ -85,6 +85,21 @@ class TransportProviderController {
         view('transport/profile');
     }
 
+    public function report() {
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $driverId = trim($_SESSION['transporter_id']);
+        $requestModel = new TransportRequest($this->db);
+        $reportData = $requestModel->getReportData($driverId);
+
+        view('transport/report', [
+            'overall' => $reportData['overall'],
+            'monthly' => $reportData['monthly']
+        ]);
+    }
+
     public function vehicle() {
         view('transport/vehicle');
     }

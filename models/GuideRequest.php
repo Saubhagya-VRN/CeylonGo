@@ -13,6 +13,7 @@ class GuideRequest {
     public $time;
     public $notes;
     public $status;
+    public $fee;
     public $guide_id;
     public $approved_at;
     public $created_at;
@@ -36,6 +37,7 @@ class GuideRequest {
             time TIME NOT NULL,
             notes TEXT,
             status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+            fee DECIMAL(10, 2) DEFAULT 0.00,
             guide_id INT NULL,
             approved_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,8 +73,8 @@ class GuideRequest {
         $this->createTable();
 
         $query = "INSERT INTO " . $this->table . "
-                  (tourist_id, customerName, contactNumber, location, language, date, time, notes, status, guide_id)
-                  VALUES (:tourist_id, :customerName, :contactNumber, :location, :language, :date, :time, :notes, :status, :guide_id)";
+                  (tourist_id, customerName, contactNumber, location, language, date, time, notes, status, fee, guide_id)
+                  VALUES (:tourist_id, :customerName, :contactNumber, :location, :language, :date, :time, :notes, :status, :fee, :guide_id)";
         
         $stmt = $this->conn->prepare($query);
 
@@ -85,6 +87,7 @@ class GuideRequest {
         $this->time = htmlspecialchars(strip_tags($this->time));
         $this->notes = htmlspecialchars(strip_tags($this->notes ?? ''));
         $this->status = $this->status ?? 'pending';
+        $this->fee = $this->fee ?? 3000.00;
         $this->tourist_id = $this->tourist_id ?? null;
         $this->guide_id = $this->guide_id ?? null;
 
@@ -97,6 +100,7 @@ class GuideRequest {
         $stmt->bindParam(":time", $this->time);
         $stmt->bindParam(":notes", $this->notes);
         $stmt->bindParam(":status", $this->status);
+        $stmt->bindParam(":fee", $this->fee);
         $stmt->bindParam(":guide_id", $this->guide_id);
 
         try {
@@ -330,6 +334,43 @@ class GuideRequest {
                 error_log("Error fetching payment bookings: " . $e2->getMessage());
                 return [];
             }
+        }
+    }
+    
+    /**
+     * Get monthly revenue and booking count for reporting
+     */
+    public function getReportData($guide_id) {
+        try {
+            // Get total bookings (approved)
+            $queryTotal = "SELECT COUNT(*) as total_bookings, IFNULL(SUM(fee), 0) as total_revenue 
+                          FROM " . $this->table . " 
+                          WHERE guide_id = ? AND status = 'approved'";
+            $stmtTotal = $this->conn->prepare($queryTotal);
+            $stmtTotal->execute([$guide_id]);
+            $overall = $stmtTotal->fetch(PDO::FETCH_ASSOC);
+
+            // Get monthly breakdown for last 12 months
+            $queryMonthly = "SELECT 
+                                DATE_FORMAT(date, '%Y-%m') as month,
+                                COUNT(*) as bookings,
+                                IFNULL(SUM(fee), 0) as revenue
+                             FROM " . $this->table . "
+                             WHERE guide_id = ? AND status = 'approved'
+                             AND date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                             GROUP BY month
+                             ORDER BY month ASC";
+            $stmtMonthly = $this->conn->prepare($queryMonthly);
+            $stmtMonthly->execute([$guide_id]);
+            $monthly = $stmtMonthly->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'overall' => $overall,
+                'monthly' => $monthly
+            ];
+        } catch (PDOException $e) {
+            error_log("Error fetching guide report data: " . $e->getMessage());
+            return ['overall' => ['total_bookings' => 0, 'total_revenue' => 0], 'monthly' => []];
         }
     }
 }
