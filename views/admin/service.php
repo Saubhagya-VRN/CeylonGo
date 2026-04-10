@@ -108,7 +108,6 @@
                     </form>
 
                     <div class="stats-section">
-                        <h4>Provider Statistics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total Providers</strong><br>
@@ -242,15 +241,12 @@
             });
 
             function applySearch() {
-                const searchTerm = document
-                    .getElementById("searchInput")
-                    .value
-                    .toLowerCase();
-
-                document.querySelectorAll("#providerTableBody tr").forEach(row => {
-                    const text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? "" : "none";
+                const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+                allUserRows.forEach(row => {
+                    row.style.display = row.innerText.toLowerCase().includes(searchTerm) ? "" : "none";
                 });
+                currentPage = 1;
+                renderTable();
             }
 
             // Enter key search
@@ -265,16 +261,12 @@
             document.getElementById("searchInput").addEventListener("input", applySearch);
 
             function filterProviders(role) {
-                const rows = document.querySelectorAll("#providerTableBody tr");
                 const buttons = document.querySelectorAll(".filter-btn");
-
-                // Toggle active class
                 buttons.forEach(btn => btn.classList.remove("active"));
                 event.target.classList.add("active");
 
-                rows.forEach(row => {
+                allUserRows.forEach(row => {
                     const roleCell = row.cells[0].innerText.toLowerCase();
-
                     if (role === "all") {
                         row.style.display = "";
                     } else if (role === "guide" && roleCell.includes("guide")) {
@@ -287,6 +279,8 @@
                         row.style.display = "none";
                     }
                 });
+                currentPage = 1;
+                renderTable();
             }
 
             // Activate / Deactivate providers
@@ -408,38 +402,37 @@
                 const tbody = document.getElementById("providerTableBody");
                 tbody.innerHTML = "";
 
+                const visibleRows = allUserRows.filter(row => row.style.display !== "none");
                 const start = (currentPage - 1) * rowsPerPage;
                 const end = start + rowsPerPage;
+                const pageRows = visibleRows.slice(start, end);
 
-                const pageRows = allUserRows.slice(start, end);
+                if (visibleRows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">No service providers found.</td></tr>';
+                    paginationControls.innerHTML = '';
+                    return;
+                }
 
                 pageRows.forEach(row => tbody.appendChild(row));
-
-                renderPagination();
+                renderPagination(visibleRows.length);
             }
 
             // Pagination buttons
-            function renderPagination() {
-                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
+            function renderPagination(totalVisible) {
+                const totalPages = Math.ceil(totalVisible / rowsPerPage);
 
                 paginationControls.innerHTML = `
                     <button class="filter-btn small-btn" ${currentPage === 1 ? "disabled" : ""} onclick="prevPage()">Prev</button>
-
-                    <span class="page-info">
-                        Page ${currentPage} of ${totalPages}
-                    </span>
-
-                    <button class="filter-btn small-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
+                    <span class="page-info">Page ${currentPage} of ${totalPages || 1}</span>
+                    <button class="filter-btn small-btn" ${currentPage >= totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
                 `;
             }
 
             // Navigation
             function nextPage() {
-                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    renderTable();
-                }
+                const visibleRows = allUserRows.filter(row => row.style.display !== "none");
+                const totalPages = Math.ceil(visibleRows.length / rowsPerPage);
+                if (currentPage < totalPages) { currentPage++; renderTable(); }
             }
 
             function prevPage() {

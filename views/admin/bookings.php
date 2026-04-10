@@ -166,7 +166,7 @@
                                 <?php if (empty($bookings)): ?>
                                     <tr>
                                         <td colspan="8" style="text-align:center;">
-                                            No customized booking requests found.
+                                            No customized bookings can be found.
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -293,7 +293,11 @@
                             </thead>
                             <tbody id="pkgBookingsTableBody">
                                 <?php if (empty($filteredPkgBookings)): ?>
-                                    <tr><td colspan="6" style="text-align:center;">No package booking requests found.</td></tr>
+                                    <tr>
+                                        <td colspan="6" style="text-align:center;">
+                                            No package booking can be found.
+                                        </td>
+                                    </tr>
                                 <?php else: ?>
                                     <?php foreach ($filteredPkgBookings as $pb):
                                         switch (strtolower($pb['status'])) {
@@ -860,8 +864,7 @@
             // ── PAGINATION FOR PACKAGE BOOKINGS ───────────────────
 
             // Get all rows
-            const allPkgRows = Array.from(document.querySelectorAll("#pkgBookingsTableBody tr"))
-                .filter(row => row.children.length > 1); // ignore "no data" row
+            const allPkgRows = Array.from(document.querySelectorAll("#pkgBookingsTableBody tr"));
             const pkgRowsPerPageSelect = document.getElementById("pkgRowsPerPage");
             const pkgPaginationControls = document.getElementById("pkgPaginationControls");
 
@@ -871,6 +874,13 @@
             // Render table
             function renderPkgTable() {
                 const tbody = document.getElementById("pkgBookingsTableBody");
+                // If only 1 row and it's a "no data" row
+                if (allPkgRows.length === 1 && allPkgRows[0].children.length === 1) {
+                    tbody.innerHTML = "";
+                    tbody.appendChild(allPkgRows[0]); // keep the message
+                    pkgPaginationControls.innerHTML = ""; // remove pagination
+                    return;
+                }
                 tbody.innerHTML = "";
 
                 const start = (pkgCurrentPage - 1) * pkgRowsPerPage;

@@ -147,7 +147,6 @@
 
                     <!-- Trip Payment Stats -->
                     <div class="stats-section">
-                        <h4>Trip Payment Statistics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total</strong><br>
@@ -272,12 +271,20 @@
                                                         title="Approve Bank Transfer">🏦✅</button>
                                             <?php endif; ?>
 
-                                            <?php if ($tHasRefund && empty($t['refund_approved_at'])): ?>
-                                                <!-- Refund requested, awaiting admin approval -->
+                                            <?php if ($tHasRefund && empty($t['refund_approved_at']) && empty($t['refund_rejected_at'])): ?>
+                                                <!-- Refund requested, awaiting admin decision -->
                                                 <button class="icon-btn trip-pay-refund-approve-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($t['refund_reason'] ?? '') ?>"
                                                         title="Approve Refund">↩️✅</button>
+                                                <button class="icon-btn trip-pay-refund-reject-btn"
+                                                        data-id="<?= (int)$t['id'] ?>"
+                                                        data-reason="<?= htmlspecialchars($t['refund_reason'] ?? '') ?>"
+                                                        title="Reject Refund">↩️❌</button>
+                                            <?php elseif (!empty($t['refund_approved_at'])): ?>
+                                                <span style="font-size:11px;color:green;font-weight:bold;">✅ Refund Approved</span>
+                                            <?php elseif (!empty($t['refund_rejected_at'])): ?>
+                                                <span style="font-size:11px;color:#c0392b;font-weight:bold;">❌ Refund Rejected</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -351,7 +358,6 @@
 
                     <!-- Stats -->
                     <div class="stats-section">
-                        <h4>Payment Statistics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total Payments</strong><br>
@@ -484,12 +490,20 @@
                                                         title="Approve Bank Transfer">🏦✅</button>
                                             <?php endif; ?>
 
-                                            <?php if ($hasRefund && empty($p['refund_approved_at'])): ?>
-                                                <!-- Refund requested, awaiting admin approval -->
+                                            <?php if ($hasRefund && empty($p['refund_approved_at']) && empty($p['refund_rejected_at'])): ?>
+                                                <!-- Refund requested, awaiting admin decision -->
                                                 <button class="icon-btn pay-refund-approve-btn"
                                                         data-id="<?= (int)$p['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($p['refund_reason'] ?? '') ?>"
                                                         title="Approve Refund">↩️✅</button>
+                                                <button class="icon-btn pay-refund-reject-btn"
+                                                        data-id="<?= (int)$p['id'] ?>"
+                                                        data-reason="<?= htmlspecialchars($p['refund_reason'] ?? '') ?>"
+                                                        title="Reject Refund">↩️❌</button>
+                                            <?php elseif (!empty($p['refund_approved_at'])): ?>
+                                                <span style="font-size:11px;color:green;font-weight:bold;">✅ Refund Approved</span>
+                                            <?php elseif (!empty($p['refund_rejected_at'])): ?>
+                                                <span style="font-size:11px;color:#c0392b;font-weight:bold;">❌ Refund Rejected</span>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -869,6 +883,33 @@
                 });
             });
 
+            // ── Reject refund (package) ───────────────────────────
+            document.querySelectorAll('.pay-refund-reject-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id     = parseInt(this.dataset.id);
+                    const reason = this.dataset.reason;
+                    const note   = prompt(
+                        'Reject refund for booking #' + id + '?\n\n' +
+                        'Customer reason: "' + (reason || 'No reason given') + '"\n\n' +
+                        'Enter a note to send to the customer (required):'
+                    );
+                    if (note === null) return; // cancelled
+                    if (!note.trim()) { alert('A rejection note is required.'); return; }
+
+                    fetch('/CeylonGo/public/admin/payment/reject-refund', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `booking_id=${id}&reject_note=${encodeURIComponent(note.trim())}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('Failed: ' + (data.message || 'Unknown error'));
+                    })
+                    .catch(() => alert('Server error. Please try again.'));
+                });
+            });
+
             // ── Approve refund (trip) ─────────────────────────────
             document.querySelectorAll('.trip-pay-refund-approve-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -885,6 +926,33 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: `trip_id=${id}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) location.reload();
+                        else alert('Failed: ' + (data.message || 'Unknown error'));
+                    })
+                    .catch(() => alert('Server error. Please try again.'));
+                });
+            });
+
+            // ── Reject refund (trip) ──────────────────────────────
+            document.querySelectorAll('.trip-pay-refund-reject-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id     = parseInt(this.dataset.id);
+                    const reason = this.dataset.reason;
+                    const note   = prompt(
+                        'Reject refund for trip #' + id + '?\n\n' +
+                        'Customer reason: "' + (reason || 'No reason given') + '"\n\n' +
+                        'Enter a note to send to the customer (required):'
+                    );
+                    if (note === null) return; // cancelled
+                    if (!note.trim()) { alert('A rejection note is required.'); return; }
+
+                    fetch('/CeylonGo/public/admin/trip-payment/reject-refund', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `trip_id=${id}&reject_note=${encodeURIComponent(note.trim())}`
                     })
                     .then(res => res.json())
                     .then(data => {
@@ -955,6 +1023,11 @@
             function renderPayTable() {
                 const tbody = document.getElementById('paymentsTableBody');
                 tbody.innerHTML = '';
+                if (allPayRows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#888;">No payments found.</td></tr>';
+                    renderPayPagination();
+                    return;
+                }
                 const start = (payPage - 1) * payRPP;
                 allPayRows.slice(start, start + payRPP).forEach(r => tbody.appendChild(r));
                 renderPayPagination();
@@ -985,6 +1058,11 @@
             function renderTripPayTable() {
                 const tbody = document.getElementById('tripPaymentsTableBody');
                 tbody.innerHTML = '';
+                if (allTripPayRows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#888;">No payments found.</td></tr>';
+                    renderTripPayPagination();
+                    return;
+                }
                 const start = (tripPayPage - 1) * tripPayRPP;
                 allTripPayRows.slice(start, start + tripPayRPP).forEach(r => tbody.appendChild(r));
                 renderTripPayPagination();

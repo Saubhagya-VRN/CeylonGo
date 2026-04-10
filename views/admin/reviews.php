@@ -74,8 +74,7 @@
 
                     <h2 class="page-title">Reviews Management</h2>
                     
-                    <h4>Overall Ratings</h4><br>
-                    <p class="sub-text">Service Performance Metrics</p>
+                    <h4>Overall Ratings</h4>
 
                     <div class="footer-buttons">
                         <button class="footer-btn">

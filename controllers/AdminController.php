@@ -562,44 +562,336 @@ class AdminController {
     }
  
     // ── Approve a refund request — marks booking as 'cancelled' ─
+    // ── Approve a refund request (package) ──────────────────────────────────
     public function approveRefund() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405); exit();
-        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
         }
- 
+
         $bookingId   = intval($_POST['booking_id'] ?? 0);
         $adminUserId = $_SESSION['user_ref_id'] ?? null;
- 
+
         if (!$bookingId) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
             exit();
         }
- 
-        // Only approve if a refund was actually requested
+
+        // Fetch booking details (need email, name, amount)
+        $fetch = $this->db->prepare("
+            SELECT pb.id, pb.fullname, pb.email, pb.total_amount, pb.refund_requested_at
+            FROM package_bookings pb
+            WHERE pb.id = :id AND pb.refund_requested_at IS NOT NULL
+        ");
+        $fetch->execute([':id' => $bookingId]);
+        $booking = $fetch->fetch(PDO::FETCH_ASSOC);
+
+        if (!$booking) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking not found or no refund requested']);
+            exit();
+        }
+
+        // Update DB: cancel booking, record refund_approved_at
         $stmt = $this->db->prepare("
             UPDATE package_bookings
-            SET status      = 'cancelled',
-                admin_notes = CONCAT(IFNULL(admin_notes, ''), ' | Refund approved by admin on ', NOW()),
-                approved_by = :admin_id,
-                updated_at  = NOW()
-            WHERE id                  = :id
-              AND refund_requested_at IS NOT NULL
+            SET status             = 'cancelled',
+                refund_approved_at = NOW(),
+                admin_notes        = CONCAT(IFNULL(admin_notes, ''), ' | Refund approved by admin on ', NOW()),
+                approved_by        = :admin_id,
+                updated_at         = NOW()
+            WHERE id = :id
+            AND refund_requested_at IS NOT NULL
         ");
         $stmt->execute([':admin_id' => $adminUserId, ':id' => $bookingId]);
         $affected = $stmt->rowCount();
- 
+
+        if ($affected > 0) {
+            // Send email asking for bank account details
+            $this->sendRefundBankDetailsRequest(
+                $booking['email'],
+                $booking['fullname'],
+                $bookingId,
+                $booking['total_amount'],
+                'package'
+            );
+        }
+
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
-            'message' => $affected > 0 ? 'Refund approved, booking cancelled' : 'Nothing updated — check refund was requested',
+            'message' => $affected > 0
+                ? 'Refund approved. Email sent to customer for bank details.'
+                : 'Nothing updated — check refund was requested',
         ]);
         exit();
+    }
+
+    // ── Reject a refund request (package) ───────────────────────────────────
+    public function rejectRefund() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $rejectNote  = trim($_POST['reject_note'] ?? '');
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+
+        if (!$bookingId || !$rejectNote) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Missing booking ID or rejection note']);
+            exit();
+        }
+
+        // Fetch booking details
+        $fetch = $this->db->prepare("
+            SELECT id, fullname, email FROM package_bookings
+            WHERE id = :id AND refund_requested_at IS NOT NULL
+        ");
+        $fetch->execute([':id' => $bookingId]);
+        $booking = $fetch->fetch(PDO::FETCH_ASSOC);
+
+        if (!$booking) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking not found or no refund requested']);
+            exit();
+        }
+
+        // Save rejection to DB
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET refund_rejected_at = NOW(),
+                refund_reject_note = :note,
+                admin_notes        = CONCAT(IFNULL(admin_notes, ''), ' | Refund rejected by admin on ', NOW(), ': ', :note2),
+                updated_at         = NOW()
+            WHERE id = :id
+            AND refund_requested_at IS NOT NULL
+            AND refund_rejected_at IS NULL
+        ");
+        $stmt->execute([
+            ':note'  => $rejectNote,
+            ':note2' => $rejectNote,
+            ':id'    => $bookingId,
+        ]);
+        $affected = $stmt->rowCount();
+
+        if ($affected > 0) {
+            // Notify customer of rejection
+            $this->sendRefundRejectionEmail(
+                $booking['email'],
+                $booking['fullname'],
+                $bookingId,
+                $rejectNote,
+                'package'
+            );
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Refund rejected and customer notified.' : 'Nothing updated',
+        ]);
+        exit();
+    }
+
+    // ── Approve a refund request (trip/custom booking) ───────────────────────
+    public function approveTripRefund() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+
+        $tripId      = intval($_POST['trip_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+
+        if (!$tripId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid trip ID']);
+            exit();
+        }
+
+        // Fetch trip details — join with users to get email
+        // Adjust the column/table names if your trips table stores customer info differently
+        $fetch = $this->db->prepare("
+            SELECT t.id, t.customer_name, t.budget_lkr, t.refund_requested_at,
+                u.email
+            FROM trips t
+            JOIN users u ON u.ref_id = t.user_id
+            WHERE t.id = :id AND t.refund_requested_at IS NOT NULL
+        ");
+        $fetch->execute([':id' => $tripId]);
+        $trip = $fetch->fetch(PDO::FETCH_ASSOC);
+
+        if (!$trip) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Trip not found or no refund requested']);
+            exit();
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE trips
+            SET status             = 'cancelled',
+                refund_approved_at = NOW(),
+                updated_at         = NOW()
+            WHERE id = :id
+            AND refund_requested_at IS NOT NULL
+        ");
+        $stmt->execute([':id' => $tripId]);
+        $affected = $stmt->rowCount();
+
+        if ($affected > 0) {
+            $this->sendRefundBankDetailsRequest(
+                $trip['email'],
+                $trip['customer_name'],
+                $tripId,
+                $trip['budget_lkr'],
+                'trip'
+            );
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0
+                ? 'Refund approved. Email sent to customer for bank details.'
+                : 'Nothing updated',
+        ]);
+        exit();
+    }
+
+    // ── Reject a refund request (trip/custom booking) ────────────────────────
+    public function rejectTripRefund() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+
+        $tripId     = intval($_POST['trip_id'] ?? 0);
+        $rejectNote = trim($_POST['reject_note'] ?? '');
+
+        if (!$tripId || !$rejectNote) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Missing trip ID or rejection note']);
+            exit();
+        }
+
+        $fetch = $this->db->prepare("
+            SELECT t.id, t.customer_name, u.email
+            FROM trips t
+            JOIN users u ON u.ref_id = t.user_id
+            WHERE t.id = :id AND t.refund_requested_at IS NOT NULL
+        ");
+        $fetch->execute([':id' => $tripId]);
+        $trip = $fetch->fetch(PDO::FETCH_ASSOC);
+
+        if (!$trip) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Trip not found or no refund requested']);
+            exit();
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE trips
+            SET refund_rejected_at = NOW(),
+                refund_reject_note = :note,
+                updated_at         = NOW()
+            WHERE id = :id
+            AND refund_requested_at IS NOT NULL
+            AND refund_rejected_at IS NULL
+        ");
+        $stmt->execute([':note' => $rejectNote, ':id' => $tripId]);
+        $affected = $stmt->rowCount();
+
+        if ($affected > 0) {
+            $this->sendRefundRejectionEmail(
+                $trip['email'],
+                $trip['customer_name'],
+                $tripId,
+                $rejectNote,
+                'trip'
+            );
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Refund rejected and customer notified.' : 'Nothing updated',
+        ]);
+        exit();
+    }
+
+    // ── Email: ask customer for bank details after approval ──────────────────
+    private function sendRefundBankDetailsRequest(
+        string $toEmail,
+        string $toName,
+        int    $bookingId,
+        float  $amount,
+        string $type   // 'package' or 'trip'
+    ): void {
+        $subject = "Your CeylonGo Refund Has Been Approved – Bank Details Required";
+        $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
+        $amountFormatted = 'LKR ' . number_format($amount, 2);
+
+        $body = "Dear {$toName},\n\n"
+            . "We are pleased to inform you that your refund request for {$typeLabel} #{$bookingId} "
+            . "({$amountFormatted}) has been approved.\n\n"
+            . "To process your refund via bank transfer, please reply to this email with the following details:\n\n"
+            . "  1. Bank Name\n"
+            . "  2. Branch Name\n"
+            . "  3. Account Holder Name\n"
+            . "  4. Account Number\n\n"
+            . "Once we receive your details, your refund will be processed within 3–5 business days.\n\n"
+            . "If you have any questions, please don't hesitate to contact us.\n\n"
+            . "Best regards,\n"
+            . "Ceylon Go Support Team\n"
+            . "support@ceylongo.com";
+
+        $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
+                . "Reply-To: support@ceylongo.com\r\n"
+                . "Content-Type: text/plain; charset=UTF-8\r\n";
+
+        // Basic PHP mail — swap for PHPMailer/SendGrid in production (see note below)
+        @mail($toEmail, $subject, $body, $headers);
+    }
+
+    // ── Email: notify customer their refund was rejected ─────────────────────
+    private function sendRefundRejectionEmail(
+        string $toEmail,
+        string $toName,
+        int    $bookingId,
+        string $rejectNote,
+        string $type
+    ): void {
+        $subject   = "Update on Your CeylonGo Refund Request";
+        $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
+
+        $body = "Dear {$toName},\n\n"
+            . "Thank you for contacting us regarding your refund request for {$typeLabel} #{$bookingId}.\n\n"
+            . "After reviewing your request, we regret to inform you that we are unable to process "
+            . "the refund at this time for the following reason:\n\n"
+            . "  \"{$rejectNote}\"\n\n"
+            . "If you believe this decision is incorrect or would like to discuss further, please "
+            . "reply to this email or contact our support team.\n\n"
+            . "We apologise for any inconvenience caused.\n\n"
+            . "Best regards,\n"
+            . "Ceylon Go Support Team\n"
+            . "support@ceylongo.com";
+
+        $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
+                . "Reply-To: support@ceylongo.com\r\n"
+                . "Content-Type: text/plain; charset=UTF-8\r\n";
+
+        @mail($toEmail, $subject, $body, $headers);
     }
 
     public function reviews()

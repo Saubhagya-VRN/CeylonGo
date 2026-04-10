@@ -75,7 +75,6 @@
                     <h2 class="page-title">Inquiry Management</h2>
 
                     <div class="stats-section">
-                        <h4>Inquiry Statistics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total Inquiries</strong><br>

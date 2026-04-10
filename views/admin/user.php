@@ -97,7 +97,6 @@
                     </form>
 
                     <div class="stats-section">
-                        <h4>User Statistics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total</strong><br>
