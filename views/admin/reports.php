@@ -1,140 +1,116 @@
-<?php 
-    // Session is already started in public/index.php
-    require_once(__DIR__ . '/../../config/config.php');
+<?php
+/**
+ * Reports & Analysis — expects variables from AdminReportController@index.
+ * @var bool $generated
+ * @var string $reportType
+ * @var array $filters
+ * @var string $search
+ * @var string $sort
+ * @var string $dir
+ * @var int $page
+ * @var int $perPage
+ * @var int $totalRows
+ * @var int $totalPages
+ * @var array $reportData
+ * @var array $summary
+ * @var array $charts
+ */
+require_once __DIR__ . '/../../config/config.php';
 
-    if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-        header("Location: /CeylonGo/public/login");
-        exit();
-    }
+if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
+    header('Location: /CeylonGo/public/login');
+    exit();
+}
+
+$preserved = array_merge($_GET, [
+    'generated'         => '1',
+    'type'                => $reportType,
+    'date_from'           => $filters['date_from'] ?? '',
+    'date_to'             => $filters['date_to'] ?? '',
+    'booking_status'      => $filters['booking_status'] ?? 'all',
+    'pay_method'          => $filters['pay_method'] ?? 'all',
+    'pay_status'          => $filters['pay_status'] ?? 'all',
+    'user_role'           => $filters['user_role'] ?? 'all',
+    'user_status'         => $filters['user_status'] ?? 'all',
+    'provider_category'   => $filters['provider_category'] ?? 'all',
+    'provider_status'     => $filters['provider_status'] ?? 'all',
+    'q'                   => $search,
+    'sort'                => $sort,
+    'dir'                 => $dir,
+]);
+
+$baseQs = static function (array $extra = []) use ($preserved): string {
+    return http_build_query(array_merge($preserved, $extra));
+};
+
+$exportQs = $baseQs();
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <!-- Font Awesome (REQUIRED) -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
-        <link rel="stylesheet" href="/CeylonGO/public/css/admin/reports.css">
-
-        <!-- Shared Transport Layout -->
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
-        <!-- Responsive styles (always last) -->
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
-        <title>Reports and Analysis</title>
-
-        <style>
-            /* ── Download Modal ─────────────────────────────────── */
-            .modal-backdrop {
-                display: none;
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,.45);
-                z-index: 1000;
-                align-items: center;
-                justify-content: center;
-            }
-            .modal-backdrop.open { display: flex; }
-
-            .modal-box {
-                background: #fff;
-                border-radius: 10px;
-                padding: 28px 32px;
-                width: 360px;
-                box-shadow: 0 8px 32px rgba(0,0,0,.2);
-            }
-            .modal-box h4 { margin-bottom: 16px; font-size: 17px; }
-
-            .modal-check-list { list-style: none; padding: 0; margin-bottom: 20px; }
-            .modal-check-list li {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 7px 0;
-                border-bottom: 1px solid #f0f0f0;
-                font-size: 14px;
-            }
-            .modal-check-list li:last-child { border-bottom: none; }
-            .modal-check-list input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
-
-            .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-            .modal-btn {
-                padding: 8px 20px;
-                border-radius: 6px;
-                border: 1px solid #ccc;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            .modal-btn.primary { background: #000; color: #fff; border-color: #000; }
-            .modal-btn.secondary { background: #fff; color: #333; }
-
-            /* ── Booking-type filter tabs ──────────────────────── */
-            .type-filter-buttons {
-                display: flex;
-                gap: 10px;
-                margin-bottom: 6px;
-            }
-            .type-btn {
-                padding: 6px 14px;
-                border: 1px solid #ccc;
-                background: #fff;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 13px;
-            }
-            .type-btn.active {
-                background: #198754;
-                color: #fff;
-                border-color: #198754;
-            }
-
-            /* Period filter */
-            .filter-group { margin-bottom: 6px; }
-            .filter-label { font-size: 12px; color: #888; margin-bottom: 4px; }
-
-            /* Revenue stat colour */
-            .stat-box.revenue span { color: #198754; }
-            .stat-box.cancellations span { color: #dc3545; }
-        </style>
-    </head>
-
-    <body>
-        <!-- Navbar -->
-        <header class="navbar">
-            <div class="branding">
-                <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
-                <div class="logo-text">Ceylon Go</div>
-            </div>
-
-            <nav class="nav-links">
-                <a href="/CeylonGo/public/admin/dashboard">Home</a>
-                <div class="profile-dropdown">
-                <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/admin/reports.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
+    <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">
+    <title>Reports &amp; Analysis — Admin</title>
+    <style>
+        .report-form { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:24px; }
+        .report-form-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:14px; align-items:end; }
+        .report-form label { display:block; font-size:12px; color:#666; margin-bottom:4px; font-weight:600; }
+        .report-form input, .report-form select { width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:6px; font-size:14px; }
+        .filter-dynamic { margin-top:12px; padding-top:12px; border-top:1px solid #eee; }
+        .btn-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+        .btn-gen { background:#198754; color:#fff; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; }
+        .btn-export { background:#212529; color:#fff; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+        .btn-export.secondary { background:#6c757d; }
+        .empty-preview { text-align:center; padding:48px 20px; color:#888; background:#fafafa; border-radius:8px; border:1px dashed #ccc; }
+        .summary-cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
+        .summary-card { background:#fff; padding:16px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.06); border-left:4px solid #198754; }
+        .summary-card strong { display:block; font-size:12px; color:#666; text-transform:uppercase; letter-spacing:.04em; }
+        .summary-card span { font-size:22px; font-weight:700; color:#222; }
+        .data-table-wrap { overflow-x:auto; background:#fff; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+        .data-table { width:100%; border-collapse:collapse; font-size:14px; }
+        .data-table th, .data-table td { padding:10px 12px; border-bottom:1px solid #eee; text-align:left; }
+        .data-table th a { color:inherit; text-decoration:none; }
+        .data-table th a:hover { text-decoration:underline; }
+        .pagination { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:16px; }
+        .pagination a, .pagination span { padding:6px 12px; border-radius:6px; border:1px solid #ddd; text-decoration:none; color:#333; font-size:13px; }
+        .pagination a:hover { background:#f0f0f0; }
+        .pagination .current { background:#198754; color:#fff; border-color:#198754; }
+        .chart-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:20px; }
+        .chart-box { background:#fff; padding:16px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,.06); }
+        .chart-box h4 { margin:0 0 12px; font-size:15px; }
+        .chart-box canvas { max-height:260px; }
+        .search-inline { max-width:280px; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="branding">
+            <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+            <div class="logo-text">Ceylon Go</div>
+        </div>
+        <nav class="nav-links">
+            <a href="/CeylonGo/public/admin/dashboard">Home</a>
+            <div class="profile-dropdown">
+                <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="document.getElementById('profileDropdown').classList.toggle('show')">
                 <div class="profile-dropdown-menu" id="profileDropdown">
                     <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
                     <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
                 </div>
-                </div>
-            </nav>
-        </header>
+            </div>
+        </nav>
+    </header>
 
-        <!-- Sidebar Overlay for Mobile -->
-        <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-        <div class="page-wrapper">
-
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <ul>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="page-wrapper">
+        <div class="sidebar">
+            <ul>
                 <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
                 <li><a href="/CeylonGo/public/admin/users"><i class="fa-solid fa-users"></i> Users</a></li>
                 <li><a href="/CeylonGo/public/admin/bookings"><i class="fa-regular fa-calendar"></i> Bookings</a></li>
@@ -143,206 +119,336 @@
                 <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                 <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
                 <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
-                <li class="active"><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports and Analysis</a></li>
-                </ul>
-            </div>
-
-            <div class="main-content">
-                <div class="reports-management">
-                
-                    <h2 class="page-title">Reports and Analysis</h2>
-                    <br>
-
-                    <!-- ── Period Filter ─────────────────────── -->
-                    <div class="filter-group">
-                        <div class="filter-label">TIME PERIOD</div>
-                        <div class="filter-buttons">
-                            <button class="filter-btn <?= ($period === 'daily')   ? 'active' : '' ?>" data-period="daily">Daily</button>
-                            <button class="filter-btn <?= ($period === 'weekly')  ? 'active' : '' ?>" data-period="weekly">Weekly</button>
-                            <button class="filter-btn <?= ($period === 'monthly') ? 'active' : '' ?>" data-period="monthly">Monthly</button>
-                            <button class="filter-btn <?= ($period === 'yearly')  ? 'active' : '' ?>" data-period="yearly">Yearly</button>
-                        </div>
-                    </div>
-
-                    <!-- ── Booking Type Filter ───────────────── -->
-                    <div class="filter-group" style="margin-top:12px;">
-                        <div class="filter-label">BOOKING TYPE</div>
-                        <div class="type-filter-buttons">
-                            <button class="type-btn <?= ($bookingType === 'both')     ? 'active' : '' ?>" data-type="both">All Bookings</button>
-                            <button class="type-btn <?= ($bookingType === 'package')  ? 'active' : '' ?>" data-type="package">Package Bookings</button>
-                            <button class="type-btn <?= ($bookingType === 'custom')   ? 'active' : '' ?>" data-type="custom">Custom Trips</button>
-                        </div>
-                    </div>
-
-                    <p class="sub-text" style="margin-top:10px;">Showing data for: <strong><?= ucfirst($period) ?></strong> · <strong><?= $bookingType === 'both' ? 'All Bookings' : ($bookingType === 'package' ? 'Package Bookings' : 'Custom Trips') ?></strong></p>
-
-                    <!-- ── Key Metrics ───────────────────────── -->
-                    <div class="stats-section">
-                        <h4>Key Metrics</h4><br>
-                        <div class="stats-grid">
-                            <div class="stat-box">
-                                <strong>Total Bookings</strong><br>
-                                <span id="statTotalBookings"><?= $totalBookings ?></span>
-                            </div>
-                            <div class="stat-box revenue">
-                                <strong>Total Revenue</strong><br>
-                                <span id="statTotalRevenue">LKR <?= number_format($totalRevenue, 2) ?></span>
-                            </div>
-                            <div class="stat-box cancellations">
-                                <strong>Cancellations</strong><br>
-                                <span id="statTotalCancellations"><?= $totalCancellations ?></span>
-                            </div>
-                        </div>
-                    </div>
-                    <br><br>
-
-                    <!-- ── Bookings Chart ──────────────────────── -->
-                    <div class="chart-section" id="section-bookings">
-                        <h3 class="section-title">Number of Bookings</h3>
-                        <canvas id="bookingsChart" 
-                                data-labels='<?= json_encode($labels) ?>' 
-                                data-values='<?= json_encode($bookings) ?>'>
-                        </canvas>
-                    </div>
-
-                    <!-- ── Revenue Chart ───────────────────────── -->
-                    <div class="chart-section" id="section-revenue">
-                        <h3 class="section-title">Revenue Generated (LKR)</h3>
-                        <canvas id="revenueChart" 
-                                data-labels='<?= json_encode($labels) ?>' 
-                                data-values='<?= json_encode($revenue) ?>'>
-                        </canvas>
-                    </div>
-
-                    <!-- ── Cancellations Chart ─────────────────── -->
-                    <div class="chart-section" id="section-cancellations">
-                        <h3 class="section-title">Cancellations / Refunds</h3>
-                        <canvas id="cancellationsChart" 
-                                data-labels='<?= json_encode($labels) ?>' 
-                                data-values='<?= json_encode($cancellations) ?>'>
-                        </canvas>
-                    </div>
-
-                    <!-- ── Download Buttons ───────────────────── -->
-                    <div class="footer-buttons">
-                        <button class="footer-btn black" onclick="openDownloadModal('pdf')">
-                            <i class="fa-solid fa-file-pdf"></i> Download PDF
-                        </button>
-                        <button class="footer-btn black" onclick="openDownloadModal('excel')">
-                            <i class="fa-solid fa-file-excel"></i> Download Excel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <footer>
-            <ul>
-                <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-                <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
-                <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+                <li class="active"><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports &amp; Analysis</a></li>
             </ul>
-        </footer>
-
-        <!-- ── Download Modal ─────────────────────────────────── -->
-        <div class="modal-backdrop" id="downloadModal">
-            <div class="modal-box">
-                <h4 id="modalTitle">Select Charts to Download</h4>
-                <ul class="modal-check-list">
-                    <li>
-                        <input type="checkbox" id="chkBookings" checked>
-                        <label for="chkBookings"><i class="fa-solid fa-calendar-check" style="color:#0d6efd;width:18px"></i> Bookings Chart</label>
-                    </li>
-                    <li>
-                        <input type="checkbox" id="chkRevenue" checked>
-                        <label for="chkRevenue"><i class="fa-solid fa-coins" style="color:#198754;width:18px"></i> Revenue Chart</label>
-                    </li>
-                    <li>
-                        <input type="checkbox" id="chkCancellations" checked>
-                        <label for="chkCancellations"><i class="fa-solid fa-circle-xmark" style="color:#dc3545;width:18px"></i> Cancellations Chart</label>
-                    </li>
-                </ul>
-                <div class="modal-actions">
-                    <button class="modal-btn secondary" onclick="closeDownloadModal()">Cancel</button>
-                    <button class="modal-btn primary" id="confirmDownloadBtn" onclick="confirmDownload()">Download</button>
-                </div>
-            </div>
         </div>
 
-        <!-- Hidden data for JS -->
-        <script>
-            const REPORT_DATA = {
-                period:      '<?= $period ?>',
-                bookingType: '<?= $bookingType ?>',
-                labels:      <?= json_encode($labels) ?>,
-                bookings:    <?= json_encode($bookings) ?>,
-                revenue:     <?= json_encode($revenue) ?>,
-                cancellations: <?= json_encode($cancellations) ?>,
-                totalBookings:     <?= $totalBookings ?>,
-                totalRevenue:      <?= $totalRevenue ?>,
-                totalCancellations: <?= $totalCancellations ?>
-            };
+        <div class="main-content">
+            <div class="reports-management">
+                <h2 class="page-title">Reports &amp; Analysis</h2>
 
-            function toggleProfileDropdown() {
-                const dropdown = document.getElementById('profileDropdown');
-                dropdown.classList.toggle('show');
-            }
+                <form class="report-form" method="get" action="/CeylonGo/public/admin/reports" id="reportForm">
+                    <input type="hidden" name="generated" value="1">
+                    <div class="report-form-grid">
+                        <div>
+                            <label for="type">Report type</label>
+                            <select name="type" id="type">
+                                <option value="users" <?= $reportType === 'users' ? 'selected' : '' ?>>Users</option>
+                                <option value="bookings" <?= $reportType === 'bookings' ? 'selected' : '' ?>>Bookings</option>
+                                <option value="payments" <?= $reportType === 'payments' ? 'selected' : '' ?>>Payments</option>
+                                <option value="providers" <?= $reportType === 'providers' ? 'selected' : '' ?>>Service Providers</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="date_from">From date</label>
+                            <input type="date" name="date_from" id="date_from" value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>">
+                        </div>
+                        <div>
+                            <label for="date_to">To date</label>
+                            <input type="date" name="date_to" id="date_to" value="<?= htmlspecialchars($filters['date_to'] ?? '') ?>">
+                        </div>
+                    </div>
 
-            document.addEventListener('click', function(event) {
-                const dropdown = document.getElementById('profileDropdown');
-                const profilePic = document.querySelector('.profile-pic');
-                if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
-                    dropdown.classList.remove('show');
-                }
+                    <div class="filter-dynamic" id="dynamicFilters">
+                        <div data-for="bookings" style="display:<?= $reportType === 'bookings' ? 'block' : 'none' ?>;">
+                            <label for="booking_status">Booking status</label>
+                            <select name="booking_status" id="booking_status" class="w-full">
+                                <option value="all" <?= ($filters['booking_status'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
+                                <option value="pending" <?= ($filters['booking_status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
+                                <option value="confirmed" <?= ($filters['booking_status'] ?? '') === 'confirmed' ? 'selected' : '' ?>>Confirmed</option>
+                                <option value="cancelled" <?= ($filters['booking_status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                            </select>
+                            <p class="sub-text" style="margin-top:6px;font-size:12px;color:#888;">Package “approved” and custom trips “confirmed/completed” count as confirmed.</p>
+                        </div>
+                        <div data-for="payments" style="display:<?= $reportType === 'payments' ? 'block' : 'none' ?>;">
+                            <div class="report-form-grid">
+                                <div>
+                                    <label for="pay_method">Payment method</label>
+                                    <select name="pay_method" id="pay_method">
+                                        <option value="all" <?= ($filters['pay_method'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
+                                        <option value="bank_transfer" <?= ($filters['pay_method'] ?? '') === 'bank_transfer' ? 'selected' : '' ?>>Bank transfer</option>
+                                        <option value="online" <?= ($filters['pay_method'] ?? '') === 'online' ? 'selected' : '' ?>>Online / other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="pay_status">Payment status</label>
+                                    <select name="pay_status" id="pay_status">
+                                        <option value="all" <?= ($filters['pay_status'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
+                                        <option value="pending" <?= ($filters['pay_status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
+                                        <option value="approved" <?= ($filters['pay_status'] ?? '') === 'approved' ? 'selected' : '' ?>>Approved</option>
+                                        <option value="paid" <?= ($filters['pay_status'] ?? '') === 'paid' ? 'selected' : '' ?>>Paid</option>
+                                        <option value="rejected" <?= ($filters['pay_status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+                                        <option value="cancelled" <?= ($filters['pay_status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="sub-text" style="margin-top:6px;font-size:12px;color:#888;">Based on package booking payment records.</p>
+                        </div>
+                        <div data-for="users" style="display:<?= $reportType === 'users' ? 'block' : 'none' ?>;">
+                            <div class="report-form-grid">
+                                <div>
+                                    <label for="user_role">Role</label>
+                                    <select name="user_role" id="user_role">
+                                        <option value="all" <?= ($filters['user_role'] ?? '') === 'all' ? 'selected' : '' ?>>All roles</option>
+                                        <option value="tourist" <?= ($filters['user_role'] ?? '') === 'tourist' ? 'selected' : '' ?>>Tourist</option>
+                                        <option value="guide" <?= ($filters['user_role'] ?? '') === 'guide' ? 'selected' : '' ?>>Guide</option>
+                                        <option value="hotel" <?= ($filters['user_role'] ?? '') === 'hotel' ? 'selected' : '' ?>>Hotel</option>
+                                        <option value="transport" <?= ($filters['user_role'] ?? '') === 'transport' ? 'selected' : '' ?>>Transport</option>
+                                        <option value="admin" <?= ($filters['user_role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="user_status">Account status</label>
+                                    <select name="user_status" id="user_status">
+                                        <option value="all" <?= ($filters['user_status'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
+                                        <option value="active" <?= ($filters['user_status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
+                                        <option value="inactive" <?= ($filters['user_status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div data-for="providers" style="display:<?= $reportType === 'providers' ? 'block' : 'none' ?>;">
+                            <div class="report-form-grid">
+                                <div>
+                                    <label for="provider_category">Category</label>
+                                    <select name="provider_category" id="provider_category">
+                                        <option value="all" <?= ($filters['provider_category'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
+                                        <option value="guide" <?= ($filters['provider_category'] ?? '') === 'guide' ? 'selected' : '' ?>>Tour guide</option>
+                                        <option value="hotel" <?= ($filters['provider_category'] ?? '') === 'hotel' ? 'selected' : '' ?>>Hotel</option>
+                                        <option value="transport" <?= ($filters['provider_category'] ?? '') === 'transport' ? 'selected' : '' ?>>Transport</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="provider_status">Status</label>
+                                    <select name="provider_status" id="provider_status">
+                                        <option value="all" <?= ($filters['provider_status'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
+                                        <option value="active" <?= ($filters['provider_status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
+                                        <option value="inactive" <?= ($filters['provider_status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button type="submit" class="btn-gen"><i class="fa-solid fa-play"></i> Generate report</button>
+                        <a class="btn-export secondary" href="/CeylonGo/public/admin/reports/export-pdf?<?= htmlspecialchars($exportQs) ?>"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
+                        <a class="btn-export secondary" href="/CeylonGo/public/admin/reports/export-excel?<?= htmlspecialchars($exportQs) ?>"><i class="fa-solid fa-file-excel"></i> Download Excel</a>
+                    </div>
+                </form>
+
+                <?php if (!$generated): ?>
+                    <div class="empty-preview">
+                        <i class="fa-solid fa-file-lines" style="font-size:40px;margin-bottom:12px;opacity:.4;"></i>
+                        <p>No report generated yet. Choose filters and click <strong>Generate report</strong>.</p>
+                    </div>
+                <?php else: ?>
+
+                <form method="get" class="report-form" style="padding:12px 16px;">
+                    <input type="hidden" name="generated" value="1">
+                    <input type="hidden" name="type" value="<?= htmlspecialchars($reportType) ?>">
+                    <input type="hidden" name="date_from" value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>">
+                    <input type="hidden" name="date_to" value="<?= htmlspecialchars($filters['date_to'] ?? '') ?>">
+                    <input type="hidden" name="booking_status" value="<?= htmlspecialchars($filters['booking_status'] ?? '') ?>">
+                    <input type="hidden" name="pay_method" value="<?= htmlspecialchars($filters['pay_method'] ?? '') ?>">
+                    <input type="hidden" name="pay_status" value="<?= htmlspecialchars($filters['pay_status'] ?? '') ?>">
+                    <input type="hidden" name="user_role" value="<?= htmlspecialchars($filters['user_role'] ?? '') ?>">
+                    <input type="hidden" name="user_status" value="<?= htmlspecialchars($filters['user_status'] ?? '') ?>">
+                    <input type="hidden" name="provider_category" value="<?= htmlspecialchars($filters['provider_category'] ?? '') ?>">
+                    <input type="hidden" name="provider_status" value="<?= htmlspecialchars($filters['provider_status'] ?? '') ?>">
+                    <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
+                    <input type="hidden" name="dir" value="<?= htmlspecialchars($dir) ?>">
+                    <label for="q" class="search-inline" style="display:inline-block;width:100%;max-width:320px;">
+                        <span style="font-size:12px;font-weight:600;color:#666;">Search table</span>
+                        <input type="search" name="q" id="q" value="<?= htmlspecialchars($search) ?>" placeholder="Filter rows…" style="width:100%;margin-top:4px;padding:8px;border:1px solid #ccc;border-radius:6px;">
+                    </label>
+                    <button type="submit" class="btn-gen" style="margin-top:18px;">Apply search</button>
+                </form>
+
+                <h3 class="section-title" style="margin-top:8px;">Summary</h3>
+                <div class="summary-cards">
+                    <?php if ($reportType === 'users'): ?>
+                        <div class="summary-card"><strong>Total accounts</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Active</strong><span><?= (int) ($summary['active'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#dc3545;"><strong>Inactive</strong><span><?= (int) ($summary['inactive'] ?? 0) ?></span></div>
+                    <?php elseif ($reportType === 'bookings'): ?>
+                        <div class="summary-card"><strong>Total records</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#ffc107;"><strong>Pending</strong><span><?= (int) ($summary['pending'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Confirmed</strong><span><?= (int) ($summary['confirmed'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#dc3545;"><strong>Cancelled</strong><span><?= (int) ($summary['cancelled'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#198754;"><strong>Revenue (LKR)</strong><span><?= number_format((float) ($summary['total_revenue'] ?? 0), 2) ?></span></div>
+                    <?php elseif ($reportType === 'payments'): ?>
+                        <div class="summary-card"><strong>Total rows</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#198754;"><strong>Paid amount (LKR)</strong><span><?= number_format((float) ($summary['total_revenue'] ?? 0), 2) ?></span></div>
+                        <div class="summary-card"><strong>Paid bookings</strong><span><?= (int) ($summary['paid'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#ffc107;"><strong>Pending / approved</strong><span><?= (int) ($summary['pending'] ?? 0) ?></span></div>
+                    <?php else: ?>
+                        <div class="summary-card"><strong>Total providers</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#198754;"><strong>Active</strong><span><?= (int) ($summary['active'] ?? 0) ?></span></div>
+                        <div class="summary-card"><strong>Guides</strong><span><?= (int) ($summary['guide'] ?? 0) ?></span></div>
+                        <div class="summary-card"><strong>Hotels</strong><span><?= (int) ($summary['hotel'] ?? 0) ?></span></div>
+                        <div class="summary-card"><strong>Transport</strong><span><?= (int) ($summary['transport'] ?? 0) ?></span></div>
+                    <?php endif; ?>
+                </div>
+
+                <h3 class="section-title">Data</h3>
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <?php if ($reportType === 'users'): ?>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'email', 'dir' => ($sort === 'email' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Email</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'role', 'dir' => ($sort === 'role' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Role</a></th>
+                                    <th>Ref ID</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Registered</a></th>
+                                    <th>Active</th>
+                                <?php elseif ($reportType === 'bookings'): ?>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'type', 'dir' => ($sort === 'type' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Type</a></th>
+                                    <th>ID</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'customer', 'dir' => ($sort === 'customer' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Customer</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'status', 'dir' => ($sort === 'status' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Status</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Created</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'amount', 'dir' => ($sort === 'amount' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Amount</a></th>
+                                    <th>Detail</th>
+                                <?php elseif ($reportType === 'payments'): ?>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'id', 'dir' => ($sort === 'id' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">ID</a></th>
+                                    <th>Customer</th>
+                                    <th>Email</th>
+                                    <th>Package</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'amount', 'dir' => ($sort === 'amount' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Amount</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'status', 'dir' => ($sort === 'status' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Status</a></th>
+                                    <th>Method</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Created</a></th>
+                                <?php else: ?>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'provider_name', 'dir' => ($sort === 'provider_name' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Name</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'email', 'dir' => ($sort === 'email' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Email</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'role', 'dir' => ($sort === 'role' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Category</a></th>
+                                    <th>Active</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'registered_at', 'dir' => ($sort === 'registered_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Registered</a></th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($reportType === 'users'): ?>
+                                <?php foreach ($reportData as $row): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['email'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['role'] ?? '') ?></td>
+                                        <td><?= (int) ($row['ref_id'] ?? 0) ?></td>
+                                        <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                                        <td><?= !empty($row['account_active']) ? 'Yes' : 'No' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php elseif ($reportType === 'bookings'): ?>
+                                <?php foreach ($reportData as $row): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['booking_type'] ?? '') ?></td>
+                                        <td><?= (int) ($row['row_id'] ?? 0) ?></td>
+                                        <td><?= htmlspecialchars($row['customer'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                                        <td>LKR <?= number_format((float) ($row['amount'] ?? 0), 2) ?></td>
+                                        <td><?php $d = (string)($row['detail'] ?? ''); echo htmlspecialchars(strlen($d) > 80 ? substr($d, 0, 77) . '…' : $d); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php elseif ($reportType === 'payments'): ?>
+                                <?php foreach ($reportData as $row): ?>
+                                    <tr>
+                                        <td><?= (int) ($row['id'] ?? 0) ?></td>
+                                        <td><?= htmlspecialchars($row['fullname'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['email'] ?? '') ?></td>
+                                        <td><?php $pn = (string)($row['package_name'] ?? ''); echo htmlspecialchars(strlen($pn) > 40 ? substr($pn, 0, 37) . '…' : $pn); ?></td>
+                                        <td>LKR <?= number_format((float) ($row['total_amount'] ?? 0), 2) ?></td>
+                                        <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['pay_method'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <?php foreach ($reportData as $row): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['provider_name'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['email'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['role'] ?? '') ?></td>
+                                        <td><?= !empty($row['is_active']) ? 'Yes' : 'No' ?></td>
+                                        <td><?= htmlspecialchars($row['registered_at'] ?? '') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                            <?php if (empty($reportData)): ?>
+                                <tr><td colspan="12" style="text-align:center;padding:24px;color:#888;">No rows match your filters.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <?php if ($totalPages > 1): ?>
+                <div class="pagination">
+                    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
+                        <?php if ($p === $page): ?>
+                            <span class="current"><?= $p ?></span>
+                        <?php else: ?>
+                            <a href="?<?= htmlspecialchars($baseQs(['page' => $p])) ?>"><?= $p ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                    <span style="border:none;"><?= (int) $totalRows ?> rows</span>
+                </div>
+                <?php endif; ?>
+
+                <h3 class="section-title" style="margin-top:28px;">Charts</h3>
+                <p class="sub-text">Trends respect the date range above (all report types use the same period for comparison).</p>
+                <div class="chart-grid">
+                    <div class="chart-box">
+                        <h4>Bookings per month</h4>
+                        <canvas id="chartBookingsMonthly"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h4>Revenue trend (LKR)</h4>
+                        <canvas id="chartRevenueTrend"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h4>New accounts per month</h4>
+                        <canvas id="chartUserGrowth"></canvas>
+                    </div>
+                </div>
+
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <ul>
+            <li><a href="/CeylonGo/public/admin/bookings">Bookings</a></li>
+            <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+            <li><a href="/CeylonGo/public/admin/dashboard">Dashboard</a></li>
+        </ul>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.REPORT_CHARTS = <?= $generated ? json_encode([
+            'bookingsMonthly' => [
+                'labels' => $charts['bookings_monthly']['labels'] ?? [],
+                'values' => $charts['bookings_monthly']['counts'] ?? [],
+            ],
+            'revenue' => [
+                'labels' => $charts['revenue']['labels'] ?? [],
+                'values' => $charts['revenue']['amounts'] ?? [],
+            ],
+            'userGrowth' => [
+                'labels' => $charts['user_growth']['labels'] ?? [],
+                'values' => $charts['user_growth']['counts'] ?? [],
+            ],
+        ]) : 'null' ?>;
+
+        document.getElementById('type').addEventListener('change', function () {
+            var v = this.value;
+            document.querySelectorAll('#dynamicFilters [data-for]').forEach(function (el) {
+                el.style.display = el.getAttribute('data-for') === v ? 'block' : 'none';
             });
-
-            // ── Download modal helpers ─────────────────────────
-            let _downloadFormat = 'pdf';
-
-            function openDownloadModal(format) {
-                _downloadFormat = format;
-                document.getElementById('modalTitle').textContent =
-                    format === 'pdf' ? 'Download PDF — Select Charts' : 'Download Excel — Select Charts';
-                document.getElementById('confirmDownloadBtn').textContent =
-                    format === 'pdf' ? 'Download PDF' : 'Download Excel';
-                document.getElementById('downloadModal').classList.add('open');
-            }
-
-            function closeDownloadModal() {
-                document.getElementById('downloadModal').classList.remove('open');
-            }
-
-            function confirmDownload() {
-                const selected = [];
-                if (document.getElementById('chkBookings').checked)     selected.push('bookings');
-                if (document.getElementById('chkRevenue').checked)       selected.push('revenue');
-                if (document.getElementById('chkCancellations').checked) selected.push('cancellations');
-
-                if (selected.length === 0) {
-                    alert('Please select at least one chart.');
-                    return;
-                }
-
-                closeDownloadModal();
-
-                if (_downloadFormat === 'pdf') {
-                    downloadChartsAsPDF(selected);
-                } else {
-                    downloadChartsAsExcel(selected);
-                }
-            }
-
-            // Close modal on backdrop click
-            document.getElementById('downloadModal').addEventListener('click', function(e) {
-                if (e.target === this) closeDownloadModal();
-            });
-        </script>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-        <script src="/CeylonGo/public/js/reports_charts.js"></script>
-    </body>
+        });
+    </script>
+    <script src="/CeylonGo/public/js/reports_charts.js"></script>
+</body>
 </html>

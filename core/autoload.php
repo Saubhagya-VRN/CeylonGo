@@ -1,6 +1,11 @@
 <?php
 
 spl_autoload_register(function ($className) {
+    // Namespaced classes are handled by Composer (loaded before this file in bootstrap).
+    if (strpos($className, '\\') !== false) {
+        return;
+    }
+
     $paths = [
         '../controllers/',
         '../models/',
@@ -15,5 +20,5 @@ spl_autoload_register(function ($className) {
         }
     }
 
-    die("Autoloader error: Class '$className' not found.");
+    // Do not die: allow other registered autoloaders (Composer) to run.
 });
