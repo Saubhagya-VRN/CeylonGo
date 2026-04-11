@@ -137,6 +137,8 @@ $exportQs = $baseQs();
                                 <option value="bookings" <?= $reportType === 'bookings' ? 'selected' : '' ?>>Bookings</option>
                                 <option value="payments" <?= $reportType === 'payments' ? 'selected' : '' ?>>Payments</option>
                                 <option value="providers" <?= $reportType === 'providers' ? 'selected' : '' ?>>Service Providers</option>
+                                <option value="packages" <?= $reportType === 'packages' ? 'selected' : '' ?>>Tour packages</option>
+                                <option value="trip_payments" <?= $reportType === 'trip_payments' ? 'selected' : '' ?>>Custom trip payments</option>
                             </select>
                         </div>
                         <div>
@@ -187,17 +189,6 @@ $exportQs = $baseQs();
                         <div data-for="users" style="display:<?= $reportType === 'users' ? 'block' : 'none' ?>;">
                             <div class="report-form-grid">
                                 <div>
-                                    <label for="user_role">Role</label>
-                                    <select name="user_role" id="user_role">
-                                        <option value="all" <?= ($filters['user_role'] ?? '') === 'all' ? 'selected' : '' ?>>All roles</option>
-                                        <option value="tourist" <?= ($filters['user_role'] ?? '') === 'tourist' ? 'selected' : '' ?>>Tourist</option>
-                                        <option value="guide" <?= ($filters['user_role'] ?? '') === 'guide' ? 'selected' : '' ?>>Guide</option>
-                                        <option value="hotel" <?= ($filters['user_role'] ?? '') === 'hotel' ? 'selected' : '' ?>>Hotel</option>
-                                        <option value="transport" <?= ($filters['user_role'] ?? '') === 'transport' ? 'selected' : '' ?>>Transport</option>
-                                        <option value="admin" <?= ($filters['user_role'] ?? '') === 'admin' ? 'selected' : '' ?>>Admin</option>
-                                    </select>
-                                </div>
-                                <div>
                                     <label for="user_status">Account status</label>
                                     <select name="user_status" id="user_status">
                                         <option value="all" <?= ($filters['user_status'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
@@ -228,12 +219,17 @@ $exportQs = $baseQs();
                                 </div>
                             </div>
                         </div>
+                        <div data-for="packages" style="display:<?= $reportType === 'packages' ? 'block' : 'none' ?>;">
+                            <p class="sub-text" style="margin:0;font-size:13px;color:#555;">Lists tour packages in the catalog. Filter by <strong>created</strong> date range.</p>
+                        </div>
+                        <div data-for="trip_payments" style="display:<?= $reportType === 'trip_payments' ? 'block' : 'none' ?>;">
+                            <p class="sub-text" style="margin:0;font-size:13px;color:#555;">Customized trip bookings (trips). Filter by trip <strong>created</strong> date.</p>
+                        </div>
                     </div>
 
                     <div class="btn-row">
                         <button type="submit" class="btn-gen"><i class="fa-solid fa-play"></i> Generate report</button>
                         <a class="btn-export secondary" href="/CeylonGo/public/admin/reports/export-pdf?<?= htmlspecialchars($exportQs) ?>"><i class="fa-solid fa-file-pdf"></i> Download PDF</a>
-                        <a class="btn-export secondary" href="/CeylonGo/public/admin/reports/export-excel?<?= htmlspecialchars($exportQs) ?>"><i class="fa-solid fa-file-excel"></i> Download Excel</a>
                     </div>
                 </form>
 
@@ -244,7 +240,7 @@ $exportQs = $baseQs();
                     </div>
                 <?php else: ?>
 
-                <form method="get" class="report-form" style="padding:12px 16px;">
+                <form method="get" class="report-form" id="reportSearchForm" style="padding:12px 16px;">
                     <input type="hidden" name="generated" value="1">
                     <input type="hidden" name="type" value="<?= htmlspecialchars($reportType) ?>">
                     <input type="hidden" name="date_from" value="<?= htmlspecialchars($filters['date_from'] ?? '') ?>">
@@ -260,15 +256,15 @@ $exportQs = $baseQs();
                     <input type="hidden" name="dir" value="<?= htmlspecialchars($dir) ?>">
                     <label for="q" class="search-inline" style="display:inline-block;width:100%;max-width:320px;">
                         <span style="font-size:12px;font-weight:600;color:#666;">Search table</span>
-                        <input type="search" name="q" id="q" value="<?= htmlspecialchars($search) ?>" placeholder="Filter rows…" style="width:100%;margin-top:4px;padding:8px;border:1px solid #ccc;border-radius:6px;">
+                        <input type="search" name="q" id="q" value="<?= htmlspecialchars($search) ?>" autocomplete="off" placeholder="Type to filter" style="width:100%;margin-top:4px;padding:8px;border:1px solid #ccc;border-radius:6px;">
                     </label>
-                    <button type="submit" class="btn-gen" style="margin-top:18px;">Apply search</button>
+                    <span id="reportSearchStatus" style="display:inline-block;margin-left:12px;font-size:12px;color:#888;vertical-align:bottom;padding-top:22px;" aria-live="polite"></span>
                 </form>
 
                 <h3 class="section-title" style="margin-top:8px;">Summary</h3>
                 <div class="summary-cards">
                     <?php if ($reportType === 'users'): ?>
-                        <div class="summary-card"><strong>Total accounts</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card"><strong>Registered customers</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
                         <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Active</strong><span><?= (int) ($summary['active'] ?? 0) ?></span></div>
                         <div class="summary-card" style="border-left-color:#dc3545;"><strong>Inactive</strong><span><?= (int) ($summary['inactive'] ?? 0) ?></span></div>
                     <?php elseif ($reportType === 'bookings'): ?>
@@ -282,12 +278,20 @@ $exportQs = $baseQs();
                         <div class="summary-card" style="border-left-color:#198754;"><strong>Paid amount (LKR)</strong><span><?= number_format((float) ($summary['total_revenue'] ?? 0), 2) ?></span></div>
                         <div class="summary-card"><strong>Paid bookings</strong><span><?= (int) ($summary['paid'] ?? 0) ?></span></div>
                         <div class="summary-card" style="border-left-color:#ffc107;"><strong>Pending / approved</strong><span><?= (int) ($summary['pending'] ?? 0) ?></span></div>
-                    <?php else: ?>
+                    <?php elseif ($reportType === 'providers'): ?>
                         <div class="summary-card"><strong>Total providers</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
                         <div class="summary-card" style="border-left-color:#198754;"><strong>Active</strong><span><?= (int) ($summary['active'] ?? 0) ?></span></div>
                         <div class="summary-card"><strong>Guides</strong><span><?= (int) ($summary['guide'] ?? 0) ?></span></div>
                         <div class="summary-card"><strong>Hotels</strong><span><?= (int) ($summary['hotel'] ?? 0) ?></span></div>
                         <div class="summary-card"><strong>Transport</strong><span><?= (int) ($summary['transport'] ?? 0) ?></span></div>
+                    <?php elseif ($reportType === 'packages'): ?>
+                        <div class="summary-card"><strong>Total packages</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#198754;"><strong>Average price (LKR)</strong><span><?= number_format((float) ($summary['avg_price'] ?? 0), 2) ?></span></div>
+                        <div class="summary-card"><strong>Trending</strong><span><?= (int) ($summary['trending'] ?? 0) ?></span></div>
+                    <?php elseif ($reportType === 'trip_payments'): ?>
+                        <div class="summary-card"><strong>Total trips</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                        <div class="summary-card" style="border-left-color:#198754;"><strong>Budget confirmed/completed (LKR)</strong><span><?= number_format((float) ($summary['completed_value'] ?? 0), 2) ?></span></div>
+                        <div class="summary-card"><strong>Pending</strong><span><?= (int) ($summary['pending'] ?? 0) ?></span></div>
                     <?php endif; ?>
                 </div>
 
@@ -298,7 +302,6 @@ $exportQs = $baseQs();
                             <tr>
                                 <?php if ($reportType === 'users'): ?>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'email', 'dir' => ($sort === 'email' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Email</a></th>
-                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'role', 'dir' => ($sort === 'role' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Role</a></th>
                                     <th>Ref ID</th>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Registered</a></th>
                                     <th>Active</th>
@@ -319,12 +322,31 @@ $exportQs = $baseQs();
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'status', 'dir' => ($sort === 'status' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Status</a></th>
                                     <th>Method</th>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Created</a></th>
-                                <?php else: ?>
+                                <?php elseif ($reportType === 'providers'): ?>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'provider_name', 'dir' => ($sort === 'provider_name' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Name</a></th>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'email', 'dir' => ($sort === 'email' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Email</a></th>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'role', 'dir' => ($sort === 'role' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Category</a></th>
                                     <th>Active</th>
                                     <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'registered_at', 'dir' => ($sort === 'registered_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Registered</a></th>
+                                <?php elseif ($reportType === 'packages'): ?>
+                                    <th>ID</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'title', 'dir' => ($sort === 'title' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Title</a></th>
+                                    <th>Location</th>
+                                    <th>Category</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'price', 'dir' => ($sort === 'price' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Price</a></th>
+                                    <th>Rating</th>
+                                    <th>Reviews</th>
+                                    <th>Trending</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Created</a></th>
+                                <?php elseif ($reportType === 'trip_payments'): ?>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'id', 'dir' => ($sort === 'id' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">ID</a></th>
+                                    <th>Customer</th>
+                                    <th>Destination</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'amount', 'dir' => ($sort === 'amount' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Budget</a></th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'status', 'dir' => ($sort === 'status' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Status</a></th>
+                                    <th>Start</th>
+                                    <th>People</th>
+                                    <th><a href="?<?= htmlspecialchars($baseQs(['sort' => 'created_at', 'dir' => ($sort === 'created_at' && $dir === 'ASC') ? 'DESC' : 'ASC', 'page' => 1])) ?>">Created</a></th>
                                 <?php endif; ?>
                             </tr>
                         </thead>
@@ -333,7 +355,6 @@ $exportQs = $baseQs();
                                 <?php foreach ($reportData as $row): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($row['email'] ?? '') ?></td>
-                                        <td><?= htmlspecialchars($row['role'] ?? '') ?></td>
                                         <td><?= (int) ($row['ref_id'] ?? 0) ?></td>
                                         <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
                                         <td><?= !empty($row['account_active']) ? 'Yes' : 'No' ?></td>
@@ -364,7 +385,7 @@ $exportQs = $baseQs();
                                         <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
-                            <?php else: ?>
+                            <?php elseif ($reportType === 'providers'): ?>
                                 <?php foreach ($reportData as $row): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($row['provider_name'] ?? '') ?></td>
@@ -374,9 +395,42 @@ $exportQs = $baseQs();
                                         <td><?= htmlspecialchars($row['registered_at'] ?? '') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
+                            <?php elseif ($reportType === 'packages'): ?>
+                                <?php foreach ($reportData as $row): ?>
+                                    <tr>
+                                        <td><?= (int) ($row['id'] ?? 0) ?></td>
+                                        <td><?= htmlspecialchars($row['title'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['location'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['category'] ?? '') ?></td>
+                                        <td>LKR <?= number_format((float) ($row['price'] ?? 0), 2) ?></td>
+                                        <td><?= htmlspecialchars((string) ($row['rating'] ?? '')) ?></td>
+                                        <td><?= (int) ($row['reviews'] ?? 0) ?></td>
+                                        <td><?= !empty($row['trending']) ? 'Yes' : 'No' ?></td>
+                                        <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php elseif ($reportType === 'trip_payments'): ?>
+                                <?php foreach ($reportData as $row): ?>
+                                    <tr>
+                                        <td><?= (int) ($row['id'] ?? 0) ?></td>
+                                        <td><?= htmlspecialchars($row['customer_name'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars($row['destination'] ?? '') ?></td>
+                                        <td>LKR <?= number_format((float) ($row['budget_lkr'] ?? 0), 2) ?></td>
+                                        <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
+                                        <td><?= htmlspecialchars((string) ($row['start_date'] ?? '')) ?></td>
+                                        <td><?= (int) ($row['number_of_people'] ?? 0) ?></td>
+                                        <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                             <?php if (empty($reportData)): ?>
-                                <tr><td colspan="12" style="text-align:center;padding:24px;color:#888;">No rows match your filters.</td></tr>
+                                <tr><td colspan="12" style="text-align:center;padding:24px;color:#888;">
+                                    <?php if ($reportType === 'users'): ?>
+                                        No customers in this period. Try clearing the from/to dates to see all tourist registrations, or choose a wider date range that includes when accounts were created.
+                                    <?php else: ?>
+                                        No rows match your filters.
+                                    <?php endif; ?>
+                                </td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -407,7 +461,7 @@ $exportQs = $baseQs();
                         <canvas id="chartRevenueTrend"></canvas>
                     </div>
                     <div class="chart-box">
-                        <h4>New accounts per month</h4>
+                        <h4><?= $reportType === 'users' ? 'New customer accounts per month' : 'New accounts per month' ?></h4>
                         <canvas id="chartUserGrowth"></canvas>
                     </div>
                 </div>
@@ -448,6 +502,34 @@ $exportQs = $baseQs();
                 el.style.display = el.getAttribute('data-for') === v ? 'block' : 'none';
             });
         });
+
+        (function () {
+            var form = document.getElementById('reportSearchForm');
+            var input = document.getElementById('q');
+            var statusEl = document.getElementById('reportSearchStatus');
+            if (!form || !input) return;
+
+            var debounceMs = 380;
+            var t = null;
+            var lastSubmitted = input.value;
+
+            function setStatus(msg) {
+                if (statusEl) statusEl.textContent = msg || '';
+            }
+
+            input.addEventListener('input', function () {
+                clearTimeout(t);
+                setStatus('Searching…');
+                t = setTimeout(function () {
+                    if (input.value === lastSubmitted) {
+                        setStatus('');
+                        return;
+                    }
+                    lastSubmitted = input.value;
+                    form.submit();
+                }, debounceMs);
+            });
+        })();
     </script>
     <script src="/CeylonGo/public/js/reports_charts.js"></script>
 </body>

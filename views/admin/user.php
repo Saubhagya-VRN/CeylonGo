@@ -79,7 +79,7 @@
                     <form method="GET" action="/CeylonGo/public/admin/users">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" placeholder="Search by role/ name/ email" id="searchInput" class="search-input">
+                                <input type="text" placeholder="Search by name or email" id="searchInput" class="search-input">
                                 <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
                             </div>
 
@@ -194,7 +194,7 @@
                                 <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportBtn">Export Users</button>
+                        <button type="button" class="footer-btn black" id="exportBtn">Download PDF report</button>
                     </div>
                 </div>
             </div>
@@ -234,6 +234,7 @@
             </ul>
         </footer>
 
+        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             function toggleProfileDropdown() {
                 const dropdown = document.getElementById('profileDropdown');
@@ -313,12 +314,35 @@
             });
 
             // Search
-            function applySearch(){
+            function applySearch() {
                 const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+                const tbody = document.getElementById("userTableBody");
+                let visibleCount = 0;
+
                 document.querySelectorAll("#userTableBody tr").forEach(row => {
+                    // Skip the "no users found" message row itself
+                    if (row.id === "noResultsRow") return;
+
                     const text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? "" : "none";
+                    if (text.includes(searchTerm)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
                 });
+
+                // Remove existing "no results" row if present
+                const existing = document.getElementById("noResultsRow");
+                if (existing) existing.remove();
+
+                // Insert "No users found" row if nothing matches
+                if (visibleCount === 0) {
+                    const noResultsRow = document.createElement("tr");
+                    noResultsRow.id = "noResultsRow";
+                    noResultsRow.innerHTML = `<td colspan="6" style="text-align:center; padding:20px; color:#888;">No users found.</td>`;
+                    tbody.appendChild(noResultsRow);
+                }
             }
 
             //enter key search
@@ -375,32 +399,7 @@
                 document.getElementById("exportBtn").addEventListener("click", () => {
                     const range = resolveExportRange();
                     if (range === null) return;
-
-                    const rows = document.querySelectorAll("#userTableBody tr");
-                    if (rows.length === 0) { alert("No users to export!"); return; }
-
-                    let txtContent = "First Name\tLast Name\tContact Number\tEmail\tRegistered (date)\n";
-                    let count = 0;
-                    rows.forEach(row => {
-                        if (row.style.display === "none") return;
-                        const created = row.dataset.createdAt || "";
-                        if (!inRange(created, range)) return;
-                        const fn = row.cells[0].innerText;
-                        const ln = row.cells[1].innerText;
-                        const cn = row.cells[2].innerText;
-                        const em = row.cells[3].innerText;
-                        txtContent += `${fn}\t${ln}\t${cn}\t${em}\t${created || "—"}\n`;
-                        count++;
-                    });
-                    if (count === 0) { alert("No users in the selected period."); return; }
-
-                    const blob = new Blob([txtContent], { type: "text/plain" });
-                    const link = document.createElement("a");
-                    const stamp = new Date().toISOString().slice(0, 10);
-                    const tag = range.start && range.end ? `${range.start}_to_${range.end}` : "all_time";
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `tourist_users_${tag}_${stamp}.txt`;
-                    link.click();
+                    window.location.href = window.CeylonGoReportPdf.buildPdfUrl("users", range);
                 });
             })();
 

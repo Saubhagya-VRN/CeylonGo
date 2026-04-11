@@ -209,7 +209,7 @@
                                 <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportBtn">Export Details</button>
+                        <button type="button" class="footer-btn black" id="exportBtn">Download PDF report</button>
                     </div>
                 </div>
             </div>
@@ -224,6 +224,7 @@
             </ul>
         </footer>
 
+        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             function toggleProfileDropdown() {
                 const dropdown = document.getElementById('profileDropdown');
@@ -344,44 +345,11 @@
                     else return { start: null, end: null };
                     return { start: ymd(start), end: ymd(end) };
                 }
-                function inRange(dateStr, range) {
-                    if (!range || (!range.start && !range.end)) return true;
-                    const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
-                    if (!d) return false;
-                    if (range.start && d < range.start) return false;
-                    if (range.end && d > range.end) return false;
-                    return true;
-                }
 
-                document.getElementById("exportBtn").addEventListener("click", () => {
+                document.getElementById("exportBtn").addEventListener("click", function () {
                     const range = resolveExportRange();
                     if (range === null) return;
-
-                    const rows = document.querySelectorAll("#providerTableBody tr");
-                    if (rows.length === 0) return alert("No providers to export!");
-
-                    let txt = "Role\tName\tEmail\tStatus\tRegistered (date)\n";
-                    let count = 0;
-                    rows.forEach(r => {
-                        if (r.style.display !== "none" && inRange(r.dataset.registeredAt, range)) {
-                            const role = r.cells[0].innerText.trim();
-                            const name = r.cells[1].innerText.trim();
-                            const email = r.cells[2].innerText.trim();
-                            const status = r.cells[3].innerText.trim();
-                            const reg = r.dataset.registeredAt || "—";
-                            txt += [role, name, email, status, reg].join("\t") + "\n";
-                            count++;
-                        }
-                    });
-                    if (count === 0) { alert("No providers in the selected period."); return; }
-
-                    const blob = new Blob([txt], { type: "text/plain" });
-                    const link = document.createElement("a");
-                    const stamp = new Date().toISOString().slice(0, 10);
-                    const tag = range.start && range.end ? `${range.start}_to_${range.end}` : "all_time";
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `service_providers_${tag}_${stamp}.txt`;
-                    link.click();
+                    window.location.href = window.CeylonGoReportPdf.buildPdfUrl("providers", range);
                 });
             })();
 

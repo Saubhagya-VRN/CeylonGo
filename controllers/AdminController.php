@@ -1162,18 +1162,10 @@ class AdminController {
         $packageModel = new Package($this->db);
         $packages = $packageModel->getAll();
 
-        $bookingModel = new Booking($this->db);
-        $customTrips = $bookingModel->getAllBookingsWithUsers('all', null, null);
-        $customTripsWithDestinations = [];
-        foreach ($customTrips as $b) {
-            $destinations = $bookingModel->getBookingDestinations($b['booking_id']);
-            $customTripsWithDestinations[] = array_merge($b, ['destinations' => $destinations]);
-        }
-
         $success = $_SESSION['pkg_success'] ?? null;
         $error   = $_SESSION['pkg_error']   ?? null;
         unset($_SESSION['pkg_success'], $_SESSION['pkg_error']);
-        view('admin/packages', compact('packages', 'success', 'error', 'customTripsWithDestinations'));
+        view('admin/packages', compact('packages', 'success', 'error'));
     }
 
     // ─── SHOW add form ───────────────────────────────────────

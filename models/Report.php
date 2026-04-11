@@ -18,7 +18,11 @@ class Report
      * Date range WHERE fragment. Use $suffix when the same SQL statement contains multiple
      * subqueries (e.g. UNION): PDO MySQL does not allow reusing one named placeholder twice.
      */
-    private function bindDateRange(array &$params, ?string $from, ?string $to, string $column, string $suffix = ''): string
+    /**
+     * @param bool $dateOnly If true, compare calendar dates with DATE(column) and bind plain Y-m-d values
+     *                       (avoids TIMESTAMP/session timezone edge cases for registration dates).
+     */
+    private function bindDateRange(array &$params, ?string $from, ?string $to, string $column, string $suffix = '', bool $dateOnly = false): string
     {
         $safe = $suffix !== '' ? preg_replace('/[^a-z0-9_]/i', '', $suffix) : '';
         $df = $safe !== '' ? ":date_from_{$safe}" : ':date_from';
@@ -26,12 +30,22 @@ class Report
 
         $conds = [];
         if ($from !== null && $from !== '') {
-            $params[$df] = $from . ' 00:00:00';
-            $conds[] = "{$column} >= {$df}";
+            if ($dateOnly) {
+                $params[$df] = $from;
+                $conds[] = "DATE({$column}) >= {$df}";
+            } else {
+                $params[$df] = $from . ' 00:00:00';
+                $conds[] = "{$column} >= {$df}";
+            }
         }
         if ($to !== null && $to !== '') {
-            $params[$dt] = $to . ' 23:59:59';
-            $conds[] = "{$column} <= {$dt}";
+            if ($dateOnly) {
+                $params[$dt] = $to;
+                $conds[] = "DATE({$column}) <= {$dt}";
+            } else {
+                $params[$dt] = $to . ' 23:59:59';
+                $conds[] = "{$column} <= {$dt}";
+            }
         }
         return $conds ? (' AND ' . implode(' AND ', $conds)) : '';
     }
@@ -107,7 +121,11 @@ class Report
                 ({$alias}.role = 'transport' AND IFNULL(tr.is_active,1) = 0)
             )";
         }
-        $sql .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, "{$alias}.created_at");
+        // Tourist customer report uses profile + login row timestamp so the period matches real sign-ups.
+        $dateCol = (($filters['user_role'] ?? 'all') === 'tourist')
+            ? 'COALESCE(tu.created_at, u.created_at)'
+            : "{$alias}.created_at";
+        $sql .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, $dateCol, '', true);
         return $sql;
     }
 
@@ -117,7 +135,6 @@ class Report
         $map = [
             'created_at' => 'u.created_at',
             'email'      => 'u.email',
-            'role'       => 'u.role',
         ];
         return $map[$sort] ?? 'u.created_at';
     }
@@ -132,9 +149,14 @@ class Report
         $where .= $this->userFilters($filters, $params, 'u');
 
         if ($search !== '') {
-            $where .= ' AND (u.email LIKE :q OR u.role LIKE :q2) ';
-            $params[':q']  = '%' . $search . '%';
-            $params[':q2'] = '%' . $search . '%';
+            $like = '%' . $search . '%';
+            $where .= ' AND (
+                u.email LIKE :q_em OR CAST(u.id AS CHAR) LIKE :q_uid
+                OR (u.ref_id IS NOT NULL AND TRIM(u.ref_id) LIKE :q_ref)
+            ) ';
+            $params[':q_em']  = $like;
+            $params[':q_uid'] = $like;
+            $params[':q_ref'] = $like;
         }
 
         $countSql = "
@@ -565,7 +587,7 @@ class Report
         if (($df !== null && $df !== '') || ($dt !== null && $dt !== '')) {
             // apply on outer query
             $sql = "SELECT * FROM ( {$sql} ) z WHERE 1=1 ";
-            $sql .= $this->bindDateRange($params, $df, $dt, 'z.registered_at');
+            $sql .= $this->bindDateRange($params, $df, $dt, 'z.registered_at', '', true);
         }
 
         $stmt = $this->db->prepare($sql);
@@ -594,7 +616,7 @@ class Report
             $q = mb_strtolower($search);
             $all = array_values(array_filter($all, function ($r) use ($q) {
                 $hay = mb_strtolower(
-                    ($r['provider_name'] ?? '') . ' ' . ($r['email'] ?? '') . ' ' . ($r['role'] ?? '')
+                    ($r['provider_name'] ?? '') . ' ' . ($r['email'] ?? '') . ' ' . ($r['role'] ?? '') . ' ' . ($r['id'] ?? '')
                 );
                 return strpos($hay, $q) !== false;
             }));
@@ -683,13 +705,18 @@ class Report
     }
 
     /**
-     * New user accounts per month (users table).
+     * New accounts per month (users table). Optional role (e.g. tourist-only for the Customers report).
+     *
      * @return array{labels: string[], counts: int[]}
      */
-    public function chartUserGrowth(?string $dateFrom, ?string $dateTo): array
+    public function chartUserGrowth(?string $dateFrom, ?string $dateTo, ?string $role = null): array
     {
         $params = [];
-        $where = ' WHERE 1=1 ' . $this->bindDateRange($params, $dateFrom, $dateTo, 'created_at');
+        $where = ' WHERE 1=1 ' . $this->bindDateRange($params, $dateFrom, $dateTo, 'created_at', '', true);
+        if ($role !== null && $role !== '') {
+            $where .= ' AND role = :ug_role ';
+            $params[':ug_role'] = $role;
+        }
         $sql = "
             SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS c
             FROM users
@@ -704,5 +731,190 @@ class Report
             'labels' => array_column($rows, 'ym'),
             'counts' => array_map('intval', array_column($rows, 'c')),
         ];
+    }
+
+    // ─── Tour packages (catalog) ───────────────────────────────────────────
+
+    /** @return array{total:int,avg_price:float,trending:int} */
+    public function summarizePackages(array $filters): array
+    {
+        $params = [];
+        $where = ' WHERE 1=1 ';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 'created_at', '', true);
+
+        $sql = "
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(AVG(price), 0) AS avg_price,
+                SUM(CASE WHEN trending = 1 THEN 1 ELSE 0 END) AS trending
+            FROM packages
+            {$where}
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $r = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'avg_price' => 0, 'trending' => 0];
+        return [
+            'total'    => (int) ($r['total'] ?? 0),
+            'avg_price'=> (float) ($r['avg_price'] ?? 0),
+            'trending' => (int) ($r['trending'] ?? 0),
+        ];
+    }
+
+    private function packageSortColumn(string $sort): string
+    {
+        $map = [
+            'created_at' => 'p.created_at',
+            'title'      => 'p.title',
+            'price'      => 'p.price',
+        ];
+        return $map[$sort] ?? 'p.created_at';
+    }
+
+    /**
+     * @return array{rows: array<int,array>, total: int}
+     */
+    public function fetchPackages(array $filters, string $search, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $params = [];
+        $where = ' WHERE 1=1 ';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 'p.created_at', '', true);
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $where .= ' AND (p.title LIKE :pq OR p.location LIKE :pq2 OR p.category LIKE :pq3 OR CAST(p.id AS CHAR) LIKE :pq4) ';
+            $params[':pq'] = $like;
+            $params[':pq2'] = $like;
+            $params[':pq3'] = $like;
+            $params[':pq4'] = $like;
+        }
+
+        $countSql = "SELECT COUNT(*) FROM packages p {$where}";
+        $stmt = $this->db->prepare($countSql);
+        $stmt->execute($params);
+        $total = (int) $stmt->fetchColumn();
+
+        $orderCol = $this->packageSortColumn($sort);
+        $orderDir = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $sql = "
+            SELECT
+                p.id,
+                p.title,
+                p.location,
+                p.category,
+                p.price,
+                p.rating,
+                p.reviews,
+                p.trending,
+                p.created_at
+            FROM packages p
+            {$where}
+            ORDER BY {$orderCol} {$orderDir}
+            LIMIT :lim OFFSET :off
+        ";
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':lim', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return ['rows' => $rows, 'total' => $total];
+    }
+
+    // ─── Custom trip payments (trips table) ────────────────────────────────
+
+    /** @return array{total:int,completed_value:float,pending:int} */
+    public function summarizeTripPayments(array $filters): array
+    {
+        $params = [];
+        $where = ' WHERE 1=1 ';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', '', true);
+
+        $sql = "
+            SELECT
+                COUNT(*) AS total,
+                COALESCE(SUM(CASE WHEN t.status IN ('confirmed','completed') THEN t.budget_lkr ELSE 0 END), 0) AS completed_value,
+                SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) AS pending
+            FROM trips t
+            {$where}
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $r = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'completed_value' => 0, 'pending' => 0];
+        return [
+            'total'           => (int) ($r['total'] ?? 0),
+            'completed_value' => (float) ($r['completed_value'] ?? 0),
+            'pending'         => (int) ($r['pending'] ?? 0),
+        ];
+    }
+
+    private function tripPaymentSortColumn(string $sort): string
+    {
+        $map = [
+            'created_at' => 't.created_at',
+            'status'     => 't.status',
+            'id'         => 't.id',
+            'amount'     => 't.budget_lkr',
+        ];
+        return $map[$sort] ?? 't.created_at';
+    }
+
+    /**
+     * @return array{rows: array<int,array>, total: int}
+     */
+    public function fetchTripPayments(array $filters, string $search, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $params = [];
+        $where = ' WHERE 1=1 ';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', '', true);
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $where .= ' AND (
+                t.customer_name LIKE :tq OR t.destination LIKE :tq2 OR CAST(t.id AS CHAR) LIKE :tq3
+            ) ';
+            $params[':tq'] = $like;
+            $params[':tq2'] = $like;
+            $params[':tq3'] = $like;
+        }
+
+        $countSql = "SELECT COUNT(*) FROM trips t {$where}";
+        $stmt = $this->db->prepare($countSql);
+        $stmt->execute($params);
+        $total = (int) $stmt->fetchColumn();
+
+        $orderCol = $this->tripPaymentSortColumn($sort);
+        $orderDir = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+        $offset = ($page - 1) * $perPage;
+
+        $sql = "
+            SELECT
+                t.id,
+                t.customer_name,
+                t.destination,
+                t.budget_lkr,
+                t.status,
+                t.start_date,
+                t.number_of_people,
+                t.created_at
+            FROM trips t
+            {$where}
+            ORDER BY {$orderCol} {$orderDir}
+            LIMIT :lim OFFSET :off
+        ";
+        $stmt = $this->db->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':lim', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return ['rows' => $rows, 'total' => $total];
     }
 }

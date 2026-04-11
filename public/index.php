@@ -141,7 +141,6 @@ $router->post('admin/inquiry/delete', 'AdminController@deleteInquiry');
 $router->post('admin/inquiry/reply',  'AdminController@replyToInquiry');
 $router->get('admin/reports', 'AdminReportController@index');
 $router->get('admin/reports/export-pdf', 'AdminReportController@exportPdf');
-$router->get('admin/reports/export-excel', 'AdminReportController@exportExcel');
 $router->get('admin/service', 'AdminController@service');
 $router->post('admin/provider/status', 'AdminController@toggleProviderStatus');
 $router->get('admin/settings', 'AdminController@settings');

@@ -118,7 +118,7 @@
                         <div class="toolbar">
                             <div class="search-section">
                                 <input type="text" name="trip_pay_search"
-                                    placeholder="Search by ID, customer or destination"
+                                    placeholder="Search by Trip ID, customer or destination"
                                     class="search-input"
                                     value="<?= htmlspecialchars($tripPaySearch) ?>">
                                 <button type="submit" class="search-btn">🔍</button>
@@ -312,7 +312,7 @@
                                 <div class="date-filter"><input type="date" id="tripExportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportTripPayBtn">Export Trip Payments</button>
+                        <button type="button" class="footer-btn black" id="exportTripPayBtn">Download PDF report</button>
                     </div>
 
                     <br><br>
@@ -327,7 +327,7 @@
                         <div class="toolbar">
                             <div class="search-section">
                                 <input type="text" name="pay_search"
-                                    placeholder="Search by customer / package"
+                                    placeholder="Search by customer or package"
                                     class="search-input"
                                     value="<?= htmlspecialchars($paySearch) ?>">
                                 <button type="submit" class="search-btn">🔍</button>
@@ -531,7 +531,7 @@
                                 <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportPayBtn">Export Package Payments</button>
+                        <button type="button" class="footer-btn black" id="exportPayBtn">Download PDF report</button>
                     </div>
 
                 </div><!-- /payments-management -->
@@ -566,6 +566,7 @@
             </ul>
         </footer>
 
+        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             // ── Navbar dropdown ───────────────────────────────────
             function toggleProfileDropdown() {
@@ -1080,154 +1081,19 @@
             renderTripPayTable();
 
             // ══════════════════════════════════════════════════════
-            //  EXPORT — PACKAGE PAYMENTS
+            //  PDF export (same layout as Reports & Analysis)
             // ══════════════════════════════════════════════════════
 
             document.getElementById('exportPayBtn').addEventListener('click', function() {
-                if (!paymentsData || paymentsData.length === 0) {
-                    alert('No payments to export!');
-                    return;
-                }
                 const range = resolveExportRange('exportTimelinePreset', 'exportDateFrom', 'exportDateTo');
                 if (range === null) return;
-
-                const list = paymentsData.filter(p =>
-                    inDateRange((p.paid_at || p.bank_transfer_submitted_at || p.created_at || '').slice(0, 10), range)
-                );
-                if (!list.length) { alert('No payments in the selected period.'); return; }
-
-                const sep    = '='.repeat(70);
-                const subSep = '-'.repeat(70);
-                const now    = new Date();
-                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('en-GB');
-
-                let report = sep + '\n';
-                report += '        CEYLON GO — PACKAGE PAYMENTS REPORT\n';
-                report += sep + '\n';
-                report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Report period  : ' + periodLabel(range) + '\n';
-                report += '  Total Records  : ' + list.length + '\n';
-                report += sep + '\n\n';
-
-                list.forEach(function(p, i) {
-                    let method = '—';
-                    if (p.payhere_payment_id)              method = 'Online (PayHere)';
-                    else if (p.bank_transfer_submitted_at) method = 'Bank Transfer';
-
-                    report += 'PAYMENT ' + (i + 1) + ' OF ' + list.length + '\n';
-                    report += sep + '\n';
-                    report += '  CUSTOMER\n  ' + subSep + '\n';
-                    report += '  Name         : ' + p.fullname + '\n';
-                    report += '  Email        : ' + p.email + '\n';
-                    report += '  Phone        : ' + p.phone + '\n\n';
-                    report += '  BOOKING\n  ' + subSep + '\n';
-                    report += '  Booking ID   : #' + p.id + '\n';
-                    report += '  Package      : ' + p.package_name + '\n';
-                    report += '  Travel Date  : ' + p.travel_date + '\n';
-                    report += '  Travelers    : ' + p.travelers + ' (' + p.adults + ' Adult' + (p.adults != 1 ? 's' : '');
-                    if (p.children > 0) report += ' / ' + p.children + ' Child' + (p.children != 1 ? 'ren' : '');
-                    if (p.infants  > 0) report += ' / ' + p.infants  + ' Infant' + (p.infants != 1 ? 's' : '');
-                    report += ')\n\n';
-                    report += '  PAYMENT\n  ' + subSep + '\n';
-                    report += '  Total Amount : LKR ' + Number(p.total_amount).toLocaleString() + '\n';
-                    report += '  Status       : ' + p.status.charAt(0).toUpperCase() + p.status.slice(1) + '\n';
-                    report += '  Method       : ' + method + '\n';
-                    if (p.payhere_payment_id)         report += '  PayHere ID   : ' + p.payhere_payment_id + '\n';
-                    if (p.paid_at)                    report += '  Paid At      : ' + p.paid_at + '\n';
-                    if (p.bank_transfer_submitted_at) report += '  Bank Transfer Submitted : ' + p.bank_transfer_submitted_at + '\n';
-                    if (p.bank_transfer_slip_path)    report += '  Bank Slip    : /uploads/' + p.bank_transfer_slip_path + '\n';
-                    if (p.approved_at)                report += '  Approved At  : ' + p.approved_at + '\n';
-                    report += '  Submitted On : ' + p.created_at + '\n';
-                    if (p.refund_requested_at) {
-                        report += '\n  REFUND REQUEST\n  ' + subSep + '\n';
-                        report += '  Requested At : ' + p.refund_requested_at + '\n';
-                        if (p.refund_reason) report += '  Reason       : ' + p.refund_reason + '\n';
-                    }
-                    report += '\n' + sep + '\n\n';
-                });
-
-                report += sep + '\n  END OF REPORT\n  Ceylon Go Admin  |  ' + dateStr + '\n' + sep + '\n';
-
-                const blob = new Blob([report], { type: 'text/plain' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
-                link.download = 'ceylongo_package_payments_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
-                link.click();
+                window.location.href = window.CeylonGoReportPdf.buildPdfUrl('payments', range);
             });
 
-            // ══════════════════════════════════════════════════════
-            //  EXPORT — TRIP PAYMENTS
-            // ══════════════════════════════════════════════════════
-
             document.getElementById('exportTripPayBtn').addEventListener('click', function() {
-                if (!tripPaymentsData || tripPaymentsData.length === 0) {
-                    alert('No trip payments to export!');
-                    return;
-                }
                 const range = resolveExportRange('tripExportTimelinePreset', 'tripExportDateFrom', 'tripExportDateTo');
                 if (range === null) return;
-
-                const list = tripPaymentsData.filter(t =>
-                    inDateRange((t.paid_at || t.bank_transfer_submitted_at || t.created_at || '').slice(0, 10), range)
-                );
-                if (!list.length) { alert('No trip payments in the selected period.'); return; }
-
-                const sep    = '='.repeat(70);
-                const subSep = '-'.repeat(70);
-                const now    = new Date();
-                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('en-GB');
-
-                let report = sep + '\n';
-                report += '      CEYLON GO — CUSTOMIZED TRIP PAYMENTS REPORT\n';
-                report += sep + '\n';
-                report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Report period  : ' + periodLabel(range) + '\n';
-                report += '  Total Records  : ' + list.length + '\n';
-                report += sep + '\n\n';
-
-                list.forEach(function(t, i) {
-                    let method = '—';
-                    if (t.payhere_payment_id)              method = 'Online (PayHere)';
-                    else if (t.bank_transfer_submitted_at) method = 'Bank Transfer';
-
-                    report += 'PAYMENT ' + (i + 1) + ' OF ' + list.length + '\n';
-                    report += sep + '\n';
-                    report += '  CUSTOMER\n  ' + subSep + '\n';
-                    report += '  Name         : ' + t.customer_name + '\n\n';
-                    report += '  TRIP DETAILS\n  ' + subSep + '\n';
-                    report += '  Trip ID      : #' + t.id + '\n';
-                    report += '  Destination  : ' + t.destination + '\n';
-                    report += '  Start Date   : ' + t.start_date + '\n';
-                    report += '  People       : ' + t.number_of_people + '\n';
-                    report += '  Days         : ' + t.number_of_days + '\n\n';
-                    report += '  PAYMENT\n  ' + subSep + '\n';
-                    report += '  Amount       : ' + (t.budget_lkr ? 'LKR ' + Number(t.budget_lkr).toLocaleString() : '—') + '\n';
-                    report += '  Status       : ' + t.status.charAt(0).toUpperCase() + t.status.slice(1) + '\n';
-                    report += '  Method       : ' + method + '\n';
-                    if (t.payhere_payment_id)         report += '  PayHere ID   : ' + t.payhere_payment_id + '\n';
-                    if (t.paid_at)                    report += '  Paid At      : ' + t.paid_at + '\n';
-                    if (t.bank_transfer_submitted_at) report += '  Bank Transfer Submitted : ' + t.bank_transfer_submitted_at + '\n';
-                    if (t.bank_transfer_slip_path)    report += '  Bank Slip    : /uploads/' + t.bank_transfer_slip_path + '\n';
-                    report += '  Submitted On : ' + t.created_at + '\n';
-                    if (t.refund_requested_at) {
-                        report += '\n  REFUND REQUEST\n  ' + subSep + '\n';
-                        report += '  Requested At : ' + t.refund_requested_at + '\n';
-                        if (t.refund_reason) report += '  Reason       : ' + t.refund_reason + '\n';
-                    }
-                    report += '\n' + sep + '\n\n';
-                });
-
-                report += sep + '\n  END OF REPORT\n  Ceylon Go Admin  |  ' + dateStr + '\n' + sep + '\n';
-
-                const blob = new Blob([report], { type: 'text/plain' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
-                link.download = 'ceylongo_trip_payments_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
-                link.click();
+                window.location.href = window.CeylonGoReportPdf.buildPdfUrl('trip_payments', range);
             });
         </script>
     </body>

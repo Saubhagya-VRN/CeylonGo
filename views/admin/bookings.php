@@ -97,7 +97,7 @@
                         <input type="hidden" name="pkg_date"   value="<?= htmlspecialchars($pkgDate) ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" name="search" placeholder="Search by booking ID" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
+                                <input type="text" name="search" placeholder="Search by customer" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
                                 <button type="submit" class="search-btn">🔍</button>
                             </div>
                             <div class="filter-buttons">
@@ -215,7 +215,7 @@
                                 <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportBtn">Export Customized Bookings</button>
+                        <button type="button" class="footer-btn black" id="exportBtn">Download PDF report</button>
                     </div>
 
                     <br><br>
@@ -228,7 +228,7 @@
                         <input type="hidden" name="date"   value="<?= htmlspecialchars($date ?? '') ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" name="pkg_search" placeholder="Search by ID, name or package" class="search-input" value="<?= htmlspecialchars($pkgSearch) ?>">
+                                <input type="text" name="pkg_search" placeholder="Search by customer or package" class="search-input" value="<?= htmlspecialchars($pkgSearch) ?>">
                                 <button type="submit" class="search-btn">🔍</button>
                             </div>
                             <div class="filter-buttons">
@@ -354,7 +354,7 @@
                                 <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
                             </span>
                         </div>
-                        <button class="footer-btn black" id="exportPkgBtn">Export Package Bookings</button>
+                        <button type="button" class="footer-btn black" id="exportPkgBtn">Download PDF report</button>
                     </div>
                 </div>
             </div>
@@ -393,6 +393,7 @@
             </ul>
         </footer>
 
+        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             // ── Navbar dropdown ───────────────────────────────────
             function toggleProfileDropdown() {
@@ -514,70 +515,11 @@
                 return range.start + " to " + range.end;
             }
 
-            // ── Export trip bookings — full structured report ──────
+            // ── PDF export (same as Reports & Analysis: filters + summary + detail) ──
             document.getElementById("exportBtn").addEventListener("click", () => {
-                if (!tripBookingsData || tripBookingsData.length === 0) {
-                    alert("No bookings to export!");
-                    return;
-                }
                 const range = resolveBookingsExportRange();
                 if (range === null) return;
-                const list = tripBookingsData.filter(function(b) {
-                    return inBookingsDateRange((b.created_at || "").slice(0, 10), range);
-                });
-                if (!list.length) {
-                    alert("No trip bookings in the selected period.");
-                    return;
-                }
-
-                const sep    = '='.repeat(70);
-                const subSep = '-'.repeat(70);
-                const now    = new Date();
-                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('en-GB');
-
-                let report = '';
-                report += '='.repeat(70) + '\n';
-                report += '        CEYLON GO — TRIP BOOKINGS REPORT\n';
-                report += '='.repeat(70) + '\n';
-                report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Report period  : ' + bookingsPeriodLabel(range) + '\n';
-                report += '  Total Bookings : ' + list.length + '\n';
-                report += '='.repeat(70) + '\n\n';
-
-                list.forEach(function(b, index) {
-                    report += 'BOOKING ' + (index + 1) + ' OF ' + list.length + '\n';
-                    report += sep + '\n';
-
-                    report += '  BOOKING DETAILS\n';
-                    report += '  ' + subSep + '\n';
-                    report += '  Booking ID   : ' + b.booking_id + '\n';
-                    report += '  Customer     : ' + b.user_name + '\n';
-                    report += '  Status       : ' + b.status.charAt(0).toUpperCase() + b.status.slice(1) + '\n';
-                    report += '  Submitted On : ' + b.created_at + '\n\n';
-
-                    report += '  TRIP DETAILS\n';
-                    report += '  ' + subSep + '\n';
-                    report += '  Destination  : ' + b.destination + '\n';
-                    report += '  Start Date   : ' + b.start_date + '\n';
-                    report += '  People       : ' + b.number_of_people + '\n';
-                    report += '  Days         : ' + b.number_of_days + '\n';
-                    if (b.budget_lkr) report += '  Budget       : LKR ' + Number(b.budget_lkr).toLocaleString() + '\n';
-
-                    report += '\n' + sep + '\n\n';
-                });
-
-                report += '='.repeat(70) + '\n';
-                report += '  END OF REPORT\n';
-                report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
-                report += '='.repeat(70) + '\n';
-
-                const blob = new Blob([report], { type: 'text/plain' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
-                link.download = 'ceylongo_trip_bookings_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
-                link.click();
+                window.location.href = window.CeylonGoReportPdf.buildPdfUrl("bookings", range);
             });
 
             const pkgBookingsData = <?= json_encode(array_values(array_map(function($pb) {
@@ -693,100 +635,10 @@
                 .catch(() => alert("Server error. Please try again."));
             });
 
-            // ── Export package bookings report ────────────────────
             document.getElementById("exportPkgBtn").addEventListener("click", function() {
-                if (!pkgBookingsData || pkgBookingsData.length === 0) {
-                    alert("No package bookings to export!");
-                    return;
-                }
                 const range = resolveBookingsExportRange();
                 if (range === null) return;
-                const pkgList = pkgBookingsData.filter(function(pb) {
-                    return inBookingsDateRange((pb.created_at || "").slice(0, 10), range);
-                });
-                if (!pkgList.length) {
-                    alert("No package bookings in the selected period.");
-                    return;
-                }
-
-                const sep    = '='.repeat(70);
-                const subSep = '-'.repeat(70);
-                const now    = new Date();
-                const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-                const timeStr = now.toLocaleTimeString('en-GB');
-
-                let report = '';
-                report += '='.repeat(70) + '\n';
-                report += '      CEYLON GO — PACKAGE BOOKINGS REPORT\n';
-                report += '='.repeat(70) + '\n';
-                report += '  Generated on    : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Report period   : ' + bookingsPeriodLabel(range) + '\n';
-                report += '  Total Bookings  : ' + pkgList.length + '\n';
-                report += '='.repeat(70) + '\n\n';
-
-                pkgList.forEach(function(pb, index) {
-                    report += 'BOOKING ' + (index + 1) + ' OF ' + pkgList.length + '\n';
-                    report += sep + '\n';
-
-                    // ── Customer details ──
-                    report += '  CUSTOMER DETAILS\n';
-                    report += '  ' + subSep + '\n';
-                    report += '  Full Name    : ' + pb.fullname + '\n';
-                    report += '  Email        : ' + pb.email + '\n';
-                    report += '  Phone        : ' + pb.phone + '\n\n';
-
-                    // ── Booking details ──
-                    report += '  BOOKING DETAILS\n';
-                    report += '  ' + subSep + '\n';
-                    report += '  Booking ID   : #' + pb.id + '\n';
-                    report += '  Package      : ' + pb.package_name + '\n';
-                    report += '  Travel Date  : ' + pb.travel_date + '\n';
-                    report += '  Status       : ' + pb.status.charAt(0).toUpperCase() + pb.status.slice(1) + '\n';
-                    report += '  Submitted On : ' + pb.created_at + '\n\n';
-
-                    // ── Traveler breakdown ──
-                    report += '  TRAVELERS\n';
-                    report += '  ' + subSep + '\n';
-                    report += '  Total        : ' + pb.travelers + '\n';
-                    report += '  Adults       : ' + pb.adults + '\n';
-                    if (pb.children > 0) report += '  Children     : ' + pb.children + '\n';
-                    if (pb.infants  > 0) report += '  Infants      : ' + pb.infants  + '\n';
-                    report += '\n';
-
-                    // ── Payment ──
-                    report += '  PAYMENT\n';
-                    report += '  ' + subSep + '\n';
-                    report += '  Total Amount : LKR ' + Number(pb.total_amount).toLocaleString() + '\n\n';
-
-                    // ── Extra info if present ──
-                    if (pb.special_requests) {
-                        report += '  SPECIAL REQUESTS\n';
-                        report += '  ' + subSep + '\n';
-                        report += '  ' + pb.special_requests + '\n\n';
-                    }
-                    if (pb.admin_notes) {
-                        report += '  ADMIN NOTES\n';
-                        report += '  ' + subSep + '\n';
-                        report += '  ' + pb.admin_notes + '\n\n';
-                    }
-                    if (pb.approved_at) {
-                        report += '  Approved At  : ' + pb.approved_at + '\n\n';
-                    }
-
-                    report += sep + '\n\n';
-                });
-
-                report += '='.repeat(70) + '\n';
-                report += '  END OF REPORT\n';
-                report += '  Ceylon Go Admin  |  ' + dateStr + '\n';
-                report += '='.repeat(70) + '\n';
-
-                const blob = new Blob([report], { type: 'text/plain' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
-                link.download = 'package_bookings_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
-                link.click();
+                window.location.href = window.CeylonGoReportPdf.buildPdfUrl("bookings", range);
             });
 
             // ── Close all modals on outside click ─────────────────

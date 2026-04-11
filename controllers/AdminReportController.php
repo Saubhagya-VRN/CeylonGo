@@ -34,9 +34,18 @@ class AdminReportController
      */
     private function filtersFromRequest(): array
     {
+        $df = trim((string) ($_GET['date_from'] ?? ''));
+        $dt = trim((string) ($_GET['date_to'] ?? ''));
+        if ($df !== '' && $dt !== '' && strcmp($df, $dt) > 0) {
+            $tmp = $df;
+            $df = $dt;
+            $dt = $tmp;
+        }
+
         return [
-            'date_from'          => $_GET['date_from'] ?? '',
-            'date_to'            => $_GET['date_to'] ?? '',
+            'date_from'          => $df,
+            'date_to'            => $dt,
+            // Role is not exposed in the Users report UI; controller forces tourist for that report.
             'user_role'          => $_GET['user_role'] ?? 'all',
             'user_status'        => $_GET['user_status'] ?? 'all',
             'booking_status'     => $_GET['booking_status'] ?? 'all',
@@ -47,16 +56,43 @@ class AdminReportController
         ];
     }
 
+    /**
+     * Users report = registered customers (tourist accounts) only.
+     */
+    private function applyReportTypeDefaults(string $reportType, array $filters): array
+    {
+        if ($reportType === 'users') {
+            $filters['user_role'] = 'tourist';
+        }
+        return $filters;
+    }
+
     private function whitelistSort(string $type, string $sort): string
     {
         $map = [
-            'users'     => ['created_at', 'email', 'role'],
-            'bookings'  => ['created_at', 'amount', 'status', 'customer', 'type'],
-            'payments'  => ['created_at', 'amount', 'status', 'id'],
-            'providers' => ['registered_at', 'provider_name', 'role', 'email'],
+            'users'          => ['created_at', 'email'],
+            'bookings'       => ['created_at', 'amount', 'status', 'customer', 'type'],
+            'payments'       => ['created_at', 'amount', 'status', 'id'],
+            'providers'      => ['registered_at', 'provider_name', 'role', 'email'],
+            'packages'       => ['created_at', 'title', 'price'],
+            'trip_payments'  => ['created_at', 'amount', 'status', 'id'],
         ];
         $allowed = $map[$type] ?? ['created_at'];
         return in_array($sort, $allowed, true) ? $sort : $allowed[0];
+    }
+
+    private function pdfReportTitle(string $reportType): string
+    {
+        if ($reportType === 'users') {
+            return 'CeylonGo Report — Customers (tourists)';
+        }
+        if ($reportType === 'packages') {
+            return 'CeylonGo Report — Tour packages';
+        }
+        if ($reportType === 'trip_payments') {
+            return 'CeylonGo Report — Custom trip payments';
+        }
+        return 'CeylonGo Report — ' . ucfirst(str_replace('_', ' ', $reportType));
     }
 
     public function index(): void
@@ -65,7 +101,7 @@ class AdminReportController
 
         $generated = isset($_GET['generated']) && $_GET['generated'] === '1';
         $reportType = $_GET['type'] ?? 'bookings';
-        $allowedTypes = ['users', 'bookings', 'payments', 'providers'];
+        $allowedTypes = ['users', 'bookings', 'payments', 'providers', 'packages', 'trip_payments'];
         if (!in_array($reportType, $allowedTypes, true)) {
             $reportType = 'bookings';
         }
@@ -75,7 +111,7 @@ class AdminReportController
         $dir    = strtoupper($_GET['dir'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
         $page   = max(1, (int) ($_GET['page'] ?? 1));
 
-        $filters = $this->filtersFromRequest();
+        $filters = $this->applyReportTypeDefaults($reportType, $this->filtersFromRequest());
         $model   = new Report($this->db);
 
         $reportData = [];
@@ -113,13 +149,26 @@ class AdminReportController
                     $totalRows  = $res['total'];
                     $summary    = $model->summarizeProviders($filters);
                     break;
+                case 'packages':
+                    $res = $model->fetchPackages($filters, $search, $sort, $dir, $page, self::PER_PAGE);
+                    $reportData = $res['rows'];
+                    $totalRows  = $res['total'];
+                    $summary    = $model->summarizePackages($filters);
+                    break;
+                case 'trip_payments':
+                    $res = $model->fetchTripPayments($filters, $search, $sort, $dir, $page, self::PER_PAGE);
+                    $reportData = $res['rows'];
+                    $totalRows  = $res['total'];
+                    $summary    = $model->summarizeTripPayments($filters);
+                    break;
             }
 
             $df = $filters['date_from'] ?: null;
             $dt = $filters['date_to'] ?: null;
             $charts['bookings_monthly'] = $model->chartBookingsPerMonth($df, $dt);
             $charts['revenue']          = $model->chartRevenueTrend($df, $dt);
-            $charts['user_growth']      = $model->chartUserGrowth($df, $dt);
+            $userGrowthRole = $reportType === 'users' ? 'tourist' : null;
+            $charts['user_growth']      = $model->chartUserGrowth($df, $dt, $userGrowthRole);
         }
 
         $totalPages = $totalRows > 0 ? (int) ceil($totalRows / self::PER_PAGE) : 1;
@@ -175,7 +224,7 @@ class AdminReportController
         }
 
         $reportType = $_GET['type'] ?? 'bookings';
-        $allowedTypes = ['users', 'bookings', 'payments', 'providers'];
+        $allowedTypes = ['users', 'bookings', 'payments', 'providers', 'packages', 'trip_payments'];
         if (!in_array($reportType, $allowedTypes, true)) {
             $reportType = 'bookings';
         }
@@ -183,85 +232,41 @@ class AdminReportController
         $search  = trim($_GET['q'] ?? '');
         $sort    = $this->whitelistSort($reportType, $_GET['sort'] ?? 'created_at');
         $dir     = strtoupper($_GET['dir'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
-        $filters = $this->filtersFromRequest();
+        $filters = $this->applyReportTypeDefaults($reportType, $this->filtersFromRequest());
         $model   = new Report($this->db);
 
         $rows = $this->fetchAllForExport($model, $reportType, $filters, $search, $sort, $dir);
 
-        $title = 'CeylonGo Report — ' . ucfirst($reportType);
-        $html  = $this->buildHtmlTable($reportType, $rows, $filters);
+        $summary = $this->fetchSummaryForExport($model, $reportType, $filters);
+
+        $title = $this->pdfReportTitle($reportType);
+        $html  = $this->buildExportFiltersSummaryHtml($reportType, $filters, $search)
+            . $this->buildSummarySectionHtml($reportType, $summary)
+            . $this->buildHtmlTable($reportType, $rows, $filters);
 
         $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
         $dompdf->loadHtml('<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
             body{font-family:DejaVu Sans,sans-serif;font-size:11px;color:#222;}
             h1{font-size:16px;margin:0 0 12px;}
-            .meta{color:#666;font-size:10px;margin-bottom:14px;}
-            table{border-collapse:collapse;width:100%;}
-            th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
-            th{background:#f0f0f0;font-weight:bold;}
-            tr:nth-child(even){background:#fafafa;}
+            h2{font-size:13px;margin:14px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px;}
+            .meta{color:#666;font-size:10px;margin-bottom:12px;}
+            .filters-block{font-size:10px;color:#444;margin-bottom:12px;line-height:1.45;}
+            .filters-block strong{color:#222;}
+            table.data{border-collapse:collapse;width:100%;}
+            table.data th,table.data td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
+            table.data th{background:#f0f0f0;font-weight:bold;}
+            table.data tr:nth-child(even){background:#fafafa;}
+            table.summary-table{border-collapse:collapse;width:100%;max-width:520px;margin:0 0 14px;}
+            table.summary-table td{border:1px solid #ddd;padding:6px 10px;}
+            table.summary-table td.lbl{font-weight:bold;background:#f5f5f5;width:42%;}
         </style></head><body>
             <h1>' . htmlspecialchars($title) . '</h1>
-            <div class="meta">Generated: ' . htmlspecialchars(date('Y-m-d H:i')) . ' &mdash; Rows: ' . count($rows) . '</div>
+            <div class="meta">Generated: ' . htmlspecialchars(date('Y-m-d H:i')) . ' &mdash; Detail rows in this file: ' . count($rows) . '</div>
             ' . $html . '
         </body></html>');
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         $dompdf->stream('ceylongo_report_' . $reportType . '.pdf', ['Attachment' => true]);
-        exit();
-    }
-
-    public function exportExcel(): void
-    {
-        $this->requireAdmin();
-        $this->loadComposerAutoload();
-        if (!class_exists(\PhpOffice\PhpSpreadsheet\Spreadsheet::class)) {
-            http_response_code(500);
-            echo 'Excel export requires Composer dependencies. Run: composer install';
-            exit();
-        }
-
-        $reportType = $_GET['type'] ?? 'bookings';
-        $allowedTypes = ['users', 'bookings', 'payments', 'providers'];
-        if (!in_array($reportType, $allowedTypes, true)) {
-            $reportType = 'bookings';
-        }
-
-        $search  = trim($_GET['q'] ?? '');
-        $sort    = $this->whitelistSort($reportType, $_GET['sort'] ?? 'created_at');
-        $dir     = strtoupper($_GET['dir'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
-        $filters = $this->filtersFromRequest();
-        $model   = new Report($this->db);
-
-        $rows = $this->fetchAllForExport($model, $reportType, $filters, $search, $sort, $dir);
-
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle(substr($reportType, 0, 31));
-
-        $headers = $this->excelHeaders($reportType);
-        $col = 1;
-        foreach ($headers as $h) {
-            $sheet->setCellValueByColumnAndRow($col++, 1, $h);
-        }
-        $r = 2;
-        foreach ($rows as $row) {
-            $col = 1;
-            foreach ($this->excelRowValues($reportType, $row) as $val) {
-                $sheet->setCellValueByColumnAndRow($col++, $r, $val);
-            }
-            $r++;
-            if ($r > self::EXPORT_MAX_ROWS + 1) {
-                break;
-            }
-        }
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="ceylongo_report_' . $reportType . '.xlsx"');
-        header('Cache-Control: max-age=0');
-
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save('php://output');
         exit();
     }
 
@@ -279,6 +284,10 @@ class AdminReportController
                 return $model->fetchPayments($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
             case 'providers':
                 return $model->fetchProviders($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
+            case 'packages':
+                return $model->fetchPackages($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
+            case 'trip_payments':
+                return $model->fetchTripPayments($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
             default:
                 return [];
         }
@@ -288,13 +297,17 @@ class AdminReportController
     {
         switch ($type) {
             case 'users':
-                return ['ID', 'Email', 'Role', 'Ref ID', 'Registered', 'Active'];
+                return ['ID', 'Email', 'Ref ID', 'Registered', 'Active'];
             case 'bookings':
                 return ['Type', 'ID', 'Customer', 'Status', 'Created', 'Amount (LKR)', 'Detail'];
             case 'payments':
                 return ['ID', 'Customer', 'Email', 'Package', 'Amount', 'Status', 'Method', 'Created', 'Paid at'];
             case 'providers':
                 return ['ID', 'Name', 'Email', 'Category', 'Active', 'Registered'];
+            case 'packages':
+                return ['ID', 'Title', 'Location', 'Category', 'Price (LKR)', 'Rating', 'Reviews', 'Trending', 'Created'];
+            case 'trip_payments':
+                return ['ID', 'Customer', 'Destination', 'Budget (LKR)', 'Status', 'Start date', 'People', 'Created'];
             default:
                 return [];
         }
@@ -311,7 +324,6 @@ class AdminReportController
                 return [
                     $row['id'] ?? '',
                     $row['email'] ?? '',
-                    $row['role'] ?? '',
                     $row['ref_id'] ?? '',
                     $row['created_at'] ?? '',
                     isset($row['account_active']) ? ((int) $row['account_active'] ? 'Yes' : 'No') : '',
@@ -347,9 +359,193 @@ class AdminReportController
                     isset($row['is_active']) ? ((int) $row['is_active'] ? 'Yes' : 'No') : '',
                     $row['registered_at'] ?? '',
                 ];
+            case 'packages':
+                return [
+                    $row['id'] ?? '',
+                    $row['title'] ?? '',
+                    $row['location'] ?? '',
+                    $row['category'] ?? '',
+                    $row['price'] ?? '',
+                    $row['rating'] ?? '',
+                    $row['reviews'] ?? '',
+                    !empty($row['trending']) ? 'Yes' : 'No',
+                    $row['created_at'] ?? '',
+                ];
+            case 'trip_payments':
+                return [
+                    $row['id'] ?? '',
+                    $row['customer_name'] ?? '',
+                    $row['destination'] ?? '',
+                    $row['budget_lkr'] ?? '',
+                    $row['status'] ?? '',
+                    $row['start_date'] ?? '',
+                    $row['number_of_people'] ?? '',
+                    $row['created_at'] ?? '',
+                ];
             default:
                 return [];
         }
+    }
+
+    /**
+     * Aggregate metrics for PDF/Excel (matches on-screen Summary cards; ignores table search).
+     *
+     * @return array<string,mixed>
+     */
+    private function fetchSummaryForExport(Report $model, string $reportType, array $filters): array
+    {
+        switch ($reportType) {
+            case 'users':
+                return $model->summarizeUsers($filters);
+            case 'bookings':
+                return $model->summarizeBookings($filters);
+            case 'payments':
+                return $model->summarizePayments($filters);
+            case 'providers':
+                return $model->summarizeProviders($filters);
+            case 'packages':
+                return $model->summarizePackages($filters);
+            case 'trip_payments':
+                return $model->summarizeTripPayments($filters);
+            default:
+                return [];
+        }
+    }
+
+    private function formatExportPeriodPlain(array $filters): string
+    {
+        $df = trim((string) ($filters['date_from'] ?? ''));
+        $dt = trim((string) ($filters['date_to'] ?? ''));
+        if ($df === '' && $dt === '') {
+            return 'All dates (no from/to filter)';
+        }
+        if ($df !== '' && $dt !== '') {
+            return $df . ' → ' . $dt;
+        }
+        if ($df !== '') {
+            return 'From ' . $df;
+        }
+        return 'Until ' . $dt;
+    }
+
+    /**
+     * @return array<int,array{0:string,1:string}>
+     */
+    private function exportFilterContextRows(string $reportType, array $filters): array
+    {
+        $rows = [['Period', $this->formatExportPeriodPlain($filters)]];
+        switch ($reportType) {
+            case 'users':
+                $rows[] = ['Audience', 'Customers (tourists only)'];
+                $st = $filters['user_status'] ?? 'all';
+                $rows[] = ['Account status', $st === 'all' ? 'All' : ucfirst((string) $st)];
+                break;
+            case 'bookings':
+                $bs = (string) ($filters['booking_status'] ?? 'all');
+                $rows[] = ['Booking status', $bs === 'all' ? 'All' : ucwords(str_replace('_', ' ', $bs))];
+                break;
+            case 'payments':
+                $pm = $filters['pay_method'] ?? 'all';
+                $ps = $filters['pay_status'] ?? 'all';
+                $rows[] = ['Payment method', $pm === 'all' ? 'All' : ucwords(str_replace('_', ' ', (string) $pm))];
+                $rows[] = ['Payment status', $ps === 'all' ? 'All' : ucfirst((string) $ps)];
+                break;
+            case 'providers':
+                $cat = $filters['provider_category'] ?? 'all';
+                $pst = $filters['provider_status'] ?? 'all';
+                $rows[] = ['Category', $cat === 'all' ? 'All' : ucfirst((string) $cat)];
+                $rows[] = ['Provider status', $pst === 'all' ? 'All' : ucfirst((string) $pst)];
+                break;
+            case 'packages':
+                $rows[] = ['Report', 'Tour packages catalog'];
+                break;
+            case 'trip_payments':
+                $rows[] = ['Report', 'Customized trip payment records (trips)'];
+                break;
+        }
+        return $rows;
+    }
+
+    /**
+     * @param array<string,mixed> $summary
+     */
+    private function buildExportFiltersSummaryHtml(string $reportType, array $filters, string $search): string
+    {
+        $lines = ['<div class="filters-block"><strong>Filters</strong><br>'];
+        foreach ($this->exportFilterContextRows($reportType, $filters) as $pair) {
+            $lines[] = htmlspecialchars($pair[0]) . ': ' . htmlspecialchars($pair[1]) . '<br>';
+        }
+        if ($search !== '') {
+            $lines[] = 'Table search: ' . htmlspecialchars($search) . '<br>';
+        }
+        $lines[] = '</div>';
+        return implode('', $lines);
+    }
+
+    /**
+     * @param array<string,mixed> $summary
+     */
+    private function buildSummarySectionHtml(string $reportType, array $summary): string
+    {
+        $pairs = [];
+        switch ($reportType) {
+            case 'users':
+                $pairs = [
+                    ['Registered customers', (string) (int) ($summary['total'] ?? 0)],
+                    ['Active', (string) (int) ($summary['active'] ?? 0)],
+                    ['Inactive', (string) (int) ($summary['inactive'] ?? 0)],
+                ];
+                break;
+            case 'bookings':
+                $pairs = [
+                    ['Total records', (string) (int) ($summary['total'] ?? 0)],
+                    ['Pending', (string) (int) ($summary['pending'] ?? 0)],
+                    ['Confirmed', (string) (int) ($summary['confirmed'] ?? 0)],
+                    ['Cancelled', (string) (int) ($summary['cancelled'] ?? 0)],
+                    ['Revenue (LKR)', number_format((float) ($summary['total_revenue'] ?? 0), 2)],
+                ];
+                break;
+            case 'payments':
+                $pairs = [
+                    ['Total rows', (string) (int) ($summary['total'] ?? 0)],
+                    ['Paid amount (LKR)', number_format((float) ($summary['total_revenue'] ?? 0), 2)],
+                    ['Paid bookings', (string) (int) ($summary['paid'] ?? 0)],
+                    ['Pending / approved', (string) (int) ($summary['pending'] ?? 0)],
+                ];
+                break;
+            case 'providers':
+                $pairs = [
+                    ['Total providers', (string) (int) ($summary['total'] ?? 0)],
+                    ['Active', (string) (int) ($summary['active'] ?? 0)],
+                    ['Guides', (string) (int) ($summary['guide'] ?? 0)],
+                    ['Hotels', (string) (int) ($summary['hotel'] ?? 0)],
+                    ['Transport', (string) (int) ($summary['transport'] ?? 0)],
+                ];
+                break;
+            case 'packages':
+                $pairs = [
+                    ['Total packages', (string) (int) ($summary['total'] ?? 0)],
+                    ['Average price (LKR)', number_format((float) ($summary['avg_price'] ?? 0), 2)],
+                    ['Marked trending', (string) (int) ($summary['trending'] ?? 0)],
+                ];
+                break;
+            case 'trip_payments':
+                $pairs = [
+                    ['Total trips', (string) (int) ($summary['total'] ?? 0)],
+                    ['Budget in confirmed/completed (LKR)', number_format((float) ($summary['completed_value'] ?? 0), 2)],
+                    ['Pending trips', (string) (int) ($summary['pending'] ?? 0)],
+                ];
+                break;
+            default:
+                return '';
+        }
+
+        $html = '<h2>Summary</h2><table class="summary-table">';
+        foreach ($pairs as $p) {
+            $html .= '<tr><td class="lbl">' . htmlspecialchars($p[0]) . '</td><td>' . htmlspecialchars($p[1]) . '</td></tr>';
+        }
+        $html .= '</table>';
+        return $html;
     }
 
     /**
@@ -357,11 +553,12 @@ class AdminReportController
      */
     private function buildHtmlTable(string $type, array $rows, array $filters): string
     {
-        if ($rows === []) {
-            return '<p>No data for the selected filters.</p>';
-        }
         $headers = $this->excelHeaders($type);
-        $html = '<table><thead><tr>';
+        $html = '<h2>Detail data</h2>';
+        if ($rows === []) {
+            return $html . '<p>No detail rows in this export for the current filters.</p>';
+        }
+        $html .= '<table class="data"><thead><tr>';
         foreach ($headers as $h) {
             $html .= '<th>' . htmlspecialchars($h) . '</th>';
         }

@@ -102,7 +102,7 @@
                                 <input
                                     type="text"
                                     name="search"
-                                    placeholder="Search by user"
+                                    placeholder="Search by customer"
                                     class="search-input"
                                     value="<?= htmlspecialchars($search ?? '') ?>"
                                 >
@@ -149,7 +149,7 @@
                         <table class="inquiry-table">
                             <thead>
                                 <tr>
-                                    <th>User</th>
+                                    <th>Customer</th>
                                     <th>Subject</th>
                                     <th>Message</th>
                                     <th>Status</th>
