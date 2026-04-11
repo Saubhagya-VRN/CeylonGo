@@ -21,9 +21,8 @@
       <a href="/CeylonGo/public/logout" class="btn-login">Logout</a>
     </nav>
   </header>
-
+  
   <?php $active_page = 'bookings'; include(__DIR__ . '/components/hotel_sidebar.php'); ?>
-
   <div class="main">
     <header class="topbar">
       <div class="left">
@@ -59,7 +58,19 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody></tbody>
+              <tbody>
+                <?php foreach($bookings as $booking) { ?>
+                  <tr>
+                    <td><?php echo $booking['id']; ?></td>
+                    <td><?php echo $booking['guest_name']; ?></td>
+                    <td><?php echo $booking['check_in']; ?></td>
+                    <td><?php echo $booking['check_out']; ?></td>
+                    <td><?php echo $booking['total_price'] . ' ' . $booking['currency']; ?></td>
+                    <td><?php echo $booking['status']; ?></td>
+                    <td><button class="btn-action">View</button></td>
+                  </tr>
+                <?php } ?>
+              </tbody>
             </table>
           </div>
         </div>
