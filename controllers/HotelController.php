@@ -182,7 +182,9 @@ class HotelController {
     }
 
     public function bookings() {
-        view('hotel/bookings');
+        $hotelBookings = new HotelBookings($this->db);
+        $bookings = $hotelBookings->getHotelBookings(1);
+        view('hotel/bookings', ['bookings' =>$bookings]);
     }
 
     public function availability() {

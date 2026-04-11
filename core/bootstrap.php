@@ -34,6 +34,7 @@ require_once BASE_PATH . '/core/autoload.php';
 require_once BASE_PATH . '/core/helpers.php';
 require_once BASE_PATH . '/core/Database.php';
 require_once BASE_PATH . '/core/PayHere.php';
+require_once BASE_PATH . '/core/function.php';
 
 // Set up error handling for production (uncomment when deploying)
 // error_reporting(0);
