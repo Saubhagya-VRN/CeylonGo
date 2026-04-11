@@ -22,22 +22,7 @@
     </nav>
   </header>
 
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-text">Ceylon Go</div>
-    </div>
-    <nav class="nav">
-      <a class="nav-link" href="/CeylonGo/public/hotel/dashboard">Dashboard</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/availability">Availability</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/bookings">Bookings</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/add-room">Booking Management</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/payments">Payments</a>
-      <a class="nav-link active" href="/CeylonGo/public/hotel/reviews">Reviews</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/inquiries">Inquiries</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/report-issue">Report Issue</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/notifications">Notifications</a>
-    </nav>
-  </aside>
+  <?php $active_page = 'reviews'; include(__DIR__ . '/components/hotel_sidebar.php'); ?>
 
   <div class="main">
     <header class="topbar">
