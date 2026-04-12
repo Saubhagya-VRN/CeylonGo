@@ -2,121 +2,117 @@
 // Accommodation (choose hotel) content – included in trip.php (step 3) and optionally in choose_hotel.php.
 // Uses /CeylonGo/public/ for assets so it works from trip page.
 $img_base = '/CeylonGo/public/images';
-
-// Room options per hotel (acts as simple data source for the details popup)
-$trip_hotel_room_options = [
-  'sunset-beach' => [
-    [
-      'type' => 'Standard Room',
-      'description' => 'Cozy double room with garden view, ideal for couples.',
-      'price' => 'Rs.12,500',
-      'priceValue' => 12500,
-      'image' => $img_base . '/5star.jpg',
-    ],
-    [
-      'type' => 'Deluxe Sea View',
-      'description' => 'Spacious room with balcony overlooking the ocean.',
-      'price' => 'Rs.18,900',
-      'priceValue' => 18900,
-      'image' => $img_base . '/5star.jpg',
-    ],
-  ],
-  'downtown-comfort' => [
-    [
-      'type' => 'Single Room',
-      'description' => 'Comfortable single room for business travelers.',
-      'price' => 'Rs.7,500',
-      'priceValue' => 7500,
-      'image' => $img_base . '/5star.jpg',
-    ],
-    [
-      'type' => 'Deluxe Double',
-      'description' => 'Modern double room with city view and workspace.',
-      'price' => 'Rs.10,500',
-      'priceValue' => 10500,
-      'image' => $img_base . '/5star.jpg',
-    ],
-  ],
-  'budget-stay' => [
-    [
-      'type' => 'Shared Dorm',
-      'description' => 'Shared dormitory bed with locker access.',
-      'price' => 'Rs.3,500',
-      'priceValue' => 3500,
-      'image' => $img_base . '/5star.jpg',
-    ],
-    [
-      'type' => 'Private Room',
-      'description' => 'Simple private room with shared facilities.',
-      'price' => 'Rs.5,500',
-      'priceValue' => 5500,
-      'image' => $img_base . '/5star.jpg',
-    ],
-  ],
-  'grand-ocean' => [
-    [
-      'type' => 'Deluxe Suite',
-      'description' => 'Luxury suite with separate living area and lake view.',
-      'price' => 'Rs.42,000',
-      'priceValue' => 42000,
-      'image' => $img_base . '/5star.jpg',
-    ],
-    [
-      'type' => 'Family Suite',
-      'description' => 'Two-bedroom suite perfect for families.',
-      'price' => 'Rs.55,000',
-      'priceValue' => 55000,
-      'image' => $img_base . '/5star.jpg',
-    ],
-  ],
-  'city-center' => [
-    [
-      'type' => 'Business Room',
-      'description' => 'Room with ergonomic workspace and high-speed WiFi.',
-      'price' => 'Rs.11,000',
-      'priceValue' => 11000,
-      'image' => $img_base . '/5star.jpg',
-    ],
-    [
-      'type' => 'Executive Room',
-      'description' => 'Larger room with lounge access and breakfast.',
-      'price' => 'Rs.16,500',
-      'priceValue' => 16500,
-      'image' => $img_base . '/5star.jpg',
-    ],
-  ],
-  'backpackers-paradise' => [
-    [
-      'type' => 'Mixed Dorm',
-      'description' => 'Bunk bed in mixed dorm with A/C.',
-      'price' => 'Rs.2,800',
-      'priceValue' => 2800,
-      'image' => $img_base . '/5star.jpg',
-    ],
-    [
-      'type' => 'Female Dorm',
-      'description' => 'Female-only dorm with ensuite bathroom.',
-      'price' => 'Rs.3,200',
-      'priceValue' => 3200,
-      'image' => $img_base . '/5star.jpg',
-    ],
-  ],
-];
-
-// Card headline price = cheapest listed room (always matches one room in View Details)
+$hotels = isset($hotels) && is_array($hotels) ? $hotels : [];
+$trip_hotels_by_slug = [];
+$trip_hotel_room_options = [];
 $trip_hotel_card_price_label = [];
-foreach ($trip_hotel_room_options as $hid => $rooms) {
-    $minPv = null;
-    $minLabel = 'Rs.0';
-    foreach ($rooms as $r) {
-        $pv = isset($r['priceValue']) ? (int) $r['priceValue'] : 0;
-        if ($minPv === null || $pv < $minPv) {
-            $minPv = $pv;
-            $minLabel = isset($r['price']) ? $r['price'] : ('Rs.' . number_format($pv));
+$trip_hotel_room_seen = [];
+show($hotels);
+foreach ($hotels as $hotel_row) {
+    if (!is_array($hotel_row)) {
+        continue;
+    }
+
+    $hotel_slug = trim((string)($hotel_row['hotel_slug'] ?? ''));
+    if ($hotel_slug === '') {
+        continue;
+    }
+
+    if (!isset($trip_hotels_by_slug[$hotel_slug])) {
+        $trip_hotels_by_slug[$hotel_slug] = $hotel_row;
+    }
+
+    if (!isset($trip_hotel_room_options[$hotel_slug])) {
+        $trip_hotel_room_options[$hotel_slug] = [];
+    }
+    if (!isset($trip_hotel_room_seen[$hotel_slug])) {
+        $trip_hotel_room_seen[$hotel_slug] = [];
+    }
+
+    $room_details_raw = $hotel_row['room_details'] ?? [];
+    $room_details = [];
+    if (is_string($room_details_raw)) {
+        $decoded_room_details = json_decode($room_details_raw, true);
+        if (is_array($decoded_room_details)) {
+            $room_details = $decoded_room_details;
+        }
+    } elseif (is_array($room_details_raw)) {
+        $room_details = $room_details_raw;
+    }
+
+    foreach ($room_details as $room) {
+        if (!is_array($room)) {
+            continue;
+        }
+
+        $room_price_value = isset($room['priceValue']) ? (int)$room['priceValue'] : 0;
+        if ($room_price_value <= 0 && isset($room['price'])) {
+            $room_price_value = (int)preg_replace('/[^0-9]/', '', (string)$room['price']);
+        }
+
+        $room_type = trim((string)($room['type'] ?? 'Room'));
+        $room_desc = trim((string)($room['description'] ?? ''));
+        $room_price_label = trim((string)($room['price'] ?? ''));
+        if ($room_price_label === '') {
+            $room_price_label = 'Rs.' . number_format($room_price_value);
+        }
+
+        $room_image = trim((string)($room['image'] ?? ''));
+        if ($room_image !== '') {
+          if (preg_match('#^/img/#i', $room_image)) {
+            $room_image = $img_base . '/' . ltrim(substr($room_image, 5), '/');
+          }
+        }
+        if ($room_image === '') {
+            $room_image = trim((string)($hotel_row['hero_image'] ?? ''));
+        }
+        if ($room_image === '') {
+            $room_image = $img_base . '/5star.jpg';
+        }
+
+        $room_unique_key = md5($room_type . '|' . $room_desc . '|' . $room_price_value . '|' . $room_price_label);
+        if (isset($trip_hotel_room_seen[$hotel_slug][$room_unique_key])) {
+            continue;
+        }
+
+        $trip_hotel_room_seen[$hotel_slug][$room_unique_key] = true;
+        $trip_hotel_room_options[$hotel_slug][] = [
+            'type' => $room_type,
+            'description' => $room_desc,
+            'price' => $room_price_label,
+            'priceValue' => $room_price_value,
+            'image' => $room_image,
+        ];
+    }
+}
+
+foreach ($trip_hotels_by_slug as $hotel_slug => $hotel_row) {
+    $from_price = isset($hotel_row['from_price']) ? (float)$hotel_row['from_price'] : 0;
+    $card_price_label = $from_price > 0 ? ('Rs.' . number_format($from_price)) : 'Rs.0';
+
+    if ($from_price <= 0 && isset($trip_hotel_room_options[$hotel_slug])) {
+        $min_room_price = null;
+        foreach ($trip_hotel_room_options[$hotel_slug] as $room) {
+            $room_price_value = isset($room['priceValue']) ? (int)$room['priceValue'] : 0;
+            if ($min_room_price === null || ($room_price_value > 0 && $room_price_value < $min_room_price)) {
+                $min_room_price = $room_price_value;
+                $card_price_label = isset($room['price']) ? (string)$room['price'] : ('Rs.' . number_format($room_price_value));
+            }
         }
     }
-    $trip_hotel_card_price_label[$hid] = $minLabel;
+
+    $trip_hotel_card_price_label[$hotel_slug] = $card_price_label;
 }
+
+$trip_hotels_list = array_values($trip_hotels_by_slug);
+usort($trip_hotels_list, function ($a, $b) {
+    $a_sort = isset($a['sort_order']) ? (int)$a['sort_order'] : PHP_INT_MAX;
+    $b_sort = isset($b['sort_order']) ? (int)$b['sort_order'] : PHP_INT_MAX;
+    if ($a_sort === $b_sort) {
+        return strcmp((string)($a['hotel_name'] ?? ''), (string)($b['hotel_name'] ?? ''));
+    }
+    return $a_sort <=> $b_sort;
+});
 
 $trip_accommodation_block = isset($trip_accommodation_block) ? $trip_accommodation_block : 'primary';
 if ($trip_accommodation_block === 'secondary') {
@@ -128,8 +124,8 @@ if ($trip_accommodation_block === 'secondary') {
 }
 ?>
 <div class="trip-accommodation-content<?php
-echo $trip_accommodation_block === 'secondary' ? ' trip-accommodation-content--secondary' : '';
-echo $trip_accommodation_block === 'tertiary' ? ' trip-accommodation-content--tertiary' : '';
+  echo $trip_accommodation_block === 'secondary' ? ' trip-accommodation-content--secondary' : '';
+  echo $trip_accommodation_block === 'tertiary' ? ' trip-accommodation-content--tertiary' : '';
 ?>">
   <section class="hotel-search trip-accommodation-search">
     <div class="search-container">
@@ -180,102 +176,80 @@ echo $trip_accommodation_block === 'tertiary' ? ' trip-accommodation-content--te
       </div>
 
       <div class="hotels-grid" id="<?php echo $p; ?>AccommodationHotelsGrid">
-        <div class="hotel-card" data-hotel-id="sunset-beach" data-price="luxury" data-rating="5" data-location="galle">
-          <div class="hotel-image" style="background-image: url('<?php echo $img_base; ?>/5star.jpg')">
-            <div class="hotel-badge">Luxury</div>
-          </div>
-          <div class="hotel-content">
-            <div class="hotel-rating"><div class="stars">★★★★★</div><span class="rating-text">5.0 (127 reviews)</span></div>
-            <h3 class="hotel-name">Sunset Beach Resort</h3>
-            <p class="hotel-location">📍 Galle, Southern Province</p>
-            <div class="hotel-amenities"><span class="amenity">WiFi</span><span class="amenity">Pool</span><span class="amenity">Spa</span><span class="amenity">Restaurant</span></div>
-            <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label['sunset-beach'] ?? 'Rs.0'); ?></span><span class="price-period">/night</span></div></div>
-            <div class="hotel-actions">
-              <a href="#" class="btn-details" data-view-details>View Details</a>
-              <a href="/CeylonGo/public/tourist/hotel-details/sunset-beach" class="btn-book">Book Now</a>
+        <?php foreach ($trip_hotels_list as $hotel): ?>
+          <?php
+            $slug = trim((string)($hotel['hotel_slug'] ?? ''));
+            if ($slug === '') {
+                continue;
+            }
+
+            $hotel_name = trim((string)($hotel['hotel_name'] ?? 'Unnamed Hotel'));
+            $location = trim((string)($hotel['location'] ?? ''));
+            $location_filter_value = strtolower($location);
+            $rating_value = isset($hotel['rating']) ? (float)$hotel['rating'] : 0;
+            $rating_bucket = (string)max(1, min(5, (int)round($rating_value)));
+            $review_count = isset($hotel['review_count']) ? (int)$hotel['review_count'] : 0;
+
+            $amenities_raw = $hotel['amenities'] ?? [];
+            $amenities = [];
+            if (is_string($amenities_raw)) {
+                $decoded_amenities = json_decode($amenities_raw, true);
+                if (is_array($decoded_amenities)) {
+                    $amenities = $decoded_amenities;
+                }
+            } elseif (is_array($amenities_raw)) {
+                $amenities = $amenities_raw;
+            }
+
+            $hero_image = trim((string)($hotel['hero_image'] ?? ''));
+            if ($hero_image === '') {
+                $hero_image = $img_base . '/5star.jpg';
+            }
+
+            $from_price = isset($hotel['from_price']) ? (float)$hotel['from_price'] : 0;
+            if ($from_price <= 0 && isset($trip_hotel_room_options[$slug])) {
+                foreach ($trip_hotel_room_options[$slug] as $room) {
+                    $room_price_value = isset($room['priceValue']) ? (int)$room['priceValue'] : 0;
+                    if ($room_price_value > 0 && ($from_price <= 0 || $room_price_value < $from_price)) {
+                        $from_price = $room_price_value;
+                    }
+                }
+            }
+
+            if ($from_price > 0 && $from_price < 7000) {
+                $price_bucket = 'budget';
+            } elseif ($from_price > 0 && $from_price < 12000) {
+                $price_bucket = 'mid';
+            } else {
+                $price_bucket = 'luxury';
+            }
+
+            $badge_label = $price_bucket === 'budget' ? 'Budget' : ($price_bucket === 'mid' ? 'Popular' : 'Luxury');
+            $stars_text = str_repeat('★', (int)$rating_bucket) . str_repeat('☆', 5 - (int)$rating_bucket);
+          ?>
+          <div class="hotel-card" data-hotel-id="<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>" data-price="<?php echo $price_bucket; ?>" data-rating="<?php echo $rating_bucket; ?>" data-location="<?php echo htmlspecialchars($location_filter_value, ENT_QUOTES, 'UTF-8'); ?>">
+            <div class="hotel-image" style="background-image: url('<?php echo htmlspecialchars($hero_image, ENT_QUOTES, 'UTF-8'); ?>')">
+              <div class="hotel-badge"><?php echo $badge_label; ?></div>
+            </div>
+            <div class="hotel-content">
+              <div class="hotel-rating"><div class="stars"><?php echo $stars_text; ?></div><span class="rating-text"><?php echo number_format($rating_value, 1); ?> (<?php echo $review_count; ?> reviews)</span></div>
+              <h3 class="hotel-name"><?php echo htmlspecialchars($hotel_name, ENT_QUOTES, 'UTF-8'); ?></h3>
+              <p class="hotel-location">📍 <?php echo htmlspecialchars($location, ENT_QUOTES, 'UTF-8'); ?></p>
+              <div class="hotel-amenities">
+                <?php if (!empty($amenities)): ?>
+                  <?php foreach ($amenities as $amenity): ?>
+                    <span class="amenity"><?php echo htmlspecialchars((string)$amenity, ENT_QUOTES, 'UTF-8'); ?></span>
+                  <?php endforeach; ?>
+                <?php endif; ?>
+              </div>
+              <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label[$slug] ?? 'Rs.0', ENT_QUOTES, 'UTF-8'); ?></span><span class="price-period">/night</span></div></div>
+              <div class="hotel-actions">
+                <a href="#" class="btn-details" data-view-details>View Details</a>
+                <a href="/CeylonGo/public/tourist/hotel-details/<?php echo rawurlencode($slug); ?>" class="btn-book">Book Now</a>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="hotel-card" data-hotel-id="downtown-comfort" data-price="mid" data-rating="4" data-location="colombo">
-          <div class="hotel-image" style="background-image: url('<?php echo $img_base; ?>/5star.jpg')">
-            <div class="hotel-badge">Popular</div>
-          </div>
-          <div class="hotel-content">
-            <div class="hotel-rating"><div class="stars">★★★★☆</div><span class="rating-text">4.2 (89 reviews)</span></div>
-            <h3 class="hotel-name">Downtown Comfort Inn</h3>
-            <p class="hotel-location">📍 Colombo, Western Province</p>
-            <div class="hotel-amenities"><span class="amenity">WiFi</span><span class="amenity">Gym</span><span class="amenity">Restaurant</span><span class="amenity">Parking</span></div>
-            <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label['downtown-comfort'] ?? 'Rs.0'); ?></span><span class="price-period">/night</span></div></div>
-            <div class="hotel-actions">
-              <a href="#" class="btn-details" data-view-details>View Details</a>
-              <a href="/CeylonGo/public/tourist/hotel-details/downtown-comfort" class="btn-book">Book Now</a>
-            </div>
-          </div>
-        </div>
-        <div class="hotel-card" data-hotel-id="budget-stay" data-price="budget" data-rating="3" data-location="kandy">
-          <div class="hotel-image" style="background-image: url('<?php echo $img_base; ?>/5star.jpg')">
-            <div class="hotel-badge">Budget</div>
-          </div>
-          <div class="hotel-content">
-            <div class="hotel-rating"><div class="stars">★★★☆☆</div><span class="rating-text">3.8 (45 reviews)</span></div>
-            <h3 class="hotel-name">Budget Stay Hostel</h3>
-            <p class="hotel-location">📍 Kandy, Central Province</p>
-            <div class="hotel-amenities"><span class="amenity">WiFi</span><span class="amenity">Shared Kitchen</span><span class="amenity">Laundry</span></div>
-            <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label['budget-stay'] ?? 'Rs.0'); ?></span><span class="price-period">/night</span></div></div>
-            <div class="hotel-actions">
-              <a href="#" class="btn-details" data-view-details>View Details</a>
-              <a href="/CeylonGo/public/tourist/hotel-details/budget-stay" class="btn-book">Book Now</a>
-            </div>
-          </div>
-        </div>
-        <div class="hotel-card" data-hotel-id="grand-ocean" data-price="luxury" data-rating="5" data-location="nuwara">
-          <div class="hotel-image" style="background-image: url('<?php echo $img_base; ?>/5star.jpg')">
-            <div class="hotel-badge">Luxury</div>
-          </div>
-          <div class="hotel-content">
-            <div class="hotel-rating"><div class="stars">★★★★★</div><span class="rating-text">4.9 (156 reviews)</span></div>
-            <h3 class="hotel-name">Grand Ocean Resort</h3>
-            <p class="hotel-location">📍 Nuwara Eliya, Central Province</p>
-            <div class="hotel-amenities"><span class="amenity">WiFi</span><span class="amenity">Pool</span><span class="amenity">Spa</span><span class="amenity">Golf</span></div>
-            <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label['grand-ocean'] ?? 'Rs.0'); ?></span><span class="price-period">/night</span></div></div>
-            <div class="hotel-actions">
-              <a href="#" class="btn-details" data-view-details>View Details</a>
-              <a href="/CeylonGo/public/tourist/hotel-details/grand-ocean" class="btn-book">Book Now</a>
-            </div>
-          </div>
-        </div>
-        <div class="hotel-card" data-hotel-id="city-center" data-price="mid" data-rating="4" data-location="colombo">
-          <div class="hotel-image" style="background-image: url('<?php echo $img_base; ?>/5star.jpg')">
-            <div class="hotel-badge">Popular</div>
-          </div>
-          <div class="hotel-content">
-            <div class="hotel-rating"><div class="stars">★★★★☆</div><span class="rating-text">4.1 (73 reviews)</span></div>
-            <h3 class="hotel-name">City Center Hotel</h3>
-            <p class="hotel-location">📍 Colombo, Western Province</p>
-            <div class="hotel-amenities"><span class="amenity">WiFi</span><span class="amenity">Restaurant</span><span class="amenity">Business Center</span><span class="amenity">Parking</span></div>
-            <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label['city-center'] ?? 'Rs.0'); ?></span><span class="price-period">/night</span></div></div>
-            <div class="hotel-actions">
-              <a href="#" class="btn-details" data-view-details>View Details</a>
-              <a href="/CeylonGo/public/tourist/hotel-details/city-center" class="btn-book">Book Now</a>
-            </div>
-          </div>
-        </div>
-        <div class="hotel-card" data-hotel-id="backpackers-paradise" data-price="budget" data-rating="3" data-location="galle">
-          <div class="hotel-image" style="background-image: url('<?php echo $img_base; ?>/5star.jpg')">
-            <div class="hotel-badge">Budget</div>
-          </div>
-          <div class="hotel-content">
-            <div class="hotel-rating"><div class="stars">★★★☆☆</div><span class="rating-text">3.6 (32 reviews)</span></div>
-            <h3 class="hotel-name">Backpacker's Paradise</h3>
-            <p class="hotel-location">📍 Galle, Southern Province</p>
-            <div class="hotel-amenities"><span class="amenity">WiFi</span><span class="amenity">Shared Kitchen</span><span class="amenity">Tour Desk</span></div>
-            <div class="hotel-price"><div><span class="price"><?php echo htmlspecialchars($trip_hotel_card_price_label['backpackers-paradise'] ?? 'Rs.0'); ?></span><span class="price-period">/night</span></div></div>
-            <div class="hotel-actions">
-              <a href="#" class="btn-details" data-view-details>View Details</a>
-              <a href="/CeylonGo/public/tourist/hotel-details/backpackers-paradise" class="btn-book">Book Now</a>
-            </div>
-          </div>
-        </div>
+        <?php endforeach; ?>
       </div>
 
       <div id="<?php echo $p; ?>AccommodationSummary" class="trip-accommodation-summary" style="display:none" aria-live="polite">

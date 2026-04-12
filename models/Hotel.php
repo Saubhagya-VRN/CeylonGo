@@ -18,8 +18,8 @@ class Hotel {
 
     public function register() {
         $query = "INSERT INTO " . $this->table . "
-                  (hotel_name, location, city, hotel_image, contact_number, email, password)
-                  VALUES (:hotel_name, :location, :city, :hotel_image, :contact_number, :email, :password)";
+            (hotel_name, location, city, hotel_image, contact_number, email, password)
+            VALUES (:hotel_name, :location, :city, :hotel_image, :contact_number, :email, :password)";
         
         $stmt = $this->conn->prepare($query);
 
@@ -54,6 +54,21 @@ class Hotel {
         $stmt = $this->conn->prepare($query);
         $stmt->execute([$email]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function GetAccommodationCatalog() {
+        try {
+            $query = "SELECT * FROM accommodation_catalog";
+            $stmt = $this->conn->prepare($query);
+
+            if ($stmt->execute()) {
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (PDOException $e) {
+            error_log('Hotel model GetAccommodationCatalog error: ' . $e->getMessage());
+        }
+
+        return [];
     }
 }
 ?>

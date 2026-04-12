@@ -246,6 +246,8 @@ class TouristController {
             exit();
         }
         $touristModel = new Tourist($this->db);
+        $hotel = new Hotel($this->db);
+        $hotels = $hotel->GetAccommodationCatalog();
         $tourist_data = $touristModel->getTouristById($_SESSION['user_id']);
         $user_name = isset($_SESSION['user_name']) ? trim($_SESSION['user_name']) : '';
         if ($user_name === '' && $tourist_data) {
@@ -300,6 +302,7 @@ class TouristController {
         view('tourist/trip', array(
             'tourist_data' => $tourist_data,
             'user_name' => $user_name,
+            'hotels' => $hotels,
             'places_autocomplete_url' => $placesAutocompleteUrl,
             'payhere_per_transaction_max_lkr' => $payhereMax,
             'bank_transfer_details' => $bankDetails,
@@ -1480,7 +1483,7 @@ class TouristController {
         try {
             $sql = "INSERT INTO package_bookings 
                     (user_id, package_id, package_name, travelers, adults, children, infants, travel_date, 
-                     fullname, email, phone, special_requests, total_amount, status) 
+                    fullname, email, phone, special_requests, total_amount, status) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
