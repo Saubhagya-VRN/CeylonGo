@@ -183,7 +183,9 @@ class HotelController {
 
     public function bookings() {
         $hotelBookings = new HotelBookings($this->db);
-        $bookings = $hotelBookings->getHotelBookings(1);
+        $hotel_id = $_SESSION['id'];
+        echo($hotel_id);
+        $bookings = $hotelBookings->getHotelBookings($hotel_id);
         view('hotel/bookings', ['bookings' =>$bookings]);
     }
 

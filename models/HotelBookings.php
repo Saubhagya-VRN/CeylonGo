@@ -9,7 +9,7 @@ class HotelBookings{
     }
 
     public function getHotelBookings($hotel_id){
-        $query = "SELECT * FROM " . $this->table . " WHERE hotel_name = ? ORDER BY check_in DESC";
+        $query = "SELECT * FROM " . $this->table . " WHERE hotel_user_id = ? ORDER BY check_in DESC";
         $stmt = $this->conn->prepare($query);
         
         try {
