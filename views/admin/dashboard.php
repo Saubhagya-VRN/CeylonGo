@@ -48,8 +48,17 @@
 
   $pendingInquiries = [];
   try {
-      $r = $conn->query("SELECT id, name, email, subject, message, created_at FROM inquiries WHERE status = 'pending' ORDER BY created_at DESC LIMIT 6");
-      if ($r) { while ($row = $r->fetch_assoc()) $pendingInquiries[] = $row; }
+    $r = $conn->query("
+        SELECT i.id, i.subject, i.message, i.created_at,
+            COALESCE(CONCAT(t.first_name, ' ', t.last_name), i.guest_name, 'Guest') AS name,
+            COALESCE(i.guest_email, '') AS email
+        FROM inquiries i
+        LEFT JOIN tourist_users t ON i.user_id = t.id
+        WHERE i.status = 'pending'
+        ORDER BY i.created_at DESC
+        LIMIT 6
+    ");
+    if ($r) { while ($row = $r->fetch_assoc()) $pendingInquiries[] = $row; }  
   } catch (Exception $e) { error_log("Dashboard inquiry fetch error: " . $e->getMessage()); }
 
   $period      = in_array($_GET['period'] ?? '', ['weekly','monthly','yearly']) ? $_GET['period'] : 'monthly';

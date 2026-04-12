@@ -44,3 +44,17 @@
 .icon-btn.danger {
   color: red;
 }
+
+/* Fix actions column alignment */
+.inquiry-table td.actions {
+    display: table-cell;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 60px; /* reserves space so column width stays consistent */
+}

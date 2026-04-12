@@ -294,25 +294,11 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="tripExportTimelinePreset">Report period (Trip Payments):</label>
-                            <select id="tripExportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="tripExportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="tripExportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="tripExportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button type="button" class="footer-btn black" id="exportTripPayBtn">Download PDF report</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=payments" class="report-link-btn">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Generate Payments Report
+                        </a>
                     </div>
 
                     <br><br>
@@ -513,25 +499,11 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period (Package Payments):</label>
-                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button type="button" class="footer-btn black" id="exportPayBtn">Download PDF report</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=payments" class="report-link-btn">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Generate Package Payments Report
+                        </a>
                     </div>
 
                 </div><!-- /payments-management -->
@@ -566,7 +538,6 @@
             </ul>
         </footer>
 
-        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             // ── Navbar dropdown ───────────────────────────────────
             function toggleProfileDropdown() {
@@ -631,65 +602,6 @@
                     'created_at'                 => $t['created_at'],
                 ];
             }, $filteredTripPayments)), JSON_UNESCAPED_UNICODE) ?>;
-
-            // ── Shared date helpers ───────────────────────────────
-            function pad(n) { return String(n).padStart(2, "0"); }
-            function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-            function inDateRange(dateStr, range) {
-                if (!range || (!range.start && !range.end)) return true;
-                const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
-                if (!d) return false;
-                if (range.start && d < range.start) return false;
-                if (range.end   && d > range.end)   return false;
-                return true;
-            }
-            function periodLabel(range) {
-                if (!range || (!range.start && !range.end)) return "All time";
-                return range.start + " to " + range.end;
-            }
-            function resolveExportRange(presetId, fromId, toId) {
-                const presetEl = document.getElementById(presetId);
-                const v = presetEl ? presetEl.value : "all";
-                if (v === "custom") {
-                    const f = document.getElementById(fromId).value;
-                    const t = document.getElementById(toId).value;
-                    if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
-                    if (f > t)   { alert("From date must be before or equal to To date."); return null; }
-                    return { start: f, end: t };
-                }
-                if (v === "all") return { start: null, end: null };
-                const today = new Date();
-                const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                let start = new Date(end);
-                if      (v === "7d")  start.setDate(start.getDate() - 6);
-                else if (v === "30d") start.setDate(start.getDate() - 29);
-                else if (v === "90d") start.setDate(start.getDate() - 89);
-                else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
-                else return { start: null, end: null };
-                return { start: ymd(start), end: ymd(end) };
-            }
-
-            // ── Package payments: export preset toggle ────────────
-            (function() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const wrap     = document.getElementById("exportCustomRangeWrap");
-                function toggle() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggle); toggle(); }
-            })();
-
-            // ── Trip payments: export preset toggle ───────────────
-            (function() {
-                const presetEl = document.getElementById("tripExportTimelinePreset");
-                const wrap     = document.getElementById("tripExportCustomRangeWrap");
-                function toggle() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggle); toggle(); }
-            })();
 
             // ── Package payment modal ─────────────────────────────
             const paymentModal   = document.getElementById('paymentModal');
@@ -1079,22 +991,6 @@
             function tripPayPrev() { if (tripPayPage > 1) { tripPayPage--; renderTripPayTable(); } }
             tripPayRPSel.addEventListener('change', function() { tripPayRPP = parseInt(this.value); tripPayPage = 1; renderTripPayTable(); });
             renderTripPayTable();
-
-            // ══════════════════════════════════════════════════════
-            //  PDF export (same layout as Reports & Analysis)
-            // ══════════════════════════════════════════════════════
-
-            document.getElementById('exportPayBtn').addEventListener('click', function() {
-                const range = resolveExportRange('exportTimelinePreset', 'exportDateFrom', 'exportDateTo');
-                if (range === null) return;
-                window.location.href = window.CeylonGoReportPdf.buildPdfUrl('payments', range);
-            });
-
-            document.getElementById('exportTripPayBtn').addEventListener('click', function() {
-                const range = resolveExportRange('tripExportTimelinePreset', 'tripExportDateFrom', 'tripExportDateTo');
-                if (range === null) return;
-                window.location.href = window.CeylonGoReportPdf.buildPdfUrl('trip_payments', range);
-            });
         </script>
     </body>
 </html>

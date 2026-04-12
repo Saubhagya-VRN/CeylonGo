@@ -207,25 +207,11 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period:</label>
-                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button class="footer-btn black" id="exportBtn">Export Inquiries</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=inquiries" class="report-link-btn">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Generate Inquiry Report
+                        </a>
                     </div>
 
                 </div>
@@ -310,79 +296,6 @@
                     });
                 }
             });
-
-            (function() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const wrap = document.getElementById("exportCustomRangeWrap");
-                function pad(n) { return String(n).padStart(2, "0"); }
-                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-                function toggleCustom() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
-
-                function resolveExportRange() {
-                    const v = presetEl ? presetEl.value : "all";
-                    if (v === "custom") {
-                        const f = document.getElementById("exportDateFrom").value;
-                        const t = document.getElementById("exportDateTo").value;
-                        if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
-                        if (f > t) { alert("From date must be before or equal to To date."); return null; }
-                        return { start: f, end: t };
-                    }
-                    if (v === "all") return { start: null, end: null };
-                    const today = new Date();
-                    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                    let start = new Date(end);
-                    if (v === "7d") start.setDate(start.getDate() - 6);
-                    else if (v === "30d") start.setDate(start.getDate() - 29);
-                    else if (v === "90d") start.setDate(start.getDate() - 89);
-                    else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
-                    else return { start: null, end: null };
-                    return { start: ymd(start), end: ymd(end) };
-                }
-                function inRange(dateStr, range) {
-                    if (!range || (!range.start && !range.end)) return true;
-                    const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
-                    if (!d) return false;
-                    if (range.start && d < range.start) return false;
-                    if (range.end && d > range.end) return false;
-                    return true;
-                }
-
-                document.getElementById("exportBtn").addEventListener("click", () => {
-                    const range = resolveExportRange();
-                    if (range === null) return;
-
-                    const rows = document.querySelectorAll("#inquiryTableBody tr");
-                    if (rows.length === 0) return alert("No inquiries to export!");
-
-                    let txt = "User\tSubject\tMessage\tStatus\tDate\n";
-                    let count = 0;
-                    rows.forEach(row => {
-                        if (row.style.display !== "none" && inRange(row.dataset.createdAt, range)) {
-                            const cells = [...row.cells];
-                            const user    = cells[0].innerText.trim();
-                            const subject = cells[1].innerText.trim();
-                            const message = cells[2].innerText.trim();
-                            const status  = cells[3].innerText.trim();
-                            const date    = cells[4].innerText.trim();
-                            txt += [user, subject, message, status, date].join("\t") + "\n";
-                            count++;
-                        }
-                    });
-                    if (count === 0) { alert("No inquiries in the selected period."); return; }
-
-                    const blob = new Blob([txt], { type: "text/plain" });
-                    const link = document.createElement("a");
-                    const stamp = new Date().toISOString().slice(0, 10);
-                    const tag = range.start && range.end ? `${range.start}_to_${range.end}` : "all_time";
-                    link.download = `inquiries_${tag}_${stamp}.txt`;
-                    link.href = URL.createObjectURL(blob);
-                    link.click();
-                });
-            })();
 
             // ── PAGINATION FOR USERS ───────────────────
 

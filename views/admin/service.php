@@ -191,25 +191,11 @@
                         </table>
                     </div>
                     
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period:</label>
-                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button type="button" class="footer-btn black" id="exportBtn">Download PDF report</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=providers" class="report-link-btn">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Generate Service Provider Report
+                        </a>
                     </div>
                 </div>
             </div>
@@ -224,7 +210,6 @@
             </ul>
         </footer>
 
-        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             function toggleProfileDropdown() {
                 const dropdown = document.getElementById('profileDropdown');
@@ -285,73 +270,34 @@
             }
 
             // Activate / Deactivate providers
-                document.getElementById("providerTableBody").addEventListener("click", function(e) {
-                    const button = e.target.closest("button");
-                    if (!button) return;
+            document.getElementById("providerTableBody").addEventListener("click", function(e) {
+                const button = e.target.closest("button");
+                if (!button) return;
 
-                    if (!button.classList.contains("deactivate-btn") &&
-                        !button.classList.contains("activate-btn")) return;
+                if (!button.classList.contains("deactivate-btn") &&
+                    !button.classList.contains("activate-btn")) return;
 
-                    const row = button.closest("tr");
-                    const providerId = row.dataset.id;
-                    const status = button.classList.contains("deactivate-btn") ? 0 : 1;
+                const row = button.closest("tr");
+                const providerId = row.dataset.id;
+                const status = button.classList.contains("deactivate-btn") ? 0 : 1;
 
-                    if (!confirm("Are you sure you want to change this provider's status?")) return;
+                if (!confirm("Are you sure you want to change this provider's status?")) return;
 
-                    fetch("/CeylonGo/public/admin/provider/status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `provider_id=${providerId}&status=${status}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload(); // simple way to refresh table
-                        } else {
-                            alert("Failed to update provider status");
-                        }
-                    })
-                    .catch(() => alert("Server error"));
-                });
-
-            (function() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const wrap = document.getElementById("exportCustomRangeWrap");
-                function pad(n) { return String(n).padStart(2, "0"); }
-                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-                function toggleCustom() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
-
-                function resolveExportRange() {
-                    const v = presetEl ? presetEl.value : "all";
-                    if (v === "custom") {
-                        const f = document.getElementById("exportDateFrom").value;
-                        const t = document.getElementById("exportDateTo").value;
-                        if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
-                        if (f > t) { alert("From date must be before or equal to To date."); return null; }
-                        return { start: f, end: t };
+                fetch("/CeylonGo/public/admin/provider/status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `provider_id=${providerId}&status=${status}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // simple way to refresh table
+                    } else {
+                        alert("Failed to update provider status");
                     }
-                    if (v === "all") return { start: null, end: null };
-                    const today = new Date();
-                    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                    let start = new Date(end);
-                    if (v === "7d") start.setDate(start.getDate() - 6);
-                    else if (v === "30d") start.setDate(start.getDate() - 29);
-                    else if (v === "90d") start.setDate(start.getDate() - 89);
-                    else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
-                    else return { start: null, end: null };
-                    return { start: ymd(start), end: ymd(end) };
-                }
-
-                document.getElementById("exportBtn").addEventListener("click", function () {
-                    const range = resolveExportRange();
-                    if (range === null) return;
-                    window.location.href = window.CeylonGoReportPdf.buildPdfUrl("providers", range);
-                });
-            })();
+                })
+                .catch(() => alert("Server error"));
+            });
 
             // ── PAGINATION FOR USERS ───────────────────
 

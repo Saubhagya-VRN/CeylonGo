@@ -197,25 +197,11 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period (Customized Bookings):</label>
-                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button type="button" class="footer-btn black" id="exportBtn">Download PDF report</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=bookings" class="report-link-btn">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Generate Bookings Report
+                        </a>
                     </div>
 
                     <br><br>
@@ -336,25 +322,11 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period (Package Bookings):</label>
-                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button type="button" class="footer-btn black" id="exportPkgBtn">Download PDF report</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=bookings" class="report-link-btn">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Generate Package Bookings Report
+                        </a>
                     </div>
                 </div>
             </div>
@@ -393,7 +365,6 @@
             </ul>
         </footer>
 
-        <script src="/CeylonGo/public/js/admin_report_pdf_export.js"></script>
         <script>
             // ── Navbar dropdown ───────────────────────────────────
             function toggleProfileDropdown() {
@@ -463,64 +434,6 @@
                     'created_at'      => $b['created_at'],
                 ];
             }, $bookingsWithDestinations ?? []), JSON_UNESCAPED_UNICODE) ?>;
-
-            // ── Export date range helpers (trip + package) ─────────
-            (function() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const wrap = document.getElementById("exportCustomRangeWrap");
-                function pad(n) { return String(n).padStart(2, "0"); }
-                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-                function toggleCustom() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
-            })();
-
-            function resolveBookingsExportRange() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const v = presetEl ? presetEl.value : "all";
-                if (v === "custom") {
-                    const f = document.getElementById("exportDateFrom").value;
-                    const t = document.getElementById("exportDateTo").value;
-                    if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
-                    if (f > t) { alert("From date must be before or equal to To date."); return null; }
-                    return { start: f, end: t };
-                }
-                if (v === "all") return { start: null, end: null };
-                const today = new Date();
-                const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                let start = new Date(end);
-                if (v === "7d") start.setDate(start.getDate() - 6);
-                else if (v === "30d") start.setDate(start.getDate() - 29);
-                else if (v === "90d") start.setDate(start.getDate() - 89);
-                else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
-                else return { start: null, end: null };
-                return { start: ymd(start), end: ymd(end) };
-            }
-            function ymd(d) {
-                const pad = function(n) { return String(n).padStart(2, "0"); };
-                return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-            }
-            function inBookingsDateRange(dateStr, range) {
-                if (!range || (!range.start && !range.end)) return true;
-                const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
-                if (!d) return false;
-                if (range.start && d < range.start) return false;
-                if (range.end && d > range.end) return false;
-                return true;
-            }
-            function bookingsPeriodLabel(range) {
-                if (!range || (!range.start && !range.end)) return "All time";
-                return range.start + " to " + range.end;
-            }
-
-            // ── PDF export (same as Reports & Analysis: filters + summary + detail) ──
-            document.getElementById("exportBtn").addEventListener("click", () => {
-                const range = resolveBookingsExportRange();
-                if (range === null) return;
-                window.location.href = window.CeylonGoReportPdf.buildPdfUrl("bookings", range);
-            });
 
             const pkgBookingsData = <?= json_encode(array_values(array_map(function($pb) {
                 return [
@@ -633,12 +546,6 @@
                     else alert("Failed to reject: " + (data.message || 'Unknown error'));
                 })
                 .catch(() => alert("Server error. Please try again."));
-            });
-
-            document.getElementById("exportPkgBtn").addEventListener("click", function() {
-                const range = resolveBookingsExportRange();
-                if (range === null) return;
-                window.location.href = window.CeylonGoReportPdf.buildPdfUrl("bookings", range);
             });
 
             // ── Close all modals on outside click ─────────────────
