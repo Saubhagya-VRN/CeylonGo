@@ -255,6 +255,15 @@
 
     <?php $active_page = 'room-management'; include(__DIR__ . '/components/hotel_sidebar.php'); ?>
 
+    <?php
+    if (is_string($rooms)) {
+        $decodedRooms = json_decode($rooms, true);
+        $rooms = is_array($decodedRooms) ? $decodedRooms : [];
+    } elseif (!is_array($rooms) && !is_object($rooms)) {
+        $rooms = [];
+    }
+    ?>
+
     <div class="main">
         <header class="topbar">
             <div class="left">
@@ -316,14 +325,49 @@
                                 </thead>
                                 <tbody>
                                     <?php foreach ($rooms as $room): ?>
+                                        <?php
+                                        $roomData = is_object($room) ? get_object_vars($room) : (is_array($room) ? $room : []);
+
+                                        $roomId = $roomData['id'] ?? null;
+                                        $roomNumber = $roomData['room_number'] ?? ($roomData['number'] ?? '-');
+                                        $roomType = $roomData['room_type'] ?? ($roomData['type'] ?? 'N/A');
+
+                                        $rateSource = $roomData['rate'] ?? ($roomData['priceValue'] ?? ($roomData['price'] ?? null));
+                                        if (is_numeric($rateSource)) {
+                                            $rateDisplay = 'LKR ' . number_format((float) $rateSource, 2);
+                                        } elseif (is_string($rateSource) && trim($rateSource) !== '') {
+                                            $rateDisplay = trim($rateSource);
+                                        } else {
+                                            $rateDisplay = '-';
+                                        }
+
+                                        $capacity = $roomData['capacity'] ?? ($roomData['max_guests'] ?? '-');
+                                        $description = isset($roomData['description']) ? (string) $roomData['description'] : '';
+
+                                        $amenities = [];
+                                        if (isset($roomData['amenities'])) {
+                                            if (is_string($roomData['amenities'])) {
+                                                $decodedAmenities = json_decode($roomData['amenities'], true);
+                                                if (is_array($decodedAmenities)) {
+                                                    $amenities = $decodedAmenities;
+                                                }
+                                            } elseif (is_array($roomData['amenities'])) {
+                                                $amenities = $roomData['amenities'];
+                                            }
+                                        }
+
+                                        $status = isset($roomData['status']) && trim((string) $roomData['status']) !== ''
+                                            ? (string) $roomData['status']
+                                            : 'available';
+                                        $statusClass = strtolower($status);
+                                        ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($room['room_number']); ?></td>
-                                            <td><?php echo htmlspecialchars($room['room_type']); ?></td>
-                                            <td>LKR <?php echo htmlspecialchars($room['rate']); ?></td>
-                                            <td><?php echo htmlspecialchars($room['capacity']); ?></td>
+                                            <td><?php echo htmlspecialchars((string) $roomNumber); ?></td>
+                                            <td><?php echo htmlspecialchars((string) $roomType); ?></td>
+                                            <td><?php echo htmlspecialchars($rateDisplay); ?></td>
+                                            <td><?php echo htmlspecialchars((string) $capacity); ?></td>
                                             <td>
                                                 <?php 
-                                                $description = $room['description'];
                                                 if (empty($description)) {
                                                     echo '<span class="text-muted">No description</span>';
                                                 } else {
@@ -333,7 +377,6 @@
                                             </td>
                                             <td>
                                                 <?php 
-                                                $amenities = json_decode($room['amenities'], true);
                                                 if (empty($amenities)) {
                                                     echo '<span class="text-muted">No amenities</span>';
                                                 } else {
@@ -345,17 +388,21 @@
                                                 ?>
                                             </td>
                                             <td>
-                                                <span class="status-badge status-<?php echo strtolower($room['status']); ?>">
-                                                    <?php echo htmlspecialchars($room['status']); ?>
+                                                <span class="status-badge status-<?php echo htmlspecialchars($statusClass); ?>">
+                                                    <?php echo htmlspecialchars($status); ?>
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="/CeylonGo/public/hotel/edit-room/<?php echo $room['id']; ?>" class="btn btn-sm btn-secondary">
-                                                    ✏ Edit
-                                                </a>
-                                                <a href="/CeylonGo/public/hotel/delete-room/<?php echo $room['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this room?');">
-                                                    🗑 Delete
-                                                </a>
+                                                <?php if (!empty($roomId)): ?>
+                                                    <a href="/CeylonGo/public/hotel/edit-room/<?php echo (int) $roomId; ?>" class="btn btn-sm btn-secondary">
+                                                        ✏ Edit
+                                                    </a>
+                                                    <a href="/CeylonGo/public/hotel/delete-room/<?php echo (int) $roomId; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this room?');">
+                                                        🗑 Delete
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="text-muted">N/A</span>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

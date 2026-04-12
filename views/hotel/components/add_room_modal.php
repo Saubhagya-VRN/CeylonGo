@@ -151,7 +151,7 @@
 			<button type="button" class="room-modal-close" data-room-modal-close aria-label="Close modal">&times;</button>
 		</div>
 
-		<form action="/CeylonGo/public/hotel/add-room" method="POST" class="room-modal-form" id="addRoomForm">
+		<form action="/CeylonGo/public/hotel/rooms" method="POST" class="room-modal-form" id="addRoomForm">
 			<div class="room-modal-grid room-modal-grid-tight">
 				<div class="form-group">
 					<label for="room_number">Room Number</label>
