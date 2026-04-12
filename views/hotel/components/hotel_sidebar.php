@@ -17,6 +17,7 @@
         ['key' => 'availability', 'label' => 'Availability', 'url' => '/CeylonGo/public/hotel/availability', 'icon' => 'fa-regular fa-calendar-check'],
         ['key' => 'bookings', 'label' => 'Bookings', 'url' => '/CeylonGo/public/hotel/bookings', 'icon' => 'fa-regular fa-calendar'],
         ['key' => 'booking-management', 'label' => 'Booking Management', 'url' => '/CeylonGo/public/hotel/add-room', 'icon' => 'fa-solid fa-door-open'],
+        ['key' => 'room-management', 'label' => 'Room Management', 'url' => '/CeylonGo/public/hotel/rooms', 'icon' => 'fa-solid fa-bed'],
         ['key' => 'payments', 'label' => 'Payments', 'url' => '/CeylonGo/public/hotel/payments', 'icon' => 'fa-solid fa-credit-card'],
         ['key' => 'reviews', 'label' => 'Reviews', 'url' => '/CeylonGo/public/hotel/reviews', 'icon' => 'fa-regular fa-star'],
         ['key' => 'inquiries', 'label' => 'Inquiries', 'url' => '/CeylonGo/public/hotel/inquiries', 'icon' => 'fa-solid fa-circle-question'],

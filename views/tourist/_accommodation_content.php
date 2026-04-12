@@ -7,7 +7,7 @@ $trip_hotels_by_slug = [];
 $trip_hotel_room_options = [];
 $trip_hotel_card_price_label = [];
 $trip_hotel_room_seen = [];
-show($hotels);
+
 foreach ($hotels as $hotel_row) {
     if (!is_array($hotel_row)) {
         continue;
