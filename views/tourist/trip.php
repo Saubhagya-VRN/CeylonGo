@@ -11,6 +11,7 @@ if (is_array($tourist_data) && isset($tourist_data['email'])) {
 $payhere_per_transaction_max_lkr = isset($payhere_per_transaction_max_lkr) ? (int) $payhere_per_transaction_max_lkr : 0;
 $bank_transfer_details = isset($bank_transfer_details) ? $bank_transfer_details : '';
 $last_trip_id = isset($last_trip_id) ? (int) $last_trip_id : 0;
+$wizard_fresh_start = !empty($wizard_fresh_start);
 $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
 $asset_base = '/CeylonGo/public';
 $user_email_sidebar = $user_email;
@@ -67,7 +68,7 @@ $main_cities = array(
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/trip.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/accommodation_content.css">
 </head>
-<body class="trip-page-body">
+<body class="trip-page-body"<?php echo $wizard_fresh_start ? ' data-wizard-fresh="1"' : ''; ?>>
   <?php include __DIR__ . '/header.php'; ?>
 
   <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
@@ -91,7 +92,10 @@ $main_cities = array(
           <i class="fa-solid fa-wand-magic-sparkles"></i> Customise Your Dream Trip
         </h1>
         <div class="trip-stepper-next">
-          <button type="button" class="btn-next">Next <i class="fa-solid fa-chevron-right"></i></button>
+          <div class="trip-stepper-next-group">
+            <button type="button" class="btn-trip-clear-data" id="tripClearDataBtn" title="Clear saved draft on this device and return to Travel Group">Clear data</button>
+            <button type="button" class="btn-next">Next <i class="fa-solid fa-chevron-right"></i></button>
+          </div>
         </div>
       </div>
 
@@ -463,23 +467,60 @@ $main_cities = array(
 
   <script>
   document.addEventListener('DOMContentLoaded', function () {
+    (function bindTripClearData() {
+      var clearBtn = document.getElementById('tripClearDataBtn');
+      if (!clearBtn) return;
+      var fallbackCustomizeUrl = <?php echo json_encode(rtrim(defined('BASE_URL') ? BASE_URL : '/CeylonGo/public', '/') . '/tourist/customize-trip'); ?>;
+      clearBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (!window.confirm('Clear all trip details saved on this device and start again at Travel Group? This does not delete past bookings from your account.')) {
+          return;
+        }
+        try { localStorage.removeItem('ceylonTripWizardDraftV2'); } catch (e0) {}
+        try {
+          sessionStorage.removeItem('ceylonTripWizardSubmitted');
+          sessionStorage.removeItem('ceylonTripWizardTripId');
+          sessionStorage.removeItem('ceylonTripWizardFingerprint');
+          sessionStorage.removeItem('ceylonTripWizardProceededToPayment');
+          sessionStorage.removeItem('ceylonTripWizardReturnToReview');
+        } catch (e1) {}
+        var path = (window.location && window.location.pathname) ? String(window.location.pathname) : '';
+        var target = (path && path.indexOf('customize-trip') !== -1) ? (path + '?reset=1') : (fallbackCustomizeUrl + '?reset=1');
+        window.location.replace(target);
+      });
+    })();
+
+    var tripPageWizardFresh = !!(document.body && document.body.getAttribute('data-wizard-fresh') === '1');
+    if (tripPageWizardFresh) {
+      try { document.body.removeAttribute('data-wizard-fresh'); } catch (eWf) {}
+      try { localStorage.removeItem('ceylonTripWizardDraftV2'); } catch (eLS) {}
+      ['ceylonTripWizardSubmitted', 'ceylonTripWizardTripId', 'ceylonTripWizardFingerprint', 'ceylonTripWizardProceededToPayment', 'ceylonTripWizardReturnToReview'].forEach(function (wk) {
+        try { sessionStorage.removeItem(wk); } catch (eSS) {}
+      });
+    }
+
     var serverLastTid = <?php echo (int) $last_trip_id; ?>;
     try {
-      var paramsBoot = new URLSearchParams(window.location.search || '');
-      var urlTidBoot = parseInt(paramsBoot.get('trip_id') || '0', 10) || 0;
-      var afterPayBoot = paramsBoot.get('afterPayment') === '1';
-      if (urlTidBoot > 0) {
-        sessionStorage.setItem('ceylonTripWizardTripId', String(urlTidBoot));
-        if (afterPayBoot) {
-          sessionStorage.setItem('ceylonTripWizardSubmitted', '1');
-          sessionStorage.setItem('ceylonTripWizardProceededToPayment', String(urlTidBoot));
+      if (!tripPageWizardFresh) {
+        var paramsBoot = new URLSearchParams(window.location.search || '');
+        var urlTidBoot = parseInt(paramsBoot.get('trip_id') || '0', 10) || 0;
+        var afterPayBoot = paramsBoot.get('afterPayment') === '1';
+        if (urlTidBoot > 0) {
+          sessionStorage.setItem('ceylonTripWizardTripId', String(urlTidBoot));
+          if (afterPayBoot) {
+            sessionStorage.setItem('ceylonTripWizardSubmitted', '1');
+            sessionStorage.setItem('ceylonTripWizardProceededToPayment', String(urlTidBoot));
+          }
         }
       }
     } catch (eUrl) {}
     try {
-      var existingTid = String(sessionStorage.getItem('ceylonTripWizardTripId') || '').trim();
-      if (!existingTid && serverLastTid > 0) {
-        sessionStorage.setItem('ceylonTripWizardTripId', String(serverLastTid));
+      if (!tripPageWizardFresh) {
+        var existingTid = String(sessionStorage.getItem('ceylonTripWizardTripId') || '').trim();
+        if (!existingTid && serverLastTid > 0) {
+          sessionStorage.setItem('ceylonTripWizardTripId', String(serverLastTid));
+        }
       }
     } catch (e0) {}
     var hamburger = document.getElementById('tripHamburgerBtn');
@@ -769,13 +810,9 @@ $main_cities = array(
         cards.forEach(function (card, si) {
           var n = si + 1;
           var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
-          var trNo = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="no"]');
           var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
-          var gNo = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="no"]');
           var tYes = trYes && trYes.classList.contains('selected');
-          var tNo = trNo && trNo.classList.contains('selected');
           var guYes = gYes && gYes.classList.contains('selected');
-          var guNo = gNo && gNo.classList.contains('selected');
           var loc = ((card.querySelector('.trip-stop-location') || {}).value || '').trim();
           var fareNum = parseFareFromStop(card);
           if (tYes && fareNum) transportSum += fareNum;
@@ -802,8 +839,6 @@ $main_cities = array(
               ['No. of people', np || '—'],
               ['Estimated fare (LKR)', fareNum ? String(Math.round(fareNum)) : '—']
             ]) + '</div></div>';
-          } else if (tNo) {
-            html += '<div class="trip-sum-service-block trip-sum-service-block--single-line-head"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-bus" aria-hidden="true"></i> Stop ' + n + ' - Transport - Not requested</span><span class="trip-sum-service-head-amt">—</span></div></div>';
           }
 
           if (guYes) {
@@ -830,8 +865,6 @@ $main_cities = array(
               ['Preferred time', gtime || '—'],
               ['Notes', gnotes || '—']
             ]) + '</div></div>';
-          } else if (guNo) {
-            html += '<div class="trip-sum-service-block trip-sum-service-block--single-line-head"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Stop ' + n + ' - Tour Guide - Not requested</span><span class="trip-sum-service-head-amt">—</span></div></div>';
           }
           html += '</div>';
         });
@@ -847,7 +880,6 @@ $main_cities = array(
           var tr = item && item.transport ? item.transport : null;
           var gu = item && item.guide ? item.guide : null;
           var tYes = tr && tr.notRequested !== true && tr.fare != null && parseFloat(tr.fare) > 0;
-          var tNo = tr && tr.notRequested === true;
           if (!tYes && tr && !tr.notRequested && tr.pickup) tYes = true;
           var fareNum = tr && tr.fare != null ? parseFloat(tr.fare) : 0;
           if (isNaN(fareNum)) fareNum = 0;
@@ -875,12 +907,9 @@ $main_cities = array(
               ['No. of people', np || '—'],
               ['Estimated fare (LKR)', fareNum ? String(Math.round(fareNum)) : '—']
             ]) + '</div></div>';
-          } else if (tNo) {
-            html += '<div class="trip-sum-service-block trip-sum-service-block--single-line-head"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-bus" aria-hidden="true"></i> Stop ' + n + ' - Transport - Not requested</span><span class="trip-sum-service-head-amt">—</span></div></div>';
           }
 
           var guYes = gu && gu.notRequested !== true && gu.location;
-          var guNo = gu && gu.notRequested === true;
           if (guYes) {
             var gloc = (gu.location || '').trim();
             var gdt = (gu.date || '').trim();
@@ -905,8 +934,6 @@ $main_cities = array(
               ['Preferred time', gtime || '—'],
               ['Notes', gnotes || '—']
             ]) + '</div></div>';
-          } else if (guNo) {
-            html += '<div class="trip-sum-service-block trip-sum-service-block--single-line-head"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Stop ' + n + ' - Tour Guide - Not requested</span><span class="trip-sum-service-head-amt">—</span></div></div>';
           }
           html += '</div>';
         });
@@ -922,8 +949,7 @@ $main_cities = array(
         var accThumb = '<div class="trip-sum-thumb trip-sum-thumb--acc" role="presentation"><img src="/CeylonGo/public/images/5star.jpg" alt="" loading="lazy" width="200" height="120"></div>';
         var body = document.getElementById(bodyId);
         if (!body || !body.querySelector('.trip-accommodation-summary-item')) {
-          var emptyBlocks = '<div class="trip-sum-service-block trip-sum-accommodation-empty"><div class="trip-sum-service-head trip-sum-service-head--hotel"><span class="trip-sum-service-head-main"><i class="fa-solid fa-hotel" aria-hidden="true"></i> ' + escSummaryHtml(title) + '</span><span class="trip-sum-service-head-amt">—</span></div><div class="trip-sum-service-body"><p class="trip-sum-muted">No hotel booking saved yet for this stay.</p></div></div>';
-          return '<div class="trip-sum-accommodation-section">' + emptyBlocks + '</div>';
+          return '';
         }
         var items = body.querySelectorAll('.trip-accommodation-summary-item');
         var blockHtml = '';
@@ -1796,6 +1822,88 @@ $main_cities = array(
       var refM = document.getElementById('tripCustomRefundModal');
       if (!refM || refM.hidden) {
         document.body.style.overflow = '';
+      }
+    }
+
+    function escapeHtmlDownload(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function downloadTripSummaryReport() {
+      var mount = document.getElementById('tripBudgetSummaryModalMount');
+      if (!mount) return;
+      if (mount.querySelector('.trip-budget-modal-loading')) {
+        window.alert('Please wait until your trip summary has finished loading, then try again.');
+        return;
+      }
+      var inner = (mount.innerHTML || '').trim();
+      if (!inner) {
+        window.alert('Nothing to download yet.');
+        return;
+      }
+
+      var tripId = '';
+      try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (e1) { tripId = ''; }
+      if (!tripId && typeof serverLastTid !== 'undefined' && serverLastTid > 0) tripId = String(serverLastTid);
+      var safeId = tripId.replace(/[^a-zA-Z0-9_-]+/g, '-');
+      var generated = new Date();
+      var fname = 'CeylonGo-Trip-Summary' + (safeId ? '-' + safeId : '') + '-' + generated.toISOString().slice(0, 10) + '.html';
+
+      var cssHref = '';
+      try {
+        var linkEl = document.querySelector('link[href*="trip.css"]');
+        if (linkEl && linkEl.href) cssHref = linkEl.href;
+      } catch (e2) {}
+      if (!cssHref) {
+        cssHref = String(window.location.origin || '') + '/CeylonGo/public/css/tourist/trip.css';
+      }
+      var cssLinkTag = '<link rel="stylesheet" href="' + escapeHtmlDownload(cssHref) + '">\n';
+
+      var fallbackCss = '<style>' +
+        'html{background:#e8eaed;min-height:100%}' +
+        'body.dl-trip-report{max-width:min(920px,100%);margin:24px auto;padding:24px 28px 48px;box-sizing:border-box;' +
+        'font-family:system-ui,Segoe UI,sans-serif;color:#111;background:#fafafa;line-height:1.45;' +
+        'box-shadow:0 0 0 1px rgba(0,0,0,0.06),0 4px 24px rgba(0,0,0,0.06);border-radius:12px}' +
+        'body.dl-trip-report .trip-summary-detailed-root{width:100%;max-width:100%}' +
+        'body.dl-trip-report .trip-summary-detailed-layout{max-width:100%;grid-template-columns:1fr}' +
+        'body.dl-trip-report .trip-summary-budget-aside{position:static;margin-top:20px;max-width:100%}' +
+        '.dl-report-head{margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #2c5530}' +
+        '.dl-report-meta{color:#64748b;font-size:14px;margin:0}' +
+        '.dl-report-foot{margin-top:32px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280}' +
+        'main img{max-width:100%;height:auto}' +
+        '</style>\n';
+
+      var metaText = 'Generated ' + generated.toLocaleString();
+      if (tripId) metaText += ' · Trip #' + tripId;
+
+      var doc = '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+        '<title>Ceylon Go - Trip Summary &amp; Budget</title>\n' +
+        cssLinkTag +
+        fallbackCss +
+        '</head>\n<body class="dl-trip-report">\n' +
+        '<header class="dl-report-head"><h1 style="margin:0 0 8px;font-size:1.45rem;color:#2c5530;">Ceylon Go - Trip Summary &amp; Budget</h1>' +
+        '<p class="dl-report-meta">' + escapeHtmlDownload(metaText) + '</p></header>\n' +
+        '<main class="trip-summary-detailed-root">' + inner + '</main>\n' +
+        '<footer class="dl-report-foot"><p>This HTML file is a snapshot of your trip summary. If styling looks plain, open it while online so the stylesheet can load, or use your browser&rsquo;s Print dialog to save as PDF.</p></footer>\n' +
+        '</body>\n</html>';
+
+      try {
+        var blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fname;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e3) {
+        window.alert('Could not create the download. Try again or use Print from your browser.');
       }
     }
 
@@ -2935,6 +3043,11 @@ $main_cities = array(
       tripWizardPendingInitialStep = 1;
       tripWizardUrlForcedStep = false;
       try {
+        if (tripPageWizardFresh) {
+          tripWizardPendingInitialStep = 1;
+          tripWizardUrlForcedStep = true;
+          return;
+        }
         var fromPay = '';
         try { fromPay = String(sessionStorage.getItem('ceylonTripWizardReturnToReview') || ''); } catch (e0) { fromPay = ''; }
         if (fromPay === '1') {
@@ -4682,7 +4795,15 @@ $main_cities = array(
     (function initTripOverviewModals() {
       var budgetOverlay = document.getElementById('tripBudgetSummaryModalOverlay');
       var budgetClose = document.getElementById('tripBudgetSummaryModalClose');
+      var budgetDownload = document.getElementById('tripBudgetSummaryModalDownload');
       if (budgetClose) budgetClose.addEventListener('click', closeTripBudgetSummaryModal);
+      if (budgetDownload) {
+        budgetDownload.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          downloadTripSummaryReport();
+        });
+      }
       if (budgetOverlay) {
         budgetOverlay.addEventListener('click', function (e) {
           if (e.target === budgetOverlay) closeTripBudgetSummaryModal();
@@ -4743,15 +4864,20 @@ $main_cities = array(
     })();
 
     (function tripWizardBootstrapAfterStops() {
-      var draft = loadTripWizardDraft();
-      if (draft && tripWizardDraftShouldRestore()) {
-        try {
-          applyTripWizardDraft(draft);
-          if (!tripWizardUrlForcedStep && draft.step >= 1 && draft.step <= totalSteps) {
-            tripWizardPendingInitialStep = draft.step;
+      if (tripPageWizardFresh) {
+        tripWizardPendingInitialStep = 1;
+        tripWizardUrlForcedStep = true;
+      } else {
+        var draft = loadTripWizardDraft();
+        if (draft && tripWizardDraftShouldRestore()) {
+          try {
+            applyTripWizardDraft(draft);
+            if (!tripWizardUrlForcedStep && draft.step >= 1 && draft.step <= totalSteps) {
+              tripWizardPendingInitialStep = draft.step;
+            }
+          } catch (eApp) {
+            try { console.warn('Trip wizard draft restore failed', eApp); } catch (eL) {}
           }
-        } catch (eApp) {
-          try { console.warn('Trip wizard draft restore failed', eApp); } catch (eL) {}
         }
       }
       var list1 = document.getElementById('tripStopsList');

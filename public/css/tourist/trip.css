@@ -3,6 +3,34 @@
  * Uses --trip-* variables from trip_layout.css
  */
 
+/* Clear data — sits left of Next in header row */
+.trip-stepper-next-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.btn-trip-clear-data {
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.btn-trip-clear-data:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
 /* Breadcrumbs */
 .trip-breadcrumbs {
   display: flex;
@@ -50,6 +78,9 @@
 
 .trip-stepper-next {
   text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .trip-page-title.trip-title-centered {
@@ -2766,6 +2797,15 @@ body.trip-page-body {
     text-align: center;
   }
 
+  .trip-stepper-next {
+    justify-content: center;
+  }
+
+  .trip-stepper-next-group {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
   .trip-page-title.trip-title-centered {
     order: -1;
     font-size: 18px;
@@ -2837,12 +2877,43 @@ body.trip-page-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
 }
 .trip-modal-title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
+  flex: 1;
+  min-width: 0;
+}
+.trip-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.trip-modal-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.trip-modal-download-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+.trip-modal-download-btn:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 .trip-modal-close {
   width: 36px;

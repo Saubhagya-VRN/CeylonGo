@@ -1,15 +1,17 @@
 <?php
 
 spl_autoload_register(function ($className) {
-    $paths = [
-        '../controllers/',
-        '../models/',
-        '../core/'
-    ];
+    // Resolve from project root — do NOT use ../ relative to getcwd() (breaks under some Apache/CLI CWDs).
+    $root = dirname(__DIR__);
+    $paths = array(
+        $root . '/controllers/',
+        $root . '/models/',
+        $root . '/core/'
+    );
 
     foreach ($paths as $path) {
         $file = $path . $className . '.php';
-        if (file_exists($file)) {
+        if (is_file($file)) {
             require_once $file;
             return;
         }

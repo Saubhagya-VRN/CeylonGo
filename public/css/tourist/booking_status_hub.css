@@ -1,0 +1,199 @@
+/* Status of Bookings hub — loads after trip.css; extends card grid + polish */
+
+.booking-status-hub-page.trip-page-body {
+  background: var(--trip-bg-light, #f5f7fa);
+}
+
+.booking-status-hub-page .trip-main-content {
+  padding-top: 24px;
+}
+
+/* Breadcrumbs: align with trip wizard (green links, no default purple) */
+.booking-status-hub-page .trip-breadcrumbs {
+  margin-bottom: 16px;
+}
+
+.booking-status-hub-page .trip-breadcrumbs a {
+  color: var(--trip-primary, #2c5530);
+  font-weight: 500;
+}
+
+.booking-status-hub-page .trip-breadcrumbs span:last-child {
+  color: #374151;
+}
+
+/* Page intro */
+.booking-status-hub-page .booking-hub-lead {
+  max-width: 720px;
+  margin: 0 auto 28px;
+  padding: 0 4px;
+  text-align: center;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.booking-status-hub-page .booking-hub-header .trip-page-title.trip-title-centered {
+  color: #111827;
+}
+
+.booking-status-hub-page .booking-hub-header .trip-page-title.trip-title-centered i {
+  color: #2c5530;
+}
+
+/* Card grid */
+.booking-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 4px 40px;
+}
+
+/* Cards: full trip.css budget card look + no stray bullets */
+.booking-hub-card.trip-sum-budget-card {
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(44, 85, 48, 0.12);
+}
+
+.booking-hub-card .trip-sum-budget-lines {
+  list-style: none;
+  margin: 0;
+  padding: 14px 16px;
+}
+
+.booking-hub-card .trip-sum-budget-lines li {
+  padding: 10px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f0f2f4;
+}
+
+.booking-hub-card .trip-sum-budget-lines li:last-of-type {
+  border-bottom: none;
+}
+
+.booking-hub-card .trip-sum-budget-lines span {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.booking-hub-card .trip-sum-budget-lines strong {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+.booking-hub-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.booking-hub-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(44, 85, 48, 0.18);
+}
+
+.booking-hub-card:focus-visible {
+  outline: 3px solid #2c5530;
+  outline-offset: 3px;
+}
+
+.booking-hub-card .trip-sum-budget-card-head {
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.booking-hub-card__pay--bank {
+  color: #b45309 !important;
+}
+
+.booking-hub-card__summary {
+  background: #f3f4f6;
+  border-top: 1px solid #e8eaed;
+}
+
+.booking-hub-card__summary-val {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: #1a3d24 !important;
+  text-align: right;
+  max-width: 68%;
+  line-height: 1.35;
+}
+
+.booking-hub-card__hint {
+  margin: 0;
+  padding: 12px 16px 14px;
+  font-size: 0.82rem;
+  color: #6b7280;
+  line-height: 1.45;
+  border-top: 1px solid #f3f4f6;
+}
+
+.booking-hub-card__cta {
+  padding: 0 14px 16px;
+}
+
+.booking-hub-card__cta-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #fff;
+  background: linear-gradient(90deg, #2c5530, #3d7342);
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(44, 85, 48, 0.25);
+}
+
+.booking-hub-card:hover .booking-hub-card__cta-btn {
+  filter: brightness(1.06);
+}
+
+/* Empty state */
+.booking-hub-empty {
+  max-width: 520px;
+  margin: 48px auto;
+  padding: 32px 28px;
+  text-align: center;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  color: #4b5563;
+  line-height: 1.55;
+}
+
+.booking-hub-btn {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.booking-hub-btn--primary {
+  color: #fff;
+  background: linear-gradient(90deg, #2c5530, #3d7342);
+}
+
+@media (max-width: 768px) {
+  .booking-hub-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .booking-status-hub-page .trip-main-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

@@ -44,6 +44,7 @@ $router->get('tourist/dashboard', 'TouristController@dashboardNew');
 $router->get('tourist/dashboard-side', 'TouristController@dashboardSide');
 $router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
+$router->get('tourist/booking-status', 'TouristController@bookingStatusHub');
 $router->get('tourist/custom-trip-summary', 'TouristController@customTripSummary');
 $router->post('tourist/trip-submit', 'TouristController@tripSubmit');
 $router->post('tourist/trip-payment-checkout', 'TouristController@tripPaymentCheckout');
@@ -150,5 +151,22 @@ $router->post('admin/review/approve', 'AdminController@approveReview');
 $router->post('admin/flag-booking', 'AdminController@flagBooking');
 
 // Dispatch the request
-$router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+try {
+    $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+} catch (Throwable $e) {
+    http_response_code(500);
+    $msg = $e->getMessage();
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Error: ' . $msg;
+    } else {
+        echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Error</title></head><body>';
+        echo '<h1>Something went wrong</h1>';
+        echo '<p>' . htmlspecialchars($msg) . '</p>';
+        if (function_exists('ini_get') && ini_get('display_errors')) {
+            echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+        }
+        echo '</body></html>';
+    }
+}
 ?>
