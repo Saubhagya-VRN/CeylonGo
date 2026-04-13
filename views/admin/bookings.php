@@ -2,9 +2,6 @@
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    
-    // $bookings, $stats, $selectedStatus, $searchId, $date — trip bookings (existing)
-    // $packageBookings, $pkgStats — package bookings (new)
 
     // Package bookings: apply search, status filter and date filter server-side
     $pkgSearch         = $_GET['pkg_search'] ?? '';
@@ -29,26 +26,18 @@
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-            <!-- Font Awesome (REQUIRED) -->
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-            <!-- Optional admin-only overrides -->
             <link rel="stylesheet" href="/CeylonGO/public/css/admin/bookings.css">
-
-            <!-- Shared Transport Layout -->
             <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
             <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
             <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
             <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-            
-            <!-- Responsive styles (always last) -->
             <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
 
             <title>Booking Management</title>
         </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -70,7 +59,6 @@
 
         <div class="page-wrapper">
 
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -354,9 +342,8 @@
                     </div>
                 </div>
             </div>
-        </div><!-- /page-wrapper -->
-
-        <!-- Footer -->
+        </div>
+        
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
@@ -457,7 +444,7 @@
                 ];
             }, $filteredPkgBookings)), JSON_UNESCAPED_UNICODE) ?>;
 
-            // ── Package Booking: view details (reuses shared modal) ──
+            // ── Package Booking: view details
             document.querySelectorAll(".pkg-view-btn").forEach(btn => {
                 btn.addEventListener("click", function() {
                     const id = parseInt(this.dataset.id);
@@ -493,7 +480,7 @@
                 });
             });
 
-            // ── Package Booking: approve ──────────────────────────
+            // ── Package Booking: approve
             document.querySelectorAll(".pkg-approve-btn").forEach(btn => {
                 btn.addEventListener("click", function() {
                     const id = parseInt(this.dataset.id);
@@ -513,7 +500,7 @@
                 });
             });
 
-            // ── Package Booking: reject with notes modal ──────────
+            // Package Booking: reject with notes modal
             const rejectModal      = document.getElementById("rejectModal");
             const rejectClose      = rejectModal.querySelector(".reject-close");
             const rejectCancelBtn  = document.getElementById("rejectCancelBtn");

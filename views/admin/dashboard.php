@@ -34,6 +34,12 @@
   $r = $conn->query("SELECT COALESCE(SUM(budget_lkr),0) AS rev FROM trips WHERE status = 'completed' AND DATE_FORMAT(created_at,'%Y-%m') = DATE_FORMAT(NOW(),'%Y-%m')");
   if ($r) $revenueThisMonth += (float)$r->fetch_assoc()['rev'];
 
+  $totalRevenue = 0;
+  $r = $conn->query("SELECT COALESCE(SUM(total_amount),0) AS rev FROM package_bookings WHERE status != 'cancelled'");
+  if ($r) $totalRevenue += (float)$r->fetch_assoc()['rev'];
+  $r = $conn->query("SELECT COALESCE(SUM(budget_lkr),0) AS rev FROM trips WHERE status = 'completed'");
+  if ($r) $totalRevenue += (float)$r->fetch_assoc()['rev'];
+
   $totalBookings = 0;
   $r = $conn->query("SELECT (SELECT COUNT(*) FROM package_bookings) + (SELECT COUNT(*) FROM trips) AS total");
   if ($r) $totalBookings = $r->fetch_assoc()['total'];
@@ -166,16 +172,20 @@
                         <div class="kpi-icon"><i class="fa-solid fa-van-shuttle"></i></div>
                         <div class="kpi-info"><p class="kpi-label">Service Providers</p><p class="kpi-value"><?= number_format($totalProviders) ?></p></div>
                     </a>
+                    <a href="/CeylonGo/public/admin/reports?generated=1&amp;type=payments&amp;pay_source=all" class="kpi-card kpi-revenue-total">
+                        <div class="kpi-icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div class="kpi-info"><p class="kpi-label" title="Package bookings (non-cancelled) + completed custom trips">Total Revenue</p><p class="kpi-value">LKR <?= number_format($totalRevenue, 0) ?></p></div>
+                    </a>
                     <a href="/CeylonGo/public/admin/payments" class="kpi-card kpi-revenue">
                         <div class="kpi-icon"><i class="fa-solid fa-circle-dollar-to-slot"></i></div>
                         <div class="kpi-info"><p class="kpi-label">Revenue This Month</p><p class="kpi-value">LKR <?= number_format($revenueThisMonth, 0) ?></p></div>
                     </a>
+                </div>
+                <div class="kpi-row-2">
                     <a href="/CeylonGo/public/admin/bookings" class="kpi-card kpi-bookings">
                         <div class="kpi-icon"><i class="fa-regular fa-calendar-check"></i></div>
                         <div class="kpi-info"><p class="kpi-label">Total Bookings</p><p class="kpi-value"><?= number_format($totalBookings) ?></p></div>
                     </a>
-                </div>
-                <div class="kpi-row-2">
                     <a href="/CeylonGo/public/admin/bookings" class="kpi-card kpi-pending">
                         <div class="kpi-icon"><i class="fa-regular fa-clock"></i></div>
                         <div class="kpi-info"><p class="kpi-label">Pending Bookings</p><p class="kpi-value"><?= number_format($totalPendingBookings) ?></p></div>

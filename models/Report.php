@@ -733,6 +733,344 @@ class Report
         ];
     }
 
+    /**
+     * Single Chart.js payload for Reports & Analysis (matches current filters, not the dashboard).
+     *
+     * @return array{title: string, labels: array, values: array<float|int>, value_kind: 'count'|'currency', chart_kind: 'bar'|'line'}|null
+     */
+    public function chartForReportsPage(string $reportType, array $filters): ?array
+    {
+        switch ($reportType) {
+            case 'users':
+                $c = $this->chartTouristCustomersPerMonth($filters);
+                if ($c['labels'] === []) {
+                    return null;
+                }
+                $ust = $filters['user_status'] ?? 'all';
+                $ustLabel = $ust === 'all' ? 'all accounts' : $ust;
+
+                return [
+                    'title'      => 'New customer registrations by month (' . $ustLabel . ')',
+                    'labels'     => $c['labels'],
+                    'values'     => $c['counts'],
+                    'value_kind' => 'count',
+                    'chart_kind' => 'bar',
+                ];
+            case 'bookings':
+                $c = $this->chartBookingsPerMonthFiltered($filters);
+                if ($c['labels'] === []) {
+                    return null;
+                }
+                $bs = $filters['booking_status'] ?? 'all';
+                $suffix = $bs === 'all' ? '' : (' (' . $bs . ')');
+
+                return [
+                    'title'      => 'Bookings by month' . $suffix,
+                    'labels'     => $c['labels'],
+                    'values'     => $c['counts'],
+                    'value_kind' => 'count',
+                    'chart_kind' => 'bar',
+                ];
+            case 'payments':
+                $c = $this->chartPaymentsRevenuePerMonthFiltered($filters);
+                if ($c['labels'] === []) {
+                    return null;
+                }
+                $src = strtolower((string) ($filters['pay_source'] ?? 'all'));
+                $scope = [
+                    'all'     => 'package + custom trips',
+                    'package' => 'package bookings',
+                    'trip'    => 'custom trips',
+                ];
+                $st = $scope[$src] ?? $src;
+
+                return [
+                    'title'      => 'Revenue by month (LKR) — ' . $st,
+                    'labels'     => $c['labels'],
+                    'values'     => $c['amounts'],
+                    'value_kind' => 'currency',
+                    'chart_kind' => 'line',
+                ];
+            case 'providers':
+                $c = $this->chartProvidersRegisteredPerMonth($filters);
+                if ($c['labels'] === []) {
+                    return null;
+                }
+                $cat = $filters['provider_category'] ?? 'all';
+                $pst = $filters['provider_status'] ?? 'all';
+                $catLabel = $cat === 'all' ? 'all categories' : $cat;
+                $stLabel = $pst === 'all' ? 'all statuses' : $pst;
+
+                return [
+                    'title'      => 'New provider registrations by month (' . $catLabel . ', ' . $stLabel . ')',
+                    'labels'     => $c['labels'],
+                    'values'     => $c['counts'],
+                    'value_kind' => 'count',
+                    'chart_kind' => 'bar',
+                ];
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Same scope as the Users report: tourists only, account status + date on COALESCE(tu.created_at, u.created_at).
+     *
+     * @return array{labels: string[], counts: int[]}
+     */
+    private function chartTouristCustomersPerMonth(array $filters): array
+    {
+        $params = [];
+        $where = " WHERE u.role = 'tourist' ";
+        $st = $filters['user_status'] ?? 'all';
+        if ($st === 'active') {
+            $where .= ' AND IFNULL(tu.is_active, 1) = 1 ';
+        } elseif ($st === 'inactive') {
+            $where .= ' AND IFNULL(tu.is_active, 1) = 0 ';
+        }
+        $dateCol = 'COALESCE(tu.created_at, u.created_at)';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, $dateCol, '', true);
+
+        $sql = "
+            SELECT DATE_FORMAT({$dateCol}, '%Y-%m') AS ym, COUNT(*) AS c
+            FROM users u
+            LEFT JOIN tourist_users tu ON u.role = 'tourist' AND u.ref_id = tu.id
+            {$where}
+            GROUP BY ym
+            ORDER BY ym ASC
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'labels' => array_column($rows, 'ym'),
+            'counts' => array_map('intval', array_column($rows, 'c')),
+        ];
+    }
+
+    /**
+     * Bookings per month with the same status filter as fetchBookings.
+     *
+     * @return array{labels: string[], counts: int[]}
+     */
+    private function chartBookingsPerMonthFiltered(array $filters): array
+    {
+        $bf = $filters['booking_status'] ?? 'all';
+        $params = [];
+        $pbWhere = ' WHERE 1=1 ';
+        $pbWhere .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 'pb.created_at', 'pb');
+        if ($bf === 'pending') {
+            $pbWhere .= " AND pb.status = 'pending' ";
+        } elseif ($bf === 'confirmed') {
+            $pbWhere .= " AND pb.status = 'approved' ";
+        } elseif ($bf === 'cancelled') {
+            $pbWhere .= " AND pb.status IN ('cancelled','rejected') ";
+        }
+
+        $trParams = [];
+        $trWhere = ' WHERE 1=1 ';
+        $trWhere .= $this->bindDateRange($trParams, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', 'tr');
+        if ($bf === 'pending') {
+            $trWhere .= " AND t.status = 'pending' ";
+        } elseif ($bf === 'confirmed') {
+            $trWhere .= " AND t.status IN ('confirmed','completed') ";
+        } elseif ($bf === 'cancelled') {
+            $trWhere .= " AND (t.status = 'cancelled' OR t.refund_requested_at IS NOT NULL) ";
+        }
+
+        $mergeParams = array_merge($params, $trParams);
+
+        $sql = "
+            SELECT ym, SUM(cnt) AS c FROM (
+                SELECT DATE_FORMAT(pb.created_at, '%Y-%m') AS ym, COUNT(*) AS cnt
+                FROM package_bookings pb
+                {$pbWhere}
+                GROUP BY ym
+                UNION ALL
+                SELECT DATE_FORMAT(t.created_at, '%Y-%m') AS ym, COUNT(*) AS cnt
+                FROM trips t
+                {$trWhere}
+                GROUP BY ym
+            ) x GROUP BY ym ORDER BY ym ASC
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($mergeParams);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'labels' => array_column($rows, 'ym'),
+            'counts' => array_map('intval', array_column($rows, 'c')),
+        ];
+    }
+
+    /**
+     * Monthly revenue aligned with payments report filters (pay_source, method, status on packages).
+     *
+     * @return array{labels: string[], amounts: float[]}
+     */
+    private function chartPaymentsRevenuePerMonthFiltered(array $filters): array
+    {
+        $src = strtolower(trim((string) ($filters['pay_source'] ?? 'all')));
+        if (!in_array($src, ['all', 'package', 'trip'], true)) {
+            $src = 'all';
+        }
+
+        if ($src === 'package') {
+            return $this->chartPackagePaymentRevenuePerMonth($filters);
+        }
+        if ($src === 'trip') {
+            return $this->chartTripRevenuePerMonth($filters);
+        }
+
+        $pkg = $this->chartPackagePaymentRevenuePerMonth($filters);
+        $trp = $this->chartTripRevenuePerMonth($filters);
+        $byYm = [];
+        foreach ($pkg['labels'] as $i => $ym) {
+            $byYm[$ym] = ($byYm[$ym] ?? 0) + (float) ($pkg['amounts'][$i] ?? 0);
+        }
+        foreach ($trp['labels'] as $i => $ym) {
+            $byYm[$ym] = ($byYm[$ym] ?? 0) + (float) ($trp['amounts'][$i] ?? 0);
+        }
+        ksort($byYm);
+        $labels = array_keys($byYm);
+        $amounts = array_values($byYm);
+
+        return ['labels' => $labels, 'amounts' => $amounts];
+    }
+
+    /**
+     * @return array{labels: string[], amounts: float[]}
+     */
+    private function chartPackagePaymentRevenuePerMonth(array $filters): array
+    {
+        $params = [];
+        $where = ' WHERE 1=1 ';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 'pb.created_at');
+
+        $method = $filters['pay_method'] ?? 'all';
+        if ($method === 'bank_transfer') {
+            $where .= " AND ({$this->paymentMethodExpr()}) = 'bank_transfer' ";
+        } elseif ($method === 'online') {
+            $where .= " AND ({$this->paymentMethodExpr()}) = 'online' ";
+        }
+
+        $pst = $filters['pay_status'] ?? 'all';
+        if ($pst !== 'all' && $pst !== '') {
+            $where .= ' AND pb.status = :pstat ';
+            $params[':pstat'] = $pst;
+        }
+
+        $sql = "
+            SELECT DATE_FORMAT(pb.created_at, '%Y-%m') AS ym,
+                   COALESCE(SUM(CASE WHEN pb.status = 'paid' THEN pb.total_amount ELSE 0 END), 0) AS amt
+            FROM package_bookings pb
+            {$where}
+            GROUP BY ym
+            ORDER BY ym ASC
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'labels'  => array_column($rows, 'ym'),
+            'amounts' => array_map('floatval', array_column($rows, 'amt')),
+        ];
+    }
+
+    /**
+     * @return array{labels: string[], amounts: float[]}
+     */
+    private function chartTripRevenuePerMonth(array $filters): array
+    {
+        $params = [];
+        $where = ' WHERE 1=1 ';
+        $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', '', true);
+
+        $sql = "
+            SELECT DATE_FORMAT(t.created_at, '%Y-%m') AS ym,
+                   COALESCE(SUM(CASE WHEN t.status IN ('confirmed','completed') THEN t.budget_lkr ELSE 0 END), 0) AS amt
+            FROM trips t
+            {$where}
+            GROUP BY ym
+            ORDER BY ym ASC
+        ";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'labels'  => array_column($rows, 'ym'),
+            'amounts' => array_map('floatval', array_column($rows, 'amt')),
+        ];
+    }
+
+    /**
+     * @return array{labels: string[], counts: int[]}
+     */
+    private function chartProvidersRegisteredPerMonth(array $filters): array
+    {
+        $cat = $filters['provider_category'] ?? 'all';
+        $st  = $filters['provider_status'] ?? 'all';
+
+        $whereStatus = '';
+        if ($st === 'active') {
+            $whereStatus = ' AND is_active = 1 ';
+        } elseif ($st === 'inactive') {
+            $whereStatus = ' AND is_active = 0 ';
+        }
+
+        $parts = [];
+        if ($cat === 'all' || $cat === 'guide') {
+            $parts[] = "
+                SELECT u.created_at AS registered_at
+                FROM users u
+                JOIN guide_users g ON u.ref_id = g.id
+                WHERE u.role = 'guide' {$whereStatus}
+            ";
+        }
+        if ($cat === 'all' || $cat === 'transport') {
+            $parts[] = "
+                SELECT u.created_at AS registered_at
+                FROM users u
+                JOIN transport_users t ON u.ref_id = t.user_id
+                WHERE u.role = 'transport' {$whereStatus}
+            ";
+        }
+        if ($cat === 'all' || $cat === 'hotel') {
+            $parts[] = "
+                SELECT u.created_at AS registered_at
+                FROM users u
+                JOIN hotel_users h ON u.ref_id = h.id
+                WHERE u.role = 'hotel' {$whereStatus}
+            ";
+        }
+
+        if ($parts === []) {
+            return ['labels' => [], 'counts' => []];
+        }
+
+        $inner = implode(' UNION ALL ', $parts);
+        $params = [];
+        $sql = "
+            SELECT DATE_FORMAT(z.registered_at, '%Y-%m') AS ym, COUNT(*) AS c
+            FROM ( {$inner} ) z
+            WHERE 1=1
+        ";
+        $sql .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 'z.registered_at', '', true);
+        $sql .= ' GROUP BY ym ORDER BY ym ASC';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'labels' => array_column($rows, 'ym'),
+            'counts' => array_map('intval', array_column($rows, 'c')),
+        ];
+    }
+
     // ─── Tour packages (catalog) ───────────────────────────────────────────
 
     /** @return array{total:int,avg_price:float,trending:int} */
@@ -916,5 +1254,241 @@ class Report
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return ['rows' => $rows, 'total' => $total];
+    }
+
+    // ─── Admin payments report (package + custom trip) ─────────────────────
+
+    private function normalizePaySource(string $value): string
+    {
+        $s = strtolower(trim($value));
+
+        return in_array($s, ['all', 'package', 'trip'], true) ? $s : 'all';
+    }
+
+    /**
+     * @param array<string,mixed> $r
+     *
+     * @return array<string,mixed>
+     */
+    private function normalizePaymentRowPackage(array $r): array
+    {
+        return [
+            'payment_source' => 'package',
+            'id'               => $r['id'],
+            'customer'         => $r['fullname'] ?? '',
+            'email'            => $r['email'] ?? '',
+            'detail'           => $r['package_name'] ?? '',
+            'amount'           => isset($r['total_amount']) ? (float) $r['total_amount'] : 0.0,
+            'status'           => $r['status'] ?? '',
+            'pay_method'       => $r['pay_method'] ?? '',
+            'created_at'       => $r['created_at'] ?? '',
+            'notes'            => $r['paid_at'] ?? '',
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $r
+     *
+     * @return array<string,mixed>
+     */
+    private function normalizePaymentRowTrip(array $r): array
+    {
+        $people = isset($r['number_of_people']) ? (int) $r['number_of_people'] : 0;
+        $start  = (string) ($r['start_date'] ?? '');
+        $notes  = trim($start . ' · ' . $people . ' pax');
+
+        return [
+            'payment_source' => 'trip',
+            'id'             => $r['id'],
+            'customer'       => $r['customer_name'] ?? '',
+            'email'          => '',
+            'detail'         => $r['destination'] ?? '',
+            'amount'         => isset($r['budget_lkr']) ? (float) $r['budget_lkr'] : 0.0,
+            'status'         => $r['status'] ?? '',
+            'pay_method'     => '—',
+            'created_at'     => $r['created_at'] ?? '',
+            'notes'          => $notes,
+        ];
+    }
+
+    /**
+     * @return array{pay_source: string, package_summary?: array, trip_summary?: array}
+     */
+    /**
+     * total_revenue: primary figure for admins — package paid (status=paid) ± trip budget for confirmed/completed,
+     * depending on pay_source (combined when scope is "all").
+     *
+     * @return array{pay_source: string, total_revenue: float, package_summary?: array, trip_summary?: array}
+     */
+    public function summarizePaymentsReport(array $filters): array
+    {
+        $src = $this->normalizePaySource((string) ($filters['pay_source'] ?? 'all'));
+        if ($src === 'package') {
+            $ps = $this->summarizePayments($filters);
+
+            return [
+                'pay_source'       => 'package',
+                'total_revenue'    => (float) ($ps['total_revenue'] ?? 0),
+                'package_summary'  => $ps,
+            ];
+        }
+        if ($src === 'trip') {
+            $ts = $this->summarizeTripPayments($filters);
+
+            return [
+                'pay_source'     => 'trip',
+                'total_revenue'  => (float) ($ts['completed_value'] ?? 0),
+                'trip_summary'   => $ts,
+            ];
+        }
+
+        $ps = $this->summarizePayments($filters);
+        $ts = $this->summarizeTripPayments($filters);
+        $combined = (float) ($ps['total_revenue'] ?? 0) + (float) ($ts['completed_value'] ?? 0);
+
+        return [
+            'pay_source'       => 'all',
+            'total_revenue'    => $combined,
+            'package_summary'  => $ps,
+            'trip_summary'     => $ts,
+        ];
+    }
+
+    private function paymentUnionOrderExpr(string $sort): string
+    {
+        $map = [
+            'created_at' => 'u.created_at',
+            'amount'     => 'u.amount',
+            'status'     => 'u.status',
+            'id'         => 'u.id',
+        ];
+
+        return $map[$sort] ?? 'u.created_at';
+    }
+
+    /**
+     * @return array{rows: array<int,array>, total: int}
+     */
+    private function fetchPaymentsAllUnion(array $filters, string $search, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $pParams = [];
+        $pWhere  = ' WHERE 1=1 ';
+        $pWhere .= $this->bindDateRange($pParams, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 'pb.created_at');
+
+        $method = $filters['pay_method'] ?? 'all';
+        if ($method === 'bank_transfer') {
+            $pWhere .= " AND ({$this->paymentMethodExpr()}) = 'bank_transfer' ";
+        } elseif ($method === 'online') {
+            $pWhere .= " AND ({$this->paymentMethodExpr()}) = 'online' ";
+        }
+
+        $pst = $filters['pay_status'] ?? 'all';
+        if ($pst !== 'all' && $pst !== '') {
+            $pWhere .= ' AND pb.status = :pkg_pstat ';
+            $pParams[':pkg_pstat'] = $pst;
+        }
+
+        if ($search !== '') {
+            $pWhere .= ' AND (pb.fullname LIKE :pkg_sq OR pb.email LIKE :pkg_sq OR pb.package_name LIKE :pkg_sq OR CAST(pb.id AS CHAR) LIKE :pkg_sq) ';
+            $pParams[':pkg_sq'] = '%' . $search . '%';
+        }
+
+        $tParams = [];
+        $tWhere  = ' WHERE 1=1 ';
+        $tWhere .= $this->bindDateRange($tParams, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', 'tr', true);
+
+        if ($search !== '') {
+            $tWhere .= ' AND (t.customer_name LIKE :tr_sq OR t.destination LIKE :tr_sq OR CAST(t.id AS CHAR) LIKE :tr_sq) ';
+            $tParams[':tr_sq'] = '%' . $search . '%';
+        }
+
+        $allParams = array_merge($pParams, $tParams);
+
+        $pkgInner = "
+            SELECT
+                'package' AS payment_source,
+                pb.id AS id,
+                pb.fullname AS customer,
+                pb.email AS email,
+                pb.package_name AS detail,
+                pb.total_amount AS amount,
+                pb.status AS status,
+                {$this->paymentMethodExpr()} AS pay_method,
+                pb.created_at AS created_at,
+                IFNULL(DATE_FORMAT(pb.paid_at, '%Y-%m-%d %H:%i:%s'), '') AS notes
+            FROM package_bookings pb
+            {$pWhere}
+        ";
+
+        $tripInner = "
+            SELECT
+                'trip' AS payment_source,
+                t.id AS id,
+                t.customer_name AS customer,
+                '' AS email,
+                t.destination AS detail,
+                t.budget_lkr AS amount,
+                t.status AS status,
+                '—' AS pay_method,
+                t.created_at AS created_at,
+                TRIM(CONCAT(IFNULL(t.start_date, ''), ' · ', IFNULL(CAST(t.number_of_people AS CHAR), ''), ' pax')) AS notes
+            FROM trips t
+            {$tWhere}
+        ";
+
+        $unionSql = "({$pkgInner}) UNION ALL ({$tripInner})";
+
+        $countSql = "SELECT COUNT(*) FROM ( {$unionSql} ) ucnt";
+        $stmt = $this->db->prepare($countSql);
+        $stmt->execute($allParams);
+        $total = (int) $stmt->fetchColumn();
+
+        $orderExpr = $this->paymentUnionOrderExpr($sort);
+        $orderDir  = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+        $offset    = ($page - 1) * $perPage;
+
+        $dataSql = "
+            SELECT u.* FROM ( {$unionSql} ) u
+            ORDER BY {$orderExpr} {$orderDir}
+            LIMIT :lim OFFSET :off
+        ";
+        $stmt = $this->db->prepare($dataSql);
+        foreach ($allParams as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->bindValue(':lim', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':off', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['amount'] = isset($row['amount']) ? (float) $row['amount'] : 0.0;
+        }
+        unset($row);
+
+        return ['rows' => $rows, 'total' => $total];
+    }
+
+    /**
+     * Package bookings, custom trips, or both — unified rows for admin reports.
+     *
+     * @return array{rows: array<int,array>, total: int}
+     */
+    public function fetchPaymentsReport(array $filters, string $search, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $src = $this->normalizePaySource((string) ($filters['pay_source'] ?? 'all'));
+        if ($src === 'package') {
+            $r = $this->fetchPayments($filters, $search, $sort, $dir, $page, $perPage);
+            $r['rows'] = array_map([$this, 'normalizePaymentRowPackage'], $r['rows']);
+
+            return $r;
+        }
+        if ($src === 'trip') {
+            $r = $this->fetchTripPayments($filters, $search, $sort, $dir, $page, $perPage);
+            $r['rows'] = array_map([$this, 'normalizePaymentRowTrip'], $r['rows']);
+
+            return $r;
+        }
+
+        return $this->fetchPaymentsAllUnion($filters, $search, $sort, $dir, $page, $perPage);
     }
 }

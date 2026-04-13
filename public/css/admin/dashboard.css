@@ -19,10 +19,10 @@
 /* ── KPI Section ───────────────────────────────────────────────────────────── */
 .kpi-section { margin-bottom: 24px; }
 
-/* Row 1: 4 cards */
+/* Row 1: KPI cards (wraps on smaller widths) */
 .kpi-row-1 {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 14px;
     margin-bottom: 14px;
 }
@@ -39,7 +39,6 @@
 }
 
 @media (max-width: 1100px) {
-    .kpi-row-1 { grid-template-columns: repeat(2, 1fr); }
     .kpi-row-2 .kpi-card { width: calc(50% - 7px); }
 }
 @media (max-width: 600px) {
@@ -75,6 +74,7 @@
 .kpi-users    { background: #eff6ff; } .kpi-users    .kpi-icon { background:#dbeafe; color:#2563eb; }
 .kpi-providers{ background: #f0fdf4; } .kpi-providers .kpi-icon { background:#bbf7d0; color:#16a34a; }
 .kpi-revenue  { background: #fefce8; } .kpi-revenue  .kpi-icon { background:#fef08a; color:#ca8a04; }
+.kpi-revenue-total { background: #fffbeb; } .kpi-revenue-total .kpi-icon { background:#fde68a; color:#a16207; }
 .kpi-bookings { background: #f5f3ff; } .kpi-bookings .kpi-icon { background:#ede9fe; color:#7c3aed; }
 .kpi-pending  { background: #fff7ed; } .kpi-pending  .kpi-icon { background:#fed7aa; color:#ea580c; }
 .kpi-cancel   { background: #fef2f2; } .kpi-cancel   .kpi-icon { background:#fecaca; color:#dc2626; }

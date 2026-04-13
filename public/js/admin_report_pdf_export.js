@@ -1,6 +1,6 @@
 /**
  * Build the same PDF export URL as Reports & Analysis (filters + summary + detail).
- * @param {string} type users|bookings|payments|providers|packages|trip_payments
+ * @param {string} type users|bookings|payments|providers
  * @param {{start: ?string, end: ?string}|null} range from resolveExportRange helpers (omit dates for all time)
  */
 (function (global) {

@@ -42,6 +42,11 @@ class AdminReportController
             $dt = $tmp;
         }
 
+        $paySrc = strtolower(trim((string) ($_GET['pay_source'] ?? 'all')));
+        if (!in_array($paySrc, ['all', 'package', 'trip'], true)) {
+            $paySrc = 'all';
+        }
+
         return [
             'date_from'          => $df,
             'date_to'            => $dt,
@@ -51,6 +56,7 @@ class AdminReportController
             'booking_status'     => $_GET['booking_status'] ?? 'all',
             'pay_method'         => $_GET['pay_method'] ?? 'all',
             'pay_status'         => $_GET['pay_status'] ?? 'all',
+            'pay_source'         => $paySrc,
             'provider_category'  => $_GET['provider_category'] ?? 'all',
             'provider_status'    => $_GET['provider_status'] ?? 'all',
         ];
@@ -74,23 +80,25 @@ class AdminReportController
             'bookings'       => ['created_at', 'amount', 'status', 'customer', 'type'],
             'payments'       => ['created_at', 'amount', 'status', 'id'],
             'providers'      => ['registered_at', 'provider_name', 'role', 'email'],
-            'packages'       => ['created_at', 'title', 'price'],
-            'trip_payments'  => ['created_at', 'amount', 'status', 'id'],
         ];
         $allowed = $map[$type] ?? ['created_at'];
         return in_array($sort, $allowed, true) ? $sort : $allowed[0];
     }
 
-    private function pdfReportTitle(string $reportType): string
+    private function pdfReportTitle(string $reportType, array $filters = []): string
     {
         if ($reportType === 'users') {
             return 'CeylonGo Report — Customers (tourists)';
         }
-        if ($reportType === 'packages') {
-            return 'CeylonGo Report — Tour packages';
-        }
-        if ($reportType === 'trip_payments') {
-            return 'CeylonGo Report — Custom trip payments';
+        if ($reportType === 'payments') {
+            $src = $filters['pay_source'] ?? 'all';
+            if ($src === 'trip') {
+                return 'CeylonGo Report — Payments (custom trips)';
+            }
+            if ($src === 'package') {
+                return 'CeylonGo Report — Payments (package bookings)';
+            }
+            return 'CeylonGo Report — Payments (package + custom trips)';
         }
         return 'CeylonGo Report — ' . ucfirst(str_replace('_', ' ', $reportType));
     }
@@ -101,7 +109,17 @@ class AdminReportController
 
         $generated = isset($_GET['generated']) && $_GET['generated'] === '1';
         $reportType = $_GET['type'] ?? 'bookings';
-        $allowedTypes = ['users', 'bookings', 'payments', 'providers', 'packages', 'trip_payments'];
+        // Legacy: custom trip payments merged into Payments; tour catalog report removed.
+        if ($reportType === 'trip_payments') {
+            $reportType = 'payments';
+            if (!isset($_GET['pay_source'])) {
+                $_GET['pay_source'] = 'trip';
+            }
+        }
+        if ($reportType === 'packages') {
+            $reportType = 'bookings';
+        }
+        $allowedTypes = ['users', 'bookings', 'payments', 'providers'];
         if (!in_array($reportType, $allowedTypes, true)) {
             $reportType = 'bookings';
         }
@@ -114,14 +132,10 @@ class AdminReportController
         $filters = $this->applyReportTypeDefaults($reportType, $this->filtersFromRequest());
         $model   = new Report($this->db);
 
-        $reportData = [];
-        $totalRows  = 0;
-        $summary    = [];
-        $charts     = [
-            'bookings_monthly' => ['labels' => [], 'counts' => []],
-            'revenue'          => ['labels' => [], 'amounts' => []],
-            'user_growth'      => ['labels' => [], 'counts' => []],
-        ];
+        $reportData  = [];
+        $totalRows   = 0;
+        $summary     = [];
+        $reportChart = null;
 
         if ($generated) {
             switch ($reportType) {
@@ -138,10 +152,10 @@ class AdminReportController
                     $summary    = $model->summarizeBookings($filters);
                     break;
                 case 'payments':
-                    $res = $model->fetchPayments($filters, $search, $sort, $dir, $page, self::PER_PAGE);
+                    $res = $model->fetchPaymentsReport($filters, $search, $sort, $dir, $page, self::PER_PAGE);
                     $reportData = $res['rows'];
                     $totalRows  = $res['total'];
-                    $summary    = $model->summarizePayments($filters);
+                    $summary    = $model->summarizePaymentsReport($filters);
                     break;
                 case 'providers':
                     $res = $model->fetchProviders($filters, $search, $sort, $dir, $page, self::PER_PAGE);
@@ -149,26 +163,9 @@ class AdminReportController
                     $totalRows  = $res['total'];
                     $summary    = $model->summarizeProviders($filters);
                     break;
-                case 'packages':
-                    $res = $model->fetchPackages($filters, $search, $sort, $dir, $page, self::PER_PAGE);
-                    $reportData = $res['rows'];
-                    $totalRows  = $res['total'];
-                    $summary    = $model->summarizePackages($filters);
-                    break;
-                case 'trip_payments':
-                    $res = $model->fetchTripPayments($filters, $search, $sort, $dir, $page, self::PER_PAGE);
-                    $reportData = $res['rows'];
-                    $totalRows  = $res['total'];
-                    $summary    = $model->summarizeTripPayments($filters);
-                    break;
             }
 
-            $df = $filters['date_from'] ?: null;
-            $dt = $filters['date_to'] ?: null;
-            $charts['bookings_monthly'] = $model->chartBookingsPerMonth($df, $dt);
-            $charts['revenue']          = $model->chartRevenueTrend($df, $dt);
-            $userGrowthRole = $reportType === 'users' ? 'tourist' : null;
-            $charts['user_growth']      = $model->chartUserGrowth($df, $dt, $userGrowthRole);
+            $reportChart = $model->chartForReportsPage($reportType, $filters);
         }
 
         $totalPages = $totalRows > 0 ? (int) ceil($totalRows / self::PER_PAGE) : 1;
@@ -186,7 +183,7 @@ class AdminReportController
             'totalPages'   => $totalPages,
             'reportData'   => $reportData,
             'summary'      => $summary,
-            'charts'       => $charts,
+            'reportChart'  => $reportChart,
         ]);
     }
 
@@ -199,7 +196,7 @@ class AdminReportController
             'generated', 'type', 'date_from', 'date_to',
             'user_role', 'user_status',
             'booking_status',
-            'pay_method', 'pay_status',
+            'pay_method', 'pay_status', 'pay_source',
             'provider_category', 'provider_status',
             'q', 'sort', 'dir',
         ];
@@ -224,7 +221,16 @@ class AdminReportController
         }
 
         $reportType = $_GET['type'] ?? 'bookings';
-        $allowedTypes = ['users', 'bookings', 'payments', 'providers', 'packages', 'trip_payments'];
+        if ($reportType === 'trip_payments') {
+            $reportType = 'payments';
+            if (!isset($_GET['pay_source'])) {
+                $_GET['pay_source'] = 'trip';
+            }
+        }
+        if ($reportType === 'packages') {
+            $reportType = 'bookings';
+        }
+        $allowedTypes = ['users', 'bookings', 'payments', 'providers'];
         if (!in_array($reportType, $allowedTypes, true)) {
             $reportType = 'bookings';
         }
@@ -239,7 +245,7 @@ class AdminReportController
 
         $summary = $this->fetchSummaryForExport($model, $reportType, $filters);
 
-        $title = $this->pdfReportTitle($reportType);
+        $title = $this->pdfReportTitle($reportType, $filters);
         $html  = $this->buildExportFiltersSummaryHtml($reportType, $filters, $search)
             . $this->buildSummarySectionHtml($reportType, $summary)
             . $this->buildHtmlTable($reportType, $rows, $filters);
@@ -281,13 +287,9 @@ class AdminReportController
             case 'bookings':
                 return $model->fetchBookings($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
             case 'payments':
-                return $model->fetchPayments($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
+                return $model->fetchPaymentsReport($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
             case 'providers':
                 return $model->fetchProviders($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
-            case 'packages':
-                return $model->fetchPackages($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
-            case 'trip_payments':
-                return $model->fetchTripPayments($filters, $search, $sort, $dir, 1, self::EXPORT_MAX_ROWS)['rows'];
             default:
                 return [];
         }
@@ -301,13 +303,9 @@ class AdminReportController
             case 'bookings':
                 return ['Type', 'ID', 'Customer', 'Status', 'Created', 'Amount (LKR)', 'Detail'];
             case 'payments':
-                return ['ID', 'Customer', 'Email', 'Package', 'Amount', 'Status', 'Method', 'Created', 'Paid at'];
+                return ['Source', 'ID', 'Customer', 'Email', 'Package / destination', 'Amount (LKR)', 'Status', 'Method', 'Created', 'Notes'];
             case 'providers':
                 return ['ID', 'Name', 'Email', 'Category', 'Active', 'Registered'];
-            case 'packages':
-                return ['ID', 'Title', 'Location', 'Category', 'Price (LKR)', 'Rating', 'Reviews', 'Trending', 'Created'];
-            case 'trip_payments':
-                return ['ID', 'Customer', 'Destination', 'Budget (LKR)', 'Status', 'Start date', 'People', 'Created'];
             default:
                 return [];
         }
@@ -340,15 +338,16 @@ class AdminReportController
                 ];
             case 'payments':
                 return [
+                    (($row['payment_source'] ?? '') === 'trip') ? 'Custom trip' : 'Package',
                     $row['id'] ?? '',
-                    $row['fullname'] ?? '',
+                    $row['customer'] ?? '',
                     $row['email'] ?? '',
-                    $row['package_name'] ?? '',
-                    $row['total_amount'] ?? '',
+                    $row['detail'] ?? '',
+                    isset($row['amount']) ? number_format((float) $row['amount'], 2) : '',
                     $row['status'] ?? '',
                     $row['pay_method'] ?? '',
                     $row['created_at'] ?? '',
-                    $row['paid_at'] ?? '',
+                    $row['notes'] ?? '',
                 ];
             case 'providers':
                 return [
@@ -358,29 +357,6 @@ class AdminReportController
                     $row['role'] ?? '',
                     isset($row['is_active']) ? ((int) $row['is_active'] ? 'Yes' : 'No') : '',
                     $row['registered_at'] ?? '',
-                ];
-            case 'packages':
-                return [
-                    $row['id'] ?? '',
-                    $row['title'] ?? '',
-                    $row['location'] ?? '',
-                    $row['category'] ?? '',
-                    $row['price'] ?? '',
-                    $row['rating'] ?? '',
-                    $row['reviews'] ?? '',
-                    !empty($row['trending']) ? 'Yes' : 'No',
-                    $row['created_at'] ?? '',
-                ];
-            case 'trip_payments':
-                return [
-                    $row['id'] ?? '',
-                    $row['customer_name'] ?? '',
-                    $row['destination'] ?? '',
-                    $row['budget_lkr'] ?? '',
-                    $row['status'] ?? '',
-                    $row['start_date'] ?? '',
-                    $row['number_of_people'] ?? '',
-                    $row['created_at'] ?? '',
                 ];
             default:
                 return [];
@@ -400,13 +376,9 @@ class AdminReportController
             case 'bookings':
                 return $model->summarizeBookings($filters);
             case 'payments':
-                return $model->summarizePayments($filters);
+                return $model->summarizePaymentsReport($filters);
             case 'providers':
                 return $model->summarizeProviders($filters);
-            case 'packages':
-                return $model->summarizePackages($filters);
-            case 'trip_payments':
-                return $model->summarizeTripPayments($filters);
             default:
                 return [];
         }
@@ -445,22 +417,23 @@ class AdminReportController
                 $rows[] = ['Booking status', $bs === 'all' ? 'All' : ucwords(str_replace('_', ' ', $bs))];
                 break;
             case 'payments':
+                $psc = $filters['pay_source'] ?? 'all';
+                $scopeLabel = [
+                    'all'     => 'Package bookings + custom trips',
+                    'package' => 'Package bookings only',
+                    'trip'    => 'Custom trips only',
+                ];
+                $rows[] = ['Payment scope', $scopeLabel[$psc] ?? $psc];
                 $pm = $filters['pay_method'] ?? 'all';
                 $ps = $filters['pay_status'] ?? 'all';
-                $rows[] = ['Payment method', $pm === 'all' ? 'All' : ucwords(str_replace('_', ' ', (string) $pm))];
-                $rows[] = ['Payment status', $ps === 'all' ? 'All' : ucfirst((string) $ps)];
+                $rows[] = ['Payment method', $pm === 'all' ? 'All (package bookings)' : ucwords(str_replace('_', ' ', (string) $pm))];
+                $rows[] = ['Payment status', $ps === 'all' ? 'All (package bookings)' : ucfirst((string) $ps)];
                 break;
             case 'providers':
                 $cat = $filters['provider_category'] ?? 'all';
                 $pst = $filters['provider_status'] ?? 'all';
                 $rows[] = ['Category', $cat === 'all' ? 'All' : ucfirst((string) $cat)];
                 $rows[] = ['Provider status', $pst === 'all' ? 'All' : ucfirst((string) $pst)];
-                break;
-            case 'packages':
-                $rows[] = ['Report', 'Tour packages catalog'];
-                break;
-            case 'trip_payments':
-                $rows[] = ['Report', 'Customized trip payment records (trips)'];
                 break;
         }
         return $rows;
@@ -506,12 +479,39 @@ class AdminReportController
                 ];
                 break;
             case 'payments':
-                $pairs = [
-                    ['Total rows', (string) (int) ($summary['total'] ?? 0)],
-                    ['Paid amount (LKR)', number_format((float) ($summary['total_revenue'] ?? 0), 2)],
-                    ['Paid bookings', (string) (int) ($summary['paid'] ?? 0)],
-                    ['Pending / approved', (string) (int) ($summary['pending'] ?? 0)],
-                ];
+                $src = $summary['pay_source'] ?? 'all';
+                $totalRev = number_format((float) ($summary['total_revenue'] ?? 0), 2);
+                if ($src === 'all') {
+                    $ps = $summary['package_summary'] ?? [];
+                    $ts = $summary['trip_summary'] ?? [];
+                    $pairs = [
+                        ['Total revenue (LKR)', $totalRev],
+                        ['Package booking rows', (string) (int) ($ps['total'] ?? 0)],
+                        ['Package paid (LKR)', number_format((float) ($ps['total_revenue'] ?? 0), 2)],
+                        ['Package paid count', (string) (int) ($ps['paid'] ?? 0)],
+                        ['Package pending / approved', (string) (int) ($ps['pending'] ?? 0)],
+                        ['Custom trip rows', (string) (int) ($ts['total'] ?? 0)],
+                        ['Trip budget confirmed/completed (LKR)', number_format((float) ($ts['completed_value'] ?? 0), 2)],
+                        ['Custom trips pending', (string) (int) ($ts['pending'] ?? 0)],
+                    ];
+                } elseif ($src === 'trip') {
+                    $ts = $summary['trip_summary'] ?? [];
+                    $pairs = [
+                        ['Total revenue (LKR)', $totalRev],
+                        ['Total trips', (string) (int) ($ts['total'] ?? 0)],
+                        ['Budget in confirmed/completed (LKR)', number_format((float) ($ts['completed_value'] ?? 0), 2)],
+                        ['Pending trips', (string) (int) ($ts['pending'] ?? 0)],
+                    ];
+                } else {
+                    $ps = $summary['package_summary'] ?? [];
+                    $pairs = [
+                        ['Total revenue (LKR)', $totalRev],
+                        ['Total rows', (string) (int) ($ps['total'] ?? 0)],
+                        ['Paid amount (LKR)', number_format((float) ($ps['total_revenue'] ?? 0), 2)],
+                        ['Paid bookings', (string) (int) ($ps['paid'] ?? 0)],
+                        ['Pending / approved', (string) (int) ($ps['pending'] ?? 0)],
+                    ];
+                }
                 break;
             case 'providers':
                 $pairs = [
@@ -520,20 +520,6 @@ class AdminReportController
                     ['Guides', (string) (int) ($summary['guide'] ?? 0)],
                     ['Hotels', (string) (int) ($summary['hotel'] ?? 0)],
                     ['Transport', (string) (int) ($summary['transport'] ?? 0)],
-                ];
-                break;
-            case 'packages':
-                $pairs = [
-                    ['Total packages', (string) (int) ($summary['total'] ?? 0)],
-                    ['Average price (LKR)', number_format((float) ($summary['avg_price'] ?? 0), 2)],
-                    ['Marked trending', (string) (int) ($summary['trending'] ?? 0)],
-                ];
-                break;
-            case 'trip_payments':
-                $pairs = [
-                    ['Total trips', (string) (int) ($summary['total'] ?? 0)],
-                    ['Budget in confirmed/completed (LKR)', number_format((float) ($summary['completed_value'] ?? 0), 2)],
-                    ['Pending trips', (string) (int) ($summary['pending'] ?? 0)],
                 ];
                 break;
             default:
