@@ -473,9 +473,9 @@ $exportQs = $baseQs();
 
     <footer>
         <ul>
-            <li><a href="/CeylonGo/public/admin/bookings">Bookings</a></li>
+            <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
+            <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
             <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
-            <li><a href="/CeylonGo/public/admin/dashboard">Dashboard</a></li>
         </ul>
     </footer>
 

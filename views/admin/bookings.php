@@ -97,8 +97,8 @@
                         <input type="hidden" name="pkg_date"   value="<?= htmlspecialchars($pkgDate) ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" name="search" placeholder="Search by customer" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
-                                <button type="submit" class="search-btn">🔍</button>
+                                <input type="text" id="tripSearchInput" placeholder="Search by customer" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
+                                <button type="button" class="search-btn" onclick="applyTripSearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <?php
@@ -214,8 +214,8 @@
                         <input type="hidden" name="date"   value="<?= htmlspecialchars($date ?? '') ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" name="pkg_search" placeholder="Search by customer or package" class="search-input" value="<?= htmlspecialchars($pkgSearch) ?>">
-                                <button type="submit" class="search-btn">🔍</button>
+                                <input type="text" id="pkgSearchInput" placeholder="Search by customer or package" class="search-input" value="<?= htmlspecialchars($pkgSearch) ?>">
+                            ``  <button type="button" class="search-btn" onclick="applyPkgSearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <?php
@@ -553,6 +553,62 @@
                 if (e.target == modal)       modal.style.display       = "none";
                 if (e.target == rejectModal) rejectModal.style.display = "none";
             };
+
+            // ── LIVE SEARCH: Customized Bookings ─────────────────────
+            function applyTripSearch() {
+                const term = document.getElementById("tripSearchInput").value.toLowerCase();
+                let visible = 0;
+
+                allBookingRows.forEach(row => {
+                    if (row.id === "tripNoResultsRow") return;
+                    const match = row.innerText.toLowerCase().includes(term);
+                    row.style.display = match ? "" : "none";
+                    if (match) visible++;
+                });
+
+                const existing = document.getElementById("tripNoResultsRow");
+                if (existing) existing.remove();
+
+                if (visible === 0) {
+                    const noRow = document.createElement("tr");
+                    noRow.id = "tripNoResultsRow";
+                    noRow.innerHTML = `<td colspan="8" style="text-align:center; padding:20px; color:#888;">No bookings found.</td>`;
+                    document.getElementById("bookingsTableBody").appendChild(noRow);
+                }
+            }
+
+            document.getElementById("tripSearchInput").addEventListener("input", applyTripSearch);
+            document.getElementById("tripSearchInput").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") { e.preventDefault(); applyTripSearch(); }
+            });
+
+            // ── LIVE SEARCH: Package Bookings ────────────────────────
+            function applyPkgSearch() {
+                const term = document.getElementById("pkgSearchInput").value.toLowerCase();
+                let visible = 0;
+
+                allPkgRows.forEach(row => {
+                    if (row.id === "pkgNoResultsRow") return;
+                    const match = row.innerText.toLowerCase().includes(term);
+                    row.style.display = match ? "" : "none";
+                    if (match) visible++;
+                });
+
+                const existing = document.getElementById("pkgNoResultsRow");
+                if (existing) existing.remove();
+
+                if (visible === 0) {
+                    const noRow = document.createElement("tr");
+                    noRow.id = "pkgNoResultsRow";
+                    noRow.innerHTML = `<td colspan="6" style="text-align:center; padding:20px; color:#888;">No package bookings found.</td>`;
+                    document.getElementById("pkgBookingsTableBody").appendChild(noRow);
+                }
+            }
+
+            document.getElementById("pkgSearchInput").addEventListener("input", applyPkgSearch);
+            document.getElementById("pkgSearchInput").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") { e.preventDefault(); applyPkgSearch(); }
+            });
 
             // ── PAGINATION FOR CUSTOMIZED BOOKINGS ───────────────────
 

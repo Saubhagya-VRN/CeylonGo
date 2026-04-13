@@ -101,12 +101,12 @@
                             <div class="search-section">
                                 <input
                                     type="text"
-                                    name="search"
+                                    id="searchInput"
                                     placeholder="Search by customer"
                                     class="search-input"
                                     value="<?= htmlspecialchars($search ?? '') ?>"
                                 >
-                                <button type="submit" class="search-btn">🔍</button>
+                                <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <button type="submit" name="status" value="all"
@@ -296,6 +296,39 @@
                     });
                 }
             });
+
+            function applySearch() {
+                const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+                const tbody = document.getElementById("inquiryTableBody");
+                let visibleCount = 0;
+
+                allUserRows.forEach(row => {
+                    if (row.id === "noResultsRow") return;
+                    const text = row.innerText.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                const existing = document.getElementById("noResultsRow");
+                if (existing) existing.remove();
+
+                if (visibleCount === 0) {
+                    const noResultsRow = document.createElement("tr");
+                    noResultsRow.id = "noResultsRow";
+                    noResultsRow.innerHTML = `<td colspan="7" style="text-align:center; padding:20px; color:#888;">No inquiries found.</td>`;
+                    tbody.appendChild(noResultsRow);
+                }
+            }
+
+            document.getElementById("searchInput").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") { e.preventDefault(); applySearch(); }
+            });
+
+            document.getElementById("searchInput").addEventListener("input", applySearch);
 
             // ── PAGINATION FOR USERS ───────────────────
 

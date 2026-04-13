@@ -10,11 +10,11 @@ $msg = isset($_GET['msg']) ? trim($_GET['msg']) : '';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Ceylon Go</title>
-  <link rel="stylesheet" href="../public/css/common.css">
-  <link rel="stylesheet" href="../public/css/tourist/tourist_dashboard.css">
-  <link rel="stylesheet" href="../public/css/tourist/navbar.css">
-  <link rel="stylesheet" href="../public/css/tourist/footer.css">
-  <link rel="stylesheet" href="../public/css/login.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/common.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/navbar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/footer.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/login.css">
   
     
 </head>

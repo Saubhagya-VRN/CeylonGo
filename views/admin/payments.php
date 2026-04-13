@@ -117,11 +117,11 @@
                         <input type="hidden" name="pay_date"   value="<?= htmlspecialchars($payDate) ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" name="trip_pay_search"
+                                <input type="text" id="tripPaySearchInput"
                                     placeholder="Search by Trip ID, customer or destination"
                                     class="search-input"
                                     value="<?= htmlspecialchars($tripPaySearch) ?>">
-                                <button type="submit" class="search-btn">🔍</button>
+                                <button type="button" class="search-btn" onclick="applyTripPaySearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <?php
@@ -268,7 +268,8 @@
                                                 <button class="icon-btn trip-pay-slip-approve-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         data-slip="<?= htmlspecialchars($t['bank_transfer_slip_path']) ?>"
-                                                        title="Approve Bank Transfer">🏦✅</button>
+                                                        title="Approve bank slip (confirm transfer)"
+                                                        aria-label="Approve bank slip and confirm transfer">🧾✅</button>
                                             <?php endif; ?>
 
                                             <?php if ($tHasRefund && empty($t['refund_approved_at']) && empty($t['refund_rejected_at'])): ?>
@@ -276,11 +277,13 @@
                                                 <button class="icon-btn trip-pay-refund-approve-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($t['refund_reason'] ?? '') ?>"
-                                                        title="Approve Refund">↩️✅</button>
+                                                        title="Approve refund request"
+                                                        aria-label="Approve refund request">💸✅</button>
                                                 <button class="icon-btn trip-pay-refund-reject-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($t['refund_reason'] ?? '') ?>"
-                                                        title="Reject Refund">↩️❌</button>
+                                                        title="Reject Refund"
+                                                        aria-label="Reject refund request">💸❌</button>
                                             <?php elseif (!empty($t['refund_approved_at'])): ?>
                                                 <span style="font-size:11px;color:green;font-weight:bold;">✅ Refund Approved</span>
                                             <?php elseif (!empty($t['refund_rejected_at'])): ?>
@@ -312,11 +315,11 @@
                         <input type="hidden" name="trip_pay_date"   value="<?= htmlspecialchars($tripPayDate) ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" name="pay_search"
+                                <input type="text" id="paySearchInput"
                                     placeholder="Search by customer or package"
                                     class="search-input"
                                     value="<?= htmlspecialchars($paySearch) ?>">
-                                <button type="submit" class="search-btn">🔍</button>
+                                <button type="button" class="search-btn" onclick="applyPaySearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <?php
@@ -473,7 +476,8 @@
                                                 <button class="icon-btn pay-slip-approve-btn"
                                                         data-id="<?= (int)$p['id'] ?>"
                                                         data-slip="<?= htmlspecialchars($p['bank_transfer_slip_path']) ?>"
-                                                        title="Approve Bank Transfer">🏦✅</button>
+                                                        title="Approve bank slip (confirm transfer)"
+                                                        aria-label="Approve bank slip and confirm transfer">✅</button>
                                             <?php endif; ?>
 
                                             <?php if ($hasRefund && empty($p['refund_approved_at']) && empty($p['refund_rejected_at'])): ?>
@@ -481,11 +485,13 @@
                                                 <button class="icon-btn pay-refund-approve-btn"
                                                         data-id="<?= (int)$p['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($p['refund_reason'] ?? '') ?>"
-                                                        title="Approve Refund">↩️✅</button>
+                                                        title="Approve refund request"
+                                                        aria-label="Approve refund request">✅</button>
                                                 <button class="icon-btn pay-refund-reject-btn"
                                                         data-id="<?= (int)$p['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($p['refund_reason'] ?? '') ?>"
-                                                        title="Reject Refund">↩️❌</button>
+                                                        title="Reject Refund"
+                                                        aria-label="Reject refund request">❌</button>
                                             <?php elseif (!empty($p['refund_approved_at'])): ?>
                                                 <span style="font-size:11px;color:green;font-weight:bold;">✅ Refund Approved</span>
                                             <?php elseif (!empty($p['refund_rejected_at'])): ?>
@@ -922,9 +928,73 @@
                 if (e.target == tripPaymentModal) tripPaymentModal.style.display = 'none';
             };
 
-            // ══════════════════════════════════════════════════════
+            // ── LIVE SEARCH: Trip Payments ────────────────────────
+            function applyTripPaySearch() {
+                const searchTerm = document.getElementById("tripPaySearchInput").value.toLowerCase();
+                const tbody = document.getElementById("tripPaymentsTableBody");
+                let visibleCount = 0;
+
+                allTripPayRows.forEach(row => {
+                    if (row.id === "tripPayNoResultsRow") return;
+                    const text = row.innerText.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                const existing = document.getElementById("tripPayNoResultsRow");
+                if (existing) existing.remove();
+
+                if (visibleCount === 0) {
+                    const noResultsRow = document.createElement("tr");
+                    noResultsRow.id = "tripPayNoResultsRow";
+                    noResultsRow.innerHTML = `<td colspan="8" style="text-align:center; padding:20px; color:#888;">No trip payments found.</td>`;
+                    tbody.appendChild(noResultsRow);
+                }
+            }
+
+            document.getElementById("tripPaySearchInput").addEventListener("input", applyTripPaySearch);
+            document.getElementById("tripPaySearchInput").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") { e.preventDefault(); applyTripPaySearch(); }
+            });
+
+            // ── LIVE SEARCH: Package Payments ─────────────────────
+            function applyPaySearch() {
+                const searchTerm = document.getElementById("paySearchInput").value.toLowerCase();
+                const tbody = document.getElementById("paymentsTableBody");
+                let visibleCount = 0;
+
+                allPayRows.forEach(row => {
+                    if (row.id === "payNoResultsRow") return;
+                    const text = row.innerText.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+
+                const existing = document.getElementById("payNoResultsRow");
+                if (existing) existing.remove();
+
+                if (visibleCount === 0) {
+                    const noResultsRow = document.createElement("tr");
+                    noResultsRow.id = "payNoResultsRow";
+                    noResultsRow.innerHTML = `<td colspan="7" style="text-align:center; padding:20px; color:#888;">No payments found.</td>`;
+                    tbody.appendChild(noResultsRow);
+                }
+            }
+
+            document.getElementById("paySearchInput").addEventListener("input", applyPaySearch);
+            document.getElementById("paySearchInput").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") { e.preventDefault(); applyPaySearch(); }
+            });
+
             //  PAGINATION — PACKAGE PAYMENTS
-            // ══════════════════════════════════════════════════════
 
             const allPayRows       = Array.from(document.querySelectorAll('#paymentsTableBody tr'))
                                          .filter(r => r.children.length > 1);

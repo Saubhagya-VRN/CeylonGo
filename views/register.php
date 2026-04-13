@@ -8,8 +8,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register | Ceylon Go</title>
-  <link rel="stylesheet" href="../public/css/register.css">
-  <link rel="stylesheet" href="../public/css/tourist/footer.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/common.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/navbar.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/register.css">
+  <link rel="stylesheet" href="/CeylonGo/public/css/tourist/footer.css">
   <style>
     body {
       background-color: #f0f8f0; /* Light greenish background from tourist_dashboard */
