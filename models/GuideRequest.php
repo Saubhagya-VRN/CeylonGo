@@ -338,6 +338,109 @@ class GuideRequest {
     }
     
     /**
+     * Get filtered report data with date range support for guide
+     * Returns KPIs, monthly breakdown, and individual tour details
+     */
+    public function getFilteredReportData($guide_id, $startDate = null, $endDate = null) {
+        try {
+            $dateCondition = "";
+            $params = [$guide_id];
+
+            if ($startDate && $endDate) {
+                $dateCondition = " AND gr.date BETWEEN ? AND ?";
+                $params[] = $startDate;
+                $params[] = $endDate;
+            }
+
+            // Overall KPIs — all aggregations NULL-safe
+            $queryKPI = "SELECT 
+                            IFNULL(COUNT(*), 0) as total_bookings,
+                            IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN gr.fee ELSE 0 END), 0) as total_revenue,
+                            IFNULL(AVG(CASE WHEN gr.status = 'approved' THEN gr.fee END), 0) as avg_fee,
+                            IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN 1 ELSE 0 END), 0) as approved_count,
+                            IFNULL(SUM(CASE WHEN gr.status = 'rejected' THEN 1 ELSE 0 END), 0) as rejected_count,
+                            IFNULL(SUM(CASE WHEN gr.status = 'pending' THEN 1 ELSE 0 END), 0) as pending_count,
+                            COUNT(DISTINCT gr.customerName) as unique_clients
+                         FROM " . $this->table . " gr
+                         WHERE gr.guide_id = ?" . $dateCondition;
+            $stmtKPI = $this->conn->prepare($queryKPI);
+            $stmtKPI->execute($params);
+            $kpi = $stmtKPI->fetch(PDO::FETCH_ASSOC);
+
+            if (!$kpi) {
+                $kpi = [
+                    'total_bookings' => 0, 'total_revenue' => 0, 'avg_fee' => 0,
+                    'approved_count' => 0, 'rejected_count' => 0, 'pending_count' => 0,
+                    'unique_clients' => 0
+                ];
+            }
+
+            // Completion rate
+            $kpi['completion_rate'] = $kpi['total_bookings'] > 0
+                ? round(($kpi['approved_count'] / $kpi['total_bookings']) * 100, 1)
+                : 0;
+
+            // Monthly breakdown
+            $paramsMonthly = [$guide_id];
+            $dateCondMonthly = "";
+            if ($startDate && $endDate) {
+                $dateCondMonthly = " AND gr.date BETWEEN ? AND ?";
+                $paramsMonthly[] = $startDate;
+                $paramsMonthly[] = $endDate;
+            }
+
+            $queryMonthly = "SELECT 
+                                DATE_FORMAT(gr.date, '%Y-%m') as month,
+                                COUNT(*) as bookings,
+                                IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN gr.fee ELSE 0 END), 0) as revenue,
+                                IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN 1 ELSE 0 END), 0) as approved,
+                                IFNULL(SUM(CASE WHEN gr.status = 'rejected' THEN 1 ELSE 0 END), 0) as rejected
+                             FROM " . $this->table . " gr
+                             WHERE gr.guide_id = ?" . $dateCondMonthly . "
+                             GROUP BY month
+                             ORDER BY month ASC";
+            $stmtMonthly = $this->conn->prepare($queryMonthly);
+            $stmtMonthly->execute($paramsMonthly);
+            $monthly = $stmtMonthly->fetchAll(PDO::FETCH_ASSOC);
+
+            // Individual tour details for summary table
+            $paramsTours = [$guide_id];
+            $dateCondTours = "";
+            if ($startDate && $endDate) {
+                $dateCondTours = " AND gr.date BETWEEN ? AND ?";
+                $paramsTours[] = $startDate;
+                $paramsTours[] = $endDate;
+            }
+
+            $queryTours = "SELECT gr.id, gr.customerName, gr.contactNumber, gr.location, 
+                                  gr.language, gr.date, gr.time, gr.notes, gr.fee, gr.status
+                           FROM " . $this->table . " gr
+                           WHERE gr.guide_id = ?" . $dateCondTours . "
+                           ORDER BY gr.date DESC";
+            $stmtTours = $this->conn->prepare($queryTours);
+            $stmtTours->execute($paramsTours);
+            $tours = $stmtTours->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'kpi' => $kpi,
+                'monthly' => $monthly,
+                'tours' => $tours
+            ];
+        } catch (PDOException $e) {
+            error_log("Error fetching filtered guide report data: " . $e->getMessage());
+            return [
+                'kpi' => [
+                    'total_bookings' => 0, 'total_revenue' => 0, 'avg_fee' => 0,
+                    'approved_count' => 0, 'rejected_count' => 0, 'pending_count' => 0,
+                    'unique_clients' => 0, 'completion_rate' => 0
+                ],
+                'monthly' => [],
+                'tours' => []
+            ];
+        }
+    }
+
+    /**
      * Get monthly revenue and booking count for reporting
      */
     public function getReportData($guide_id) {
