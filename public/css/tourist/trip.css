@@ -3131,3 +3131,43 @@ body.trip-page-body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Dashboard iframe embed: hide wizard chrome; only budget summary modal is visible */
+body.trip-summary-embed header.navbar,
+body.trip-summary-embed .sidebar-overlay.trip-overlay,
+body.trip-summary-embed .trip-page-wrapper {
+  display: none !important;
+}
+
+body.trip-summary-embed {
+  padding-top: 0 !important;
+  margin: 0;
+  min-height: 0;
+  background: #fff;
+}
+
+body.trip-summary-embed .trip-modal-overlay--trip-overview {
+  z-index: 10050;
+}
+
+/* Inside dashboard iframe: no extra shell behind the green header */
+body.trip-summary-embed .trip-modal-overlay--trip-overview.trip-modal-open {
+  background: transparent !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  padding: 0 !important;
+}
+
+body.trip-summary-embed .trip-modal.trip-modal--budget-summary {
+  max-width: 100% !important;
+  width: 100%;
+  max-height: 100vh !important;
+  height: 100vh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.trip-summary-embed .trip-modal--budget-summary .trip-modal-budget-body {
+  flex: 1;
+  min-height: 0;
+}

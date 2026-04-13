@@ -46,10 +46,8 @@ $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
           <li><a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/customize-trip"><i class="fa-solid fa-wand-magic-sparkles"></i> <span class="sidebar-link-text">Customise Your Trip <span class="sidebar-sub">Plan Custom Trips</span></span></a></li>
           <li id="tripSidebarNavStatusBookings"><a href="/CeylonGo/public/tourist/booking-status"><i class="fa-solid fa-clipboard-list"></i> <span class="sidebar-link-text">Status of Bookings <span class="sidebar-sub">Trip review &amp; submit</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/customize-trip?step=10"><i class="fa-solid fa-wallet"></i> <span class="sidebar-link-text">Budget Overview <span class="sidebar-sub">Costs &amp; itinerary</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/customize-trip?step=14"><i class="fa-solid fa-clipboard-check"></i> <span class="sidebar-link-text">Trip Overview <span class="sidebar-sub">Final confirmation</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/my-bookings?view=custom"><i class="fa-regular fa-calendar-check"></i> <span class="sidebar-link-text">Bookings <span class="sidebar-sub">Customised trips</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/payment"><i class="fa-solid fa-credit-card"></i> <span class="sidebar-link-text">Payments <span class="sidebar-sub">Invoices & Wallet</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/add-review"><i class="fa-solid fa-star"></i> <span class="sidebar-link-text">Reviews <span class="sidebar-sub">Rate your experience</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/profile"><i class="fa-regular fa-user"></i> <span class="sidebar-link-text">Profile <span class="sidebar-sub">Account Settings</span></span></a></li>
         </ul>
       </div>

@@ -569,6 +569,15 @@ a.my-booking-btn-trip-summary:visited {
   padding: 24px;
 }
 
+.trip-summary-modal__frame {
+  display: block;
+  width: 100%;
+  height: min(72vh, 760px);
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+}
+
 .trip-sum-card {
   background: #fafafa;
   border: 1px solid #e5e7eb;

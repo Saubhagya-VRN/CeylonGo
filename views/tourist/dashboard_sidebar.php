@@ -46,10 +46,8 @@ $dashboard_bookings_upcoming_arr = isset($dashboard_bookings_upcoming) && is_arr
           <li class="active"><a href="/CeylonGo/public/tourist/dashboard-side"><i class="fa-solid fa-table-columns"></i> <span class="sidebar-link-text">Dashboard <span class="sidebar-sub">Overview & Stats</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/customize-trip"><i class="fa-solid fa-wand-magic-sparkles"></i> <span class="sidebar-link-text">Customise Your Trip <span class="sidebar-sub">Plan Custom Trips</span></span></a></li>
           <li id="tripSidebarNavStatusBookings"><a href="/CeylonGo/public/tourist/booking-status"><i class="fa-solid fa-clipboard-list"></i> <span class="sidebar-link-text">Status of Bookings <span class="sidebar-sub">Trip review &amp; submit</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/customize-trip?step=10"><i class="fa-solid fa-wallet"></i> <span class="sidebar-link-text">Budget Overview <span class="sidebar-sub">Costs &amp; itinerary</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/customize-trip?step=14"><i class="fa-solid fa-clipboard-check"></i> <span class="sidebar-link-text">Trip Overview <span class="sidebar-sub">Final confirmation</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/my-bookings?view=custom"><i class="fa-regular fa-calendar-check"></i> <span class="sidebar-link-text">Bookings <span class="sidebar-sub">Customised trips</span></span></a></li>
-          <li><a href="/CeylonGo/public/tourist/payment"><i class="fa-solid fa-credit-card"></i> <span class="sidebar-link-text">Payments <span class="sidebar-sub">Invoices & Wallet</span></span></a></li>
+          <li><a href="/CeylonGo/public/tourist/add-review"><i class="fa-solid fa-star"></i> <span class="sidebar-link-text">Reviews <span class="sidebar-sub">Rate your experience</span></span></a></li>
           <li><a href="/CeylonGo/public/tourist/profile"><i class="fa-regular fa-user"></i> <span class="sidebar-link-text">Profile <span class="sidebar-sub">Account Settings</span></span></a></li>
         </ul>
       </div>
@@ -105,8 +103,7 @@ $dashboard_bookings_upcoming_arr = isset($dashboard_bookings_upcoming) && is_arr
 
       <section id="dashBookingsDetail" class="dash-bookings-detail" hidden aria-label="Booking details">
         <div class="dash-bookings-detail-inner">
-          <h2 class="dash-bookings-detail-title">Your bookings</h2>
-          <p class="dash-bookings-detail-hint">Paid or confirmed customised trips (same count as Total Bookings).</p>
+          <h2 class="dash-bookings-detail-title">Total Bookings</h2>
           <div id="dashBookingsDetailBody" class="dash-bookings-detail-body"></div>
           <p class="dash-bookings-detail-footer"><a href="/CeylonGo/public/tourist/my-bookings?view=custom">Open full My Bookings</a></p>
         </div>
@@ -115,12 +112,22 @@ $dashboard_bookings_upcoming_arr = isset($dashboard_bookings_upcoming) && is_arr
       <section id="dashUpcomingDetail" class="dash-bookings-detail" hidden aria-label="Upcoming trips">
         <div class="dash-bookings-detail-inner">
           <h2 class="dash-bookings-detail-title">Upcoming trips</h2>
-          <p class="dash-bookings-detail-hint">Trips that have not finished yet (same count as Upcoming Trips).</p>
           <div id="dashUpcomingDetailBody" class="dash-bookings-detail-body"></div>
           <p class="dash-bookings-detail-footer"><a href="/CeylonGo/public/tourist/my-bookings?view=custom">Open full My Bookings</a></p>
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Must be a direct child of body (not inside main) so z-index stacks above the fixed navbar (z-index 1000). -->
+  <div id="dashTripSummaryPopup" class="dash-trip-popup" hidden aria-hidden="true">
+    <div class="dash-trip-popup__backdrop js-dash-trip-popup-close" tabindex="-1"></div>
+    <div class="dash-trip-popup__dialog" role="dialog" aria-modal="true" aria-label="Trip summary">
+      <p class="dash-trip-popup__loading" id="dashTripSummaryPopupLoading" hidden aria-live="polite">Loading trip summary…</p>
+      <div class="dash-trip-popup__body">
+        <iframe class="dash-trip-popup__frame dash-trip-popup__frame--hidden" id="dashTripSummaryPopupFrame" title="Trip summary" loading="eager"></iframe>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -209,6 +216,10 @@ $dashboard_bookings_upcoming_arr = isset($dashboard_bookings_upcoming) && is_arr
         var bid = esc(String(b.id));
         var detId = idPrefix + '-detail-' + bid;
         var trigId = idPrefix + '-trigger-' + bid;
+        var overviewHref = String(b.overview_url || '#');
+        if (overviewHref && overviewHref !== '#') {
+          overviewHref = overviewHref + (overviewHref.indexOf('?') === -1 ? '?' : '&') + 'show_summary=1&summary_embed=1';
+        }
         return '<article class="dash-booking-card" role="article" data-trip-id="' + bid + '">'
           + '<button type="button" class="dash-booking-card__header" aria-expanded="false" aria-controls="' + esc(detId) + '" id="' + esc(trigId) + '">'
           + '<div class="dash-booking-card__header-main">'
@@ -227,13 +238,14 @@ $dashboard_bookings_upcoming_arr = isset($dashboard_bookings_upcoming) && is_arr
           + contact
           + note
           + '<div class="dash-booking-card__foot">'
-          + '<a class="dash-booking-card__link" href="' + esc(b.overview_url || '#') + '">View trip summary</a>'
+          + '<a class="dash-booking-card__link" href="' + esc(overviewHref) + '">View trip summary</a>'
           + '</div>'
           + '</div>'
           + '</article>';
       }).join('');
       bodyEl.innerHTML = '<div class="dash-booking-cards">' + cards + '</div>';
       bindBookingAccordionsIn(bodyEl);
+      bindTripSummaryPopupLinks(bodyEl);
     }
     function renderBookingsCards() {
       renderBookingsCardsInto(
@@ -275,6 +287,84 @@ $dashboard_bookings_upcoming_arr = isset($dashboard_bookings_upcoming) && is_arr
         });
       }
     }
+
+    var tripPopup = document.getElementById('dashTripSummaryPopup');
+    var tripPopupFrame = document.getElementById('dashTripSummaryPopupFrame');
+    var tripPopupLoading = document.getElementById('dashTripSummaryPopupLoading');
+    function openDashTripPopup(url) {
+      if (!tripPopup || !tripPopupFrame) return;
+      try {
+        if (tripPopupFrame._revealTimer) clearTimeout(tripPopupFrame._revealTimer);
+      } catch (eR) {}
+      if (tripPopupLoading) tripPopupLoading.hidden = false;
+      tripPopupFrame.classList.add('dash-trip-popup__frame--hidden');
+      function revealFrame() {
+        try {
+          if (tripPopupFrame._revealTimer) clearTimeout(tripPopupFrame._revealTimer);
+        } catch (eR2) {}
+        tripPopupFrame._revealTimer = null;
+        tripPopupFrame.classList.remove('dash-trip-popup__frame--hidden');
+        if (tripPopupLoading) tripPopupLoading.hidden = true;
+        tripPopupFrame.onload = null;
+      }
+      tripPopupFrame.onload = function () { revealFrame(); };
+      tripPopupFrame._revealTimer = setTimeout(function () { revealFrame(); }, 800);
+      tripPopupFrame.src = url || 'about:blank';
+      tripPopup.hidden = false;
+      tripPopup.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeDashTripPopup() {
+      if (!tripPopup || !tripPopupFrame) return;
+      tripPopup.hidden = true;
+      tripPopup.setAttribute('aria-hidden', 'true');
+      tripPopupFrame.onload = null;
+      try {
+        if (tripPopupFrame._revealTimer) clearTimeout(tripPopupFrame._revealTimer);
+      } catch (eC) {}
+      tripPopupFrame._revealTimer = null;
+      tripPopupFrame.classList.add('dash-trip-popup__frame--hidden');
+      if (tripPopupLoading) tripPopupLoading.hidden = true;
+      tripPopupFrame.src = 'about:blank';
+      document.body.style.overflow = '';
+    }
+    function bindTripSummaryPopupLinks(rootEl) {
+      if (!rootEl) return;
+      var links = rootEl.querySelectorAll('.dash-booking-card__link');
+      for (var i = 0; i < links.length; i++) {
+        var a = links[i];
+        if (a.dataset.boundPopup === '1') continue;
+        a.dataset.boundPopup = '1';
+        a.addEventListener('click', function (e) {
+          var href = this.getAttribute('href') || '';
+          if (!href || href === '#') return;
+          e.preventDefault();
+          e.stopPropagation();
+          openDashTripPopup(href);
+        });
+      }
+    }
+    if (tripPopup) {
+      tripPopup.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t) return;
+        if (t.classList && t.classList.contains('js-dash-trip-popup-close')) {
+          closeDashTripPopup();
+          return;
+        }
+        if (t === tripPopup) closeDashTripPopup();
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (tripPopup && !tripPopup.hidden) closeDashTripPopup();
+    });
+    window.addEventListener('message', function (e) {
+      try {
+        if (!e || !e.data || e.data.type !== 'ceylon-trip-summary-closed') return;
+        closeDashTripPopup();
+      } catch (eMsg) {}
+    });
     function closeUpcomingPanel() {
       if (upcomingPanel) upcomingPanel.setAttribute('hidden', '');
       if (upcomingCard) {

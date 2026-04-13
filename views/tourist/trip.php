@@ -12,6 +12,7 @@ $payhere_per_transaction_max_lkr = isset($payhere_per_transaction_max_lkr) ? (in
 $bank_transfer_details = isset($bank_transfer_details) ? $bank_transfer_details : '';
 $last_trip_id = isset($last_trip_id) ? (int) $last_trip_id : 0;
 $wizard_fresh_start = !empty($wizard_fresh_start);
+$trip_summary_embed = isset($_GET['summary_embed']) && (string) $_GET['summary_embed'] === '1';
 $avatar_initial = $user_name ? strtoupper(substr(trim($user_name), 0, 1)) : 'T';
 $asset_base = '/CeylonGo/public';
 $user_email_sidebar = $user_email;
@@ -55,10 +56,30 @@ $main_cities = array(
 );
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"<?php echo !empty($trip_summary_embed) ? ' class="trip-summary-embed-html"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php if (!empty($trip_summary_embed)): ?>
+    <style id="trip-summary-embed-boot">
+      /* First paint inside dashboard iframe: match white modal card (no black flash) */
+      html.trip-summary-embed-html, html.trip-summary-embed-html body {
+        margin: 0;
+        background: #fff;
+      }
+      html.trip-summary-embed-html body > header.navbar,
+      html.trip-summary-embed-html body > .sidebar-overlay,
+      html.trip-summary-embed-html body > .trip-page-wrapper {
+        visibility: hidden !important;
+        position: absolute !important;
+        left: -99999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <?php endif; ?>
     <title>Customise Your Trip - Ceylon Go</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/common.css">
@@ -68,7 +89,7 @@ $main_cities = array(
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/trip.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/accommodation_content.css">
 </head>
-<body class="trip-page-body"<?php echo $wizard_fresh_start ? ' data-wizard-fresh="1"' : ''; ?>>
+<body class="trip-page-body<?php echo $trip_summary_embed ? ' trip-summary-embed' : ''; ?>"<?php echo $wizard_fresh_start ? ' data-wizard-fresh="1"' : ''; ?>>
   <?php include __DIR__ . '/header.php'; ?>
 
   <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
@@ -523,6 +544,19 @@ $main_cities = array(
         }
       }
     } catch (e0) {}
+
+    (function autoOpenTripSummaryEmbedEarly() {
+      try {
+        if (!document.body.classList.contains('trip-summary-embed')) return;
+        var params = new URLSearchParams(window.location.search || '');
+        if (params.get('show_summary') !== '1') return;
+        var tid = String(params.get('trip_id') || '').trim();
+        if (!tid && serverLastTid > 0) tid = String(serverLastTid);
+        openTripBudgetSummaryModal(tid);
+        window.__dashTripSummaryEmbedOpened = true;
+      } catch (eEarly) {}
+    })();
+
     var hamburger = document.getElementById('tripHamburgerBtn');
     var sidebar = document.getElementById('tripSidebar');
     var overlay = document.getElementById('tripSidebarOverlay');
@@ -1542,6 +1576,27 @@ $main_cities = array(
     var tripWizardUrlForcedStep = false;
     var tripWizardDraftTimer = null;
 
+    /** Enforce: Verify bookings (12+) only after submit; Payments (13+) only after "Proceed to Payment". */
+    function clampWizardStepToAllowed(step) {
+      var s = parseInt(step, 10);
+      if (isNaN(s) || s < 1) return 1;
+      if (s > totalSteps) return totalSteps;
+      try { syncTripWizardSubmissionState(); } catch (e) {}
+      var tid = '';
+      try { tid = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (e1) { tid = ''; }
+      var submitted = false;
+      try { submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1'; } catch (e2) {}
+      var proceeded = '';
+      try { proceeded = String(sessionStorage.getItem(tripWizardProceedKey) || '').trim(); } catch (e3) {}
+      if (!submitted || !tid) {
+        return Math.min(s, 11);
+      }
+      if (proceeded !== tid) {
+        return Math.min(s, 12);
+      }
+      return s;
+    }
+
     function fmtTripRefundLabels(paidAtRaw) {
       var paidLabel = '—';
       var deadlineLabel = '—';
@@ -1559,6 +1614,24 @@ $main_cities = array(
       var dl = new Date(d.getTime() + 3 * 86400000);
       deadlineLabel = dl.toLocaleString('en-US', opts);
       return { paidLabel: paidLabel, deadlineLabel: deadlineLabel };
+    }
+
+    /** Same rules as Trip Overview: card paid, bank slip submitted, or trip marked paid. */
+    function deriveTripPaymentFlags(t) {
+      if (!t) return { showOverview: false, hasBank: false, isBankSubmitted: false };
+      var st = (t.status || '').toString().trim().toLowerCase();
+      var paymentState = (t.payment_state || '').toString().trim();
+      var hasBank = String(t.bank_transfer_submitted_at || '').trim() !== '';
+      var paidComplete = (st === 'confirmed' || st === 'completed') || String(t.payhere_payment_id || '').trim() !== '' || String(t.paid_at || '').trim() !== '';
+      if (!paymentState && hasBank && !paidComplete) {
+        paymentState = 'payment_submitted';
+      }
+      var showOverview = paidComplete || paymentState === 'payment_submitted' || hasBank;
+      return {
+        showOverview: showOverview,
+        hasBank: hasBank,
+        isBankSubmitted: paymentState === 'payment_submitted'
+      };
     }
 
     function renderTripFinalReviewStep() {
@@ -1601,19 +1674,13 @@ $main_cities = array(
             return;
           }
           var t = data.trip;
-          var st = (t.status || '').toString().trim().toLowerCase();
-          var paymentState = (t.payment_state || '').toString().trim();
-          var hasBank = String(t.bank_transfer_submitted_at || '').trim() !== '';
-          var paidComplete = (st === 'confirmed' || st === 'completed') || String(t.payhere_payment_id || '').trim() !== '' || String(t.paid_at || '').trim() !== '';
-          if (!paymentState && hasBank && !paidComplete) {
-            paymentState = 'payment_submitted';
-          }
-          var showOverviewCard = paidComplete || paymentState === 'payment_submitted' || hasBank;
-          if (!showOverviewCard) {
+          var pf = deriveTripPaymentFlags(t);
+          if (!pf.showOverview) {
             mount.innerHTML = '<p style="margin:0;color:#b45309;">Payment is not completed yet. If you already paid, please refresh in a moment.</p>';
             return;
           }
-          var isBankSubmitted = paymentState === 'payment_submitted';
+          var hasBank = pf.hasBank;
+          var isBankSubmitted = pf.isBankSubmitted;
 
           var paidDate = '';
           if (isBankSubmitted && hasBank) {
@@ -1650,11 +1717,11 @@ $main_cities = array(
             : '<p class="trip-paid-card__note trip-paid-card__note--success">Payment complete. Thank you for choosing Ceylon Go.</p>';
           var actionsHtml = isBankSubmitted
             ? '<div class="trip-paid-card__actions trip-paid-card__actions--single">' +
-              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open">View trip summary</button>' +
+              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open" data-trip-id="' + escSummaryHtml(String(tidNum || '')) + '">View trip summary</button>' +
               '</div>'
             : '<div class="trip-paid-card__actions trip-paid-card__actions--split">' +
               '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--secondary js-trip-refund-open">Request refund</button>' +
-              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open">View trip summary</button>' +
+              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open" data-trip-id="' + escSummaryHtml(String(tidNum || '')) + '">View trip summary</button>' +
               '</div>';
 
           mount.innerHTML =
@@ -1689,7 +1756,9 @@ $main_cities = array(
           if (budBtn) {
             budBtn.addEventListener('click', function (e) {
               e.preventDefault();
-              openTripBudgetSummaryModal();
+              var tid = '';
+              try { tid = String(this.getAttribute('data-trip-id') || '').trim(); } catch (eT2) { tid = ''; }
+              openTripBudgetSummaryModal(tid);
             });
           }
         })
@@ -1771,7 +1840,7 @@ $main_cities = array(
         document.body.style.overflow = '';
       }
     }
-    function openTripBudgetSummaryModal() {
+    function openTripBudgetSummaryModal(tripIdOverride) {
       var overlay = document.getElementById('tripBudgetSummaryModalOverlay');
       var inner = document.getElementById('tripBudgetSummaryModalMount');
       if (!overlay || !inner) return;
@@ -1781,7 +1850,12 @@ $main_cities = array(
       document.body.style.overflow = 'hidden';
 
       var tripId = '';
-      try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (eT) { tripId = ''; }
+      if (tripIdOverride != null && String(tripIdOverride).trim() !== '') {
+        tripId = String(tripIdOverride).trim();
+      }
+      if (!tripId) {
+        try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (eT) { tripId = ''; }
+      }
       if (!tripId && typeof serverLastTid !== 'undefined' && serverLastTid > 0) tripId = String(serverLastTid);
 
       function renderNow() {
@@ -1823,6 +1897,11 @@ $main_cities = array(
       if (!refM || refM.hidden) {
         document.body.style.overflow = '';
       }
+      try {
+        if (document.body.classList.contains('trip-summary-embed') && window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'ceylon-trip-summary-closed' }, '*');
+        }
+      } catch (ePm) {}
     }
 
     function escapeHtmlDownload(s) {
@@ -2313,6 +2392,87 @@ $main_cities = array(
       }
     }
 
+    function mapVerifyBookingStatus(raw) {
+      var s = (raw || '').toString().trim().toLowerCase();
+      if (!s) return { text: '—', cls: 'trip-sum-status--muted' };
+      if (s === 'pending') return { text: 'Pending', cls: 'trip-sum-status--pending' };
+      if (s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted') {
+        return { text: 'Accepted', cls: 'trip-sum-status--accepted' };
+      }
+      if (s === 'cancelled' || s === 'canceled') return { text: 'Cancelled', cls: 'trip-sum-status--cancelled' };
+      return { text: String(raw), cls: 'trip-sum-status--muted' };
+    }
+
+    function isVerifyBookingApproved(raw) {
+      var s = (raw || '').toString().trim().toLowerCase();
+      return s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted';
+    }
+
+    function getVerifyBookingsLegs() {
+      var legs = [];
+      legs.push({ num: 1, stopsId: 'tripStopsList', accBodyId: 'tripAccommodationSummaryBody' });
+      if (typeof wantsSecondDestination === 'function' && wantsSecondDestination()) {
+        legs.push({ num: 2, stopsId: 'tripStopsList_2', accBodyId: 'trip2AccommodationSummaryBody' });
+      }
+      if (typeof wantsThirdDestination === 'function' && wantsThirdDestination()) {
+        legs.push({ num: 3, stopsId: 'tripStopsList_3', accBodyId: 'trip3AccommodationSummaryBody' });
+      }
+      return legs;
+    }
+
+    /** Transport / guide / hotel rows must be approved (not pending) before Payments / Next. */
+    function validateVerifyBookingsApproved() {
+      var legs = getVerifyBookingsLegs();
+      var globalStopIdx = 0;
+      for (var li = 0; li < legs.length; li++) {
+        var leg = legs[li];
+        var stopsEl = document.getElementById(leg.stopsId);
+        if (stopsEl) {
+          var cards = stopsEl.querySelectorAll('.trip-stop-card');
+          for (var ci = 0; ci < cards.length; ci++) {
+            var card = cards[ci];
+            globalStopIdx++;
+            var trYes = card.querySelector('.trip-stop-opt-transport .trip-toggle-btn[data-value="yes"]');
+            var gYes = card.querySelector('.trip-stop-opt-guide .trip-toggle-btn[data-value="yes"]');
+            var trOn = trYes && trYes.classList.contains('selected');
+            var gOn = gYes && gYes.classList.contains('selected');
+            if (trOn) {
+              var ts = (card.getAttribute('data-transport-booking-status') || '').trim();
+              if (!isVerifyBookingApproved(ts)) {
+                return {
+                  ok: false,
+                  message: 'Transport for stop ' + globalStopIdx + ' is not approved yet. Please wait for approval before continuing.'
+                };
+              }
+            }
+            if (gOn) {
+              var gs = (card.getAttribute('data-guide-booking-status') || '').trim();
+              if (!isVerifyBookingApproved(gs)) {
+                return {
+                  ok: false,
+                  message: 'Tour guide for stop ' + globalStopIdx + ' is not approved yet. Please wait for approval before continuing.'
+                };
+              }
+            }
+          }
+        }
+        var accBody = document.getElementById(leg.accBodyId);
+        var items = accBody ? accBody.querySelectorAll('.trip-accommodation-summary-item') : [];
+        for (var ii = 0; ii < items.length; ii++) {
+          var item = items[ii];
+          var bid = item.getAttribute('data-booking-id');
+          var bst = (item.getAttribute('data-booking-status') || '').trim();
+          if (bid && !isVerifyBookingApproved(bst)) {
+            return {
+              ok: false,
+              message: 'A hotel booking is still pending approval. Please wait until it is approved before continuing.'
+            };
+          }
+        }
+      }
+      return { ok: true };
+    }
+
     function renderVerifyBookingsStep() {
       var mount = document.getElementById('tripVerifyBookingsMount');
       if (!mount) return;
@@ -2326,23 +2486,20 @@ $main_cities = array(
 
       try {
         syncTripWizardSubmissionState();
-        var submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
 
-        // Build booking status list (transport/tour guide per stop + hotel per destination).
-        // For now, do not depend on mapBookingStatus; keep it simple.
         var pendingCount = 0;
-        function bumpPending() { pendingCount++; }
+        var acceptedCount = 0;
+        var cancelledCount = 0;
+        function bump(st) {
+          var t = (st || '').toString().trim().toLowerCase();
+          if (t === 'pending') pendingCount++;
+          else if (t === 'confirmed' || t === 'completed' || t === 'approved' || t === 'accepted') acceptedCount++;
+          else if (t === 'cancelled' || t === 'canceled') cancelledCount++;
+        }
 
         var rows = [];
         var globalStopIdx = 0;
-        var legs = [];
-        legs.push({ num: 1, stopsId: 'tripStopsList', accBodyId: 'tripAccommodationSummaryBody' });
-        if (typeof wantsSecondDestination === 'function' && wantsSecondDestination()) {
-          legs.push({ num: 2, stopsId: 'tripStopsList_2', accBodyId: 'trip2AccommodationSummaryBody' });
-        }
-        if (typeof wantsThirdDestination === 'function' && wantsThirdDestination()) {
-          legs.push({ num: 3, stopsId: 'tripStopsList_3', accBodyId: 'trip3AccommodationSummaryBody' });
-        }
+        var legs = getVerifyBookingsLegs();
 
         legs.forEach(function (leg) {
           var stopsEl = document.getElementById(leg.stopsId);
@@ -2354,12 +2511,16 @@ $main_cities = array(
               var trOn = trYes && trYes.classList.contains('selected');
               var gOn = gYes && gYes.classList.contains('selected');
               if (trOn) {
-                bumpPending();
-                rows.push({ label: 'Stop ' + globalStopIdx + ' — Transport provider', disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+                var ts = (card.getAttribute('data-transport-booking-status') || '').trim();
+                var disp = ts ? mapVerifyBookingStatus(ts) : { text: 'Not requested', cls: 'trip-sum-status--muted' };
+                if (ts) bump(ts);
+                rows.push({ label: 'Stop ' + globalStopIdx + ' — Transport provider', disp: disp });
               }
               if (gOn) {
-                bumpPending();
-                rows.push({ label: 'Stop ' + globalStopIdx + ' — Tour guide', disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+                var gs = (card.getAttribute('data-guide-booking-status') || '').trim();
+                var dispG = gs ? mapVerifyBookingStatus(gs) : { text: 'Not requested', cls: 'trip-sum-status--muted' };
+                if (gs) bump(gs);
+                rows.push({ label: 'Stop ' + globalStopIdx + ' — Tour guide', disp: dispG });
               }
             });
           }
@@ -2383,13 +2544,16 @@ $main_cities = array(
                 }
               }
               var bid = item.getAttribute('data-booking-id');
+              var bst = (item.getAttribute('data-booking-status') || '').trim();
               var lab = 'Destination ' + leg.num + ' — ' + (hn ? hn : 'Hotel');
+              var dispH;
               if (bid) {
-                bumpPending();
-                rows.push({ label: lab, disp: { text: 'Pending', cls: 'trip-sum-status--pending' } });
+                dispH = mapVerifyBookingStatus(bst || 'pending');
+                bump(bst || 'pending');
               } else {
-                rows.push({ label: lab, disp: { text: 'Not booked', cls: 'trip-sum-status--muted' } });
+                dispH = { text: 'Not booked', cls: 'trip-sum-status--muted' };
               }
+              rows.push({ label: lab, disp: dispH });
             });
           }
         });
@@ -2397,9 +2561,16 @@ $main_cities = array(
         var linesHtml = rows.map(function (r) {
           return '<li><span>' + escSummaryHtml(r.label) + '</span><strong class="trip-sum-status ' + r.disp.cls + '">' + escSummaryHtml(r.disp.text) + '</strong></li>';
         }).join('');
-        var summaryText = pendingCount ? (pendingCount + ' pending') : 'No pending items';
+        var summaryText = 'No confirmations yet';
+        if (pendingCount || acceptedCount || cancelledCount) {
+          var parts = [];
+          if (pendingCount) parts.push(pendingCount + ' pending');
+          if (acceptedCount) parts.push(acceptedCount + ' accepted');
+          if (cancelledCount) parts.push(cancelledCount + ' cancelled');
+          summaryText = parts.join(' · ');
+        }
 
-        var topNote = '<p class="trip-sum-budget-footnote">Please carefully review your trip before submitting. After submission, you won’t be able to modify it. If you need changes, please contact our team.</p>';
+        var topNote = '<p class="trip-sum-budget-footnote">Status updates can take up to <strong>24 hours</strong>. Please wait until all items are marked <strong>Accepted</strong> before making payment. You’ll be notified once everything is ready.</p>';
 
         mount.innerHTML =
           '<div style="max-width: 520px; margin: 0 auto; width: 100%;">' +
@@ -2421,6 +2592,11 @@ $main_cities = array(
             if (!tid) {
               alert('Please click "Submit trip" first, then proceed to payment.');
               showStep(11);
+              return;
+            }
+            var gate = validateVerifyBookingsApproved();
+            if (!gate.ok) {
+              alert(gate.message);
               return;
             }
             try { sessionStorage.setItem(tripWizardProceedKey, String(tid)); } catch (e) {}
@@ -3006,18 +3182,25 @@ $main_cities = array(
       if (currentStep === 5 && !validateStep5SecondDestination()) return;
       if (currentStep === 7 && !validateStep7ThirdChoice()) return;
       if (currentStep === 8 && !validateStep8ThirdDestination()) return;
-      // Do not allow proceeding past Trip Review & Submit until trip is submitted.
+      // Do not allow proceeding to Verify bookings until the trip is actually submitted (not only a server trip id).
       if (currentStep === 11) {
         try { syncTripWizardSubmissionState(); } catch (e) {}
+        var submittedOk = false;
+        try { submittedOk = sessionStorage.getItem(tripWizardSubmittedKey) === '1'; } catch (eS) {}
         var tid = '';
-        try { tid = sessionStorage.getItem(tripWizardTripIdKey) || ''; } catch (e) {}
-        if (!tid) {
-          alert('Please submit your trip first.');
+        try { tid = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (e) {}
+        if (!submittedOk || !tid) {
+          alert('Please submit your trip first (use the Submit trip button on this page).');
           return;
         }
       }
-      // Do not allow proceeding to Payments unless "Proceed to Payment" was clicked.
+      // Verify bookings: nothing pending — must be approved before Payments.
       if (currentStep === 12) {
+        var gateStep = validateVerifyBookingsApproved();
+        if (!gateStep.ok) {
+          alert(gateStep.message);
+          return;
+        }
         var tid2 = '';
         var proceeded = '';
         try { tid2 = sessionStorage.getItem(tripWizardTripIdKey) || ''; } catch (e) {}
@@ -3031,6 +3214,65 @@ $main_cities = array(
           alert('Please click "Proceed to Payment" to continue.');
           return;
         }
+      }
+      // Payments: require recorded payment (same check as Trip Overview) before Trip Overview.
+      if (currentStep === 13) {
+        var tidPay = '';
+        try { tidPay = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (ePay) { tidPay = ''; }
+        if (!tidPay && typeof serverLastTid !== 'undefined' && serverLastTid > 0) {
+          tidPay = String(serverLastTid);
+        }
+        if (!tidPay) {
+          alert('Submit your trip on Trip Review & Submit first so you have a trip reference to pay.');
+          return;
+        }
+        var nextBtn = btnNext;
+        var prevHtml = nextBtn ? nextBtn.innerHTML : '';
+        if (nextBtn) {
+          nextBtn.disabled = true;
+          nextBtn.innerHTML = 'Checking…';
+        }
+        fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tidPay), {
+          method: 'GET',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+          credentials: 'same-origin'
+        })
+          .then(function (r) {
+            return r.text().then(function (text) {
+              var data = null;
+              try { data = JSON.parse(text); } catch (eJ) { data = null; }
+              return { ok: r.ok, status: r.status, data: data };
+            });
+          })
+          .then(function (res) {
+            if (nextBtn) {
+              nextBtn.disabled = false;
+              nextBtn.innerHTML = prevHtml;
+            }
+            var data = res.data;
+            if (!data || !data.success || !data.trip) {
+              var errMsg = (data && data.error) ? data.error : 'Could not verify payment status.';
+              if (!res.ok && res.status === 401) {
+                errMsg = 'Your session expired. Please sign in again.';
+              }
+              alert(errMsg);
+              return;
+            }
+            if (!deriveTripPaymentFlags(data.trip).showOverview) {
+              alert('Complete your payment first. For card, finish secure checkout. For bank transfer, upload your slip and click Continue — then tap Next.');
+              return;
+            }
+            var next = computeNextStep(13);
+            if (next !== 13) showStep(next);
+          })
+          .catch(function () {
+            if (nextBtn) {
+              nextBtn.disabled = false;
+              nextBtn.innerHTML = prevHtml;
+            }
+            alert('Could not verify payment status. Check your connection and try again.');
+          });
+        return;
       }
       var next = computeNextStep(currentStep);
       if (next !== currentStep) showStep(next);
@@ -3064,7 +3306,7 @@ $main_cities = array(
         if (rawStep) {
           var s = parseInt(rawStep, 10);
           if (!isNaN(s) && s >= 1 && s <= totalSteps) {
-            tripWizardPendingInitialStep = s;
+            tripWizardPendingInitialStep = clampWizardStepToAllowed(s);
             tripWizardUrlForcedStep = true;
           }
         }
@@ -4863,7 +5105,22 @@ $main_cities = array(
       }
     })();
 
+    (function autoOpenTripSummaryFromUrl() {
+      try {
+        if (window.__dashTripSummaryEmbedOpened) return;
+        var params = new URLSearchParams(window.location.search || '');
+        if (params.get('show_summary') !== '1') return;
+        var tid = String(params.get('trip_id') || '').trim();
+        if (!tid && typeof serverLastTid !== 'undefined' && serverLastTid > 0) tid = String(serverLastTid);
+        setTimeout(function () { openTripBudgetSummaryModal(tid); }, 50);
+      } catch (eAuto) {}
+    })();
+
     (function tripWizardBootstrapAfterStops() {
+      if (document.body.classList.contains('trip-summary-embed')) {
+        try { scheduleSaveTripWizardDraft(); } catch (eEmb) {}
+        return;
+      }
       if (tripPageWizardFresh) {
         tripWizardPendingInitialStep = 1;
         tripWizardUrlForcedStep = true;
@@ -4873,7 +5130,7 @@ $main_cities = array(
           try {
             applyTripWizardDraft(draft);
             if (!tripWizardUrlForcedStep && draft.step >= 1 && draft.step <= totalSteps) {
-              tripWizardPendingInitialStep = draft.step;
+              tripWizardPendingInitialStep = clampWizardStepToAllowed(draft.step);
             }
           } catch (eApp) {
             try { console.warn('Trip wizard draft restore failed', eApp); } catch (eL) {}
