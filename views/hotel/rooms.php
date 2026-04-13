@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/navbar.css">
     <style>
         body {
-            font-family: 'Inter', 'Poppins', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f7f5;
         }
 
