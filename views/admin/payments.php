@@ -64,7 +64,6 @@
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -85,8 +84,6 @@
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -108,10 +105,7 @@
                     <br>
 
                     <h4 class="page-title" style="font-size:16px;">Customized Booking Payments</h4>
-
-                    <!-- Search, Filter & Date toolbar (trip payments) -->
                     <form method="GET" action="/CeylonGo/public/admin/payments">
-                        <!-- Preserve package-payments filters across submits -->
                         <input type="hidden" name="pay_search" value="<?= htmlspecialchars($paySearch) ?>">
                         <input type="hidden" name="pay_status" value="<?= htmlspecialchars($paySelectedStatus) ?>">
                         <input type="hidden" name="pay_date"   value="<?= htmlspecialchars($payDate) ?>">
@@ -145,7 +139,6 @@
                         </div>
                     </form>
 
-                    <!-- Trip Payment Stats -->
                     <div class="stats-section">
                         <div class="stats-grid">
                             <div class="stat-box">
@@ -173,7 +166,6 @@
                         </div>
                     </div>
 
-                    <!-- Trip Payments Table -->
                     <div class="payments-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
                             <!-- LEFT: Show entries -->
@@ -252,19 +244,16 @@
                                         </td>
                                         <td><?= $tDisplayDate ? date('Y-m-d', strtotime($tDisplayDate)) : '—' ?></td>
                                         <td class="actions">
-                                            <!-- View details — always shown -->
                                             <button class="icon-btn trip-pay-view-btn"
                                                     data-id="<?= (int)$t['id'] ?>"
                                                     title="View Details">👁️</button>
 
                                             <?php if ($tStatus === 'pending' && !$tHasSlip): ?>
-                                                <!-- Pending with no slip: admin manually marks paid -->
                                                 <button class="icon-btn trip-pay-verify-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         title="Mark as Paid">✅</button>
 
                                             <?php elseif ($tHasSlip && $tStatus === 'pending' && empty($t['paid_at'])): ?>
-                                                <!-- Bank slip submitted, awaiting admin approval -->
                                                 <button class="icon-btn trip-pay-slip-approve-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         data-slip="<?= htmlspecialchars($t['bank_transfer_slip_path']) ?>"
@@ -273,7 +262,6 @@
                                             <?php endif; ?>
 
                                             <?php if ($tHasRefund && empty($t['refund_approved_at']) && empty($t['refund_rejected_at'])): ?>
-                                                <!-- Refund requested, awaiting admin decision -->
                                                 <button class="icon-btn trip-pay-refund-approve-btn"
                                                         data-id="<?= (int)$t['id'] ?>"
                                                         data-reason="<?= htmlspecialchars($t['refund_reason'] ?? '') ?>"
@@ -307,9 +295,7 @@
                     <br><br>
                     <h4 class="page-title" style="font-size:16px;">Package Booking Payments</h4>
 
-                    <!-- Search, Filter & Date toolbar -->
                     <form method="GET" action="/CeylonGo/public/admin/payments">
-                        <!-- Preserve trip-payments filters across submits -->
                         <input type="hidden" name="trip_pay_search" value="<?= htmlspecialchars($tripPaySearch) ?>">
                         <input type="hidden" name="trip_pay_status" value="<?= htmlspecialchars($tripPaySelectedStatus) ?>">
                         <input type="hidden" name="trip_pay_date"   value="<?= htmlspecialchars($tripPayDate) ?>">
@@ -345,7 +331,6 @@
                         </div>
                     </form>
 
-                    <!-- Stats -->
                     <div class="stats-section">
                         <div class="stats-grid">
                             <div class="stat-box">
@@ -381,7 +366,6 @@
                         </div>
                     </div>
 
-                    <!-- Package Payments Table -->
                     <div class="payments-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
                             <!-- LEFT: Show entries -->
@@ -511,13 +495,11 @@
                             Generate Package Payments Report
                         </a>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                </div><!-- /payments-management -->
-            </div><!-- /main-content -->
-
-        </div><!-- /page-wrapper -->
-
-        <!-- Package Payment Details Modal -->
+      
         <div id="paymentModal" class="modal" style="display:none;">
             <div class="modal-content">
                 <span class="pay-modal-close">&times;</span>
@@ -526,7 +508,6 @@
             </div>
         </div>
 
-        <!-- Trip Payment Details Modal -->
         <div id="tripPaymentModal" class="modal" style="display:none;">
             <div class="modal-content">
                 <span class="trip-pay-modal-close">&times;</span>
@@ -535,7 +516,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>

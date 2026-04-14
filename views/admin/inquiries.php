@@ -11,50 +11,40 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
-        <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/inquiries.css">
-        
-        <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
 
-        <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
 
         <title>Inquiry Management</title>
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
-        <div class="branding">
-            <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
-            <div class="logo-text">Ceylon Go</div>
-        </div>
+            <div class="branding">
+                <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+                <div class="logo-text">Ceylon Go</div>
+            </div>
 
-        <nav class="nav-links">
-            <a href="/CeylonGo/public/admin/dashboard">Home</a>
-            <div class="profile-dropdown">
-            <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
-            <div class="profile-dropdown-menu" id="profileDropdown">
-                <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
-                <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-            </div>
-            </div>
-        </nav>
+            <nav class="nav-links">
+                <a href="/CeylonGo/public/admin/dashboard">Home</a>
+                <div class="profile-dropdown">
+                <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+                <div class="profile-dropdown-menu" id="profileDropdown">
+                    <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+                    <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
+                </div>
+            </nav>
         </header>
 
-        <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -73,7 +63,6 @@
                 <div class="inquiry-management">
 
                     <h2 class="page-title">Inquiry Management</h2>
-
                     <div class="stats-section">
                         <div class="stats-grid">
                             <div class="stat-box">
@@ -218,13 +207,12 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
-        <ul>
-            <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-            <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
-            <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
-        </ul>
+            <ul>
+                <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
+                <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
+                <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+            </ul>
         </footer>
 
         <script>
