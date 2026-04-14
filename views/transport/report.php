@@ -30,6 +30,9 @@ if ($start_date && $end_date) {
 } else {
     $periodLabel = 'All Time';
 }
+
+// Generated timestamp
+$generatedAt = date('F d, Y \a\t h:i A');
 ?>
 
 <!DOCTYPE html>
@@ -56,6 +59,65 @@ if ($start_date && $end_date) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Print Styles -->
+    <style>
+    @media print {
+        /* Hide non-essential elements */
+        .navbar, .sidebar, .sidebar-overlay, footer,
+        .report-actions, .filter-bar, .charts-row,
+        .kpi-grid, .table-search, #tablePagination,
+        .report-period, .report-page-header { display: none !important; }
+
+        /* Reset layout */
+        body { background: #fff !important; margin: 0; padding: 0; }
+        .page-wrapper { display: block !important; }
+        .main-content { margin: 0 !important; padding: 20px !important; width: 100% !important; }
+
+        /* Brand Header for print */
+        .report-brand-header {
+            display: flex !important;
+            background: #2c5530 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            border-radius: 0 !important;
+            margin: -20px -20px 20px -20px !important;
+            padding: 18px 24px !important;
+        }
+        .report-brand-header .brand-logo { width: 40px; height: 40px; }
+        .report-brand-header .brand-text h1 { font-size: 18px !important; }
+
+        /* Show ALL table rows */
+        #tourTableBody tr { display: table-row !important; }
+
+        /* Table styles for print */
+        .report-table-section {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        .report-table-header h3 { font-size: 16px !important; color: #000 !important; }
+        .report-table-header h3 i { display: none; }
+        .report-table { font-size: 11px !important; }
+        .report-table thead th {
+            background: #333 !important;
+            color: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            padding: 8px 10px !important;
+            font-size: 10px !important;
+        }
+        .report-table tbody td { padding: 6px 10px !important; font-size: 10px !important; border-bottom: 1px solid #ddd !important; }
+        .report-table tfoot td {
+            background: #f0f0f0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            padding: 10px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            border-top: 2px solid #333 !important;
+        }
+    }
+    </style>
     <!-- PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -97,13 +159,30 @@ if ($start_date && $end_date) {
                 <li><a href="/CeylonGo/public/transporter/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Bookings</a></li>
                 <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
                 <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-                <li class="active"><a href="/CeylonGo/public/transporter/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
                 <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+                <li class="active"><a href="/CeylonGo/public/transporter/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
             </ul>
         </div>
 
         <!-- Main Content -->
         <div class="main-content" id="reportContent">
+
+            <!-- Report Branding Header (hidden on screen, visible in print/PDF) -->
+            <div class="report-brand-header" id="reportBrandHeader">
+                <div class="brand-left">
+                    <img src="/CeylonGo/public/images/logo.png" alt="Ceylon Go" class="brand-logo">
+                    <div class="brand-text">
+                        <h1>Ceylon Go</h1>
+                        <span class="brand-tagline">Transport Performance Report</span>
+                    </div>
+                </div>
+                <div class="brand-right">
+                    <div class="brand-info-row"><i class="fa-regular fa-user"></i> <strong><?= htmlspecialchars($user_name) ?></strong></div>
+                    <div class="brand-info-row"><i class="fa-solid fa-id-badge"></i> Transport Provider</div>
+                    <div class="brand-info-row"><i class="fa-regular fa-clock"></i> Generated: <?= $generatedAt ?></div>
+                    <div class="brand-info-row"><i class="fa-regular fa-calendar-check"></i> Period: <?= htmlspecialchars($periodLabel) ?></div>
+                </div>
+            </div>
 
             <!-- Page Header -->
             <div class="report-page-header">
@@ -233,53 +312,46 @@ if ($start_date && $end_date) {
                                 <th>Tour ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
-                                <th>Pickup</th>
-                                <th>Dropoff</th>
+                                <th>Location</th>
                                 <th>Vehicle</th>
                                 <th>Pax</th>
                                 <th>Distance</th>
                                 <th>Fare</th>
-                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="tourTableBody">
                             <?php if (empty($tours)): ?>
                                 <tr class="no-data-row">
-                                    <td colspan="10">
+                                    <td colspan="8">
                                         <i class="fa-regular fa-folder-open"></i>
                                         No tour records found for the selected period.
                                     </td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($tours as $tour): ?>
-                                    <tr data-status="<?= htmlspecialchars($tour['status']) ?>">
-                                        <td class="tour-id">#TR<?= str_pad($tour['id'], 3, '0', STR_PAD_LEFT) ?></td>
-                                        <td><?= htmlspecialchars($tour['customer_name']) ?></td>
-                                        <td><?= date('M d, Y', strtotime($tour['date'])) ?></td>
-                                        <td><?= htmlspecialchars($tour['pickup_location']) ?></td>
-                                        <td><?= htmlspecialchars($tour['dropoff_location']) ?></td>
-                                        <td><?= htmlspecialchars($tour['vehicle_type']) ?></td>
-                                        <td><?= (int)$tour['num_people'] ?></td>
-                                        <td><?= $tour['distance'] ? number_format($tour['distance'], 1) . ' km' : '-' ?></td>
-                                        <td class="fare-cell">Rs. <?= number_format($tour['estimated_fare'] ?? 0, 2) ?></td>
-                                        <td>
-                                            <?php
-                                            $statusIcon = match($tour['status']) {
-                                                'confirmed', 'completed' => 'fa-circle-check',
-                                                'pending' => 'fa-clock',
-                                                'cancelled' => 'fa-circle-xmark',
-                                                default => 'fa-circle-question'
-                                            };
-                                            ?>
-                                            <span class="status-pill <?= htmlspecialchars($tour['status']) ?>">
-                                                <i class="fa-solid <?= $statusIcon ?>"></i>
-                                                <?= ucfirst(htmlspecialchars($tour['status'])) ?>
-                                            </span>
-                                        </td>
+                                    <tr>
+                                        <td class="tour-id">#TR<?= str_pad($tour["id"], 3, "0", STR_PAD_LEFT) ?></td>
+                                        <td><?= htmlspecialchars($tour["customerName"]) ?></td>
+                                        <td><?= date("M d, Y", strtotime($tour["date"])) ?></td>
+                                        <td><?= htmlspecialchars($tour["pickup_location"] ?? "N/A") ?></td>
+                                        <td><?= htmlspecialchars($tour["vehicle_type"]) ?></td>
+                                        <td><?= htmlspecialchars($tour["pax"]) ?></td>
+                                        <td><?= number_format($tour["distance"], 1) ?> km</td>
+                                        <td class="fare-cell">Rs. <?= number_format($tour["fare"], 2) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
+                        <?php if (!empty($tours)): ?>
+                        <tfoot style="background: rgba(0, 119, 182, 0.05); font-weight: 700;">
+                            <tr>
+                                <td colspan="5" style="text-align: right; padding: 14px 20px; color: #1a1a2e; font-size: 14px;">TOTALS</td>
+                                <td style="border-top: 2px solid #0077b6; color: #0077b6; padding: 14px 16px;"><?= array_sum(array_column($tours, "pax")) ?></td>
+                                <td style="border-top: 2px solid #0077b6; color: #0077b6; padding: 14px 16px;"><?= number_format(array_sum(array_column($tours, "distance")), 1) ?> km</td>
+                                <td style="border-top: 2px solid #0077b6; color: #1a1a2e; padding: 14px 16px;">Rs. <?= number_format(array_sum(array_column($tours, "fare")), 2) ?></td>
+                            </tr>
+                        </tfoot>
+                        <?php endif; ?>
                     </table>
                 </div>
 
@@ -541,37 +613,39 @@ if ($start_date && $end_date) {
     // ========================
     function downloadPDF() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'mm', 'a4'); // landscape for wide table
+        const doc = new jsPDF('l', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
         // ---- HEADER ----
-        doc.setFillColor(44, 85, 48);
-        doc.rect(0, 0, pageWidth, 28, 'F');
+        doc.setFillColor(44, 85, 48); // System Green
+        doc.rect(0, 0, pageWidth, 32, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('Ceylon Go - Transport Performance Report', 14, 14);
-        doc.setFontSize(11);
+        doc.text('Ceylon Go', 14, 12);
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
-        doc.text('Report Period: <?= addslashes($periodLabel) ?>', 14, 22);
-        doc.text('Generated: ' + new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }), pageWidth - 14, 22, { align: 'right' });
+        doc.text('Transport Performance Report', 14, 20);
+        doc.setFontSize(10);
+        doc.text('User: <?= addslashes($user_name) ?>  |  Type: Transport Provider', 14, 27);
+        doc.text('Generated: <?= addslashes($generatedAt) ?>  |  Period: <?= addslashes($periodLabel) ?>', pageWidth - 14, 27, { align: 'right' });
 
         // ---- KPI SUMMARY ----
-        let y = 36;
+        let y = 40;
         doc.setTextColor(30, 30, 30);
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        doc.text('Summary', 14, y);
+        doc.text('Summary Metrics', 14, y);
         y += 8;
 
         const kpiData = [
-            ['Total Revenue', 'Rs. <?= number_format($kpi['total_revenue'], 2) ?>'],
-            ['Completion Rate', '<?= $kpi['completion_rate'] ?>%'],
-            ['Total Distance', '<?= number_format($kpi['total_distance'], 1) ?> km'],
-            ['Total Passengers', '<?= number_format($kpi['total_passengers']) ?>'],
-            ['Completed Trips', '<?= number_format($kpi['completed_count']) ?>'],
-            ['Total Bookings', '<?= number_format($kpi['total_bookings']) ?>']
+            ['Total Revenue', 'Rs. <?= number_format($kpi["total_revenue"], 2) ?>'],
+            ['Avg. Fare', 'Rs. <?= number_format($kpi["avg_fare"], 2) ?>'],
+            ['Total Bookings', '<?= number_format($kpi["total_bookings"]) ?>'],
+            ['Total Distance', '<?= number_format($kpi["total_distance"], 1) ?> km'],
+            ['Total Passengers', '<?= number_format($kpi["total_passengers"]) ?>'],
+            ['Completion Rate', '<?= $kpi["completion_rate"] ?>%']
         ];
 
         doc.autoTable({
@@ -581,71 +655,54 @@ if ($start_date && $end_date) {
             theme: 'grid',
             headStyles: { fillColor: [44, 85, 48], textColor: 255, fontStyle: 'bold', fontSize: 10 },
             bodyStyles: { fontSize: 10 },
-            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 }, 1: { cellWidth: 60 } },
-            margin: { left: 14, right: pageWidth - 134 },
-            tableWidth: 120
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 50 } },
+            margin: { left: 14 },
+            tableWidth: 100
         });
 
         // ---- TOUR DETAILS TABLE ----
         y = doc.lastAutoTable.finalY + 12;
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
-        doc.text('Tour Details', 14, y);
+        doc.text('Detailed Trip Summary', 14, y);
         y += 4;
 
-        // Build table data from PHP
+        // Build data from PHP
         const tourRows = [
             <?php foreach ($tours as $tour): ?>
             [
-                '#TR<?= str_pad($tour['id'], 3, '0', STR_PAD_LEFT) ?>',
-                '<?= addslashes($tour['customer_name']) ?>',
-                '<?= date('M d, Y', strtotime($tour['date'])) ?>',
-                '<?= addslashes($tour['pickup_location']) ?>',
-                '<?= addslashes($tour['dropoff_location']) ?>',
-                '<?= addslashes($tour['vehicle_type']) ?>',
-                '<?= (int)$tour['num_people'] ?>',
-                '<?= $tour['distance'] ? number_format($tour['distance'], 1) : '-' ?> km',
-                'Rs. <?= number_format($tour['estimated_fare'] ?? 0, 2) ?>',
-                '<?= ucfirst($tour['status']) ?>'
+                '#TR<?= str_pad($tour["id"], 3, "0", STR_PAD_LEFT) ?>',
+                '<?= addslashes($tour["customerName"]) ?>',
+                '<?= date("M d, Y", strtotime($tour["date"])) ?>',
+                '<?= addslashes($tour["pickup_location"] ?? "N/A") ?>',
+                '<?= addslashes($tour["vehicle_type"]) ?>',
+                '<?= $tour["pax"] ?>',
+                '<?= number_format($tour["distance"], 1) ?> km',
+                'Rs. <?= number_format($tour["fare"], 2) ?>'
             ],
             <?php endforeach; ?>
         ];
 
-        // Calculate totals
-        const totalFare = <?= array_sum(array_column($tours, 'estimated_fare')) ?>;
-        const totalDist = <?= array_sum(array_column($tours, 'distance')) ?>;
-        const totalPax = <?= array_sum(array_column($tours, 'num_people')) ?>;
+        // Totals
+        const totalPax = <?= array_sum(array_column($tours, "pax")) ?>;
+        const totalDist = <?= array_sum(array_column($tours, "distance")) ?>;
+        const totalFare = <?= array_sum(array_column($tours, "fare")) ?>;
 
         doc.autoTable({
             startY: y,
-            head: [['Tour ID', 'Customer', 'Date', 'Pickup', 'Dropoff', 'Vehicle', 'Pax', 'Distance', 'Fare (LKR)', 'Status']],
+            head: [['Tour ID', 'Customer', 'Date', 'Location', 'Vehicle', 'Pax', 'Distance', 'Fare (LKR)']],
             body: tourRows,
-            foot: [['', '', '', '', '', '', totalPax.toString(), totalDist.toFixed(1) + ' km', 'Rs. ' + totalFare.toLocaleString('en-US', {minimumFractionDigits: 2}), '']],
+            foot: [['', '', '', '', 'TOTALS', totalPax, totalDist.toFixed(1) + ' km', 'Rs. ' + totalFare.toLocaleString('en-US', {minimumFractionDigits: 2})]],
             theme: 'grid',
-            headStyles: { fillColor: [44, 85, 48], textColor: 255, fontStyle: 'bold', fontSize: 8, cellPadding: 3 },
-            bodyStyles: { fontSize: 8, cellPadding: 2.5 },
-            footStyles: { fillColor: [230, 243, 230], textColor: [30, 30, 30], fontStyle: 'bold', fontSize: 9, cellPadding: 3 },
+            headStyles: { fillColor: [44, 85, 48], textColor: 255, fontStyle: 'bold', fontSize: 9, cellPadding: 3 },
+            bodyStyles: { fontSize: 8.5, cellPadding: 2.5 },
+            footStyles: { fillColor: [240, 248, 240], textColor: [30, 30, 30], fontStyle: 'bold', fontSize: 10, cellPadding: 3 },
             columnStyles: {
-                0: { cellWidth: 18 },
-                3: { cellWidth: 38 },
-                4: { cellWidth: 38 },
-                8: { halign: 'right' },
-                9: { cellWidth: 20 }
+                0: { cellWidth: 20 },
+                1: { cellWidth: 40 },
+                7: { halign: 'right', fontStyle: 'bold' }
             },
-            margin: { left: 14, right: 14 },
-            didParseCell: function(data) {
-                // Color status cells
-                if (data.section === 'body' && data.column.index === 9) {
-                    const val = data.cell.raw.toLowerCase();
-                    if (val === 'confirmed' || val === 'completed') data.cell.styles.textColor = [21, 87, 36];
-                    else if (val === 'pending') data.cell.styles.textColor = [133, 100, 4];
-                    else if (val === 'cancelled') data.cell.styles.textColor = [114, 28, 36];
-                }
-                // Bold the totals label
-                if (data.section === 'foot' && data.column.index === 0) {
-                    data.cell.text = ['TOTALS'];
-                }
-            }
+            margin: { left: 14, right: 14 }
         });
 
         // ---- FOOTER ----

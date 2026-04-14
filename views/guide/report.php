@@ -30,6 +30,9 @@ if ($start_date && $end_date) {
 } else {
     $periodLabel = 'All Time';
 }
+
+// Generated timestamp
+$generatedAt = date('F d, Y \a\t h:i A');
 ?>
 
 <!DOCTYPE html>
@@ -97,14 +100,30 @@ if ($start_date && $end_date) {
                 <li><a href="/CeylonGo/public/guide/cancelled"><i class="fa-solid fa-xmark"></i> Cancelled Tours</a></li>
                 <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
                 <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
-                <li class="active"><a href="/CeylonGo/public/guide/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
-                <li><a href="/CeylonGo/public/guide/places"><i class="fa-solid fa-map-location-dot"></i> My Places</a></li>
                 <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+                <li class="active"><a href="/CeylonGo/public/guide/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
             </ul>
         </div>
 
         <!-- Main Content -->
         <div class="main-content" id="reportContent">
+
+            <!-- Report Branding Header (hidden on screen, visible in print/PDF) -->
+            <div class="report-brand-header" id="reportBrandHeader">
+                <div class="brand-left">
+                    <img src="/CeylonGo/public/images/logo.png" alt="Ceylon Go" class="brand-logo">
+                    <div class="brand-text">
+                        <h1>Ceylon Go</h1>
+                        <span class="brand-tagline">Guide Performance Report</span>
+                    </div>
+                </div>
+                <div class="brand-right">
+                    <div class="brand-info-row"><i class="fa-regular fa-user"></i> <strong><?= htmlspecialchars($user_name) ?></strong></div>
+                    <div class="brand-info-row"><i class="fa-solid fa-id-badge"></i> Tour Guide</div>
+                    <div class="brand-info-row"><i class="fa-regular fa-clock"></i> Generated: <?= $generatedAt ?></div>
+                    <div class="brand-info-row"><i class="fa-regular fa-calendar-check"></i> Period: <?= htmlspecialchars($periodLabel) ?></div>
+                </div>
+            </div>
 
             <!-- Page Header -->
             <div class="report-page-header">
@@ -237,46 +256,39 @@ if ($start_date && $end_date) {
                                 <th>Time</th>
                                 <th>Location</th>
                                 <th>Language</th>
-                                <th>Fee</th>
-                                <th>Status</th>
+                                <th>Fee (LKR)</th>
                             </tr>
                         </thead>
                         <tbody id="tourTableBody">
                             <?php if (empty($tours)): ?>
                                 <tr class="no-data-row">
-                                    <td colspan="8">
+                                    <td colspan="7">
                                         <i class="fa-regular fa-folder-open"></i>
                                         No tour records found for the selected period.
                                     </td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($tours as $tour): ?>
-                                    <tr data-status="<?= htmlspecialchars($tour['status']) ?>">
-                                        <td class="tour-id">#GR<?= str_pad($tour['id'], 3, '0', STR_PAD_LEFT) ?></td>
-                                        <td><?= htmlspecialchars($tour['customerName']) ?></td>
-                                        <td><?= date('M d, Y', strtotime($tour['date'])) ?></td>
-                                        <td><?= date('h:i A', strtotime($tour['time'])) ?></td>
-                                        <td><?= htmlspecialchars($tour['location']) ?></td>
-                                        <td><?= htmlspecialchars($tour['language']) ?></td>
-                                        <td class="fee-cell">Rs. <?= number_format($tour['fee'] ?? 0, 2) ?></td>
-                                        <td>
-                                            <?php
-                                            $statusIcon = match($tour['status']) {
-                                                'approved' => 'fa-circle-check',
-                                                'pending' => 'fa-clock',
-                                                'rejected' => 'fa-circle-xmark',
-                                                default => 'fa-circle-question'
-                                            };
-                                            ?>
-                                            <span class="status-pill <?= htmlspecialchars($tour['status']) ?>">
-                                                <i class="fa-solid <?= $statusIcon ?>"></i>
-                                                <?= ucfirst(htmlspecialchars($tour['status'])) ?>
-                                            </span>
-                                        </td>
+                                    <tr>
+                                        <td class="tour-id">#GT<?= str_pad($tour["id"], 3, "0", STR_PAD_LEFT) ?></td>
+                                        <td><?= htmlspecialchars($tour["customerName"]) ?></td>
+                                        <td><?= date("M d, Y", strtotime($tour["date"])) ?></td>
+                                        <td><?= date("h:i A", strtotime($tour["time"])) ?></td>
+                                        <td><?= htmlspecialchars($tour["location"]) ?></td>
+                                        <td><span class="lang-tag"><?= htmlspecialchars($tour["language"]) ?></span></td>
+                                        <td class="fee-cell">Rs. <?= number_format($tour["fee"], 2) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
+                        <?php if (!empty($tours)): ?>
+                        <tfoot style="background: rgba(44, 85, 48, 0.05); font-weight: 700;">
+                            <tr>
+                                <td colspan="6" style="text-align: right; padding: 14px 20px; color: #1a1a2e; font-size: 14px;">TOTAL REVENUE</td>
+                                <td style="border-top: 2px solid #2c5530; color: #1a1a2e; padding: 14px 16px;">Rs. <?= number_format(array_sum(array_column($tours, "fee")), 2) ?></td>
+                            </tr>
+                        </tfoot>
+                        <?php endif; ?>
                     </table>
                 </div>
 
@@ -522,29 +534,106 @@ if ($start_date && $end_date) {
     // ========================
     async function downloadPDF() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const element = document.getElementById('reportContent');
+        const doc = new jsPDF('l', 'mm', 'a4');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
 
-        const buttons = document.querySelectorAll('.report-actions, .filter-bar, .table-search, #tablePagination');
-        buttons.forEach(el => el.style.display = 'none');
+        // ---- HEADER ----
+        doc.setFillColor(44, 85, 48); // System Green
+        doc.rect(0, 0, pageWidth, 32, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Ceylon Go', 14, 12);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Guide Performance Report', 14, 20);
+        doc.setFontSize(10);
+        doc.text('User: <?= addslashes($user_name) ?>  |  Type: Tour Guide', 14, 27);
+        doc.text('Generated: <?= addslashes($generatedAt) ?>  |  Period: <?= addslashes($periodLabel) ?>', pageWidth - 14, 27, { align: 'right' });
 
-        await html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth() - 20;
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            let heightLeft = pdfHeight;
-            let position = 10;
+        // ---- KPI SUMMARY ----
+        let y = 40;
+        doc.setTextColor(30, 30, 30);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Performance metrics', 14, y);
+        y += 8;
 
-            doc.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
-            heightLeft -= (doc.internal.pageSize.getHeight() - 20);
-            while (heightLeft > 0) {
-                position = heightLeft - pdfHeight + 10;
-                doc.addPage();
-                doc.addImage(imgData, 'PNG', 10, position, pdfWidth, pdfHeight);
-                heightLeft -= (doc.internal.pageSize.getHeight() - 20);
-            }
-            doc.save('guide_performance_report.pdf');
+        const kpiData = [
+            ['Total Revenue', 'Rs. <?= number_format($kpi["total_revenue"], 2) ?>'],
+            ['Avg. Fee', 'Rs. <?= number_format($kpi["avg_fee"], 2) ?>'],
+            ['Total Bookings', '<?= number_format($kpi["total_bookings"]) ?>'],
+            ['Unique Clients', '<?= number_format($kpi["unique_clients"]) ?>'],
+            ['Completion Rate', '<?= $kpi["completion_rate"] ?>%']
+        ];
+
+        doc.autoTable({
+            startY: y,
+            head: [['Metric', 'Value']],
+            body: kpiData,
+            theme: 'grid',
+            headStyles: { fillColor: [44, 85, 48], textColor: 255, fontStyle: 'bold', fontSize: 10 },
+            bodyStyles: { fontSize: 10 },
+            columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 }, 1: { cellWidth: 50 } },
+            margin: { left: 14 },
+            tableWidth: 100
+        });
+
+        // ---- TOUR DETAILS TABLE ----
+        y = doc.lastAutoTable.finalY + 12;
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detailed Tour History', 14, y);
+        y += 4;
+
+        // Build table data from PHP
+        const tourRows = [
+            <?php foreach ($tours as $tour): ?>
+            [
+                '#GT<?= str_pad($tour["id"], 3, "0", STR_PAD_LEFT) ?>',
+                '<?= addslashes($tour["customerName"]) ?>',
+                '<?= date("M d, Y", strtotime($tour["date"])) ?>',
+                '<?= date("h:i A", strtotime($tour["time"])) ?>',
+                '<?= addslashes($tour["location"]) ?>',
+                '<?= addslashes($tour["language"]) ?>',
+                'Rs. <?= number_format($tour["fee"], 2) ?>'
+            ],
+            <?php endforeach; ?>
+        ];
+
+        // Total
+        const totalFee = <?= array_sum(array_column($tours, "fee")) ?>;
+
+        doc.autoTable({
+            startY: y,
+            head: [['Tour ID', 'Customer', 'Date', 'Time', 'Location', 'Language', 'Fee (LKR)']],
+            body: tourRows,
+            foot: [['', '', '', '', '', 'TOTAL REVENUE', 'Rs. ' + totalFee.toLocaleString('en-US', {minimumFractionDigits: 2})]],
+            theme: 'grid',
+            headStyles: { fillColor: [44, 85, 48], textColor: 255, fontStyle: 'bold', fontSize: 9, cellPadding: 3 },
+            bodyStyles: { fontSize: 8.5, cellPadding: 2.5 },
+            footStyles: { fillColor: [240, 248, 240], textColor: [44, 85, 48], fontStyle: 'bold', fontSize: 10, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 20 },
+                1: { cellWidth: 40 },
+                6: { halign: 'right', fontStyle: 'bold' }
+            },
+            margin: { left: 14, right: 14 }
+        });
+
+        // ---- FOOTER ----
+        const totalPages = doc.internal.getNumberOfPages();
+        const pageHeight = doc.internal.pageSize.height;
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('Ceylon Go Guide Performance Report', 14, pageHeight - 10);
+            doc.text('Page ' + i + ' of ' + totalPages, pageWidth - 14, pageHeight - 10, { align: 'right' });
+        }
+
+        doc.save('guide_performance_report.pdf');
         });
 
         buttons.forEach(el => el.style.display = '');

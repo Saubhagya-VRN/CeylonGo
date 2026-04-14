@@ -3,6 +3,76 @@
     overflow-x: hidden;
 }
 
+/* ===== REPORT BRAND HEADER ===== */
+.report-brand-header {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #2c5530 0%, #1a3d1e 100%);
+    border-radius: 16px;
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(44, 85, 48, 0.3);
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.report-brand-header .brand-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.report-brand-header .brand-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    object-fit: contain;
+    background: rgba(255,255,255,0.1);
+    padding: 6px;
+}
+
+.report-brand-header .brand-text h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.report-brand-header .brand-tagline {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 400;
+}
+
+.report-brand-header .brand-right {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: right;
+}
+
+.report-brand-header .brand-info-row {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.report-brand-header .brand-info-row strong {
+    color: #fff;
+}
+
+.report-brand-header .brand-info-row i {
+    width: 16px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+}
+
 /* ===== REPORT PAGE STYLES ===== */
 
 /* Report Header */
