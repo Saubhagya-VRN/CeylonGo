@@ -18,6 +18,7 @@ class Review {
                     r.admin_reply,
                     r.rating,
                     r.status,
+                    r.created_at,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
                 FROM reviews r
                 JOIN tourist_users t ON r.user_id = t.id
@@ -33,6 +34,7 @@ class Review {
                     r.admin_reply,
                     r.rating,
                     r.status,
+                    r.created_at,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
                 FROM reviews r
                 JOIN tourist_users t ON r.user_id = t.id

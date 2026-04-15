@@ -80,7 +80,7 @@
                     <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                     <li><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                     <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-box-open"></i> Packages</a></li>
-                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
@@ -88,7 +88,8 @@
             <div class="main-content">
                 <div class="booking-management">
                     <h2 class="page-title">Booking Management</h2>
-                    <br>
+
+                    <h4 class="page-title" style="font-size:16px;">Customized Booking Requests</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/bookings">
                         <input type="hidden" name="pkg_search" value="<?= htmlspecialchars($pkgSearch) ?>">
@@ -101,7 +102,7 @@
                             </div>
                             <div class="filter-buttons">
                                 <?php
-                                    $statuses = ['all','pending','completed','cancelled'];
+                                    $statuses = ['all','pending','confirmed','completed','cancelled'];
                                     foreach($statuses as $s):
                                         $active = ($selectedStatus ?? 'all') === $s ? 'active' : '';
                                         echo "<button type='submit' name='status' value='{$s}' class='filter-btn {$active}'>" . ucfirst($s) . "</button>";
@@ -115,10 +116,9 @@
                     </form>
 
                     <div class="stats-section">
-                        <h4>Trip Booking Statistics</h4><br>
                         <div class="stats-grid">
                             <?php
-                                $keys = ['total','pending','completed','cancelled'];
+                                $keys = ['total','pending','confirmed','completed','cancelled'];
                                 foreach($keys as $k):
                                     $val = $stats[$k] ?? 0;
                                     echo "<div class='stat-box'><strong>" . ucfirst($k) . "</strong><br><span>{$val}</span></div>";
@@ -126,50 +126,101 @@
                             ?>
                         </div>
                     </div>
-                    <br>
+                    <br>      
 
                     <div class="bookings-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                            
+                            <!-- LEFT: Show entries -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+
+                                <select id="rowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+
+                            <!-- RIGHT: Pagination -->
+                            <div id="paginationControls" class="filter-buttons"></div>
+
+                        </div>
                         <table class="booking-table">
                             <thead>
                                 <tr>
-                                    <th>Booking ID</th>
-                                    <th>User</th>
+                                    <th>Customer</th>
+                                    <th>Destination</th>
+                                    <th>People</th>
+                                    <th>Days</th>
+                                    <th>Start Date</th>
                                     <th>Status</th>
-                                    <th>Submitted Date</th>
+                                    <th>Submitted</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="bookingsTableBody">
-                                <?php foreach($bookings as $b):
-                                    switch (strtolower($b['status'])) {
-                                        case 'pending':   $statusClass = 'pending';   break;
-                                        case 'completed': $statusClass = 'completed'; break;
-                                        case 'cancelled': $statusClass = 'cancelled'; break;
-                                        default:          $statusClass = '';
-                                    }
-                                ?>
-                                <tr>
-                                    <td><?= $b['booking_id'] ?></td>
-                                    <td><?= htmlspecialchars($b['user_name']) ?></td>
-                                    <td><span class="status <?= $statusClass ?>"><?= ucfirst($b['status']) ?></span></td>
-                                    <td><?= date('Y-m-d', strtotime($b['created_at'])) ?></td>
-                                    <td>
-                                        <button class="icon-btn view-btn" data-booking-id="<?= $b['booking_id'] ?>" title="View Details">👁️</button>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
+                                <?php if (empty($bookings)): ?>
+                                    <tr>
+                                        <td colspan="8" style="text-align:center;">
+                                            No customized booking requests found.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach($bookings as $b):
+                                        switch (strtolower($b['status'])) {
+                                            case 'pending':   $statusClass = 'pending';   break;
+                                            case 'confirmed': $statusClass = 'approved';  break;
+                                            case 'completed': $statusClass = 'completed'; break;
+                                            case 'cancelled': $statusClass = 'cancelled'; break;
+                                            default:          $statusClass = '';
+                                        }
+                                    ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($b['user_name']) ?></td>
+                                        <td><?= htmlspecialchars($b['destination']) ?></td>
+                                        <td><?= (int)$b['number_of_people'] ?></td>
+                                        <td><?= (int)$b['number_of_days'] ?></td>
+                                        <td><?= htmlspecialchars($b['start_date']) ?></td>
+                                        <td><span class="status <?= $statusClass ?>"><?= ucfirst($b['status']) ?></span></td>
+                                        <td><?= date('Y-m-d', strtotime($b['created_at'])) ?></td>
+                                        <td>
+                                            <button class="icon-btn view-btn" data-booking-id="<?= $b['booking_id'] ?>" title="View Details">👁️</button>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="footer-buttons">
-                        <button class="footer-btn black" id="exportBtn">Export Details</button>
+                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label for="exportTimelinePreset">Report period (Customized Bookings):</label>
+                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
+                                <option value="all">All time</option>
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d">Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="ytd">Year to date</option>
+                                <option value="custom">Custom range</option>
+                            </select>
+                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="export-range-label">From</span>
+                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
+                                <span class="export-range-label">To</span>
+                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
+                            </span>
+                        </div>
+                        <button class="footer-btn black" id="exportBtn">Export Customized Bookings</button>
                     </div>
 
                     <br><br>
 
-                    <h3 class="page-title" style="font-size:18px;">Package Booking Requests</h3>
-                    <br>
+                    <h4 class="page-title" style="font-size:16px;">Package Booking Requests</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/bookings">
                         <input type="hidden" name="search" value="<?= htmlspecialchars($searchId ?? '') ?>">
@@ -196,7 +247,6 @@
                     </form>
 
                     <div class="stats-section">
-                        <h4>Package Booking Statistics</h4><br>
                         <div class="stats-grid">
                             <?php
                                 $pkgKeys = ['total','pending','approved','rejected'];
@@ -262,7 +312,24 @@
                         </table>
                     </div>
 
-                    <div class="footer-buttons">
+                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
+                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <label for="exportTimelinePreset">Report period (Package Bookings):</label>
+                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
+                                <option value="all">All time</option>
+                                <option value="7d">Last 7 days</option>
+                                <option value="30d">Last 30 days</option>
+                                <option value="90d">Last 90 days</option>
+                                <option value="ytd">Year to date</option>
+                                <option value="custom">Custom range</option>
+                            </select>
+                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="export-range-label">From</span>
+                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
+                                <span class="export-range-label">To</span>
+                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
+                            </span>
+                        </div>
                         <button class="footer-btn black" id="exportPkgBtn">Export Package Bookings</button>
                     </div>
                 </div>
@@ -338,16 +405,17 @@
                             return;
                         }
                         const b = data.booking;
-                        let html = `<p><strong>Booking ID:</strong> ${b.booking_id}</p>`;
-                        html += `<p><strong>User:</strong> ${b.user_name}</p>`;
+                        let html = `<p><strong>Customer:</strong> ${b.user_name}</p>`;
                         html += `<p><strong>Status:</strong> ${b.status}</p>`;
-                        html += `<p><strong>Submitted Date:</strong> ${b.created_at}</p>`;
-                        html += `<h4>Destinations</h4><table>
-                                    <tr><th>Destination</th><th>People</th><th>Days</th><th>Hotel</th><th>Transport</th></tr>`;
-                        data.destinations.forEach(d => {
-                            html += `<tr><td>${d.destination}</td><td>${d.people_count}</td><td>${d.days}</td><td>${d.hotel}</td><td>${d.transport}</td></tr>`;
-                        });
-                        html += "</table>";
+                        html += `<p><strong>Submitted:</strong> ${b.created_at}</p>`;
+                        html += `<h4>Trip Details</h4><table>
+                                    <tr><th>Field</th><th>Details</th></tr>
+                                    <tr><td>Destination</td><td>${b.destination}</td></tr>
+                                    <tr><td>Start Date</td><td>${b.start_date}</td></tr>
+                                    <tr><td>People</td><td>${b.number_of_people}</td></tr>
+                                    <tr><td>Days</td><td>${b.number_of_days}</td></tr>
+                                    ${b.budget_lkr ? `<tr><td>Budget</td><td>LKR ${Number(b.budget_lkr).toLocaleString()}</td></tr>` : ''}
+                                </table>`;
                         modalContent.innerHTML = html;
                     })
                     .catch(() => { modalContent.innerHTML = "<p style='color:red'>Error loading booking details.</p>"; });
@@ -359,18 +427,82 @@
             // ── Embed all trip bookings with destinations for export ──
             const tripBookingsData = <?= json_encode(array_map(function($b) {
                 return [
-                    'booking_id'    => $b['booking_id'],
-                    'user_name'     => $b['user_name'],
-                    'status'        => $b['status'],
-                    'created_at'    => $b['created_at'],
-                    'destinations'  => $b['destinations'] ?? [],
+                    'booking_id'      => $b['booking_id'],
+                    'user_name'       => $b['user_name'],
+                    'status'          => $b['status'],
+                    'destination'     => $b['destination'],
+                    'number_of_people'=> $b['number_of_people'],
+                    'number_of_days'  => $b['number_of_days'],
+                    'start_date'      => $b['start_date'],
+                    'budget_lkr'      => $b['budget_lkr'],
+                    'created_at'      => $b['created_at'],
                 ];
             }, $bookingsWithDestinations ?? []), JSON_UNESCAPED_UNICODE) ?>;
+
+            // ── Export date range helpers (trip + package) ─────────
+            (function() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const wrap = document.getElementById("exportCustomRangeWrap");
+                function pad(n) { return String(n).padStart(2, "0"); }
+                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+                function toggleCustom() {
+                    if (!presetEl || !wrap) return;
+                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
+                }
+                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
+            })();
+
+            function resolveBookingsExportRange() {
+                const presetEl = document.getElementById("exportTimelinePreset");
+                const v = presetEl ? presetEl.value : "all";
+                if (v === "custom") {
+                    const f = document.getElementById("exportDateFrom").value;
+                    const t = document.getElementById("exportDateTo").value;
+                    if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
+                    if (f > t) { alert("From date must be before or equal to To date."); return null; }
+                    return { start: f, end: t };
+                }
+                if (v === "all") return { start: null, end: null };
+                const today = new Date();
+                const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                let start = new Date(end);
+                if (v === "7d") start.setDate(start.getDate() - 6);
+                else if (v === "30d") start.setDate(start.getDate() - 29);
+                else if (v === "90d") start.setDate(start.getDate() - 89);
+                else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
+                else return { start: null, end: null };
+                return { start: ymd(start), end: ymd(end) };
+            }
+            function ymd(d) {
+                const pad = function(n) { return String(n).padStart(2, "0"); };
+                return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+            }
+            function inBookingsDateRange(dateStr, range) {
+                if (!range || (!range.start && !range.end)) return true;
+                const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
+                if (!d) return false;
+                if (range.start && d < range.start) return false;
+                if (range.end && d > range.end) return false;
+                return true;
+            }
+            function bookingsPeriodLabel(range) {
+                if (!range || (!range.start && !range.end)) return "All time";
+                return range.start + " to " + range.end;
+            }
 
             // ── Export trip bookings — full structured report ──────
             document.getElementById("exportBtn").addEventListener("click", () => {
                 if (!tripBookingsData || tripBookingsData.length === 0) {
                     alert("No bookings to export!");
+                    return;
+                }
+                const range = resolveBookingsExportRange();
+                if (range === null) return;
+                const list = tripBookingsData.filter(function(b) {
+                    return inBookingsDateRange((b.created_at || "").slice(0, 10), range);
+                });
+                if (!list.length) {
+                    alert("No trip bookings in the selected period.");
                     return;
                 }
 
@@ -385,14 +517,14 @@
                 report += '        CEYLON GO — TRIP BOOKINGS REPORT\n';
                 report += '='.repeat(70) + '\n';
                 report += '  Generated on   : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Total Bookings : ' + tripBookingsData.length + '\n';
+                report += '  Report period  : ' + bookingsPeriodLabel(range) + '\n';
+                report += '  Total Bookings : ' + list.length + '\n';
                 report += '='.repeat(70) + '\n\n';
 
-                tripBookingsData.forEach(function(b, index) {
-                    report += 'BOOKING ' + (index + 1) + ' OF ' + tripBookingsData.length + '\n';
+                list.forEach(function(b, index) {
+                    report += 'BOOKING ' + (index + 1) + ' OF ' + list.length + '\n';
                     report += sep + '\n';
 
-                    // ── Booking summary ──
                     report += '  BOOKING DETAILS\n';
                     report += '  ' + subSep + '\n';
                     report += '  Booking ID   : ' + b.booking_id + '\n';
@@ -400,24 +532,13 @@
                     report += '  Status       : ' + b.status.charAt(0).toUpperCase() + b.status.slice(1) + '\n';
                     report += '  Submitted On : ' + b.created_at + '\n\n';
 
-                    // ── Destinations ──
-                    if (b.destinations && b.destinations.length > 0) {
-                        report += '  DESTINATIONS (' + b.destinations.length + ')\n';
-                        report += '  ' + subSep + '\n';
-                        b.destinations.forEach(function(d, di) {
-                            report += '  Destination ' + (di + 1) + '\n';
-                            report += '    Location   : ' + d.destination + '\n';
-                            report += '    People     : ' + d.people_count + '\n';
-                            report += '    Days       : ' + d.days + '\n';
-                            if (d.hotel && d.hotel.trim() !== '')
-                                report += '    Hotel      : ' + d.hotel + '\n';
-                            report += '    Transport  : ' + d.transport + '\n';
-                        });
-                    } else {
-                        report += '  DESTINATIONS\n';
-                        report += '  ' + subSep + '\n';
-                        report += '  No destination details recorded.\n';
-                    }
+                    report += '  TRIP DETAILS\n';
+                    report += '  ' + subSep + '\n';
+                    report += '  Destination  : ' + b.destination + '\n';
+                    report += '  Start Date   : ' + b.start_date + '\n';
+                    report += '  People       : ' + b.number_of_people + '\n';
+                    report += '  Days         : ' + b.number_of_days + '\n';
+                    if (b.budget_lkr) report += '  Budget       : LKR ' + Number(b.budget_lkr).toLocaleString() + '\n';
 
                     report += '\n' + sep + '\n\n';
                 });
@@ -430,7 +551,8 @@
                 const blob = new Blob([report], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'ceylongo_trip_bookings_' + now.toISOString().slice(0, 10) + '.txt';
+                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
+                link.download = 'ceylongo_trip_bookings_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
                 link.click();
             });
 
@@ -553,6 +675,15 @@
                     alert("No package bookings to export!");
                     return;
                 }
+                const range = resolveBookingsExportRange();
+                if (range === null) return;
+                const pkgList = pkgBookingsData.filter(function(pb) {
+                    return inBookingsDateRange((pb.created_at || "").slice(0, 10), range);
+                });
+                if (!pkgList.length) {
+                    alert("No package bookings in the selected period.");
+                    return;
+                }
 
                 const sep    = '='.repeat(70);
                 const subSep = '-'.repeat(70);
@@ -565,11 +696,12 @@
                 report += '      CEYLON GO — PACKAGE BOOKINGS REPORT\n';
                 report += '='.repeat(70) + '\n';
                 report += '  Generated on    : ' + dateStr + ' at ' + timeStr + '\n';
-                report += '  Total Bookings  : ' + pkgBookingsData.length + '\n';
+                report += '  Report period   : ' + bookingsPeriodLabel(range) + '\n';
+                report += '  Total Bookings  : ' + pkgList.length + '\n';
                 report += '='.repeat(70) + '\n\n';
 
-                pkgBookingsData.forEach(function(pb, index) {
-                    report += 'BOOKING ' + (index + 1) + ' OF ' + pkgBookingsData.length + '\n';
+                pkgList.forEach(function(pb, index) {
+                    report += 'BOOKING ' + (index + 1) + ' OF ' + pkgList.length + '\n';
                     report += sep + '\n';
 
                     // ── Customer details ──
@@ -628,7 +760,8 @@
                 const blob = new Blob([report], { type: 'text/plain' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'package_bookings_' + now.toISOString().slice(0, 10) + '.txt';
+                const tag = range.start && range.end ? range.start + '_to_' + range.end : 'all_time';
+                link.download = 'package_bookings_' + tag + '_' + now.toISOString().slice(0, 10) + '.txt';
                 link.click();
             });
 
@@ -637,6 +770,72 @@
                 if (e.target == modal)       modal.style.display       = "none";
                 if (e.target == rejectModal) rejectModal.style.display = "none";
             };
+
+            // ── PAGINATION FOR CUSTOMIZED BOOKINGS ───────────────────
+
+            // Get all rows initially rendered by PHP
+            const allBookingRows = Array.from(document.querySelectorAll("#bookingsTableBody tr"));
+            const rowsPerPageSelect = document.getElementById("rowsPerPage");
+            const paginationControls = document.getElementById("paginationControls");
+
+            let currentPage = 1;
+            let rowsPerPage = parseInt(rowsPerPageSelect.value);
+
+            // Render table based on page
+            function renderTable() {
+                const tbody = document.getElementById("bookingsTableBody");
+                tbody.innerHTML = "";
+
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+
+                const pageRows = allBookingRows.slice(start, end);
+
+                pageRows.forEach(row => tbody.appendChild(row));
+
+                renderPagination();
+            }
+
+            // Pagination buttons
+            function renderPagination() {
+                const totalPages = Math.ceil(allBookingRows.length / rowsPerPage);
+
+                paginationControls.innerHTML = `
+                    <button class="filter-btn small-btn" ${currentPage === 1 ? "disabled" : ""} onclick="prevPage()">Prev</button>
+
+                    <span class="page-info">
+                        Page ${currentPage} of ${totalPages}
+                    </span>
+
+                    <button class="filter-btn small-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
+                `;
+            }
+
+            // Navigation
+            function nextPage() {
+                const totalPages = Math.ceil(allBookingRows.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            }
+
+            function prevPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            }
+
+            // Change rows per page
+            rowsPerPageSelect.addEventListener("change", function() {
+                rowsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
+
+            // Initialize
+            renderTable();
         </script>
     </body>
 </html>

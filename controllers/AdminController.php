@@ -210,36 +210,32 @@ class AdminController {
         $status   = $_GET['status'] ?? 'all';
         $searchId = $_GET['search'] ?? null;
         $date     = $_GET['date']   ?? null;
-
-        // Trip bookings
+ 
         $bookingModel = new Booking($this->db);
         $bookings     = $bookingModel->getAllBookingsWithUsers($status, $searchId, $date);
         $stats        = $bookingModel->getBookingStats();
-
-        // Pre-load ALL destinations for every trip booking (needed for export report)
+ 
+        // Pre-load trip details for every booking (used in export report)
         $bookingsWithDestinations = [];
         foreach ($bookings as $b) {
             $destinations = $bookingModel->getBookingDestinations($b['booking_id']);
             $bookingsWithDestinations[] = array_merge($b, ['destinations' => $destinations]);
         }
-
+ 
         // Package bookings
         $pkgStmt = $this->db->prepare("
-            SELECT *
-            FROM package_bookings
-            ORDER BY created_at DESC
+            SELECT * FROM package_bookings ORDER BY created_at DESC
         ");
         $pkgStmt->execute();
         $packageBookings = $pkgStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Package booking stats
+ 
         $pkgStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0];
         foreach ($packageBookings as $pb) {
             $pkgStats['total']++;
             $s = strtolower($pb['status']);
             if (isset($pkgStats[$s])) $pkgStats[$s]++;
         }
-
+ 
         view('admin/bookings', [
             'bookings'                 => $bookings,
             'bookingsWithDestinations' => $bookingsWithDestinations,
@@ -251,34 +247,31 @@ class AdminController {
             'pkgStats'                 => $pkgStats,
         ]);
     }
-
+ 
     public function getBookingDetails() {
         if ($_SERVER['REQUEST_METHOD'] !== 'GET' || !isset($_GET['booking_id'])) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Booking ID missing']);
             exit;
         }
-
-        $bookingId = intval($_GET['booking_id']);
+ 
+        $bookingId    = intval($_GET['booking_id']);
         $bookingModel = new Booking($this->db);
-
-        // Fetch booking info
-        $booking = $bookingModel->getBookingById($bookingId);
-
+        $booking      = $bookingModel->getBookingById($bookingId);
+ 
         if (!$booking) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Booking not found']);
             exit;
         }
-
-        // Fetch destinations
+ 
         $destinations = $bookingModel->getBookingDestinations($bookingId);
-
+ 
         header('Content-Type: application/json');
         echo json_encode([
-            'success' => true,
-            'booking' => $booking,
-            'destinations' => $destinations
+            'success'      => true,
+            'booking'      => $booking,
+            'destinations' => $destinations,
         ]);
         exit;
     }
@@ -371,7 +364,164 @@ class AdminController {
     }
 
     public function payments() {
-        view('admin/payments');
+        // Fetch all package bookings that have any payment activity
+        // (paid, approved-awaiting-payment, bank transfer submitted, etc.)
+        $stmt = $this->db->prepare("
+            SELECT *
+            FROM package_bookings
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute();
+        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+ 
+        // Build stats
+        $payStats = [
+            'total'     => 0,
+            'paid'      => 0,
+            'approved'  => 0,
+            'pending'   => 0,
+            'rejected'  => 0,
+            'cancelled' => 0,
+        ];
+        foreach ($payments as $p) {
+            $payStats['total']++;
+            $s = strtolower($p['status']);
+            if (isset($payStats[$s])) $payStats[$s]++;
+        }
+ 
+        view('admin/payments', [
+            'payments' => $payments,
+            'payStats' => $payStats,
+        ]);
+    }
+
+    public function verifyPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+ 
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$bookingId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+ 
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET status      = 'paid',
+                paid_at     = NOW(),
+                approved_by = :admin_id,
+                updated_at  = NOW()
+            WHERE id = :id
+              AND status IN ('pending', 'approved')
+        ");
+        $stmt->execute([
+            ':admin_id' => $adminUserId,
+            ':id'       => $bookingId,
+        ]);
+ 
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Marked as paid' : 'No rows updated',
+        ]);
+        exit();
+    }
+
+    public function approveSlipPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); exit();
+        }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$bookingId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+ 
+        // Only approve if a slip has actually been submitted and it's not already paid
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET status      = 'paid',
+                paid_at     = NOW(),
+                approved_by = :admin_id,
+                updated_at  = NOW()
+            WHERE id        = :id
+              AND bank_transfer_slip_path IS NOT NULL
+              AND bank_transfer_slip_path != ''
+              AND status IN ('pending', 'approved')
+              AND paid_at IS NULL
+        ");
+        $stmt->execute([':admin_id' => $adminUserId, ':id' => $bookingId]);
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Payment approved' : 'Nothing updated — check slip exists and status is pending/approved',
+        ]);
+        exit();
+    }
+ 
+    // ── Approve a refund request — marks booking as 'cancelled' ─
+    public function approveRefund() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405); exit();
+        }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$bookingId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
+            exit();
+        }
+ 
+        // Only approve if a refund was actually requested
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET status      = 'cancelled',
+                admin_notes = CONCAT(IFNULL(admin_notes, ''), ' | Refund approved by admin on ', NOW()),
+                approved_by = :admin_id,
+                updated_at  = NOW()
+            WHERE id                  = :id
+              AND refund_requested_at IS NOT NULL
+        ");
+        $stmt->execute([':admin_id' => $adminUserId, ':id' => $bookingId]);
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Refund approved, booking cancelled' : 'Nothing updated — check refund was requested',
+        ]);
+        exit();
     }
 
     public function reviews()
@@ -469,8 +619,67 @@ class AdminController {
         exit();
     }
 
-    public function inquiries() {
-        view('admin/inquiries');
+    public function inquiries()
+    {
+        $inquiryModel = new Inquiry($this->db);
+ 
+        $status = $_GET['status'] ?? 'all';
+        $search = trim($_GET['search'] ?? '');
+ 
+        $inquiries = $inquiryModel->getAllInquiries($status, $search);
+        $stats     = $inquiryModel->getInquiryStats();
+ 
+        view('admin/inquiries', [
+            'inquiries'      => $inquiries,
+            'selectedStatus' => $status,
+            'search'         => $search,
+            'stats'          => $stats,
+        ]);
+    }
+ 
+    public function deleteInquiry()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+ 
+        $inquiryId    = intval($_POST['inquiry_id'] ?? 0);
+        $inquiryModel = new Inquiry($this->db);
+        $success      = $inquiryModel->deleteInquiry($inquiryId);
+ 
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+ 
+    public function replyToInquiry()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+ 
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+ 
+        $inquiryId = intval($_POST['inquiry_id'] ?? 0);
+        $reply     = trim($_POST['reply'] ?? '');
+ 
+        if ($inquiryId === 0 || $reply === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false]);
+            exit();
+        }
+ 
+        $inquiryModel = new Inquiry($this->db);
+        $success      = $inquiryModel->saveAdminReply($inquiryId, $reply);
+ 
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
     }
 
     public function reports() {
@@ -517,7 +726,8 @@ class AdminController {
                 CONCAT(g.first_name, ' ', g.last_name) AS provider_name,
                 u.email,
                 u.role,
-                g.is_active
+                g.is_active,
+                u.created_at AS registered_at
             FROM users u
             JOIN guide_users g ON u.ref_id = g.id
             WHERE u.role = 'guide' $whereStatus
@@ -528,7 +738,8 @@ class AdminController {
                 t.full_name AS provider_name,
                 u.email,
                 u.role,
-                t.is_active
+                t.is_active,
+                u.created_at AS registered_at
             FROM users u
             JOIN transport_users t ON u.ref_id = t.user_id
             WHERE u.role = 'transport' $whereStatus
@@ -539,7 +750,8 @@ class AdminController {
                 h.hotel_name AS provider_name,
                 u.email,
                 u.role,
-                h.is_active
+                h.is_active,
+                u.created_at AS registered_at
             FROM users u
             JOIN hotel_users h ON u.ref_id = h.id
             WHERE u.role = 'hotel' $whereStatus
@@ -607,10 +819,19 @@ class AdminController {
         $this->requireAdmin();
         $packageModel = new Package($this->db);
         $packages = $packageModel->getAll();
+
+        $bookingModel = new Booking($this->db);
+        $customTrips = $bookingModel->getAllBookingsWithUsers('all', null, null);
+        $customTripsWithDestinations = [];
+        foreach ($customTrips as $b) {
+            $destinations = $bookingModel->getBookingDestinations($b['booking_id']);
+            $customTripsWithDestinations[] = array_merge($b, ['destinations' => $destinations]);
+        }
+
         $success = $_SESSION['pkg_success'] ?? null;
         $error   = $_SESSION['pkg_error']   ?? null;
         unset($_SESSION['pkg_success'], $_SESSION['pkg_error']);
-        view('admin/packages', compact('packages', 'success', 'error'));
+        view('admin/packages', compact('packages', 'success', 'error', 'customTripsWithDestinations'));
     }
 
     // ─── SHOW add form ───────────────────────────────────────
