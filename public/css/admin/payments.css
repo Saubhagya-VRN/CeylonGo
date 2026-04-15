@@ -1,6 +1,5 @@
 @import url("common.css");
 
-/* Stats use common.css (.stats-section, .stats-grid, .stat-box); keep page spacing only */
 .payments-management .stats-section {
   margin-bottom: 20px;
 }
@@ -40,9 +39,6 @@
   font-weight: bold;
 }
  
-/* ── Additions for real data (do not alter above) ─────────── */
- 
-/* approved = blue (booking confirmed, payment not yet received) */
 .status.approved {
   color: #007bff;
   font-weight: bold;
@@ -52,7 +48,6 @@
     color: #c0392b;
 }
  
-/* Modal */
 .modal {
   display: none;
   position: fixed;
@@ -92,8 +87,7 @@
   margin-top: 10px;
 }
  
-#paymentDetailsContent th,
-#paymentDetailsContent td {
+#paymentDetailsContent th, #paymentDetailsContent td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -103,7 +97,6 @@
   background-color: #f2f2f2;
 }
  
-/* icon buttons (shared with other admin pages) */
 .icon-btn {
   background: transparent;
   border: none;
@@ -127,7 +120,6 @@
   text-align: left;
 }
  
-/* ── Refund indicator ────────────────────────────────────── */
 .refund-badge {
   font-size: 11px;
   font-weight: bold;

@@ -15,16 +15,13 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/admin/packages.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
-    
     <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">
-
     <title>Manage Packages</title>
   </head>
 
@@ -65,7 +62,6 @@
       <div class="main-content">
         <div class="user-management">
           <h2 class="page-title">Manage Tour Packages</h2>
-
           <?php if ($success): ?>
             <div class="pkg-alert pkg-alert--success"><?= htmlspecialchars($success) ?></div>
           <?php endif; ?>
@@ -74,7 +70,7 @@
           <?php endif; ?>
 
           <div class="footer-buttons">
-            <a href="/CeylonGo/public/admin/packages/new" class="footer-btn black">+ Add New Package</a>
+            <a href="/CeylonGo/public/admin/packages/new" class="report-link-btn">+ Add New Package</a>
           </div>
           <br>
           
@@ -91,8 +87,7 @@
           </form>
 
           <div class="users-section">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">               
                 <!-- LEFT: Show entries -->
                 <div class="filter-buttons" style="align-items:center;">
                     <span style="font-size:14px;">Show</span>
@@ -106,10 +101,8 @@
 
                     <span style="font-size:14px;">entries</span>
                 </div>
-
                 <!-- RIGHT: Pagination -->
                 <div id="paginationControls" class="filter-buttons"></div>
-
             </div>
             <table class="user-table" id="packagesTable">
               <thead>
@@ -158,7 +151,6 @@
 
           <div class="footer-buttons" style="margin-top: 24px;">
               <a href="/CeylonGo/public/admin/reports?generated=1&amp;type=payments&amp;pay_source=package" class="report-link-btn">
-                  <i class="fa-solid fa-file-arrow-down"></i>
                   Generate Package Report
               </a>
           </div>

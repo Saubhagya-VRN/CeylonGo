@@ -10,16 +10,13 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/inquiries.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
         <title>Inquiry Management</title>
     </head>
 
@@ -43,7 +40,6 @@
         </header>
 
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
             <div class="sidebar">
                 <ul>
@@ -61,7 +57,6 @@
 
             <div class="main-content">
                 <div class="inquiry-management">
-
                     <h2 class="page-title">Inquiry Management</h2>
                     <div class="stats-section">
                         <div class="stats-grid">
@@ -116,7 +111,6 @@
 
                     <div class="inquiries-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-    
                             <!-- LEFT: Show entries -->
                             <div class="filter-buttons" style="align-items:center;">
                                 <span style="font-size:14px;">Show</span>
@@ -130,10 +124,8 @@
 
                                 <span style="font-size:14px;">entries</span>
                             </div>
-
                             <!-- RIGHT: Pagination -->
                             <div id="paginationControls" class="filter-buttons"></div>
-
                         </div>
                         <table class="inquiry-table">
                             <thead>
@@ -198,11 +190,9 @@
 
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=inquiries" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate Inquiry Report
                         </a>
                     </div>
-
                 </div>
             </div>
         </div>

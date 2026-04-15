@@ -21,21 +21,19 @@
 ?>
 
 <!DOCTYPE html>
-    <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-            <link rel="stylesheet" href="/CeylonGO/public/css/admin/bookings.css">
-            <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
-            <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
-            <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
-            <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-            <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
-            <title>Booking Management</title>
-        </head>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/admin/bookings.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
+        <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
+        <title>Booking Management</title>
+    </head>
 
     <body>
         <header class="navbar">
@@ -76,7 +74,6 @@
             <div class="main-content">
                 <div class="booking-management">
                     <h2 class="page-title">Booking Management</h2>
-
                     <h4 class="page-title" style="font-size:16px;">Customized Booking Requests</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/bookings">
@@ -118,7 +115,6 @@
 
                     <div class="bookings-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-                            
                             <!-- LEFT: Show entries -->
                             <div class="filter-buttons" style="align-items:center;">
                                 <span style="font-size:14px;">Show</span>
@@ -132,10 +128,8 @@
 
                                 <span style="font-size:14px;">entries</span>
                             </div>
-
                             <!-- RIGHT: Pagination -->
                             <div id="paginationControls" class="filter-buttons"></div>
-
                         </div>
                         <table class="booking-table">
                             <thead>
@@ -193,7 +187,6 @@
                     </div>
 
                     <br><br>
-
                     <h4 class="page-title" style="font-size:16px;">Package Booking Requests</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/bookings">
@@ -203,7 +196,7 @@
                         <div class="toolbar">
                             <div class="search-section">
                                 <input type="text" id="pkgSearchInput" placeholder="Search by customer or package" class="search-input" value="<?= htmlspecialchars($pkgSearch) ?>">
-                            ``  <button type="button" class="search-btn" onclick="applyPkgSearch()">🔍</button>
+                                <button type="button" class="search-btn" onclick="applyPkgSearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <?php
@@ -234,8 +227,7 @@
                     <br>
 
                     <div class="bookings-section">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                            
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;"> 
                             <!-- LEFT -->
                             <div class="filter-buttons" style="align-items:center;">
                                 <span style="font-size:14px;">Show</span>
@@ -249,10 +241,8 @@
 
                                 <span style="font-size:14px;">entries</span>
                             </div>
-
                             <!-- RIGHT -->
                             <div id="pkgPaginationControls" class="filter-buttons"></div>
-
                         </div>
                         <table class="booking-table">
                             <thead>
@@ -312,7 +302,6 @@
 
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=bookings" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate Package Bookings Report
                         </a>
                     </div>
@@ -327,7 +316,6 @@
                 </div>
             </div>
 
-            <!-- Reject Reason Modal (package bookings) -->
             <div id="rejectModal" class="modal">
                 <div class="modal-content" style="max-width:420px;">
                     <span class="reject-close">&times;</span>

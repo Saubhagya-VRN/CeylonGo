@@ -82,13 +82,11 @@ class AdminController {
             exit();
         }
  
-        // ── Full page render: just delegate to the view ──────────────────────
-        // All PHP data fetching is done inside the view itself (dashboard.php)
-        // so that the view stays self-contained (existing project pattern).
         view('admin/dashboard');
     }
 
     public function profile() {
+        $this->requireAdmin();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->updateProfile();
             return;
@@ -105,20 +103,35 @@ class AdminController {
     }
 
     public function updateProfile() {
+        $this->requireAdmin();
         $data = $_POST;
         $admin_id = $_SESSION['user_ref_id'] ?? null;
 
         if (!$admin_id) {
-            header("Location: /CeylonGo/public/admin/profile?error=" . urlencode("Invalid session"));
+            $_SESSION['error'] = 'Invalid session. Please log in again.';
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+
+        $errors = Validation::adminProfileErrors([
+            'username' => $data['username'] ?? '',
+            'email'      => $data['email'] ?? '',
+            'phone'      => $data['phone'] ?? '',
+            'role'       => $data['role'] ?? '',
+            'password'   => $data['password'] ?? '',
+        ]);
+        if ($errors) {
+            $_SESSION['error'] = implode('<br>', $errors);
+            header('Location: /CeylonGo/public/admin/profile');
             exit();
         }
 
         $admin = new Admin($this->db);
         $admin->id = $admin_id;
-        $admin->username = $data['username'] ?? '';
-        $admin->email = $data['email'] ?? '';
-        $admin->phone_number = $data['phone'] ?? '';
-        $admin->role = $data['role'] ?? '';
+        $admin->username = trim($data['username'] ?? '');
+        $admin->email = trim($data['email'] ?? '');
+        $admin->phone_number = trim($data['phone'] ?? '');
+        $admin->role = trim($data['role'] ?? '');
         
         if (!empty($data['password'])) {
             $admin->password = password_hash($data['password'], PASSWORD_DEFAULT);
@@ -136,18 +149,20 @@ class AdminController {
             $authUser->updateUser();
 
             $_SESSION['success'] = "Profile updated successfully!";
-            header("Location: /CeylonGo/public/admin/profile");
+            header('Location: /CeylonGo/public/admin/profile');
         } else {
-            header("Location: /CeylonGo/public/admin/profile?error=" . urlencode("Failed to update profile"));
+            $_SESSION['error'] = 'Failed to update profile.';
+            header('Location: /CeylonGo/public/admin/profile');
         }
         exit();
     }
 
     public function deleteProfile() {
+        $this->requireAdmin();
         $admin_id = $_SESSION['user_ref_id'] ?? null;
 
         if (!$admin_id) {
-            header("Location: /CeylonGo/public/login");
+            header('Location: /CeylonGo/public/login');
             exit();
         }
 
@@ -160,7 +175,8 @@ class AdminController {
             session_destroy();
             header("Location: /CeylonGo/public/login?msg=Profile+Deleted");
         } else {
-            header("Location: /CeylonGo/public/admin/profile?error=" . urlencode("Failed to delete profile"));
+            $_SESSION['error'] = 'Failed to delete profile.';
+            header('Location: /CeylonGo/public/admin/profile');
         }
         exit();
     }
@@ -178,6 +194,11 @@ class AdminController {
 
         $userId = intval($_POST['user_id'] ?? 0);
         $status = intval($_POST['status'] ?? 1);
+        if (!in_array($status, [0, 1], true)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false]);
+            exit();
+        }
 
         $userModel = new User($this->db); // ✅ Use User class
         $success = $userModel->updateStatus($userId, $status);
@@ -188,25 +209,37 @@ class AdminController {
     }
 
     public function users() {
+        $this->requireAdmin();
         $userModel = new User($this->db); 
 
-        // ✅ Handle POST for editing user
+        // Handle POST for editing user
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_user'])) {
-            $userId = intval($_POST['user_id']);
+            $errors = Validation::touristAdminEditErrors([
+                'user_id'    => $_POST['user_id'] ?? 0,
+                'first_name' => $_POST['first_name'] ?? '',
+                'last_name'  => $_POST['last_name'] ?? '',
+                'contact'    => $_POST['contact'] ?? '',
+            ]);
+            if ($errors) {
+                $_SESSION['error'] = implode('<br>', $errors);
+                header('Location: /CeylonGo/public/admin/users');
+                exit();
+            }
+
+            $userId = (int) $_POST['user_id'];
             $firstName = trim($_POST['first_name']);
             $lastName = trim($_POST['last_name']);
             $contact = trim($_POST['contact']);
-            $email = trim($_POST['email']);
 
-            $success = $userModel->updateUserByAdmin($userId, $firstName, $lastName, $contact, $email);
+            $success = $userModel->updateUserByAdmin($userId, $firstName, $lastName, $contact);
 
             if ($success) {
-                $_SESSION['success'] = "User updated successfully!";
+                $_SESSION['success'] = 'User updated successfully!';
             } else {
-                $_SESSION['error'] = "Failed to update user.";
+                $_SESSION['error'] = 'Failed to update user.';
             }
 
-            header("Location: /CeylonGo/public/admin/users");
+            header('Location: /CeylonGo/public/admin/users');
             exit();
         }
         // GET / display users
@@ -561,8 +594,6 @@ class AdminController {
         exit();
     }
  
-    // ── Approve a refund request — marks booking as 'cancelled' ─
-    // ── Approve a refund request (package) ──────────────────────────────────
     public function approveRefund() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
@@ -630,7 +661,6 @@ class AdminController {
         exit();
     }
 
-    // ── Reject a refund request (package) ───────────────────────────────────
     public function rejectRefund() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
@@ -700,7 +730,6 @@ class AdminController {
         exit();
     }
 
-    // ── Approve a refund request (trip/custom booking) ───────────────────────
     public function approveTripRefund() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
@@ -767,7 +796,6 @@ class AdminController {
         exit();
     }
 
-    // ── Reject a refund request (trip/custom booking) ────────────────────────
     public function rejectTripRefund() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
@@ -830,7 +858,6 @@ class AdminController {
         exit();
     }
 
-    // ── Email: ask customer for bank details after approval ──────────────────
     private function sendRefundBankDetailsRequest(
         string $toEmail,
         string $toName,
@@ -1140,23 +1167,13 @@ class AdminController {
         ]);
     }
 
-    public function settings() {
-        view('admin/settings');
-    }
-
-    public function forgotPassword() {
-        view('admin/forgot_pwd');
-    }
-
-    // ─── Helper: admin auth guard ────────────────────────────
-    private function requireAdmin() {
+    private function requireAdmin(): void {
         if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
             header('Location: /CeylonGo/public/login');
             exit();
         }
     }
 
-    // ─── LIST packages ───────────────────────────────────────
     public function packages() {
         $this->requireAdmin();
         $packageModel = new Package($this->db);
@@ -1168,7 +1185,6 @@ class AdminController {
         view('admin/packages', compact('packages', 'success', 'error'));
     }
 
-    // ─── SHOW add form ───────────────────────────────────────
     public function packageNew() {
         $this->requireAdmin();
         $error   = $_SESSION['pkg_error'] ?? null;
@@ -1178,7 +1194,6 @@ class AdminController {
         self::loadPackageForm(compact('mode', 'package', 'error'));
     }
 
-    // ─── CREATE package (POST) ───────────────────────────────
     public function packageCreate() {
         $this->requireAdmin();
         $data = $this->buildPackageData($_POST);
@@ -1202,7 +1217,6 @@ class AdminController {
         exit();
     }
 
-    // ─── SHOW edit form ──────────────────────────────────────
     public function packageEdit() {
         $this->requireAdmin();
         $id = intval($_GET['id'] ?? 0);
@@ -1219,7 +1233,6 @@ class AdminController {
         self::loadPackageForm(compact('mode', 'package', 'error'));
     }
 
-    // ─── UPDATE package (POST) ───────────────────────────────
     public function packageUpdate() {
         $this->requireAdmin();
         $id = intval($_POST['id'] ?? 0);
@@ -1247,7 +1260,6 @@ class AdminController {
         exit();
     }
 
-    // ─── DELETE package (POST) ───────────────────────────────
     public function packageDelete() {
         $this->requireAdmin();
         $id = intval($_POST['id'] ?? 0);
@@ -1260,11 +1272,8 @@ class AdminController {
         exit();
     }
 
-    // ─── Private: load the package form view ─────────────────
     private static function loadPackageForm(array $data) {
         extract($data);
-        // Build path the same way your view() helper does:
-        // views folder sits one level above the controllers folder.
         $file = dirname(__DIR__) . '/views/admin/package_form.php';
         if (file_exists($file)) {
             require $file;
@@ -1275,11 +1284,6 @@ class AdminController {
     }
     
     // ─── Private helpers ─────────────────────────────────────
-
-    /**
-     * Build the $data array from raw $_POST input.
-     * Converts textarea/repeatable fields into the arrays Package model expects.
-     */
     private function buildPackageData(array $post): array {
         // Scalar fields
         $data = [
@@ -1365,8 +1369,31 @@ class AdminController {
         elseif (!in_array($data['category'], $validCategories, true))
             $errors[] = 'Invalid category. Allowed: ' . implode(', ', $validCategories);
         if (empty($data['price']) || $data['price'] <= 0) $errors[] = 'A valid positive price (LKR) is required.';
-        if (isset($data['rating'])  && $data['rating']  !== null && !is_numeric($data['rating']))  $errors[] = 'Rating must be a number.';
-        if (isset($data['reviews']) && $data['reviews'] !== null && !is_numeric($data['reviews'])) $errors[] = 'Reviews must be a number.';
+        if (isset($data['rating'])  && $data['rating']  !== null) {
+            if (!is_numeric($data['rating'])) {
+                $errors[] = 'Rating must be a number.';
+            } else {
+                $r = (float) $data['rating'];
+                if ($r < 0 || $r > 5) {
+                    $errors[] = 'Rating must be between 0 and 5.';
+                }
+            }
+        }
+        if (isset($data['reviews']) && $data['reviews'] !== null) {
+            if (!is_numeric($data['reviews'])) {
+                $errors[] = 'Review count must be a number.';
+            } elseif ((int) $data['reviews'] < 0) {
+                $errors[] = 'Review count cannot be negative.';
+            }
+        }
+        $childRatio = $data['price_child_ratio'] ?? 0;
+        $infantRatio = $data['price_infant_ratio'] ?? 0;
+        if (!is_numeric($childRatio) || (float) $childRatio < 0 || (float) $childRatio > 1) {
+            $errors[] = 'Child price ratio must be between 0 and 1.';
+        }
+        if (!is_numeric($infantRatio) || (float) $infantRatio < 0 || (float) $infantRatio > 1) {
+            $errors[] = 'Infant price ratio must be between 0 and 1.';
+        }
 
         return $errors;
     }

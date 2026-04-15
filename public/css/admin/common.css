@@ -59,7 +59,6 @@
   color: white;
 }
 
-/* Stats Section */
 .stats-section {
   margin-top: 30px;
 }
@@ -68,18 +67,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  justify-content: center;   /* centers all boxes */
+  justify-content: center; 
   align-items: center;
 }
 
 .stat-box {
   border: 1px solid #ccc;
   min-width: 200px;  
-  max-width: 140px;        /* smaller width */
-  padding: 10px 12px;        /* reduced padding */
+  max-width: 140px;      
+  padding: 10px 12px;      
   text-align: center;
   background: #f9f9f9;
-  border-radius: 6px;        /* slightly smaller radius */
+  border-radius: 6px;       
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
@@ -114,7 +113,6 @@
   font-weight: bold;
 }
 
-/* Match bookings toolbar date picker (top-right filter) for export custom range */
 .date-filter .date-input {
   padding: 6px;
   border: 1px solid #ccc;
@@ -167,7 +165,6 @@
   cursor: not-allowed;
 }
 
-/* Report redirect button */
 .report-link-btn {
     display: inline-flex;
     align-items: center;
@@ -179,11 +176,28 @@
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    box-shadow: none;
     transition: background 0.2s ease;
+}
+
+button.report-link-btn {
+    border: none;
+    cursor: pointer;
+    font: inherit;
 }
 
 .report-link-btn:hover {
     background: #1e3d21;
+    color: #fff;
+}
+
+/* Secondary action — e.g. Download PDF (muted grey, no drop shadow) */
+.report-link-btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.report-link-btn-secondary:hover {
+    background: #5c636a;
     color: #fff;
 }

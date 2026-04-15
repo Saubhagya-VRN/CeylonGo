@@ -116,8 +116,8 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <title>Ceylon Go - Admin Dashboard</title>
     </head>
-    <body>
 
+    <body>
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -136,7 +136,6 @@
         </header>
 
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
             <div class="sidebar">
                 <ul>
@@ -162,7 +161,6 @@
                     </div>
                 </div>
 
-                <!-- KPI Cards -->
                 <section class="kpi-section">
                     <div class="kpi-row-1">
                         <a href="/CeylonGo/public/admin/users" class="kpi-card kpi-users">
@@ -198,7 +196,6 @@
                     </div>
                 </section>
 
-                <!-- Analytics Charts -->
                 <section class="chart-section">
                     <div class="chart-section-header">
                         <h4>Analytics Overview</h4>
@@ -240,10 +237,8 @@
                             <div class="chart-wrap"><canvas id="cancellationsChart"></canvas></div>
                         </div>
                     </div>
-
                 </section>
 
-                <!-- Pending Inquiries -->
                 <section class="inquiries-section">
                     <div class="section-header">
                         <h4>Pending Inquiries</h4>
@@ -274,7 +269,6 @@
                         </div>
                     <?php endif; ?>
                 </section>
-
             </div>
         </div>
 

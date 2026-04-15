@@ -13,26 +13,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/user.css">
-
-        <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
-        <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
         <title>User Management</title>
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -51,12 +42,8 @@
             </nav>
         </header>
 
-        <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -74,6 +61,18 @@
             <div class="main-content">
                 <div class="user-management">
                     <h2 class="page-title">User Management</h2>
+                    <?php if (!empty($_SESSION['success'])): ?>
+                        <div class="flash flash-success" style="background:#e8f5e9;color:#1b5e20;padding:10px 14px;border-radius:8px;margin:12px 0;">
+                            <?= htmlspecialchars($_SESSION['success']) ?>
+                        </div>
+                        <?php unset($_SESSION['success']); ?>
+                    <?php endif; ?>
+                    <?php if (!empty($_SESSION['error'])): ?>
+                        <div class="flash flash-error" style="background:#ffebee;color:#b71c1c;padding:10px 14px;border-radius:8px;margin:12px 0;">
+                            <?= $_SESSION['error'] ?>
+                        </div>
+                        <?php unset($_SESSION['error']); ?>
+                    <?php endif; ?>
                     <br>
 
                     <form method="GET" action="/CeylonGo/public/admin/users">
@@ -115,8 +114,7 @@
                     <br>
 
                     <div class="users-section">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                            
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">                           
                             <!-- LEFT: Show entries -->
                             <div class="filter-buttons" style="align-items:center;">
                                 <span style="font-size:14px;">Show</span>
@@ -130,10 +128,8 @@
 
                                 <span style="font-size:14px;">entries</span>
                             </div>
-
                             <!-- RIGHT: Pagination -->
                             <div id="paginationControls" class="filter-buttons"></div>
-
                         </div>
                         <table class="user-table">
                             <thead>
@@ -170,7 +166,7 @@
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr><td colspan="5" style="text-align:center;">No users found.</td></tr>
+                                <tr><td colspan="6" style="text-align:center;">No users found.</td></tr>
                             <?php endif; ?>
                             </tbody>
                         </table>
@@ -178,32 +174,21 @@
 
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=users" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate User Report
                         </a>
                     </div>
                 </div>
             </div>
 
-            <!-- Add/Edit Modal -->
             <div class="modal" id="userModal">
                 <div class="modal-content">
                     <h3 id="modalTitle">Edit User</h3>
                     <form method="POST" action="/CeylonGo/public/admin/users" id="userForm">
                         <input type="hidden" name="user_id" id="user_id">
-
                         <input type="text" name="first_name" id="first_name" placeholder="Enter first name" required><br>
                         <input type="text" name="last_name" id="last_name" placeholder="Enter last name" required><br>
-
-                        <!-- Phone number validation: exactly 10 digits -->
                         <input type="text" name="contact" id="contact" placeholder="Enter contact number" required
                             pattern="\d{10}" title="Phone number must be exactly 10 digits"><br>
-
-                        <!-- Email validation: format name@gmail.com -->
-                        <input type="email" name="email" id="email" placeholder="Enter email address" required
-                            pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-                            title="Please enter a valid email, e.g., name@gmail.com"><br>
-
                         <button type="submit" name="edit_user" id="submitBtn" class="submit-btn">Save Changes</button>
                         <button type="button" class="cancel-btn" id="closeModalBtn">Cancel</button>
                     </form>
@@ -211,7 +196,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
@@ -252,7 +236,6 @@
                     const first_name = row.cells[0].innerText;
                     const last_name = row.cells[1].innerText;
                     const contact = row.cells[2].innerText;
-                    const email = row.cells[3].innerText;
 
                     modal.style.display="flex";
                     modalTitle.innerText = "Edit User";
@@ -263,7 +246,6 @@
                     document.getElementById("first_name").value = first_name;
                     document.getElementById("last_name").value = last_name;
                     document.getElementById("contact").value = contact;
-                    document.getElementById("email").value = email;
                 });
             });
 

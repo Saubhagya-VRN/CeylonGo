@@ -88,12 +88,11 @@ class User {
         return $stmt->execute([$status, $userId]);
     }
 
-    public function updateUserByAdmin($userId, $firstName, $lastName, $contact, $email) {
+    public function updateUserByAdmin($userId, $firstName, $lastName, $contact) {
         $sql = "UPDATE tourist_users 
                 SET first_name = :first_name, 
                     last_name = :last_name, 
-                    contact_number = :contact, 
-                    email = :email
+                    contact_number = :contact
                 WHERE id = :id";
 
         $stmt = $this->conn->prepare($sql);
@@ -101,7 +100,6 @@ class User {
             ':first_name' => $firstName,
             ':last_name'  => $lastName,
             ':contact'    => $contact,
-            ':email'      => $email,
             ':id'         => $userId
         ]);
     }

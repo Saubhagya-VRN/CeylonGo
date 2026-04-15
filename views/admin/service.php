@@ -17,27 +17,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/service.css">
-        
-        <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
-        <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
         <title>Service Provider Management</title>
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -56,12 +46,8 @@
             </nav>
         </header>
 
-        <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -78,10 +64,8 @@
 
             <div class="main-content">
                 <div class="provider-management">
-                
                     <h2 class="page-title">Service Provider Management</h2>
                     <br>
-                    
                     <form method="GET" action="/CeylonGo/public/admin/service">
                         <div class="toolbar">
                             <div class="search-section">
@@ -91,15 +75,17 @@
 
                             <div class="filter-buttons">
                                 <button type="submit" name="status" value="all"
-                                    class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
+                                    class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All
+                                </button>
 
                                 <button type="submit" name="status" value="active"
-                                    class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active</button>
+                                    class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active
+                                </button>
 
                                 <button type="submit" name="status" value="inactive"
-                                    class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive</button>
+                                    class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive
+                                </button>
 
-                                <!-- role filters can stay JS-based -->
                                 <button type="button" class="filter-btn" onclick="filterProviders('guide')">Tour Guides</button>
                                 <button type="button" class="filter-btn" onclick="filterProviders('hotel')">Hotels</button>
                                 <button type="button" class="filter-btn" onclick="filterProviders('transport')">Transport Providers</button>
@@ -131,7 +117,6 @@
 
                     <div class="providers-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                            
                             <!-- LEFT: Show entries -->
                             <div class="filter-buttons" style="align-items:center;">
                                 <span style="font-size:14px;">Show</span>
@@ -145,10 +130,8 @@
 
                                 <span style="font-size:14px;">entries</span>
                             </div>
-
                             <!-- RIGHT: Pagination -->
                             <div id="paginationControls" class="filter-buttons"></div>
-
                         </div>
                         <table class="provider-table">
                             <thead>
@@ -193,7 +176,6 @@
                     
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=providers" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate Service Provider Report
                         </a>
                     </div>
@@ -201,7 +183,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>

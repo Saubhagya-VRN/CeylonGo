@@ -1,7 +1,5 @@
 <?php
-/**
- * Admin Reports & Analysis — form filters, preview table, charts, PDF/Excel export.
- */
+
 class AdminReportController
 {
     private PDO $db;
@@ -29,9 +27,6 @@ class AdminReportController
         }
     }
 
-    /**
-     * Collect filter array from GET (used by index + exports).
-     */
     private function filtersFromRequest(): array
     {
         $df = trim((string) ($_GET['date_from'] ?? ''));
@@ -62,9 +57,6 @@ class AdminReportController
         ];
     }
 
-    /**
-     * Users report = registered customers (tourist accounts) only.
-     */
     private function applyReportTypeDefaults(string $reportType, array $filters): array
     {
         if ($reportType === 'users') {
@@ -187,9 +179,6 @@ class AdminReportController
         ]);
     }
 
-    /**
-     * Build query string for export links (preserve filters).
-     */
     public static function exportQueryBase(array $get, string $type): string
     {
         $keys = [

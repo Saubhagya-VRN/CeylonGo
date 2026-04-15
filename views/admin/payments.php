@@ -46,12 +46,12 @@
         return true;
     });
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/payments.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
@@ -59,7 +59,6 @@
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
         <title>Payments Management</title>
     </head>
 
@@ -82,7 +81,6 @@
         </header>
 
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
             <div class="sidebar">
                 <ul>
@@ -100,10 +98,7 @@
 
             <div class="main-content">
                 <div class="payments-management">
-
                     <h2 class="page-title">Payments Management</h2>
-                    <br>
-
                     <h4 class="page-title" style="font-size:16px;">Customized Booking Payments</h4>
                     <form method="GET" action="/CeylonGo/public/admin/payments">
                         <input type="hidden" name="pay_search" value="<?= htmlspecialchars($paySearch) ?>">
@@ -287,7 +282,6 @@
 
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=payments" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate Payments Report
                         </a>
                     </div>
@@ -491,7 +485,6 @@
 
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=payments" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate Package Payments Report
                         </a>
                     </div>

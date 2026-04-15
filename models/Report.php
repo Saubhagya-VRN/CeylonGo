@@ -1,8 +1,5 @@
 <?php
-/**
- * Admin Reports — aggregated queries with prepared statements.
- * All dynamic SQL uses whitelisted sort columns and bound parameters.
- */
+
 class Report
 {
     private PDO $db;
@@ -217,11 +214,14 @@ class Report
     {
         $df = $filters['date_from'] ?? null;
         $dt = $filters['date_to'] ?? null;
+        // One unique named placeholder set per subquery — PDO does not allow reusing :name in one statement.
         $params = [];
-        $datePb = $this->bindDateRange($params, $df, $dt, 'pb.created_at', 'pb');
-        $params2 = [];
-        $dateTr = $this->bindDateRange($params2, $df, $dt, 't.created_at', 'tr');
-        $params = array_merge($params, $params2);
+        $datePb = [];
+        $dateTr = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $datePb[$i] = $this->bindDateRange($params, $df, $dt, 'pb.created_at', 'pb' . $i);
+            $dateTr[$i] = $this->bindDateRange($params, $df, $dt, 't.created_at', 'tr' . $i);
+        }
 
         $bf = $filters['booking_status'] ?? 'all';
         $extraPb = '';
@@ -239,16 +239,16 @@ class Report
 
         $sql = "
             SELECT
-                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb} {$extraPb})
-              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr} {$extraTr}) AS total,
-                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb} AND pb.status = 'pending')
-              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr} AND t.status = 'pending') AS pending,
-                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb} AND pb.status = 'approved')
-              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr} AND t.status IN ('confirmed','completed')) AS confirmed,
-                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb} AND pb.status IN ('cancelled','rejected'))
-              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr} AND (t.status = 'cancelled' OR t.refund_requested_at IS NOT NULL)) AS cancelled,
-                COALESCE((SELECT SUM(pb.total_amount) FROM package_bookings pb WHERE 1=1 {$datePb} {$extraPb}),0)
-              + COALESCE((SELECT SUM(CASE WHEN t.status IN ('confirmed','completed') THEN t.budget_lkr ELSE 0 END) FROM trips t WHERE 1=1 {$dateTr} {$extraTr}),0)
+                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb[1]} {$extraPb})
+              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr[1]} {$extraTr}) AS total,
+                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb[2]} AND pb.status = 'pending')
+              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr[2]} AND t.status = 'pending') AS pending,
+                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb[3]} AND pb.status = 'approved')
+              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr[3]} AND t.status IN ('confirmed','completed')) AS confirmed,
+                (SELECT COUNT(*) FROM package_bookings pb WHERE 1=1 {$datePb[4]} AND pb.status IN ('cancelled','rejected'))
+              + (SELECT COUNT(*) FROM trips t WHERE 1=1 {$dateTr[4]} AND (t.status = 'cancelled' OR t.refund_requested_at IS NOT NULL)) AS cancelled,
+                COALESCE((SELECT SUM(pb.total_amount) FROM package_bookings pb WHERE 1=1 {$datePb[5]} {$extraPb}),0)
+              + COALESCE((SELECT SUM(CASE WHEN t.status IN ('confirmed','completed') THEN t.budget_lkr ELSE 0 END) FROM trips t WHERE 1=1 {$dateTr[5]} {$extraTr}),0)
                 AS total_revenue
         ";
         $stmt = $this->db->prepare($sql);

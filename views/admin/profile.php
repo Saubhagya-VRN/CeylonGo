@@ -18,6 +18,7 @@
     <title>Admin Profile - Ceylon Go</title>
     <link rel="stylesheet" href="/CeylonGO/public/css/admin/profile.css">
   </head>
+
   <body>
     <div class="profile-container">
       <div class="profile-card">
@@ -47,7 +48,6 @@
           <p><strong>Role:</strong> <?= htmlspecialchars($admin['role']) ?></p>
         </div>
 
-        <!-- Edit Profile Form -->
         <div class="edit-profile">
           <h3>Edit Profile</h3>
           <form action="/CeylonGo/public/admin/profile" method="POST">
@@ -91,7 +91,6 @@
             <button type="submit" class="save-btn">Save Changes</button>
           </form>
 
-          <!-- Delete Profile -->
           <form action="/CeylonGo/public/admin/delete-profile" method="POST" onsubmit="return confirm('Are you sure you want to delete your profile?');">
             <input type="hidden" name="id" value="<?= $admin['id'] ?>">
             <button type="submit" class="delete-btn">Delete Profile</button>

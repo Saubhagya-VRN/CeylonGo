@@ -35,7 +35,6 @@
     color: red;
 }
 
-/* Package bookings — approved = green, rejected = red */
 .status.approved {
     color: green;
 }

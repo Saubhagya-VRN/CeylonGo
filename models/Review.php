@@ -6,7 +6,6 @@ class Review {
         $this->db = $db;
     }
 
-    // Get all reviews
     public function getAllReviews($rating = 'all')
     {
         if ($rating === 'all') {
@@ -49,7 +48,6 @@ class Review {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Delete review
     public function deleteReview($id) {
         $sql = "DELETE FROM reviews WHERE id = ?";
         $stmt = $this->db->prepare($sql);
@@ -72,7 +70,6 @@ class Review {
         ]);
     }
 
-    // Get review metrics for dashboard
     public function getReviewMetrics()
     {
         $sql = "

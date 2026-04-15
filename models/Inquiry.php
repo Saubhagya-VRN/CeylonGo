@@ -6,10 +6,6 @@ class Inquiry {
         $this->db = $db;
     }
 
-    /**
-     * Get all inquiries, with optional status filter and search term.
-     * Joined with tourist_users for registered users; falls back to guest_name/guest_email.
-     */
     public function getAllInquiries(string $status = 'all', string $search = ''): array
     {
         $conditions = [];
@@ -56,9 +52,6 @@ class Inquiry {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get summary statistics for the stats boxes.
-     */
     public function getInquiryStats(): array
     {
         $sql = "
@@ -82,9 +75,6 @@ class Inquiry {
         ];
     }
 
-    /**
-     * Save admin reply and mark as replied.
-     */
     public function saveAdminReply(int $inquiryId, string $reply): bool
     {
         $sql = "
@@ -99,9 +89,6 @@ class Inquiry {
         return $stmt->execute([':reply' => $reply, ':id' => $inquiryId]);
     }
 
-    /**
-     * Permanently delete an inquiry.
-     */
     public function deleteInquiry(int $id): bool
     {
         $stmt = $this->db->prepare("DELETE FROM inquiries WHERE id = ?");

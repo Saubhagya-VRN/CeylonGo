@@ -1,9 +1,5 @@
 <?php
-/**
- * Package model for tour packages.
- * Table: packages
- * Used by: tourist listing, detail, booking form, add review. Admin CRUD can use create(), update(), delete().
- */
+
 class Package {
     private $conn;
     private $table = 'packages';
@@ -39,10 +35,6 @@ class Package {
         return $row;
     }
 
-    /**
-     * Get all packages, optionally filtered by category or trending.
-     * Returns same shape as listing page expects: id, title, location, locations, duration, image, trending, rating, reviews, meals, category, price.
-     */
     public function getAll($filters = []) {
         $sql = "SELECT id, title, location, locations, duration, duration_short, image, category, price, price_child_ratio, price_infant_ratio, rating, reviews, trending, created_at FROM " . $this->table . " ORDER BY id ASC";
         $stmt = $this->conn->prepare($sql);
@@ -58,9 +50,6 @@ class Package {
         return $list;
     }
 
-    /**
-     * Get one package by id for detail page / booking form. Returns null if not found.
-     */
     public function getById($id) {
         $sql = "SELECT * FROM " . $this->table . " WHERE id = ? LIMIT 1";
         $stmt = $this->conn->prepare($sql);
@@ -69,9 +58,6 @@ class Package {
         return $row ? $this->normalizeRow($row, false) : null;
     }
 
-    /**
-     * Get id and title only for dropdowns (e.g. Add Review).
-     */
     public function getListForDropdown() {
         $sql = "SELECT id, title FROM " . $this->table . " ORDER BY id ASC";
         $stmt = $this->conn->prepare($sql);
@@ -79,10 +65,6 @@ class Package {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Create a new package (for admin). $data keys must match table columns; overview/highlights/itinerary/accommodation/included/excluded as arrays will be JSON-encoded.
-     * Returns new id or false.
-     */
     public function create($data) {
         $data = $this->prepareData($data);
         $cols = array_keys($data);
@@ -96,9 +78,6 @@ class Package {
         return false;
     }
 
-    /**
-     * Update package by id (for admin).
-     */
     public function update($id, $data) {
         $data = $this->prepareData($data);
         unset($data['id']);
@@ -114,9 +93,6 @@ class Package {
         return false;
     }
 
-    /**
-     * Delete package by id (for admin).
-     */
     public function delete($id) {
         $sql = "DELETE FROM " . $this->table . " WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
