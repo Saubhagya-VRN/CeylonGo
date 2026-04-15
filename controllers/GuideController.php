@@ -193,11 +193,19 @@ class GuideController {
         }
 
         $guideRequest = new GuideRequest($this->db);
-        $reportData = $guideRequest->getReportData($user_id);
+
+        // Get date range from query parameters
+        $startDate = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : null;
+        $endDate = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : null;
+
+        $reportData = $guideRequest->getFilteredReportData($user_id, $startDate, $endDate);
 
         view('guide/report', [
-            'overall' => $reportData['overall'],
-            'monthly' => $reportData['monthly']
+            'kpi' => $reportData['kpi'],
+            'monthly' => $reportData['monthly'],
+            'tours' => $reportData['tours'],
+            'start_date' => $startDate,
+            'end_date' => $endDate
         ]);
     }
 
