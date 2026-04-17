@@ -44,7 +44,6 @@ $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboardNew');
 $router->get('tourist/dashboard-side', 'TouristController@dashboardSide');
-$router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
 $router->get('tourist/booking-status', 'TouristController@bookingStatusHub');
 $router->get('tourist/custom-trip-summary', 'TouristController@customTripSummary');
@@ -71,7 +70,6 @@ $router->get('tourist/booking/trip-summary', 'TouristController@packageBookingTr
 $router->get('tourist/booking/trip-summary-json', 'TouristController@packageBookingTripSummaryJson');
 $router->post('tourist/booking/refund-request', 'TouristController@packageBookingRefundRequest');
 $router->post('tourist/trip/refund-request', 'TouristController@customTripRefundRequest');
-$router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
 $router->get('tourist/packages', 'TouristController@packages');
 $router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
 $router->get('tourist/package_details', 'TouristController@packageDetailsQuery');
@@ -83,7 +81,6 @@ $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete
 $router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSubmit');
 $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
-$router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 $router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
 $router->post('tourist/inquiries', 'TouristController@inquirySubmit');
 $router->get('tourist/profile', 'TouristController@profile');
