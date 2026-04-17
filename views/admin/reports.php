@@ -153,17 +153,20 @@ $exportQs = $baseQs();
                                     </div>
                                     <div>
                                         <label for="pay_status">Payment status</label>
+                                        <?php
+                                            $_paySel = strtolower((string) ($filters['pay_status'] ?? 'all'));
+                                            if ($_paySel === 'paid') {
+                                                $_paySel = 'received';
+                                            }
+                                        ?>
                                         <select name="pay_status" id="pay_status">
-                                            <option value="all" <?= ($filters['pay_status'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
-                                            <option value="pending" <?= ($filters['pay_status'] ?? '') === 'pending' ? 'selected' : '' ?>>Pending</option>
-                                            <option value="approved" <?= ($filters['pay_status'] ?? '') === 'approved' ? 'selected' : '' ?>>Approved</option>
-                                            <option value="paid" <?= ($filters['pay_status'] ?? '') === 'paid' ? 'selected' : '' ?>>Paid</option>
-                                            <option value="rejected" <?= ($filters['pay_status'] ?? '') === 'rejected' ? 'selected' : '' ?>>Rejected</option>
-                                            <option value="cancelled" <?= ($filters['pay_status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                                            <option value="all" <?= $_paySel === 'all' ? 'selected' : '' ?>>All</option>
+                                            <option value="awaiting" <?= $_paySel === 'awaiting' ? 'selected' : '' ?>>Awaiting</option>
+                                            <option value="received" <?= $_paySel === 'received' ? 'selected' : '' ?>>Received</option>
+                                            <option value="refunded" <?= $_paySel === 'refunded' ? 'selected' : '' ?>>Refunded</option>
                                         </select>
                                     </div>
                                 </div>
-                                <p class="sub-text" style="margin-top:6px;font-size:12px;color:#888;">Method and status apply to <strong>package booking</strong> payments. Custom trips use trip status; date range uses booking/trip <strong>created</strong> date.</p>
                             </div>
                             <div data-for="users" style="display:<?= $reportType === 'users' ? 'block' : 'none' ?>;">
                                 <div class="report-form-grid">
@@ -183,9 +186,9 @@ $exportQs = $baseQs();
                                         <label for="provider_category">Category</label>
                                         <select name="provider_category" id="provider_category">
                                             <option value="all" <?= ($filters['provider_category'] ?? '') === 'all' ? 'selected' : '' ?>>All</option>
-                                            <option value="guide" <?= ($filters['provider_category'] ?? '') === 'guide' ? 'selected' : '' ?>>Tour guide</option>
-                                            <option value="hotel" <?= ($filters['provider_category'] ?? '') === 'hotel' ? 'selected' : '' ?>>Hotel</option>
-                                            <option value="transport" <?= ($filters['provider_category'] ?? '') === 'transport' ? 'selected' : '' ?>>Transport</option>
+                                            <option value="guide" <?= ($filters['provider_category'] ?? '') === 'guide' ? 'selected' : '' ?>>Tour guides</option>
+                                            <option value="hotel" <?= ($filters['provider_category'] ?? '') === 'hotel' ? 'selected' : '' ?>>Hotels</option>
+                                            <option value="transport" <?= ($filters['provider_category'] ?? '') === 'transport' ? 'selected' : '' ?>>Transport Providers</option>
                                         </select>
                                     </div>
                                     <div>
@@ -238,11 +241,11 @@ $exportQs = $baseQs();
                     <h3 class="section-title" style="margin-top:8px;">Summary</h3>
                     <div class="summary-cards">
                         <?php if ($reportType === 'users'): ?>
-                            <div class="summary-card"><strong>Registered customers</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>Registered Customers</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
                             <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Active</strong><span><?= (int) ($summary['active'] ?? 0) ?></span></div>
                             <div class="summary-card" style="border-left-color:#dc3545;"><strong>Inactive</strong><span><?= (int) ($summary['inactive'] ?? 0) ?></span></div>
                         <?php elseif ($reportType === 'bookings'): ?>
-                            <div class="summary-card"><strong>Total records</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>Total Bookings</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
                             <div class="summary-card" style="border-left-color:#ffc107;"><strong>Pending</strong><span><?= (int) ($summary['pending'] ?? 0) ?></span></div>
                             <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Confirmed</strong><span><?= (int) ($summary['confirmed'] ?? 0) ?></span></div>
                             <div class="summary-card" style="border-left-color:#dc3545;"><strong>Cancelled</strong><span><?= (int) ($summary['cancelled'] ?? 0) ?></span></div>
@@ -258,33 +261,36 @@ $exportQs = $baseQs();
                                 $ps = $summary['package_summary'] ?? [];
                                 $ts = $summary['trip_summary'] ?? [];
                             ?>
-                            <div class="summary-card"><strong>Package rows</strong><span><?= (int) ($ps['total'] ?? 0) ?></span></div>
-                            <div class="summary-card" style="border-left-color:#198754;"><strong>Package paid (LKR)</strong><span><?= number_format((float) ($ps['total_revenue'] ?? 0), 2) ?></span></div>
-                            <div class="summary-card"><strong>Package paid count</strong><span><?= (int) ($ps['paid'] ?? 0) ?></span></div>
-                            <div class="summary-card" style="border-left-color:#ffc107;"><strong>Package pending / approved</strong><span><?= (int) ($ps['pending'] ?? 0) ?></span></div>
-                            <div class="summary-card"><strong>Custom trip rows</strong><span><?= (int) ($ts['total'] ?? 0) ?></span></div>
-                            <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Trip budget conf./completed (LKR)</strong><span><?= number_format((float) ($ts['completed_value'] ?? 0), 2) ?></span></div>
-                            <div class="summary-card"><strong>Custom trips pending</strong><span><?= (int) ($ts['pending'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>No of Bookings - Packages</strong><span><?= (int) ($ps['total'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#198754;"><strong>Total Revenue (LKR) - Packages</strong><span><?= number_format((float) ($ps['total_revenue'] ?? 0), 2) ?></span></div>
+                            <div class="summary-card"><strong>Paid Count - Packages</strong><span><?= (int) ($ps['paid'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#ffc107;"><strong>No of Pending Payments - Packages</strong><span><?= (int) ($ps['pending'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>No of Bookings - Customized Trips</strong><span><?= (int) ($ts['total'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#0d6efd;"><strong>Total Revenue (LKR) - Customized Trips</strong><span><?= number_format((float) ($ts['completed_value'] ?? 0), 2) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#198754;"><strong>Paid Count - Customized Trips</strong><span><?= (int) ($ts['paid'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>No of Pending Payments - Customized Trips</strong><span><?= (int) ($ts['pending'] ?? 0) ?></span></div>
                             <?php elseif ($psScope === 'trip'):
                                 $ts = $summary['trip_summary'] ?? [];
                             ?>
-                            <div class="summary-card"><strong>Total trips</strong><span><?= (int) ($ts['total'] ?? 0) ?></span></div>
-                            <div class="summary-card" style="border-left-color:#198754;"><strong>Budget confirmed/completed (LKR)</strong><span><?= number_format((float) ($ts['completed_value'] ?? 0), 2) ?></span></div>
-                            <div class="summary-card"><strong>Pending trips</strong><span><?= (int) ($ts['pending'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>No of Bookings</strong><span><?= (int) ($ts['total'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#198754;"><strong>Total Revenue (LKR)</strong><span><?= number_format((float) ($ts['completed_value'] ?? 0), 2) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#198754;"><strong>Paid bookings</strong><span><?= (int) ($ts['paid'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>No of Pending Payments</strong><span><?= (int) ($ts['pending'] ?? 0) ?></span></div>
                             <?php else:
                                 $ps = $summary['package_summary'] ?? [];
                             ?>
-                            <div class="summary-card"><strong>Total rows</strong><span><?= (int) ($ps['total'] ?? 0) ?></span></div>
-                            <div class="summary-card" style="border-left-color:#198754;"><strong>Paid amount (LKR)</strong><span><?= number_format((float) ($ps['total_revenue'] ?? 0), 2) ?></span></div>
+                            <div class="summary-card"><strong>No of Bookings</strong><span><?= (int) ($ps['total'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#198754;"><strong>Total Revenue (LKR)</strong><span><?= number_format((float) ($ps['total_revenue'] ?? 0), 2) ?></span></div>
                             <div class="summary-card"><strong>Paid bookings</strong><span><?= (int) ($ps['paid'] ?? 0) ?></span></div>
-                            <div class="summary-card" style="border-left-color:#ffc107;"><strong>Pending / approved</strong><span><?= (int) ($ps['pending'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#ffc107;"><strong>No of Pending Payments</strong><span><?= (int) ($ps['pending'] ?? 0) ?></span></div>
                             <?php endif; ?>
                         <?php elseif ($reportType === 'providers'): ?>
                             <div class="summary-card"><strong>Total providers</strong><span><?= (int) ($summary['total'] ?? 0) ?></span></div>
                             <div class="summary-card" style="border-left-color:#198754;"><strong>Active</strong><span><?= (int) ($summary['active'] ?? 0) ?></span></div>
+                            <div class="summary-card" style="border-left-color:#dc3545;"><strong>Inactive</strong><span><?= (int) ($summary['inactive'] ?? 0) ?></span></div>
                             <div class="summary-card"><strong>Guides</strong><span><?= (int) ($summary['guide'] ?? 0) ?></span></div>
                             <div class="summary-card"><strong>Hotels</strong><span><?= (int) ($summary['hotel'] ?? 0) ?></span></div>
-                            <div class="summary-card"><strong>Transport</strong><span><?= (int) ($summary['transport'] ?? 0) ?></span></div>
+                            <div class="summary-card"><strong>Transport Providers</strong><span><?= (int) ($summary['transport'] ?? 0) ?></span></div>
                         <?php endif; ?>
                     </div>
 

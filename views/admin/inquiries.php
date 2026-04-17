@@ -86,6 +86,7 @@
                                 <input
                                     type="text"
                                     id="searchInput"
+                                    name="search"
                                     placeholder="Search by customer"
                                     class="search-input"
                                     value="<?= htmlspecialchars($search ?? '') ?>"
@@ -189,8 +190,8 @@
                     </div>
 
                     <div class="footer-buttons" style="margin-top: 24px;">
-                        <a href="/CeylonGo/public/admin/reports?type=inquiries" class="report-link-btn">
-                            Generate Inquiry Report
+                        <a id="inquiryExportLink" href="/CeylonGo/public/admin/inquiries/export?status=<?= rawurlencode($selectedStatus ?? 'all') ?><?= !empty($search) ? '&search=' . rawurlencode($search) : '' ?>"
+                           class="report-link-btn">Download Inquiry Report
                         </a>
                     </div>
                 </div>
@@ -375,6 +376,22 @@
 
             // Initialize
             renderTable();
+
+            // Keep PDF export URL in sync with search box (server-side search filter)
+            (function syncInquiryExportLink() {
+                const link = document.getElementById('inquiryExportLink');
+                const inp = document.getElementById('searchInput');
+                if (!link || !inp) return;
+                const status = <?= json_encode($selectedStatus ?? 'all') ?>;
+                function build() {
+                    let u = '/CeylonGo/public/admin/inquiries/export?status=' + encodeURIComponent(status);
+                    const q = inp.value.trim();
+                    if (q) u += '&search=' + encodeURIComponent(q);
+                    link.href = u;
+                }
+                inp.addEventListener('input', build);
+                build();
+            })();
         </script>
     </body>
 </html>

@@ -150,8 +150,8 @@
           </div>
 
           <div class="footer-buttons" style="margin-top: 24px;">
-              <a href="/CeylonGo/public/admin/reports?generated=1&amp;type=payments&amp;pay_source=package" class="report-link-btn">
-                  Generate Package Report
+              <a href="/CeylonGo/public/admin/packages/export" class="report-link-btn">
+                  Download Package Report
               </a>
           </div>
         </div>

@@ -24,27 +24,8 @@
   background: #f1f1f1;
 }
  
-.status.completed {
-  color: green;
-  font-weight: bold;
-}
- 
-.status.pending {
-  color: orange;
-  font-weight: bold;
-}
- 
-.status.canceled {
-  color: red;
-  font-weight: bold;
-}
- 
-.status.approved {
-  color: #007bff;
-  font-weight: bold;
-}
-
-.icon-btn[title="Reject Refund"] {
+.icon-btn[title="Reject Refund"],
+.icon-btn[title="Reject bank slip"] {
     color: #c0392b;
 }
  
@@ -118,12 +99,6 @@
 .payments-table td.actions {
   vertical-align: middle;
   text-align: left;
-}
- 
-.refund-badge {
-  font-size: 11px;
-  font-weight: bold;
-  color: #e65100;
 }
  
 .stat-box.refund-card span {

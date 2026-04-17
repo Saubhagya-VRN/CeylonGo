@@ -340,11 +340,19 @@ class AdminController {
         $pkgStmt->execute();
         $packageBookings = $pkgStmt->fetchAll(PDO::FETCH_ASSOC);
  
-        $pkgStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0];
+        $pkgStats = [
+            'total'     => 0,
+            'approved'  => 0,
+            'pending'   => 0,
+            'paid'      => 0,
+            'cancelled' => 0,
+        ];
         foreach ($packageBookings as $pb) {
             $pkgStats['total']++;
-            $s = strtolower($pb['status']);
-            if (isset($pkgStats[$s])) $pkgStats[$s]++;
+            $s = strtolower((string) ($pb['status'] ?? ''));
+            if (isset($pkgStats[$s])) {
+                $pkgStats[$s]++;
+            }
         }
  
         view('admin/bookings', [
@@ -475,34 +483,93 @@ class AdminController {
     }
 
     public function payments() {
-        // Fetch all package bookings that have any payment activity
-        // (paid, approved-awaiting-payment, bank transfer submitted, etc.)
-        $stmt = $this->db->prepare("
-            SELECT *
-            FROM package_bookings
-            ORDER BY created_at DESC
-        ");
+        // Package bookings — payment_status_key matches admin/payments getPaymentDisplay()
+        $stmt = $this->db->prepare("SELECT * FROM package_bookings ORDER BY created_at DESC");
         $stmt->execute();
-        $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
- 
-        // Build stats
+        $rawPackageRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $payments = array_map(function ($p) {
+            $p['payment_status_key'] = self::packagePaymentStatusKey($p);
+
+            return $p;
+        }, $rawPackageRows);
+
+        // Package stats — Payment Status column (awaiting / received / rejected)
         $payStats = [
             'total'     => 0,
-            'paid'      => 0,
-            'approved'  => 0,
-            'pending'   => 0,
+            'awaiting'  => 0,
+            'received'  => 0,
             'rejected'  => 0,
-            'cancelled' => 0,
         ];
         foreach ($payments as $p) {
             $payStats['total']++;
-            $s = strtolower($p['status']);
-            if (isset($payStats[$s])) $payStats[$s]++;
+            $k = $p['payment_status_key'] ?? self::packagePaymentStatusKey($p);
+            if ($k === 'awaiting') {
+                $payStats['awaiting']++;
+            } elseif ($k === 'received') {
+                $payStats['received']++;
+            } elseif ($k === 'rejected') {
+                $payStats['rejected']++;
+            }
+        }
+ 
+        // Trip payments — join tourist_users for email
+        $tripStmt = $this->db->prepare("
+            SELECT t.*,
+                   tu.first_name AS customer_name,
+                   tu.email      AS customer_email
+            FROM trips t
+            LEFT JOIN tourist_users tu ON tu.id = t.user_id
+            ORDER BY t.created_at DESC
+        ");
+        $tripStmt->execute();
+        $rawTrips = $tripStmt->fetchAll(PDO::FETCH_ASSOC);
+ 
+        // Normalise trip rows to match what the view expects
+        $tripPayments = array_map(function($t) {
+            $row = [
+                'id'                         => $t['id'],
+                'user_id'                    => $t['user_id'],
+                'customer_name'              => $t['customer_name'] ?? ($t['fullname'] ?? 'Unknown'),
+                'destination'                => $t['destination']   ?? ($t['area'] ?? '—'),
+                'budget_lkr'                 => $t['budget_lkr']    ?? null,
+                'status'                     => $t['status'],
+                'payhere_payment_id'         => $t['payhere_payment_id'] ?? null,
+                'paid_at'                    => $t['paid_at'] ?? null,
+                'bank_transfer_submitted_at' => $t['bank_transfer_submitted_at'] ?? null,
+                'bank_transfer_slip_path'    => $t['bank_transfer_slip_path'] ?? null,
+                'refund_requested_at'        => $t['refund_requested_at'] ?? null,
+                'refund_approved_at'         => $t['refund_approved_at'] ?? null,
+                'refund_rejected_at'         => $t['refund_rejected_at'] ?? null,
+                'refund_reject_note'         => $t['refund_reject_note'] ?? null,
+                'refund_reason'              => $t['refund_reason'] ?? null,
+                'created_at'                 => $t['created_at'],
+            ];
+            $row['payment_status_key'] = self::tripPaymentStatusKey($row);
+            return $row;
+        }, $rawTrips);
+ 
+        // Trip stats — aligned with Payment Status column (awaiting / received)
+        $tripPayStats = [
+            'total'    => 0,
+            'awaiting' => 0,
+            'received' => 0,
+        ];
+        foreach ($tripPayments as $t) {
+            $tripPayStats['total']++;
+            $k = $t['payment_status_key'] ?? self::tripPaymentStatusKey($t);
+            if ($k === 'awaiting') {
+                $tripPayStats['awaiting']++;
+            }
+            if ($k === 'received') {
+                $tripPayStats['received']++;
+            }
         }
  
         view('admin/payments', [
-            'payments' => $payments,
-            'payStats' => $payStats,
+            'payments'      => $payments,
+            'payStats'      => $payStats,
+            'tripPayments'  => $tripPayments,
+            'tripPayStats'  => $tripPayStats,
         ]);
     }
 
@@ -552,9 +619,7 @@ class AdminController {
     }
 
     public function approveSlipPayment() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405); exit();
-        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
@@ -570,7 +635,6 @@ class AdminController {
             exit();
         }
  
-        // Only approve if a slip has actually been submitted and it's not already paid
         $stmt = $this->db->prepare("
             UPDATE package_bookings
             SET status      = 'paid',
@@ -593,8 +657,47 @@ class AdminController {
         ]);
         exit();
     }
+
+    public function approveTripSlipPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
  
-    public function approveRefund() {
+        $tripId      = intval($_POST['trip_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
+        if (!$tripId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid trip ID']);
+            exit();
+        }
+ 
+        $stmt = $this->db->prepare("
+            UPDATE trips
+            SET status     = 'completed',
+                paid_at    = NOW(),
+                updated_at = NOW()
+            WHERE id       = :id
+              AND bank_transfer_slip_path IS NOT NULL
+              AND bank_transfer_slip_path != ''
+              AND status = 'pending'
+              AND paid_at IS NULL
+        ");
+        $stmt->execute([':id' => $tripId]);
+        $affected = $stmt->rowCount();
+ 
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0 ? 'Trip payment approved' : 'Nothing updated — check slip exists and status is pending',
+        ]);
+        exit();
+    }
+
+    public function rejectSlipPayment() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
             http_response_code(403);
@@ -603,15 +706,189 @@ class AdminController {
         }
 
         $bookingId   = intval($_POST['booking_id'] ?? 0);
-        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+        $rejectNote  = trim($_POST['reject_note']  ?? '');
 
+        if (!$bookingId || !$rejectNote) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Missing booking ID or rejection reason']);
+            exit();
+        }
+
+        $fetch = $this->db->prepare("
+            SELECT id, fullname, email, bank_transfer_slip_path
+            FROM package_bookings
+            WHERE id = :id
+              AND bank_transfer_slip_path IS NOT NULL
+              AND bank_transfer_slip_path != ''
+              AND status IN ('pending', 'approved')
+              AND paid_at IS NULL
+        ");
+        $fetch->execute([':id' => $bookingId]);
+        $row = $fetch->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Booking not found or slip cannot be rejected']);
+            exit();
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE package_bookings
+            SET bank_transfer_slip_path    = NULL,
+                bank_transfer_submitted_at = NULL,
+                admin_notes = CONCAT(IFNULL(admin_notes, ''), ' | Bank slip rejected on ', NOW(), ': ', :note2),
+                updated_at = NOW()
+            WHERE id = :id
+              AND bank_transfer_slip_path IS NOT NULL
+              AND bank_transfer_slip_path != ''
+              AND status IN ('pending', 'approved')
+              AND paid_at IS NULL
+        ");
+        $stmt->execute([':note2' => $rejectNote, ':id' => $bookingId]);
+        $affected = $stmt->rowCount();
+
+        if ($affected > 0) {
+            $this->removeBankSlipUploadFile($row['bank_transfer_slip_path']);
+            if (!empty($row['email'])) {
+                $this->sendBankSlipRejectionEmail(
+                    $row['email'],
+                    $row['fullname'],
+                    $bookingId,
+                    $rejectNote,
+                    'package'
+                );
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0
+                ? 'Bank slip rejected. Customer has been notified; they can upload a new slip.'
+                : 'Nothing updated',
+        ]);
+        exit();
+    }
+
+    public function rejectTripSlipPayment() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+
+        $tripId     = intval($_POST['trip_id']    ?? 0);
+        $rejectNote = trim($_POST['reject_note']  ?? '');
+
+        if (!$tripId || !$rejectNote) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Missing trip ID or rejection reason']);
+            exit();
+        }
+
+        $fetch = $this->db->prepare("
+            SELECT t.id, t.customer_name, t.bank_transfer_slip_path, tu.email
+            FROM trips t
+            JOIN tourist_users tu ON tu.id = t.user_id
+            WHERE t.id = :id
+              AND t.bank_transfer_slip_path IS NOT NULL
+              AND t.bank_transfer_slip_path != ''
+              AND t.status = 'pending'
+              AND t.paid_at IS NULL
+        ");
+        $fetch->execute([':id' => $tripId]);
+        $row = $fetch->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            $fetch2 = $this->db->prepare("
+                SELECT t.id, t.customer_name, t.bank_transfer_slip_path, u.email AS email
+                FROM trips t
+                JOIN users u ON u.ref_id = t.user_id AND u.role = 'tourist'
+                WHERE t.id = :id
+                  AND t.bank_transfer_slip_path IS NOT NULL
+                  AND t.bank_transfer_slip_path != ''
+                  AND t.status = 'pending'
+                  AND t.paid_at IS NULL
+            ");
+            $fetch2->execute([':id' => $tripId]);
+            $row = $fetch2->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$row) {
+            $fetch3 = $this->db->prepare("
+                SELECT id, customer_name, bank_transfer_slip_path, NULL AS email
+                FROM trips
+                WHERE id = :id
+                  AND bank_transfer_slip_path IS NOT NULL
+                  AND bank_transfer_slip_path != ''
+                  AND status = 'pending'
+                  AND paid_at IS NULL
+            ");
+            $fetch3->execute([':id' => $tripId]);
+            $row = $fetch3->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if (!$row) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Trip not found or slip cannot be rejected']);
+            exit();
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE trips
+            SET bank_transfer_slip_path    = NULL,
+                bank_transfer_submitted_at = NULL,
+                updated_at = NOW()
+            WHERE id = :id
+              AND bank_transfer_slip_path IS NOT NULL
+              AND bank_transfer_slip_path != ''
+              AND status = 'pending'
+              AND paid_at IS NULL
+        ");
+        $stmt->execute([':id' => $tripId]);
+        $affected = $stmt->rowCount();
+
+        if ($affected > 0) {
+            $this->removeBankSlipUploadFile($row['bank_transfer_slip_path']);
+            if (!empty($row['email'])) {
+                $this->sendBankSlipRejectionEmail(
+                    $row['email'],
+                    $row['customer_name'],
+                    $tripId,
+                    $rejectNote,
+                    'trip'
+                );
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $affected > 0,
+            'message' => $affected > 0
+                ? 'Bank slip rejected. Customer has been notified; they can upload a new slip.'
+                : 'Nothing updated',
+        ]);
+        exit();
+    }
+ 
+    public function approveRefund() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit();
+        }
+ 
+        $bookingId   = intval($_POST['booking_id'] ?? 0);
+        $adminUserId = $_SESSION['user_ref_id'] ?? null;
+ 
         if (!$bookingId) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Invalid booking ID']);
             exit();
         }
-
-        // Fetch booking details (need email, name, amount)
+ 
         $fetch = $this->db->prepare("
             SELECT pb.id, pb.fullname, pb.email, pb.total_amount, pb.refund_requested_at
             FROM package_bookings pb
@@ -619,14 +896,13 @@ class AdminController {
         ");
         $fetch->execute([':id' => $bookingId]);
         $booking = $fetch->fetch(PDO::FETCH_ASSOC);
-
+ 
         if (!$booking) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Booking not found or no refund requested']);
             exit();
         }
-
-        // Update DB: cancel booking, record refund_approved_at
+ 
         $stmt = $this->db->prepare("
             UPDATE package_bookings
             SET status             = 'cancelled',
@@ -635,28 +911,28 @@ class AdminController {
                 approved_by        = :admin_id,
                 updated_at         = NOW()
             WHERE id = :id
-            AND refund_requested_at IS NOT NULL
+              AND refund_requested_at IS NOT NULL
+              AND refund_approved_at  IS NULL
         ");
         $stmt->execute([':admin_id' => $adminUserId, ':id' => $bookingId]);
         $affected = $stmt->rowCount();
-
+ 
         if ($affected > 0) {
-            // Send email asking for bank account details
             $this->sendRefundBankDetailsRequest(
                 $booking['email'],
                 $booking['fullname'],
                 $bookingId,
-                $booking['total_amount'],
+                (float)$booking['total_amount'],
                 'package'
             );
         }
-
+ 
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
             'message' => $affected > 0
                 ? 'Refund approved. Email sent to customer for bank details.'
-                : 'Nothing updated — check refund was requested',
+                : 'Nothing updated — check refund was requested and not already processed',
         ]);
         exit();
     }
@@ -668,32 +944,30 @@ class AdminController {
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
         }
-
+ 
         $bookingId   = intval($_POST['booking_id'] ?? 0);
-        $rejectNote  = trim($_POST['reject_note'] ?? '');
+        $rejectNote  = trim($_POST['reject_note']  ?? '');
         $adminUserId = $_SESSION['user_ref_id'] ?? null;
-
+ 
         if (!$bookingId || !$rejectNote) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Missing booking ID or rejection note']);
             exit();
         }
-
-        // Fetch booking details
+ 
         $fetch = $this->db->prepare("
             SELECT id, fullname, email FROM package_bookings
             WHERE id = :id AND refund_requested_at IS NOT NULL
         ");
         $fetch->execute([':id' => $bookingId]);
         $booking = $fetch->fetch(PDO::FETCH_ASSOC);
-
+ 
         if (!$booking) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Booking not found or no refund requested']);
             exit();
         }
-
-        // Save rejection to DB
+ 
         $stmt = $this->db->prepare("
             UPDATE package_bookings
             SET refund_rejected_at = NOW(),
@@ -701,8 +975,8 @@ class AdminController {
                 admin_notes        = CONCAT(IFNULL(admin_notes, ''), ' | Refund rejected by admin on ', NOW(), ': ', :note2),
                 updated_at         = NOW()
             WHERE id = :id
-            AND refund_requested_at IS NOT NULL
-            AND refund_rejected_at IS NULL
+              AND refund_requested_at IS NOT NULL
+              AND refund_rejected_at  IS NULL
         ");
         $stmt->execute([
             ':note'  => $rejectNote,
@@ -710,9 +984,8 @@ class AdminController {
             ':id'    => $bookingId,
         ]);
         $affected = $stmt->rowCount();
-
+ 
         if ($affected > 0) {
-            // Notify customer of rejection
             $this->sendRefundRejectionEmail(
                 $booking['email'],
                 $booking['fullname'],
@@ -721,7 +994,7 @@ class AdminController {
                 'package'
             );
         }
-
+ 
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -737,55 +1010,68 @@ class AdminController {
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
         }
-
+ 
         $tripId      = intval($_POST['trip_id'] ?? 0);
         $adminUserId = $_SESSION['user_ref_id'] ?? null;
-
+ 
         if (!$tripId) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Invalid trip ID']);
             exit();
         }
-
-        // Fetch trip details — join with users to get email
-        // Adjust the column/table names if your trips table stores customer info differently
+ 
+        // Join users table to get the email
         $fetch = $this->db->prepare("
             SELECT t.id, t.customer_name, t.budget_lkr, t.refund_requested_at,
-                u.email
+                   u.email
             FROM trips t
-            JOIN users u ON u.ref_id = t.user_id
+            JOIN users u ON u.ref_id = t.user_id AND u.role = 'tourist'
             WHERE t.id = :id AND t.refund_requested_at IS NOT NULL
         ");
         $fetch->execute([':id' => $tripId]);
         $trip = $fetch->fetch(PDO::FETCH_ASSOC);
-
+ 
+        // Fallback: try tourist_users table if users join returns nothing
+        if (!$trip) {
+            $fetch2 = $this->db->prepare("
+                SELECT t.id, t.customer_name, t.budget_lkr, t.refund_requested_at,
+                       tu.email
+                FROM trips t
+                JOIN tourist_users tu ON tu.id = t.user_id
+                WHERE t.id = :id AND t.refund_requested_at IS NOT NULL
+            ");
+            $fetch2->execute([':id' => $tripId]);
+            $trip = $fetch2->fetch(PDO::FETCH_ASSOC);
+        }
+ 
         if (!$trip) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Trip not found or no refund requested']);
             exit();
         }
-
+ 
         $stmt = $this->db->prepare("
             UPDATE trips
             SET status             = 'cancelled',
                 refund_approved_at = NOW(),
                 updated_at         = NOW()
             WHERE id = :id
-            AND refund_requested_at IS NOT NULL
+              AND refund_requested_at IS NOT NULL
+              AND refund_approved_at  IS NULL
         ");
         $stmt->execute([':id' => $tripId]);
         $affected = $stmt->rowCount();
-
+ 
         if ($affected > 0) {
             $this->sendRefundBankDetailsRequest(
                 $trip['email'],
                 $trip['customer_name'],
                 $tripId,
-                $trip['budget_lkr'],
+                (float)($trip['budget_lkr'] ?? 0),
                 'trip'
             );
         }
-
+ 
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -803,43 +1089,55 @@ class AdminController {
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
         }
-
-        $tripId     = intval($_POST['trip_id'] ?? 0);
-        $rejectNote = trim($_POST['reject_note'] ?? '');
-
+ 
+        $tripId     = intval($_POST['trip_id']    ?? 0);
+        $rejectNote = trim($_POST['reject_note']  ?? '');
+ 
         if (!$tripId || !$rejectNote) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Missing trip ID or rejection note']);
             exit();
         }
-
+ 
         $fetch = $this->db->prepare("
             SELECT t.id, t.customer_name, u.email
             FROM trips t
-            JOIN users u ON u.ref_id = t.user_id
+            JOIN users u ON u.ref_id = t.user_id AND u.role = 'tourist'
             WHERE t.id = :id AND t.refund_requested_at IS NOT NULL
         ");
         $fetch->execute([':id' => $tripId]);
         $trip = $fetch->fetch(PDO::FETCH_ASSOC);
-
+ 
+        // Fallback
+        if (!$trip) {
+            $fetch2 = $this->db->prepare("
+                SELECT t.id, t.customer_name, tu.email
+                FROM trips t
+                JOIN tourist_users tu ON tu.id = t.user_id
+                WHERE t.id = :id AND t.refund_requested_at IS NOT NULL
+            ");
+            $fetch2->execute([':id' => $tripId]);
+            $trip = $fetch2->fetch(PDO::FETCH_ASSOC);
+        }
+ 
         if (!$trip) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Trip not found or no refund requested']);
             exit();
         }
-
+ 
         $stmt = $this->db->prepare("
             UPDATE trips
             SET refund_rejected_at = NOW(),
                 refund_reject_note = :note,
                 updated_at         = NOW()
             WHERE id = :id
-            AND refund_requested_at IS NOT NULL
-            AND refund_rejected_at IS NULL
+              AND refund_requested_at IS NOT NULL
+              AND refund_rejected_at  IS NULL
         ");
         $stmt->execute([':note' => $rejectNote, ':id' => $tripId]);
         $affected = $stmt->rowCount();
-
+ 
         if ($affected > 0) {
             $this->sendRefundRejectionEmail(
                 $trip['email'],
@@ -849,7 +1147,7 @@ class AdminController {
                 'trip'
             );
         }
-
+ 
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -865,10 +1163,10 @@ class AdminController {
         float  $amount,
         string $type   // 'package' or 'trip'
     ): void {
-        $subject = "Your CeylonGo Refund Has Been Approved – Bank Details Required";
+        $subject   = "Your CeylonGo Refund Has Been Approved – Bank Details Required";
         $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
         $amountFormatted = 'LKR ' . number_format($amount, 2);
-
+ 
         $body = "Dear {$toName},\n\n"
             . "We are pleased to inform you that your refund request for {$typeLabel} #{$bookingId} "
             . "({$amountFormatted}) has been approved.\n\n"
@@ -882,12 +1180,11 @@ class AdminController {
             . "Best regards,\n"
             . "Ceylon Go Support Team\n"
             . "support@ceylongo.com";
-
+ 
         $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
-                . "Reply-To: support@ceylongo.com\r\n"
-                . "Content-Type: text/plain; charset=UTF-8\r\n";
-
-        // Basic PHP mail — swap for PHPMailer/SendGrid in production (see note below)
+                 . "Reply-To: support@ceylongo.com\r\n"
+                 . "Content-Type: text/plain; charset=UTF-8\r\n";
+ 
         @mail($toEmail, $subject, $body, $headers);
     }
 
@@ -897,26 +1194,66 @@ class AdminController {
         string $toName,
         int    $bookingId,
         string $rejectNote,
-        string $type
+        string $type   // 'package' or 'trip'
     ): void {
         $subject   = "Update on Your CeylonGo Refund Request";
         $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
+ 
+        $body = "Dear {$toName},\n\n"
+            . "We regret to inform you that your refund request for {$typeLabel} #{$bookingId} "
+            . "has been reviewed and cannot be approved at this time.\n\n"
+            . "Reason: {$rejectNote}\n\n"
+            . "If you believe this decision was made in error or if you have further questions, "
+            . "please contact our support team at support@ceylongo.com.\n\n"
+            . "We apologise for any inconvenience caused.\n\n"
+            . "Best regards,\n"
+            . "Ceylon Go Support Team\n"
+            . "support@ceylongo.com";
+ 
+        $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
+                 . "Reply-To: support@ceylongo.com\r\n"
+                 . "Content-Type: text/plain; charset=UTF-8\r\n";
+ 
+        @mail($toEmail, $subject, $body, $headers);
+    }
+
+    private function removeBankSlipUploadFile(?string $relativePath): void
+    {
+        if ($relativePath === null || $relativePath === '') {
+            return;
+        }
+        $safe = basename(str_replace(['\\', '..'], '', $relativePath));
+        if ($safe === '') {
+            return;
+        }
+        $full = dirname(__DIR__) . '/public/uploads/' . $safe;
+        if (is_file($full)) {
+            @unlink($full);
+        }
+    }
+
+    private function sendBankSlipRejectionEmail(
+        string $toEmail,
+        string $toName,
+        int    $refId,
+        string $rejectNote,
+        string $type   // 'package' or 'trip'
+    ): void {
+        $subject   = 'Update on Your CeylonGo Bank Transfer Slip';
+        $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
 
         $body = "Dear {$toName},\n\n"
-            . "Thank you for contacting us regarding your refund request for {$typeLabel} #{$bookingId}.\n\n"
-            . "After reviewing your request, we regret to inform you that we are unable to process "
-            . "the refund at this time for the following reason:\n\n"
-            . "  \"{$rejectNote}\"\n\n"
-            . "If you believe this decision is incorrect or would like to discuss further, please "
-            . "reply to this email or contact our support team.\n\n"
-            . "We apologise for any inconvenience caused.\n\n"
+            . "We were unable to verify the bank transfer slip you uploaded for {$typeLabel} #{$refId}.\n\n"
+            . "Reason: {$rejectNote}\n\n"
+            . "Please sign in to your CeylonGo account and upload a new slip if you still wish to pay by bank transfer.\n\n"
+            . "If you have questions, contact us at support@ceylongo.com.\n\n"
             . "Best regards,\n"
             . "Ceylon Go Support Team\n"
             . "support@ceylongo.com";
 
         $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
-                . "Reply-To: support@ceylongo.com\r\n"
-                . "Content-Type: text/plain; charset=UTF-8\r\n";
+                 . "Reply-To: support@ceylongo.com\r\n"
+                 . "Content-Type: text/plain; charset=UTF-8\r\n";
 
         @mail($toEmail, $subject, $body, $headers);
     }
@@ -1032,6 +1369,238 @@ class AdminController {
             'search'         => $search,
             'stats'          => $stats,
         ]);
+    }
+
+    /**
+     * Download inquiries as PDF table (same filters as inquiry list: status, optional search).
+     */
+    public function exportInquiriesPdf(): void
+    {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+            http_response_code(403);
+            exit('Forbidden');
+        }
+
+        $this->loadComposerAutoload();
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            http_response_code(500);
+            echo 'PDF export requires Composer dependencies. Run: composer install';
+            exit;
+        }
+
+        $status = $_GET['status'] ?? 'all';
+        if (!in_array($status, ['all', 'pending', 'replied'], true)) {
+            $status = 'all';
+        }
+        $search = trim((string) ($_GET['search'] ?? ''));
+
+        $inquiryModel = new Inquiry($this->db);
+        $rows = $inquiryModel->getAllInquiries($status, $search);
+
+        $e = static function (?string $s): string {
+            return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        };
+
+        $tbody = '';
+        foreach ($rows as $r) {
+            $customer = trim((string) ($r['tourist_name'] ?? ''));
+            if ($customer === '' && !empty($r['guest_name'])) {
+                $customer = trim((string) $r['guest_name']) . ' <' . trim((string) ($r['guest_email'] ?? '')) . '>';
+            }
+            if ($customer === '') {
+                $customer = 'Unknown';
+            }
+            $dateStr = !empty($r['created_at']) ? date('Y-m-d', strtotime($r['created_at'])) : '';
+            $tbody .= '<tr>'
+                . '<td>' . $e((string) ($r['id'] ?? '')) . '</td>'
+                . '<td>' . $e($customer) . '</td>'
+                . '<td>' . $e((string) ($r['subject'] ?? '')) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['message'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['status'] ?? '')) . '</td>'
+                . '<td>' . $e($dateStr) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['admin_reply'] ?? '')) . '</td>'
+                . '</tr>';
+        }
+
+        $filterMeta = 'Status: ' . $e($status);
+        if ($search !== '') {
+            $filterMeta .= ' &mdash; Search: ' . $e($search);
+        }
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+            body{font-family:DejaVu Sans,sans-serif;font-size:9px;color:#222;}
+            h1{font-size:15px;margin:0 0 8px;}
+            .meta{color:#666;font-size:9px;margin-bottom:10px;line-height:1.4;}
+            table.data{border-collapse:collapse;width:100%;}
+            table.data th,table.data td{border:1px solid #ccc;padding:5px 6px;text-align:left;vertical-align:top;}
+            table.data th{background:#f0f0f0;}
+            table.data tr:nth-child(even){background:#fafafa;}
+            .c-long{max-width:200px;word-wrap:break-word;}
+        </style></head><body>
+            <h1>Inquiries report</h1>
+            <div class="meta">' . $filterMeta . '<br>Generated: ' . $e(date('Y-m-d H:i')) . ' &mdash; Rows: ' . count($rows) . '</div>
+            <table class="data"><thead><tr>
+                <th>ID</th><th>Customer</th><th>Subject</th><th>Message</th><th>Status</th><th>Date</th><th>Admin Reply</th>
+            </tr></thead><tbody>' . $tbody . '</tbody></table>
+        </body></html>';
+
+        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('inquiries_' . date('Y-m-d_His') . '.pdf', ['Attachment' => true]);
+        exit;
+    }
+
+    /**
+     * Download reviews as PDF table (same filter as reviews list: rating).
+     */
+    public function exportReviewsPdf(): void
+    {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+            http_response_code(403);
+            exit('Forbidden');
+        }
+
+        $this->loadComposerAutoload();
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            http_response_code(500);
+            echo 'PDF export requires Composer dependencies. Run: composer install';
+            exit;
+        }
+
+        $rating = $_GET['rating'] ?? 'all';
+        if ($rating !== 'all' && (!ctype_digit((string) $rating) || (int) $rating < 1 || (int) $rating > 5)) {
+            $rating = 'all';
+        }
+
+        $reviewModel = new Review($this->db);
+        $rows = $reviewModel->getAllReviews($rating);
+
+        $e = static function (?string $s): string {
+            return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        };
+
+        $tbody = '';
+        foreach ($rows as $r) {
+            $dateStr = !empty($r['created_at']) ? date('Y-m-d', strtotime($r['created_at'])) : '';
+            $tbody .= '<tr>'
+                . '<td>' . $e((string) ($r['id'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['user_id'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['tourist_name'] ?? '')) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['review_text'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['rating'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['status'] ?? '')) . '</td>'
+                . '<td>' . $e($dateStr) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['admin_reply'] ?? '')) . '</td>'
+                . '</tr>';
+        }
+
+        $ratingLabel = $rating === 'all' ? 'All ratings' : ($rating . ' star(s)');
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+            body{font-family:DejaVu Sans,sans-serif;font-size:9px;color:#222;}
+            h1{font-size:15px;margin:0 0 8px;}
+            .meta{color:#666;font-size:9px;margin-bottom:10px;line-height:1.4;}
+            table.data{border-collapse:collapse;width:100%;}
+            table.data th,table.data td{border:1px solid #ccc;padding:5px 6px;text-align:left;vertical-align:top;}
+            table.data th{background:#f0f0f0;}
+            table.data tr:nth-child(even){background:#fafafa;}
+            .c-long{max-width:200px;word-wrap:break-word;}
+        </style></head><body>
+            <h1>Reviews report</h1>
+            <div class="meta">Filter: ' . $e($ratingLabel) . '<br>Generated: ' . $e(date('Y-m-d H:i')) . ' &mdash; Rows: ' . count($rows) . '</div>
+            <table class="data"><thead><tr>
+                <th>Review ID</th><th>User ID</th><th>User Name</th><th>Comment</th><th>Rating</th><th>Status</th><th>Date</th><th>Admin Reply</th>
+            </tr></thead><tbody>' . $tbody . '</tbody></table>
+        </body></html>';
+
+        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('reviews_' . date('Y-m-d_His') . '.pdf', ['Attachment' => true]);
+        exit;
+    }
+
+    /**
+     * Tour packages catalog — PDF table (same records as Manage Packages).
+     */
+    public function exportPackagesPdf(): void
+    {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+            http_response_code(403);
+            exit('Forbidden');
+        }
+
+        $this->loadComposerAutoload();
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            http_response_code(500);
+            echo 'PDF export requires Composer dependencies. Run: composer install';
+            exit;
+        }
+
+        $packageModel = new Package($this->db);
+        $rows = $packageModel->getAll();
+
+        $e = static function (?string $s): string {
+            return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        };
+
+        $tbody = '';
+        foreach ($rows as $p) {
+            $dur = $p['duration_short'] ?? $p['duration'] ?? '—';
+            $priceStr = isset($p['price']) ? number_format((int) $p['price']) : '0';
+            $ratingStr = isset($p['rating']) && $p['rating'] !== null ? number_format((float) $p['rating'], 1) : '—';
+            $trend = !empty($p['trending']) ? 'Yes' : 'No';
+            $revCount = (int) ($p['reviews'] ?? 0);
+            $created = !empty($p['created_at']) ? date('Y-m-d', strtotime($p['created_at'])) : '';
+            $hasImage = !empty($p['image']) ? 'Yes' : 'No';
+            $tbody .= '<tr>'
+                . '<td>' . $e((string) ($p['id'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($p['title'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($p['location'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($p['category'] ?? '')) . '</td>'
+                . '<td>' . $e((string) $dur) . '</td>'
+                . '<td style="text-align:right;">' . $e($priceStr) . '</td>'
+                . '<td>' . $e($ratingStr) . '</td>'
+                . '<td>' . $e((string) $revCount) . '</td>'
+                . '<td>' . $e($trend) . '</td>'
+                . '<td>' . $e($hasImage) . '</td>'
+                . '<td>' . $e($created) . '</td>'
+                . '</tr>';
+        }
+
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+            body{font-family:DejaVu Sans,sans-serif;font-size:8px;color:#222;}
+            h1{font-size:14px;margin:0 0 8px;}
+            .meta{color:#666;font-size:9px;margin-bottom:10px;line-height:1.4;}
+            table.data{border-collapse:collapse;width:100%;}
+            table.data th,table.data td{border:1px solid #ccc;padding:4px 5px;text-align:left;vertical-align:top;}
+            table.data th{background:#f0f0f0;font-size:8px;}
+            table.data tr:nth-child(even){background:#fafafa;}
+            .t-title{max-width:120px;word-wrap:break-word;}
+        </style></head><body>
+            <h1>Tour packages catalog</h1>
+            <div class="meta">Generated: ' . $e(date('Y-m-d H:i')) . ' &mdash; Packages: ' . count($rows) . '</div>
+            <table class="data"><thead><tr>
+                <th>ID</th><th>Title</th><th>Location</th><th>Category</th><th>Duration</th><th>Price (LKR)</th><th>Rating</th><th>Reviews</th><th>Trending</th><th>Image</th><th>Created</th>
+            </tr></thead><tbody>' . $tbody . '</tbody></table>
+        </body></html>';
+
+        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('packages_' . date('Y-m-d_His') . '.pdf', ['Attachment' => true]);
+        exit;
+    }
+
+    private function loadComposerAutoload(): void
+    {
+        $path = dirname(__DIR__) . '/vendor/autoload.php';
+        if (is_readable($path)) {
+            require_once $path;
+        }
     }
  
     public function deleteInquiry()
@@ -1404,6 +1973,48 @@ class AdminController {
     private function parseLines(string $text): array {
         $lines = explode("\n", str_replace("\r", '', $text));
         return array_values(array_filter(array_map('trim', $lines)));
+    }
+
+    /**
+     * Payment Status column for customized (trip) bookings — matches admin/payments getPaymentDisplay().
+     * Keys: awaiting, received, refunded, none (booking cancelled/rejected, no payment to show).
+     */
+    private static function tripPaymentStatusKey(array $row): string {
+        if (!empty($row['refund_approved_at'])) {
+            return 'refunded';
+        }
+        if (!empty($row['paid_at'])) {
+            return 'received';
+        }
+        if (!empty($row['bank_transfer_submitted_at'])) {
+            return 'awaiting';
+        }
+        $status = strtolower((string) ($row['status'] ?? ''));
+        if (in_array($status, ['cancelled', 'rejected'], true)) {
+            return 'none';
+        }
+        return 'awaiting';
+    }
+
+    /**
+     * Payment Status column for package bookings — matches admin/payments getPaymentDisplay().
+     * Keys: awaiting, received, rejected (refund approved / refunded), none (no payment row).
+     */
+    private static function packagePaymentStatusKey(array $row): string {
+        if (!empty($row['refund_approved_at'])) {
+            return 'rejected';
+        }
+        if (!empty($row['paid_at'])) {
+            return 'received';
+        }
+        if (!empty($row['bank_transfer_submitted_at'])) {
+            return 'awaiting';
+        }
+        $status = strtolower((string) ($row['status'] ?? ''));
+        if (in_array($status, ['cancelled', 'rejected'], true)) {
+            return 'none';
+        }
+        return 'awaiting';
     }
 
 }

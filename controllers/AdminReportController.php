@@ -414,9 +414,18 @@ class AdminReportController
                 ];
                 $rows[] = ['Payment scope', $scopeLabel[$psc] ?? $psc];
                 $pm = $filters['pay_method'] ?? 'all';
-                $ps = $filters['pay_status'] ?? 'all';
+                $ps = strtolower((string) ($filters['pay_status'] ?? 'all'));
+                if ($ps === 'paid') {
+                    $ps = 'received';
+                }
+                $payStatusLabels = [
+                    'all'       => 'All',
+                    'awaiting'  => 'Awaiting',
+                    'received'  => 'Received',
+                    'refunded'  => 'Refunded',
+                ];
                 $rows[] = ['Payment method', $pm === 'all' ? 'All (package bookings)' : ucwords(str_replace('_', ' ', (string) $pm))];
-                $rows[] = ['Payment status', $ps === 'all' ? 'All (package bookings)' : ucfirst((string) $ps)];
+                $rows[] = ['Payment status', $payStatusLabels[$ps] ?? ucfirst($ps)];
                 break;
             case 'providers':
                 $cat = $filters['provider_category'] ?? 'all';
@@ -481,6 +490,7 @@ class AdminReportController
                         ['Package pending / approved', (string) (int) ($ps['pending'] ?? 0)],
                         ['Custom trip rows', (string) (int) ($ts['total'] ?? 0)],
                         ['Trip budget confirmed/completed (LKR)', number_format((float) ($ts['completed_value'] ?? 0), 2)],
+                        ['Paid count — customized trips', (string) (int) ($ts['paid'] ?? 0)],
                         ['Custom trips pending', (string) (int) ($ts['pending'] ?? 0)],
                     ];
                 } elseif ($src === 'trip') {
@@ -489,6 +499,7 @@ class AdminReportController
                         ['Total revenue (LKR)', $totalRev],
                         ['Total trips', (string) (int) ($ts['total'] ?? 0)],
                         ['Budget in confirmed/completed (LKR)', number_format((float) ($ts['completed_value'] ?? 0), 2)],
+                        ['Paid bookings', (string) (int) ($ts['paid'] ?? 0)],
                         ['Pending trips', (string) (int) ($ts['pending'] ?? 0)],
                     ];
                 } else {
@@ -506,6 +517,7 @@ class AdminReportController
                 $pairs = [
                     ['Total providers', (string) (int) ($summary['total'] ?? 0)],
                     ['Active', (string) (int) ($summary['active'] ?? 0)],
+                    ['Inactive', (string) (int) ($summary['inactive'] ?? 0)],
                     ['Guides', (string) (int) ($summary['guide'] ?? 0)],
                     ['Hotels', (string) (int) ($summary['hotel'] ?? 0)],
                     ['Transport', (string) (int) ($summary['transport'] ?? 0)],

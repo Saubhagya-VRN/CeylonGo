@@ -379,6 +379,56 @@ class Report
         END";
     }
 
+    /**
+     * Normalizes pay_status for payments reports: aligns with admin payments.php Payment column
+     * (Awaiting / Received / Refunded). Legacy value "paid" maps to "received".
+     */
+    private function normalizePaymentDisplayFilter(array $filters): string
+    {
+        $raw = strtolower(trim((string) ($filters['pay_status'] ?? 'all')));
+        if ($raw === '' || $raw === 'all') {
+            return 'all';
+        }
+        if ($raw === 'paid') {
+            return 'received';
+        }
+        if (in_array($raw, ['awaiting', 'received', 'refunded'], true)) {
+            return $raw;
+        }
+
+        return 'all';
+    }
+
+    /** package_bookings — matches getPaymentDisplay() in views/admin/payments.php */
+    private function sqlPaymentDisplayFilterPackage(string $pst): string
+    {
+        switch ($pst) {
+            case 'refunded':
+                return ' AND pb.refund_approved_at IS NOT NULL ';
+            case 'received':
+                return ' AND pb.refund_approved_at IS NULL AND pb.paid_at IS NOT NULL ';
+            case 'awaiting':
+                return " AND pb.refund_approved_at IS NULL AND pb.paid_at IS NULL AND pb.status NOT IN ('cancelled','rejected') ";
+            default:
+                return '';
+        }
+    }
+
+    /** trips — same payment display rules as package rows */
+    private function sqlPaymentDisplayFilterTrip(string $pst): string
+    {
+        switch ($pst) {
+            case 'refunded':
+                return ' AND t.refund_approved_at IS NOT NULL ';
+            case 'received':
+                return ' AND t.refund_approved_at IS NULL AND t.paid_at IS NOT NULL ';
+            case 'awaiting':
+                return " AND t.refund_approved_at IS NULL AND t.paid_at IS NULL AND t.status <> 'cancelled' ";
+            default:
+                return '';
+        }
+    }
+
     /** @return array{total:int,total_revenue:float,paid:int,pending:int} */
     public function summarizePayments(array $filters): array
     {
@@ -393,11 +443,8 @@ class Report
             $where .= " AND ({$this->paymentMethodExpr()}) = 'online' ";
         }
 
-        $pst = $filters['pay_status'] ?? 'all';
-        if ($pst !== 'all' && $pst !== '') {
-            $where .= ' AND pb.status = :pstat ';
-            $params[':pstat'] = $pst;
-        }
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $where .= $this->sqlPaymentDisplayFilterPackage($pst);
 
         $sql = "
             SELECT
@@ -446,11 +493,8 @@ class Report
             $where .= " AND ({$this->paymentMethodExpr()}) = 'online' ";
         }
 
-        $pst = $filters['pay_status'] ?? 'all';
-        if ($pst !== 'all' && $pst !== '') {
-            $where .= ' AND pb.status = :pstat ';
-            $params[':pstat'] = $pst;
-        }
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $where .= $this->sqlPaymentDisplayFilterPackage($pst);
 
         if ($search !== '') {
             $where .= ' AND (pb.fullname LIKE :sq OR pb.email LIKE :sq OR pb.package_name LIKE :sq OR CAST(pb.id AS CHAR) LIKE :sq) ';
@@ -496,14 +540,16 @@ class Report
 
     // ─── Service providers (same union as admin service page) ──────────────
 
-    /** @return array{total:int,active:int,guide:int,hotel:int,transport:int} */
+    /** @return array{total:int,active:int,inactive:int,guide:int,hotel:int,transport:int} */
     public function summarizeProviders(array $filters): array
     {
         $rows = $this->fetchProvidersAll($filters);
-        $stats = ['total' => count($rows), 'active' => 0, 'guide' => 0, 'hotel' => 0, 'transport' => 0];
+        $stats = ['total' => count($rows), 'active' => 0, 'inactive' => 0, 'guide' => 0, 'hotel' => 0, 'transport' => 0];
         foreach ($rows as $r) {
             if (!empty($r['is_active'])) {
                 $stats['active']++;
+            } else {
+                $stats['inactive']++;
             }
             if (($r['role'] ?? '') === 'guide') {
                 $stats['guide']++;
@@ -955,11 +1001,8 @@ class Report
             $where .= " AND ({$this->paymentMethodExpr()}) = 'online' ";
         }
 
-        $pst = $filters['pay_status'] ?? 'all';
-        if ($pst !== 'all' && $pst !== '') {
-            $where .= ' AND pb.status = :pstat ';
-            $params[':pstat'] = $pst;
-        }
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $where .= $this->sqlPaymentDisplayFilterPackage($pst);
 
         $sql = "
             SELECT DATE_FORMAT(pb.created_at, '%Y-%m') AS ym,
@@ -987,6 +1030,9 @@ class Report
         $params = [];
         $where = ' WHERE 1=1 ';
         $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', '', true);
+
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $where .= $this->sqlPaymentDisplayFilterTrip($pst);
 
         $sql = "
             SELECT DATE_FORMAT(t.created_at, '%Y-%m') AS ym,
@@ -1165,28 +1211,33 @@ class Report
 
     // ─── Custom trip payments (trips table) ────────────────────────────────
 
-    /** @return array{total:int,completed_value:float,pending:int} */
+    /** @return array{total:int,completed_value:float,pending:int,paid:int} */
     public function summarizeTripPayments(array $filters): array
     {
         $params = [];
         $where = ' WHERE 1=1 ';
         $where .= $this->bindDateRange($params, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', '', true);
 
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $where .= $this->sqlPaymentDisplayFilterTrip($pst);
+
         $sql = "
             SELECT
                 COUNT(*) AS total,
                 COALESCE(SUM(CASE WHEN t.status IN ('confirmed','completed') THEN t.budget_lkr ELSE 0 END), 0) AS completed_value,
-                SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) AS pending
+                SUM(CASE WHEN t.status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN t.paid_at IS NOT NULL THEN 1 ELSE 0 END) AS paid_cnt
             FROM trips t
             {$where}
         ";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        $r = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'completed_value' => 0, 'pending' => 0];
+        $r = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'completed_value' => 0, 'pending' => 0, 'paid_cnt' => 0];
         return [
             'total'           => (int) ($r['total'] ?? 0),
             'completed_value' => (float) ($r['completed_value'] ?? 0),
             'pending'         => (int) ($r['pending'] ?? 0),
+            'paid'            => (int) ($r['paid_cnt'] ?? 0),
         ];
     }
 
@@ -1219,6 +1270,9 @@ class Report
             $params[':tq2'] = $like;
             $params[':tq3'] = $like;
         }
+
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $where .= $this->sqlPaymentDisplayFilterTrip($pst);
 
         $countSql = "SELECT COUNT(*) FROM trips t {$where}";
         $stmt = $this->db->prepare($countSql);
@@ -1382,11 +1436,8 @@ class Report
             $pWhere .= " AND ({$this->paymentMethodExpr()}) = 'online' ";
         }
 
-        $pst = $filters['pay_status'] ?? 'all';
-        if ($pst !== 'all' && $pst !== '') {
-            $pWhere .= ' AND pb.status = :pkg_pstat ';
-            $pParams[':pkg_pstat'] = $pst;
-        }
+        $pst = $this->normalizePaymentDisplayFilter($filters);
+        $pWhere .= $this->sqlPaymentDisplayFilterPackage($pst);
 
         if ($search !== '') {
             $pWhere .= ' AND (pb.fullname LIKE :pkg_sq OR pb.email LIKE :pkg_sq OR pb.package_name LIKE :pkg_sq OR CAST(pb.id AS CHAR) LIKE :pkg_sq) ';
@@ -1396,6 +1447,8 @@ class Report
         $tParams = [];
         $tWhere  = ' WHERE 1=1 ';
         $tWhere .= $this->bindDateRange($tParams, $filters['date_from'] ?? null, $filters['date_to'] ?? null, 't.created_at', 'tr', true);
+
+        $tWhere .= $this->sqlPaymentDisplayFilterTrip($pst);
 
         if ($search !== '') {
             $tWhere .= ' AND (t.customer_name LIKE :tr_sq OR t.destination LIKE :tr_sq OR CAST(t.id AS CHAR) LIKE :tr_sq) ';

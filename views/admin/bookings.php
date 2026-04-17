@@ -3,10 +3,13 @@
         session_start();
     }
 
-    // Package bookings: apply search, status filter and date filter server-side
-    $pkgSearch         = $_GET['pkg_search'] ?? '';
+    // Package bookings: apply search, status filter and date filter server-side (status column)
+    $pkgSearch = $_GET['pkg_search'] ?? '';
     $pkgSelectedStatus = $_GET['pkg_status'] ?? 'all';
-    $pkgDate           = $_GET['pkg_date']   ?? '';
+    if (!in_array($pkgSelectedStatus, ['all', 'approved', 'pending', 'paid', 'cancelled'], true)) {
+        $pkgSelectedStatus = 'all';
+    }
+    $pkgDate = $_GET['pkg_date'] ?? '';
 
     $filteredPkgBookings = array_filter($packageBookings ?? [], function($pb) use ($pkgSearch, $pkgSelectedStatus, $pkgDate) {
         if ($pkgSelectedStatus !== 'all' && strtolower($pb['status']) !== $pkgSelectedStatus) return false;
@@ -82,12 +85,12 @@
                         <input type="hidden" name="pkg_date"   value="<?= htmlspecialchars($pkgDate) ?>">
                         <div class="toolbar">
                             <div class="search-section">
-                                <input type="text" id="tripSearchInput" placeholder="Search by customer" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
+                                <input type="text" id="tripSearchInput" placeholder="Search by booking ID or customer" class="search-input" value="<?= htmlspecialchars($searchId ?? '') ?>">
                                 <button type="button" class="search-btn" onclick="applyTripSearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <?php
-                                    $statuses = ['all','pending','confirmed','completed','cancelled'];
+                                    $statuses = ['all','pending','completed','cancelled'];
                                     foreach($statuses as $s):
                                         $active = ($selectedStatus ?? 'all') === $s ? 'active' : '';
                                         echo "<button type='submit' name='status' value='{$s}' class='filter-btn {$active}'>" . ucfirst($s) . "</button>";
@@ -102,16 +105,25 @@
 
                     <div class="stats-section">
                         <div class="stats-grid">
-                            <?php
-                                $keys = ['total','pending','confirmed','completed','cancelled'];
-                                foreach($keys as $k):
-                                    $val = $stats[$k] ?? 0;
-                                    echo "<div class='stat-box'><strong>" . ucfirst($k) . "</strong><br><span>{$val}</span></div>";
-                                endforeach;
-                            ?>
+                            <div class="stat-box">
+                                <strong>Total</strong><br>
+                                <span><?= (int)($stats['total'] ?? 0) ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Pending</strong><br>
+                                <span><?= (int)($stats['pending'] ?? 0) ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Completed</strong><br>
+                                <span><?= (int)($stats['completed'] ?? 0) ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Cancelled</strong><br>
+                                <span><?= (int)($stats['cancelled'] ?? 0) ?></span>
+                            </div>
                         </div>
                     </div>
-                    <br>      
+                    <br>
 
                     <div class="bookings-section">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
@@ -134,6 +146,7 @@
                         <table class="booking-table">
                             <thead>
                                 <tr>
+                                    <th>Booking ID</th>
                                     <th>Customer</th>
                                     <th>Destination</th>
                                     <th>People</th>
@@ -147,7 +160,7 @@
                             <tbody id="bookingsTableBody">
                                 <?php if (empty($bookings)): ?>
                                     <tr>
-                                        <td colspan="8" style="text-align:center;">
+                                        <td colspan="9" style="text-align:center;">
                                             No customized bookings can be found.
                                         </td>
                                     </tr>
@@ -162,6 +175,7 @@
                                         }
                                     ?>
                                     <tr>
+                                        <td><?= (int)$b['booking_id'] ?></td>
                                         <td><?= htmlspecialchars($b['user_name']) ?></td>
                                         <td><?= htmlspecialchars($b['destination']) ?></td>
                                         <td><?= (int)$b['number_of_people'] ?></td>
@@ -181,7 +195,6 @@
 
                     <div class="footer-buttons" style="margin-top: 24px;">
                         <a href="/CeylonGo/public/admin/reports?type=bookings" class="report-link-btn">
-                            <i class="fa-solid fa-file-arrow-down"></i>
                             Generate Bookings Report
                         </a>
                     </div>
@@ -200,10 +213,16 @@
                             </div>
                             <div class="filter-buttons">
                                 <?php
-                                    $pkgStatuses = ['all','pending','approved','rejected'];
-                                    foreach($pkgStatuses as $s):
-                                        $active = $pkgSelectedStatus === $s ? 'active' : '';
-                                        echo "<button type='submit' name='pkg_status' value='{$s}' class='filter-btn {$active}'>" . ucfirst($s) . "</button>";
+                                    $pkgStatuses = [
+                                        'all'       => 'All',
+                                        'pending'   => 'Pending',
+                                        'approved'  => 'Approved',
+                                        'paid'      => 'Paid',
+                                        'cancelled' => 'Cancelled',
+                                    ];
+                                    foreach ($pkgStatuses as $val => $label):
+                                        $active = $pkgSelectedStatus === $val ? 'active' : '';
+                                        echo "<button type='submit' name='pkg_status' value='" . htmlspecialchars($val) . "' class='filter-btn {$active}'>" . htmlspecialchars($label) . "</button>";
                                     endforeach;
                                 ?>
                             </div>
@@ -216,10 +235,16 @@
                     <div class="stats-section">
                         <div class="stats-grid">
                             <?php
-                                $pkgKeys = ['total','pending','approved','rejected'];
-                                foreach($pkgKeys as $k):
-                                    $val = $pkgStats[$k] ?? 0;
-                                    echo "<div class='stat-box'><strong>" . ucfirst($k) . "</strong><br><span>{$val}</span></div>";
+                                $pkgStatLabels = [
+                                    'total'     => 'Total',
+                                    'pending'   => 'Pending',
+                                    'approved'  => 'Approved',
+                                    'paid'      => 'Paid',
+                                    'cancelled' => 'Cancelled',
+                                ];
+                                foreach ($pkgStatLabels as $k => $label):
+                                    $val = (int) ($pkgStats[$k] ?? 0);
+                                    echo "<div class='stat-box'><strong>" . htmlspecialchars($label) . "</strong><br><span>{$val}</span></div>";
                                 endforeach;
                             ?>
                         </div>
@@ -267,8 +292,9 @@
                                         switch (strtolower($pb['status'])) {
                                             case 'pending':   $sc = 'pending';   break;
                                             case 'approved':  $sc = 'approved';  break;
+                                            case 'paid':      $sc = 'completed'; break;
                                             case 'rejected':  $sc = 'rejected';  break;
-                                            case 'cancelled': $sc = 'rejected';  break;
+                                            case 'cancelled': $sc = 'cancelled'; break;
                                             default:          $sc = '';
                                         }
                                     ?>
@@ -547,7 +573,7 @@
                 if (visible === 0) {
                     const noRow = document.createElement("tr");
                     noRow.id = "tripNoResultsRow";
-                    noRow.innerHTML = `<td colspan="8" style="text-align:center; padding:20px; color:#888;">No bookings found.</td>`;
+                    noRow.innerHTML = `<td colspan="9" style="text-align:center; padding:20px; color:#888;">No bookings found.</td>`;
                     document.getElementById("bookingsTableBody").appendChild(noRow);
                 }
             }

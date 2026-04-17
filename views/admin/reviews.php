@@ -181,8 +181,8 @@
                     </div>
 
                     <div class="footer-buttons" style="margin-top: 24px;">
-                        <a href="/CeylonGo/public/admin/reports?type=reviews" class="report-link-btn">
-                            Generate Review Report
+                        <a href="/CeylonGo/public/admin/reviews/export?rating=<?= rawurlencode((string)($selectedRating ?? 'all')) ?>"
+                           class="report-link-btn">Download Review Report
                         </a>
                     </div>
                 </div>
