@@ -2841,9 +2841,28 @@ class TouristController {
         $tourist->last_name = trim($data['last_name'] ?? '');
         $tourist->contact_number = trim($data['contact_number'] ?? '');
         $tourist->email = trim($data['email'] ?? '');
-        
+
+        if ($tourist->first_name === '' || $tourist->last_name === '' || $tourist->email === '') {
+            header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Please fill in first name, last name, and email."));
+            exit();
+        }
+        if (!filter_var($tourist->email, FILTER_VALIDATE_EMAIL)) {
+            header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Please enter a valid email address."));
+            exit();
+        }
+
         if (!empty($data['password'])) {
-            $tourist->password = password_hash($data['password'], PASSWORD_DEFAULT);
+            $pw = trim($data['password']);
+            $pw2 = trim($data['password_confirm'] ?? '');
+            if ($pw !== $pw2) {
+                header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("New passwords do not match."));
+                exit();
+            }
+            if (strlen($pw) < 6) {
+                header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Password must be at least 6 characters."));
+                exit();
+            }
+            $tourist->password = password_hash($pw, PASSWORD_DEFAULT);
         }
 
         if ($tourist->updateProfile()) {

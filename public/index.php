@@ -16,6 +16,8 @@ $router->get('login', 'AuthController@loginView');
 $router->post('login', 'AuthController@login');
 $router->get('register', 'AuthController@registerView');
 $router->get('logout', 'AuthController@logout');
+$router->get('about', 'PagesController@about');
+$router->get('contact', 'PagesController@contact');
 
 // Routes
 $router->get('transporter/register', 'TransportProviderController@registerView');
@@ -84,6 +86,8 @@ $router->get('tourist/contact', 'TouristController@contact');
 $router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 $router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
 $router->post('tourist/inquiries', 'TouristController@inquirySubmit');
+$router->get('tourist/profile', 'TouristController@profile');
+$router->post('tourist/profile', 'TouristController@profile');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
