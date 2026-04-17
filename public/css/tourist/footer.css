@@ -1,19 +1,17 @@
 /* footer.css */
 
-/* Keep footer at bottom of page when content is short */
+/* Keep footer at bottom of page when content is short.
+   Works even when pages don't use a direct `body > main` layout. */
 body {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-}
-
-body > main {
-  flex: 1 0 auto;
 }
 
 /* Footer container */
 footer {
   flex-shrink: 0;
+  margin-top: auto;
   background: linear-gradient(135deg, #4a7c59, #5a8c69);
   color: white;
   padding: 30px 0;

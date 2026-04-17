@@ -73,7 +73,7 @@ function booking_hub_party_label($n) {
         <div class="trip-stepper-next" aria-hidden="true"></div>
       </div>
 
-      <p class="booking-hub-lead">Submitted trips that still need payment or booking follow-up. Choose a trip to open its status and continue to payment.</p>
+      <p class="booking-hub-lead">Submitted trips and their current acceptance status. Status updates can take up to 24 hours.</p>
 
       <?php if (empty($pending_trips)): ?>
       <div class="booking-hub-empty">
@@ -83,17 +83,28 @@ function booking_hub_party_label($n) {
       <?php else: ?>
       <div class="booking-hub-grid" role="list">
         <?php foreach ($pending_trips as $t):
-          $tid = (int) ($t['id'] ?? 0);
-          $href = $asset_base . '/tourist/customize-trip?step=11&trip_id=' . $tid;
+          $tid = (int) (isset($t['id']) ? $t['id'] : 0);
+          // Open directly on "Verify bookings" (step 12) for a submitted trip.
+          $href = $asset_base . '/tourist/customize-trip?step=12&trip_id=' . $tid . '&submitted=1';
           $dest = isset($t['destination']) ? (string) $t['destination'] : '';
           $sd = isset($t['start_date']) ? (string) $t['start_date'] : '';
           $bud = isset($t['budget_lkr']) ? (float) $t['budget_lkr'] : 0.0;
           $np = isset($t['number_of_people']) ? (int) $t['number_of_people'] : 0;
-          $bank = !empty($t['has_bank_pending']);
-          $badge = $bank ? 'Bank transfer submitted' : 'Payment pending';
-          $summary = $bank
-            ? 'Awaiting payment confirmation (1–2 business days).'
-            : 'Complete payment to confirm your trip.';
+          $rawStatus = isset($t['trip_status']) ? strtolower(trim((string) $t['trip_status'])) : '';
+          if ($rawStatus === '') $rawStatus = 'pending';
+          $badge = 'Pending';
+          if (in_array($rawStatus, array('confirmed', 'completed', 'approved', 'accepted'), true)) {
+            $badge = 'Accepted';
+          } elseif (in_array($rawStatus, array('cancelled', 'canceled'), true)) {
+            $badge = 'Cancelled';
+          } elseif (in_array($rawStatus, array('rejected', 'declined', 'denied'), true)) {
+            $badge = 'Rejected';
+          }
+          $summary = ($badge === 'Accepted')
+            ? 'Accepted — you can open and proceed to payment.'
+            : (($badge === 'Rejected' || $badge === 'Cancelled')
+              ? ($badge . ' — please contact support if you need help.')
+              : 'Pending — please check back later (up to 24 hours).');
           ?>
         <a class="booking-hub-card trip-sum-budget-card" role="listitem" href="<?php echo htmlspecialchars($href, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Open status for trip <?php echo (int) $tid; ?>, <?php echo htmlspecialchars($dest, ENT_QUOTES, 'UTF-8'); ?>">
           <div class="trip-sum-budget-card-head">Trip #<?php echo (int) $tid; ?></div>
@@ -115,8 +126,8 @@ function booking_hub_party_label($n) {
               <strong><?php echo $bud > 0 ? ('LKR ' . number_format((int) round($bud))) : '—'; ?></strong>
             </li>
             <li>
-              <span>Payment</span>
-              <strong class="booking-hub-card__pay <?php echo $bank ? 'booking-hub-card__pay--bank' : ''; ?>"><?php echo htmlspecialchars($badge, ENT_QUOTES, 'UTF-8'); ?></strong>
+              <span>Status</span>
+              <strong class="booking-hub-card__pay <?php echo $badge === 'Accepted' ? 'trip-sum-status--accepted' : ($badge === 'Pending' ? 'trip-sum-status--pending' : 'trip-sum-status--cancelled'); ?>"><?php echo htmlspecialchars($badge, ENT_QUOTES, 'UTF-8'); ?></strong>
             </li>
           </ul>
           <div class="trip-sum-budget-total trip-sum-booking-status-total booking-hub-card__summary">

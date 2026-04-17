@@ -94,6 +94,17 @@ class TouristController {
             die("<script>alert('Passwords do not match.'); window.history.back();</script>");
         }
 
+        // Prevent duplicate accounts (users table is the source of truth for login).
+        try {
+            $authChk = new AuthUser($this->db);
+            $existing = $authChk->getUserByEmail(trim((string) $data['email']));
+            if ($existing && !empty($existing['email'])) {
+                die("<script>alert('This email is already registered. Please log in.'); window.history.back();</script>");
+            }
+        } catch (\Throwable $e) {
+            // If lookup fails, continue and let the insert fail with a clearer message below.
+        }
+
         // Create tourist
         $tourist = new Tourist($this->db);
         $tourist->first_name = trim($data['fname']);
@@ -102,14 +113,39 @@ class TouristController {
         $tourist->email = trim($data['email']);
         $tourist->password = password_hash($data['password'], PASSWORD_DEFAULT);
 
-        if ($tourist->register()) {
+        try {
+            // Ensure tourist_users + users stay in sync.
+            if (method_exists($this->db, 'beginTransaction')) {
+                $this->db->beginTransaction();
+            }
+
+            if (!$tourist->register()) {
+                if (method_exists($this->db, 'rollBack')) {
+                    $this->db->rollBack();
+                }
+                echo "<script>alert('Registration failed. Please try again.'); window.history.back();</script>";
+                return;
+            }
+
             // Add to users table
             $authUser = new AuthUser($this->db);
             $authUser->ref_id = $tourist->id;
             $authUser->email = $tourist->email;
             $authUser->password = $tourist->password;
             $authUser->role = 'tourist';
-            $authUser->addUser();
+            $okUser = $authUser->addUser();
+
+            if (!$okUser) {
+                if (method_exists($this->db, 'rollBack')) {
+                    $this->db->rollBack();
+                }
+                echo "<script>alert('Registration failed: could not create login user record.'); window.history.back();</script>";
+                return;
+            }
+
+            if (method_exists($this->db, 'commit')) {
+                $this->db->commit();
+            }
 
             // Set session
             $_SESSION['user_id'] = $tourist->id;
@@ -120,8 +156,15 @@ class TouristController {
 
             header("Location: /CeylonGo/public/tourist/dashboard");
             exit();
-        } else {
+        } catch (\Throwable $e) {
+            try {
+                if (method_exists($this->db, 'rollBack')) {
+                    $this->db->rollBack();
+                }
+            } catch (\Throwable $e2) {}
+            error_log('tourist register: ' . $e->getMessage());
             echo "<script>alert('Registration failed. Please try again.'); window.history.back();</script>";
+            return;
         }
     }
 
@@ -291,6 +334,7 @@ class TouristController {
                 continue;
             }
             $hasBank = isset($tr['bank_transfer_submitted_at']) && trim((string) $tr['bank_transfer_submitted_at']) !== '';
+            $status = isset($tr['status']) ? trim((string) $tr['status']) : '';
             $dest = isset($tr['destination']) ? trim((string) $tr['destination']) : '';
             $sd = isset($tr['start_date']) ? trim((string) $tr['start_date']) : '';
             $budget = isset($tr['budget_lkr']) ? (float) $tr['budget_lkr'] : 0.0;
@@ -302,6 +346,7 @@ class TouristController {
                 'budget_lkr' => $budget,
                 'number_of_people' => isset($tr['number_of_people']) ? (int) $tr['number_of_people'] : 0,
                 'has_bank_pending' => $hasBank,
+                'trip_status' => $status,
             );
         }
 
@@ -534,7 +579,7 @@ class TouristController {
         }
         $itemsName = mb_substr(preg_replace('/\s+/', ' ', trim($itemsName)), 0, 120) ?: 'Custom trip';
 
-        $fields = [
+        $fields = array(
             'merchant_id' => $merchantId,
             'return_url' => app_absolute_url('tourist/payment/return') . '?',
             'cancel_url' => app_absolute_url('tourist/customize-trip'),
@@ -552,17 +597,17 @@ class TouristController {
             'country' => 'Sri Lanka',
             'hash' => $hash,
             'custom_1' => (string) $tripId,
-        ];
+        );
 
         $checkoutUrl = PayHere::checkoutUrl((bool) PAYHERE_SANDBOX);
 
         $_SESSION['payhere_pending_trip_id'] = $tripId;
         $_SESSION['payhere_pending_trip_order_id'] = $orderId;
 
-        view('tourist/payhere_redirect', [
+        view('tourist/payhere_redirect', array(
             'checkout_url' => $checkoutUrl,
             'fields' => $fields,
-        ]);
+        ));
     }
 
     /**

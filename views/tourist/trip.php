@@ -527,11 +527,20 @@ $main_cities = array(
         var paramsBoot = new URLSearchParams(window.location.search || '');
         var urlTidBoot = parseInt(paramsBoot.get('trip_id') || '0', 10) || 0;
         var afterPayBoot = paramsBoot.get('afterPayment') === '1';
+        var forceSubmittedBoot = paramsBoot.get('submitted') === '1';
         if (urlTidBoot > 0) {
           sessionStorage.setItem('ceylonTripWizardTripId', String(urlTidBoot));
-          if (afterPayBoot) {
+          if (afterPayBoot || forceSubmittedBoot) {
             sessionStorage.setItem('ceylonTripWizardSubmitted', '1');
-            sessionStorage.setItem('ceylonTripWizardProceededToPayment', String(urlTidBoot));
+            // Prevent "submitted" getting dropped by fingerprint mismatch when opening a previously submitted trip.
+            if (forceSubmittedBoot) {
+              try {
+                sessionStorage.setItem('ceylonTripWizardFingerprint', tripWizardFingerprint());
+              } catch (eFpBoot) {}
+            }
+            if (afterPayBoot) {
+              sessionStorage.setItem('ceylonTripWizardProceededToPayment', String(urlTidBoot));
+            }
           }
         }
       }
@@ -2403,6 +2412,23 @@ $main_cities = array(
       return { text: String(raw), cls: 'trip-sum-status--muted' };
     }
 
+    function mapVerifyTripStatus(raw) {
+      var s = (raw || '').toString().trim().toLowerCase();
+      if (!s) return { text: 'Pending', cls: 'trip-sum-status--pending' };
+      if (s === 'pending') return { text: 'Pending', cls: 'trip-sum-status--pending' };
+      if (s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted') {
+        return { text: 'Accepted', cls: 'trip-sum-status--accepted' };
+      }
+      if (s === 'cancelled' || s === 'canceled') return { text: 'Cancelled', cls: 'trip-sum-status--cancelled' };
+      if (s === 'rejected' || s === 'declined' || s === 'denied') return { text: 'Rejected', cls: 'trip-sum-status--cancelled' };
+      return { text: String(raw), cls: 'trip-sum-status--muted' };
+    }
+
+    function isVerifyTripAccepted(raw) {
+      var s = (raw || '').toString().trim().toLowerCase();
+      return s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted';
+    }
+
     function isVerifyBookingApproved(raw) {
       var s = (raw || '').toString().trim().toLowerCase();
       return s === 'confirmed' || s === 'completed' || s === 'approved' || s === 'accepted';
@@ -2486,6 +2512,8 @@ $main_cities = array(
 
       try {
         syncTripWizardSubmissionState();
+        var tripId = '';
+        try { tripId = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (eTid) { tripId = ''; }
 
         var pendingCount = 0;
         var acceptedCount = 0;
@@ -2558,50 +2586,97 @@ $main_cities = array(
           }
         });
 
-        var linesHtml = rows.map(function (r) {
-          return '<li><span>' + escSummaryHtml(r.label) + '</span><strong class="trip-sum-status ' + r.disp.cls + '">' + escSummaryHtml(r.disp.text) + '</strong></li>';
-        }).join('');
-        var summaryText = 'No confirmations yet';
-        if (pendingCount || acceptedCount || cancelledCount) {
-          var parts = [];
-          if (pendingCount) parts.push(pendingCount + ' pending');
-          if (acceptedCount) parts.push(acceptedCount + ' accepted');
-          if (cancelledCount) parts.push(cancelledCount + ' cancelled');
-          summaryText = parts.join(' · ');
+        // Fetch the submitted trip acceptance status from DB (this is what changes within ~24 hours).
+        var tripStatusRaw = '';
+        if (!tripId) {
+          rows.unshift({ label: 'Submitted trip', disp: mapVerifyTripStatus('pending') });
+          finalizeRender(false);
+        } else {
+          fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tripId), {
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data && data.success && data.trip) {
+                tripStatusRaw = (data.trip.status || '').toString().trim();
+              } else {
+                tripStatusRaw = '';
+              }
+              var dispTrip = mapVerifyTripStatus(tripStatusRaw || 'pending');
+              var acceptedTrip = isVerifyTripAccepted(tripStatusRaw);
+              rows.unshift({ label: 'Submitted trip', disp: dispTrip });
+              finalizeRender(acceptedTrip);
+            })
+            .catch(function () {
+              rows.unshift({ label: 'Submitted trip', disp: mapVerifyTripStatus('pending') });
+              finalizeRender(false);
+            });
         }
 
-        var topNote = '<p class="trip-sum-budget-footnote">Status updates can take up to <strong>24 hours</strong>. Please wait until all items are marked <strong>Accepted</strong> before making payment. You’ll be notified once everything is ready.</p>';
+        function finalizeRender(tripAccepted) {
+          var linesHtml = rows.map(function (r) {
+            return '<li><span>' + escSummaryHtml(r.label) + '</span><strong class="trip-sum-status ' + r.disp.cls + '">' + escSummaryHtml(r.disp.text) + '</strong></li>';
+          }).join('');
+          var summaryText = 'No confirmations yet';
+          if (pendingCount || acceptedCount || cancelledCount) {
+            var parts = [];
+            if (pendingCount) parts.push(pendingCount + ' pending');
+            if (acceptedCount) parts.push(acceptedCount + ' accepted');
+            if (cancelledCount) parts.push(cancelledCount + ' cancelled');
+            summaryText = parts.join(' · ');
+          }
+          var topNote = '';
+          if (!tripId) {
+            topNote = '<p class="trip-sum-budget-footnote">Please submit your trip first to track its acceptance status.</p>';
+          } else if (!tripAccepted) {
+            topNote = '<p class="trip-sum-budget-footnote">Status updates can take up to <strong>24 hours</strong>. Please wait until your submitted trip is marked <strong>Accepted</strong> before making payment. You’ll be notified once everything is ready.</p>';
+          } else {
+            topNote = '<p class="trip-sum-budget-footnote">Your submitted trip is <strong>Accepted</strong>. You can proceed to payment.</p>';
+          }
 
-        mount.innerHTML =
-          '<div style="max-width: 520px; margin: 0 auto; width: 100%;">' +
-            '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Status of bookings">' +
-              '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
-              '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
-              '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
-              topNote +
-              '<div class="trip-sum-booking-submit-wrap">' +
-                '<button type="button" class="trip-sum-booking-submit-btn" id="tripVerifyProceedBtn">Proceed to Payment</button>' +
+          mount.innerHTML =
+            '<div style="max-width: 520px; margin: 0 auto; width: 100%;">' +
+              '<div class="trip-sum-budget-card trip-sum-booking-status-card" role="region" aria-label="Status of bookings">' +
+                '<div class="trip-sum-budget-card-head">Status of Bookings</div>' +
+                '<ul class="trip-sum-budget-lines">' + linesHtml + '</ul>' +
+                '<div class="trip-sum-budget-total trip-sum-booking-status-total"><span>Summary</span><strong class="trip-sum-booking-status-total-value">' + escSummaryHtml(summaryText) + '</strong></div>' +
+                topNote +
+                '<div class="trip-sum-booking-submit-wrap">' +
+                  '<button type="button" class="trip-sum-booking-submit-btn" id="tripVerifyProceedBtn"' + (tripAccepted ? '' : ' disabled') + '>Proceed to Payment</button>' +
+                '</div>' +
               '</div>' +
-            '</div>' +
-          '</div>';
+            '</div>';
 
-        var proceedBtn = document.getElementById('tripVerifyProceedBtn');
-        if (proceedBtn) {
-          proceedBtn.onclick = function () {
-            var tid = sessionStorage.getItem(tripWizardTripIdKey) || '';
-            if (!tid) {
-              alert('Please click "Submit trip" first, then proceed to payment.');
-              showStep(11);
-              return;
-            }
-            var gate = validateVerifyBookingsApproved();
-            if (!gate.ok) {
-              alert(gate.message);
-              return;
-            }
-            try { sessionStorage.setItem(tripWizardProceedKey, String(tid)); } catch (e) {}
-            showStep(13);
-          };
+          var proceedBtn = document.getElementById('tripVerifyProceedBtn');
+          if (proceedBtn) {
+            proceedBtn.onclick = function () {
+              var tid = '';
+              try { tid = String(sessionStorage.getItem(tripWizardTripIdKey) || '').trim(); } catch (e0) { tid = ''; }
+              if (!tid) {
+                alert('Please click "Submit trip" first, then proceed to payment.');
+                showStep(11);
+                return;
+              }
+              fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tid), {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+              })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                  var st = (data && data.trip && data.trip.status) ? String(data.trip.status) : '';
+                  if (!isVerifyTripAccepted(st)) {
+                    alert('Your submitted trip is not accepted yet. Please wait (up to 24 hours) and try again.');
+                    return;
+                  }
+                  try { sessionStorage.setItem(tripWizardProceedKey, String(tid)); } catch (e) {}
+                  showStep(13);
+                })
+                .catch(function () {
+                  alert('Could not verify your trip status right now. Please try again.');
+                });
+            };
+          }
         }
       } catch (e) {
         mount.innerHTML =

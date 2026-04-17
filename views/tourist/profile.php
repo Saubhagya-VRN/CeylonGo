@@ -1,8 +1,8 @@
 <?php
 // views/tourist/profile.php — account details (controller loads $tourist)
-$tourist = isset($tourist) && is_array($tourist) ? $tourist : [];
-$success_message = $_SESSION['success'] ?? '';
-$error_message = $_GET['error'] ?? $_SESSION['error'] ?? '';
+$tourist = isset($tourist) && is_array($tourist) ? $tourist : array();
+$success_message = isset($_SESSION['success']) ? $_SESSION['success'] : '';
+$error_message = isset($_GET['error']) ? $_GET['error'] : (isset($_SESSION['error']) ? $_SESSION['error'] : '');
 unset($_SESSION['success'], $_SESSION['error']);
 
 $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
@@ -19,11 +19,12 @@ if ($user_email_sidebar === '' && !empty($tourist['email'])) {
 $avatar_initial = $user_name !== '' ? strtoupper(substr($user_name, 0, 1)) : 'T';
 $trip_sidebar_active = 'profile';
 
-$fn = htmlspecialchars((string) ($tourist['first_name'] ?? ''), ENT_QUOTES, 'UTF-8');
-$ln = htmlspecialchars((string) ($tourist['last_name'] ?? ''), ENT_QUOTES, 'UTF-8');
-$contact = htmlspecialchars((string) ($tourist['contact_number'] ?? ''), ENT_QUOTES, 'UTF-8');
-$em = htmlspecialchars((string) ($tourist['email'] ?? ''), ENT_QUOTES, 'UTF-8');
+$fn = htmlspecialchars((string) (isset($tourist['first_name']) ? $tourist['first_name'] : ''), ENT_QUOTES, 'UTF-8');
+$ln = htmlspecialchars((string) (isset($tourist['last_name']) ? $tourist['last_name'] : ''), ENT_QUOTES, 'UTF-8');
+$contact = htmlspecialchars((string) (isset($tourist['contact_number']) ? $tourist['contact_number'] : ''), ENT_QUOTES, 'UTF-8');
+$em = htmlspecialchars((string) (isset($tourist['email']) ? $tourist['email'] : ''), ENT_QUOTES, 'UTF-8');
 $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'UTF-8');
+$full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,15 +35,20 @@ $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'U
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/common.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/navbar.css">
+  <?php if (!$full_page): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip_layout.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/sidebar.css">
+  <?php endif; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/footer.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/profile.css">
+  <?php if (!$full_page): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip.css">
+  <?php endif; ?>
 </head>
-<body class="trip-page-body">
+<body class="<?php echo $full_page ? 'profile-full-page' : 'trip-page-body'; ?>">
   <?php include __DIR__ . '/header.php'; ?>
 
+  <?php if (!$full_page): ?>
   <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
 
   <div class="trip-page-wrapper">
@@ -55,6 +61,9 @@ $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'U
         <span>&gt;</span>
         <span>Profile</span>
       </div>
+  <?php else: ?>
+    <main class="profile-trip-main" style="max-width: 1100px; margin: 0 auto; padding: 28px 18px;">
+  <?php endif; ?>
 
       <div class="trip-header-row" aria-label="Profile">
         <div class="trip-stepper-prev" aria-hidden="true"></div>
@@ -153,10 +162,13 @@ $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'U
         </div>
       </div>
     </main>
+  <?php if (!$full_page): ?>
   </div>
+  <?php endif; ?>
 
   <?php include __DIR__ . '/footer.php'; ?>
 
+  <?php if (!$full_page): ?>
   <script>
   document.addEventListener('DOMContentLoaded', function () {
     var hamburger = document.getElementById('tripHamburgerBtn');
@@ -186,5 +198,6 @@ $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'U
     });
   });
   </script>
+  <?php endif; ?>
 </body>
 </html>
