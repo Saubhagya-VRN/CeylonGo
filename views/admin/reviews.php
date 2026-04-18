@@ -3,6 +3,13 @@
         header("Location: /CeylonGo/public/login");
         exit();
     }
+
+    $selectedRating = $selectedRating ?? 'all';
+    $selectedPkgRating = $selectedPkgRating ?? 'all';
+    $reviews = $reviews ?? [];
+    $packageReviews = $packageReviews ?? [];
+    $metrics = $metrics ?? ['total' => 0, 'pending' => 0, 'average' => 0];
+    $packageMetrics = $packageMetrics ?? ['total' => 0, 'pending' => 0, 'average' => 0];
 ?>
 
 <!DOCTYPE html>
@@ -59,41 +66,20 @@
             <div class="main-content">
                 <div class="reviews-management">
                     <h2 class="page-title">Reviews Management</h2>
-                    <h4>Overall Ratings</h4>
 
-                    <div class="footer-buttons">
-                        <button class="footer-btn">
-                            Average Rating:
-                            <b><?= number_format($metrics['average'], 1) ?></b>
-                        </button>
-
-                        <button class="footer-btn">
-                            Total Reviews:
-                            <b><?= $metrics['total'] ?></b>
-                            <?php if ($metrics['pending'] > 0): ?>
-                                <span style="color:orange;font-size:12px;">
-                                    (<?= $metrics['pending'] ?> pending)
-                                </span>
-                            <?php endif; ?>
-                        </button>
-
-                        <button class="footer-btn">
-                            Positive Feedback:
-                            <b><?= $metrics['positive_percentage'] ?>%</b>
-                        </button>
-                    </div>
-                    <br>
+                    <h4 class="page-title" style="font-size:16px;">Customized Trip Reviews</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/reviews">
+                        <input type="hidden" name="pkg_rating" value="<?= htmlspecialchars((string) $selectedPkgRating) ?>">
                         <div class="toolbar">
                             <div class="filter-buttons">
                                 <button type="submit" name="rating" value="all"
-                                    class="filter-btn <?= ($selectedRating=='all')?'active':'' ?>">
+                                    class="filter-btn <?= ($selectedRating === 'all') ? 'active' : '' ?>">
                                     All
                                 </button>
                                 <?php for ($i = 5; $i >= 1; $i--): ?>
                                     <button type="submit" name="rating" value="<?= $i ?>"
-                                        class="filter-btn <?= ($selectedRating==$i)?'active':'' ?>">
+                                        class="filter-btn <?= ($selectedRating == (string) $i) ? 'active' : '' ?>">
                                         <?= $i ?> ⭐
                                     </button>
                                 <?php endfor; ?>
@@ -101,29 +87,45 @@
                         </div>
                     </form>
 
-                    <div class="users-section">
-                        <table class="user-table">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">                               
-                                <!-- LEFT: Show entries -->
-                                <div class="filter-buttons" style="align-items:center;">
-                                    <span style="font-size:14px;">Show</span>
-
-                                    <select id="rowsPerPage" class="filter-btn small-btn">
-                                        <option value="10" selected>10</option>
-                                        <option value="15">15</option>
-                                        <option value="25">25</option>
-                                        <option value="50">50</option>
-                                    </select>
-
-                                    <span style="font-size:14px;">entries</span>
-                                </div>
-                                <!-- RIGHT: Pagination -->
-                                <div id="paginationControls" class="filter-buttons"></div>
+                    <div class="stats-section">
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong>Average Rating</strong><br>
+                                <span><?= number_format((float) ($metrics['average'] ?? 0), 1) ?></span>
                             </div>
+                            <div class="stat-box">
+                                <strong>Total Reviews</strong><br>
+                                <span><?= (int) ($metrics['total'] ?? 0) ?></span>
+                                <?php if (($metrics['pending'] ?? 0) > 0): ?>
+                                    <span style="color:orange;font-size:12px;">
+                                        (<?= (int) $metrics['pending'] ?> pending)
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+
+                    <div class="users-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+                                <select id="customRowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+                            <div id="customPaginationControls" class="filter-buttons"></div>
+                        </div>
+                        <table class="user-table">
                             <thead>
                                 <tr>
                                     <th>User ID</th>
                                     <th>User Name</th>
+                                    <th>Destination</th>
                                     <th>Comment</th>
                                     <th>Rating</th>
                                     <th>Status</th>
@@ -131,36 +133,42 @@
                                     <th>Admin Reply</th>
                                 </tr>
                             </thead>
-                            <tbody id="reviewTableBody">
-                                <?php if(count($reviews) > 0): ?>
-                                    <?php foreach($reviews as $review): ?>
-                                        <tr data-id="<?= $review['id'] ?>"
+                            <tbody id="customReviewTableBody">
+                                <?php if (count($reviews) > 0): ?>
+                                    <?php foreach ($reviews as $review): ?>
+                                        <tr data-id="<?= (int) $review['id'] ?>"
+                                            data-kind="custom"
+                                            data-reply="<?= htmlspecialchars($review['admin_reply'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
                                             data-created-at="<?= htmlspecialchars(substr($review['created_at'] ?? '', 0, 10)) ?>">
-                                            <td><?= htmlspecialchars($review['user_id']) ?></td>
-                                            <td><?= htmlspecialchars($review['tourist_name']) ?></td>
-                                            <td><?= htmlspecialchars($review['review_text']) ?></td>
-
+                                            <td><?= htmlspecialchars((string) $review['user_id']) ?></td>
+                                            <td><?= htmlspecialchars($review['tourist_name'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($review['destination'] ?? '') ?: '—' ?></td>
+                                            <td><?= htmlspecialchars($review['review_text'] ?? '') ?></td>
                                             <td>
                                                 <?php
+                                                    $r = (int) ($review['rating'] ?? 0);
                                                     for ($i = 1; $i <= 5; $i++) {
-                                                        echo $i <= $review['rating'] ? "⭐" : "☆";
+                                                        echo $i <= $r ? '⭐' : '☆';
                                                     }
                                                 ?>
                                             </td>
                                             <td>
-                                                <?php if ($review['status'] === 'approved'): ?>
-                                                    <span style="color:green;font-weight:bold">Approved</span>
-                                                <?php else: ?>
-                                                    <span style="color:orange;font-weight:bold">Pending</span>
-                                                <?php endif; ?>
+                                                <?php
+                                                    $st = strtolower((string) ($review['status'] ?? ''));
+                                                    $hasReply = trim((string) ($review['admin_reply'] ?? '')) !== '';
+                                                    if ($st === 'pending' && !$hasReply) {
+                                                        echo '<span style="color:orange;font-weight:bold">Pending</span>';
+                                                    } else {
+                                                        echo '<span style="color:#198754;font-weight:bold">Replied</span>';
+                                                    }
+                                                ?>
                                             </td>
-
                                             <td class="actions">
-                                                <?php if ($review['status'] === 'pending'): ?>
-                                                    <button class="icon-btn approve-btn" title="Approve">✅</button>
+                                                <?php if (($review['status'] ?? '') === 'pending'): ?>
+                                                    <button type="button" class="icon-btn approve-btn" title="Approve">✅</button>
                                                 <?php endif; ?>
-                                                <button class="icon-btn reply-btn" title="Comment">💬</button>
-                                                <button class="icon-btn danger delete-btn" title="Delete">🗑️</button>
+                                                <button type="button" class="icon-btn reply-btn" title="Comment">💬</button>
+                                                <button type="button" class="icon-btn danger delete-btn" title="Delete">🗑️</button>
                                             </td>
                                             <td>
                                                 <?php if (!empty($review['admin_reply'])): ?>
@@ -173,7 +181,7 @@
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="6" style="text-align:center;">No reviews found.</td>
+                                        <td colspan="8" style="text-align:center;">No customized reviews found.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
@@ -181,8 +189,136 @@
                     </div>
 
                     <div class="footer-buttons" style="margin-top: 24px;">
-                        <a href="/CeylonGo/public/admin/reviews/export?rating=<?= rawurlencode((string)($selectedRating ?? 'all')) ?>"
-                           class="report-link-btn">Download Review Report
+                        <a href="/CeylonGo/public/admin/reviews/export?rating=<?= rawurlencode((string) $selectedRating) ?>"
+                           class="report-link-btn">Download Customized Review Report
+                        </a>
+                    </div>
+
+                    <br><br>
+                    <h4 class="page-title" style="font-size:16px;">Package Reviews</h4>
+
+                    <form method="GET" action="/CeylonGo/public/admin/reviews">
+                        <input type="hidden" name="rating" value="<?= htmlspecialchars((string) $selectedRating) ?>">
+                        <div class="toolbar">
+                            <div class="filter-buttons">
+                                <button type="submit" name="pkg_rating" value="all"
+                                    class="filter-btn <?= ($selectedPkgRating === 'all') ? 'active' : '' ?>">
+                                    All
+                                </button>
+                                <?php for ($i = 5; $i >= 1; $i--): ?>
+                                    <button type="submit" name="pkg_rating" value="<?= $i ?>"
+                                        class="filter-btn <?= ($selectedPkgRating == (string) $i) ? 'active' : '' ?>">
+                                        <?= $i ?> ⭐
+                                    </button>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="stats-section">
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <strong>Average Rating</strong><br>
+                                <span><?= number_format((float) ($packageMetrics['average'] ?? 0), 1) ?></span>
+                            </div>
+                            <div class="stat-box">
+                                <strong>Total Reviews</strong><br>
+                                <span><?= (int) ($packageMetrics['total'] ?? 0) ?></span>
+                                <?php if (($packageMetrics['pending'] ?? 0) > 0): ?>
+                                    <span style="color:orange;font-size:12px;">
+                                        (<?= (int) $packageMetrics['pending'] ?> pending)
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+
+                    <div class="users-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+                                <select id="pkgReviewRowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+                            <div id="pkgReviewPaginationControls" class="filter-buttons"></div>
+                        </div>
+                        <table class="user-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>User Name</th>
+                                    <th>Package</th>
+                                    <th>Comment</th>
+                                    <th>Rating</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                    <th>Admin Reply</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packageReviewTableBody">
+                                <?php if (count($packageReviews) > 0): ?>
+                                    <?php foreach ($packageReviews as $pr): ?>
+                                        <tr data-id="<?= (int) $pr['id'] ?>"
+                                            data-kind="package"
+                                            data-reply="<?= htmlspecialchars($pr['admin_reply'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                            data-created-at="<?= htmlspecialchars(substr($pr['created_at'] ?? '', 0, 10)) ?>">
+                                            <td><?= htmlspecialchars((string) ($pr['user_id'] ?? '')) ?></td>
+                                            <td><?= htmlspecialchars($pr['tourist_name'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($pr['destination'] ?? '') ?: '—' ?></td>
+                                            <td><?= htmlspecialchars($pr['review_text'] ?? '') ?></td>
+                                            <td>
+                                                <?php
+                                                    $r2 = (int) ($pr['rating'] ?? 0);
+                                                    for ($i = 1; $i <= 5; $i++) {
+                                                        echo $i <= $r2 ? '⭐' : '☆';
+                                                    }
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?php
+                                                    $st2 = strtolower((string) ($pr['status'] ?? ''));
+                                                    $hasReply2 = trim((string) ($pr['admin_reply'] ?? '')) !== '';
+                                                    if ($st2 === 'pending' && !$hasReply2) {
+                                                        echo '<span style="color:orange;font-weight:bold">Pending</span>';
+                                                    } else {
+                                                        echo '<span style="color:#198754;font-weight:bold">Replied</span>';
+                                                    }
+                                                ?>
+                                            </td>
+                                            <td class="actions">
+                                                <?php if (($pr['status'] ?? '') === 'pending'): ?>
+                                                    <button type="button" class="icon-btn pkg-approve-btn" title="Approve">✅</button>
+                                                <?php endif; ?>
+                                                <button type="button" class="icon-btn pkg-reply-btn" title="Comment">💬</button>
+                                                <button type="button" class="icon-btn danger pkg-delete-btn" title="Delete">🗑️</button>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($pr['admin_reply'])): ?>
+                                                    <?= htmlspecialchars($pr['admin_reply']) ?>
+                                                <?php else: ?>
+                                                    <span style="color:#aaa;font-style:italic;">—</span>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="8" style="text-align:center;">No package reviews found.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reviews/export-package?pkg_rating=<?= rawurlencode((string) $selectedPkgRating) ?>"
+                           class="report-link-btn">Download Package Review Report
                         </a>
                     </div>
                 </div>
@@ -203,156 +339,190 @@
                 dropdown.classList.toggle('show');
             }
 
-            // Close dropdown when clicking outside
             document.addEventListener('click', function(event) {
                 const dropdown = document.getElementById('profileDropdown');
                 const profilePic = document.querySelector('.profile-pic');
-                
+
                 if (dropdown && !dropdown.contains(event.target) && event.target !== profilePic) {
                 dropdown.classList.remove('show');
                 }
             });
 
-            document.getElementById("reviewTableBody").addEventListener("click", function(e) {
+            const ENDPOINTS = {
+                custom: {
+                    delete: '/CeylonGo/public/admin/review/delete',
+                    reply: '/CeylonGo/public/admin/review/reply',
+                    approve: '/CeylonGo/public/admin/review/approve'
+                },
+                package: {
+                    delete: '/CeylonGo/public/admin/package-review/delete',
+                    reply: '/CeylonGo/public/admin/package-review/reply',
+                    approve: '/CeylonGo/public/admin/package-review/approve'
+                }
+            };
 
-                const button = e.target.closest("button");
-                if (!button) return;
+            function wireReviewActions(tbodyId, kind) {
+                const tbody = document.getElementById(tbodyId);
+                if (!tbody) return;
 
-                const row = button.closest("tr");
-                const reviewId = row.dataset.id;
+                tbody.addEventListener('click', function(e) {
+                    const button = e.target.closest('button');
+                    if (!button) return;
 
-                // ── Delete review ─────────────────────────────────
-                if (button.classList.contains("delete-btn")) {
-                    if (!confirm("Permanently delete this review?")) return;
+                    const row = button.closest('tr');
+                    if (!row || !row.dataset.id) return;
 
-                    fetch("/CeylonGo/public/admin/review/delete", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `review_id=${reviewId}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            row.remove();
-                        } else {
-                            alert("Failed to delete review");
-                        }
+                    const reviewId = row.dataset.id;
+                    const ep = ENDPOINTS[kind];
+
+                    if (button.classList.contains('delete-btn') || button.classList.contains('pkg-delete-btn')) {
+                        if (!confirm('Permanently delete this review?')) return;
+
+                        fetch(ep.delete, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'review_id=' + encodeURIComponent(reviewId)
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                row.remove();
+                            } else {
+                                alert('Failed to delete review');
+                            }
+                        });
+                        return;
+                    }
+
+                    if (button.classList.contains('reply-btn') || button.classList.contains('pkg-reply-btn')) {
+                        const existingReply = row.dataset.reply || '';
+                        const reply = prompt('Enter admin reply:', existingReply);
+                        if (reply === null || reply.trim() === '') return;
+
+                        fetch(ep.reply, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'review_id=' + encodeURIComponent(reviewId) + '&reply=' + encodeURIComponent(reply)
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                row.dataset.reply = reply;
+                                const replyCell = row.cells[row.cells.length - 1];
+                                replyCell.textContent = reply;
+                                alert('Reply saved ✅');
+                            } else {
+                                alert('Failed to save reply ❌');
+                            }
+                        });
+                        return;
+                    }
+
+                    if (button.classList.contains('approve-btn') || button.classList.contains('pkg-approve-btn')) {
+                        if (!confirm('Approve this review?')) return;
+
+                        fetch(ep.approve, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'review_id=' + encodeURIComponent(reviewId)
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                location.reload();
+                            } else {
+                                alert('Failed to approve review. Check server logs.');
+                            }
+                        })
+                        .catch(() => alert('Server error while approving.'));
+                    }
+                });
+            }
+
+            wireReviewActions('customReviewTableBody', 'custom');
+            wireReviewActions('packageReviewTableBody', 'package');
+
+            function initReviewPagination(tbodyId, rowsSelId, pagId, prevFnName, nextFnName) {
+                const tbody = document.getElementById(tbodyId);
+                const rowsPerPageSelect = document.getElementById(rowsSelId);
+                const paginationControls = document.getElementById(pagId);
+                if (!tbody || !rowsPerPageSelect || !paginationControls) return;
+
+                const allRows = Array.from(tbody.querySelectorAll('tr'));
+
+                if (allRows.length === 1 && allRows[0].children.length === 1) {
+                    paginationControls.innerHTML = '';
+                    return;
+                }
+
+                let currentPage = 1;
+                let rowsPerPage = parseInt(rowsPerPageSelect.value, 10);
+
+                function renderPagination(totalPages) {
+                    paginationControls.innerHTML = `
+                        <button type="button" class="filter-btn small-btn" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
+                        <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+                        <button type="button" class="filter-btn small-btn" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+                    `;
+                    const btns = paginationControls.querySelectorAll('button.filter-btn.small-btn');
+                    if (btns[0] && currentPage > 1) {
+                        btns[0].addEventListener('click', function() { window[prevFnName](); });
+                    }
+                    if (btns[1] && currentPage < totalPages) {
+                        btns[1].addEventListener('click', function() { window[nextFnName](); });
+                    }
+                }
+
+                function renderTable() {
+                    const totalPages = Math.max(1, Math.ceil(allRows.length / rowsPerPage));
+                    if (currentPage > totalPages) currentPage = totalPages;
+                    if (currentPage < 1) currentPage = 1;
+
+                    tbody.innerHTML = '';
+                    const start = (currentPage - 1) * rowsPerPage;
+                    allRows.slice(start, start + rowsPerPage).forEach(function(row) {
+                        tbody.appendChild(row);
                     });
+                    renderPagination(totalPages);
                 }
 
-                // ── Reply to review ───────────────────────────────
-                if (button.classList.contains("reply-btn")) {
-                    const existingReply = row.dataset.reply || "";
-                    const reply = prompt("Enter admin reply:", existingReply);
-                    if (reply === null || reply.trim() === "") return;
+                window[nextFnName] = function() {
+                    const totalPages = Math.max(1, Math.ceil(allRows.length / rowsPerPage));
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderTable();
+                    }
+                };
+                window[prevFnName] = function() {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderTable();
+                    }
+                };
 
-                    fetch("/CeylonGo/public/admin/review/reply", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `review_id=${reviewId}&reply=${encodeURIComponent(reply)}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            row.dataset.reply = reply;
-                            // Update the admin reply cell visually
-                            const replyCell = row.cells[row.cells.length - 1];
-                            replyCell.innerHTML = reply;
-                            alert("Reply saved ✅");
-                        } else {
-                            alert("Failed to save reply ❌");
-                        }
-                    });
-                }
-
-                // ── Approve review ────────────────────────────────
-                if (button.classList.contains("approve-btn")) {
-                    if (!confirm("Approve this review?")) return;
-
-                    fetch("/CeylonGo/public/admin/review/approve", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `review_id=${reviewId}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert("Failed to approve review. Check server logs.");
-                        }
-                    })
-                    .catch(() => alert("Server error while approving."));
-                }
-            });
-            
-            // ── PAGINATION FOR USERS ───────────────────
-
-            // Get all rows initially rendered by PHP
-            const allUserRows = Array.from(document.querySelectorAll("#reviewTableBody tr"))
-                .filter(row => row.children.length > 1); // ignore "no data" row
-
-            const rowsPerPageSelect = document.getElementById("rowsPerPage");
-            const paginationControls = document.getElementById("paginationControls");
-
-            let currentPage = 1;
-            let rowsPerPage = parseInt(rowsPerPageSelect.value);
-
-            // Render table based on page
-            function renderTable() {
-                const tbody = document.getElementById("reviewTableBody");
-                tbody.innerHTML = "";
-
-                const start = (currentPage - 1) * rowsPerPage;
-                const end = start + rowsPerPage;
-
-                const pageRows = allUserRows.slice(start, end);
-
-                pageRows.forEach(row => tbody.appendChild(row));
-
-                renderPagination();
-            }
-
-            // Pagination buttons
-            function renderPagination() {
-                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
-
-                paginationControls.innerHTML = `
-                    <button class="filter-btn small-btn" ${currentPage === 1 ? "disabled" : ""} onclick="prevPage()">Prev</button>
-
-                    <span class="page-info">
-                        Page ${currentPage} of ${totalPages}
-                    </span>
-
-                    <button class="filter-btn small-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
-                `;
-            }
-
-            // Navigation
-            function nextPage() {
-                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
+                rowsPerPageSelect.addEventListener('change', function() {
+                    rowsPerPage = parseInt(this.value, 10);
+                    currentPage = 1;
                     renderTable();
-                }
-            }
+                });
 
-            function prevPage() {
-                if (currentPage > 1) {
-                    currentPage--;
-                    renderTable();
-                }
-            }
-
-            // Change rows per page
-            rowsPerPageSelect.addEventListener("change", function() {
-                rowsPerPage = parseInt(this.value);
-                currentPage = 1;
                 renderTable();
-            });
+            }
 
-            // Initialize
-            renderTable();
+            initReviewPagination(
+                'customReviewTableBody',
+                'customRowsPerPage',
+                'customPaginationControls',
+                'customRevPrevPage',
+                'customRevNextPage'
+            );
+            initReviewPagination(
+                'packageReviewTableBody',
+                'pkgReviewRowsPerPage',
+                'pkgReviewPaginationControls',
+                'pkgRevPrevPage',
+                'pkgRevNextPage'
+            );
         </script>
     </body>
 </html>

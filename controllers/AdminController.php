@@ -1299,17 +1299,28 @@ class AdminController {
     {
         $reviewModel = new Review($this->db);
 
-        // Filter
         $rating = $_GET['rating'] ?? 'all';
+        if ($rating !== 'all' && (!ctype_digit((string) $rating) || (int) $rating < 1 || (int) $rating > 5)) {
+            $rating = 'all';
+        }
 
-        // Data
+        $pkgRating = $_GET['pkg_rating'] ?? 'all';
+        if ($pkgRating !== 'all' && (!ctype_digit((string) $pkgRating) || (int) $pkgRating < 1 || (int) $pkgRating > 5)) {
+            $pkgRating = 'all';
+        }
+
         $reviews = $reviewModel->getAllReviews($rating);
+        $packageReviews = $reviewModel->getAllPackageReviews($pkgRating);
         $metrics = $reviewModel->getReviewMetrics();
+        $packageMetrics = $reviewModel->getPackageReviewMetrics();
 
         view('admin/reviews', [
             'reviews' => $reviews,
+            'packageReviews' => $packageReviews,
             'selectedRating' => $rating,
-            'metrics' => $metrics
+            'selectedPkgRating' => $pkgRating,
+            'metrics' => $metrics,
+            'packageMetrics' => $packageMetrics,
         ]);
     }
 
@@ -1380,6 +1391,89 @@ class AdminController {
             "UPDATE reviews SET status = 'approved' WHERE id = :id"
         );
         $success = $stmt->execute([':id' => $reviewId]);
+        $affected = $stmt->rowCount();
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $success && $affected > 0,
+            'message' => $affected > 0 ? 'Approved' : 'No rows updated — check the ID',
+        ]);
+        exit();
+    }
+
+    public function deletePackageReview(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = (int) ($_POST['review_id'] ?? 0);
+        $reviewModel = new Review($this->db);
+        $success = $reviewId > 0 && $reviewModel->deletePackageReview($reviewId);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
+    public function replyToPackageReview(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = (int) ($_POST['review_id'] ?? 0);
+        $reply = trim((string) ($_POST['reply'] ?? ''));
+
+        if ($reviewId === 0 || $reply === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false]);
+            exit();
+        }
+
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->savePackageAdminReply($reviewId, $reply);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success]);
+        exit();
+    }
+
+    public function approvePackageReview(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            exit();
+        }
+
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            http_response_code(403);
+            exit();
+        }
+
+        $reviewId = (int) ($_POST['review_id'] ?? 0);
+        if (!$reviewId) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid review ID']);
+            exit();
+        }
+
+        $stmt = $this->db->prepare(
+            'UPDATE package_reviews SET status = :st, approved_at = COALESCE(approved_at, NOW()) WHERE id = :id'
+        );
+        $success = $stmt->execute([':st' => 'approved', ':id' => $reviewId]);
         $affected = $stmt->rowCount();
 
         header('Content-Type: application/json');
@@ -1556,6 +1650,77 @@ class AdminController {
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
         $dompdf->stream('reviews_' . date('Y-m-d_His') . '.pdf', ['Attachment' => true]);
+        exit;
+    }
+
+    /**
+     * Download package reviews as PDF (same filter as package reviews list: pkg_rating).
+     */
+    public function exportPackageReviewsPdf(): void
+    {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+            http_response_code(403);
+            exit('Forbidden');
+        }
+
+        $this->loadComposerAutoload();
+        if (!class_exists(\Dompdf\Dompdf::class)) {
+            http_response_code(500);
+            echo 'PDF export requires Composer dependencies. Run: composer install';
+            exit;
+        }
+
+        $pkgRating = $_GET['pkg_rating'] ?? 'all';
+        if ($pkgRating !== 'all' && (!ctype_digit((string) $pkgRating) || (int) $pkgRating < 1 || (int) $pkgRating > 5)) {
+            $pkgRating = 'all';
+        }
+
+        $reviewModel = new Review($this->db);
+        $rows = $reviewModel->getAllPackageReviews($pkgRating);
+
+        $e = static function (?string $s): string {
+            return htmlspecialchars((string) $s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        };
+
+        $tbody = '';
+        foreach ($rows as $r) {
+            $dateStr = !empty($r['created_at']) ? date('Y-m-d', strtotime($r['created_at'])) : '';
+            $tbody .= '<tr>'
+                . '<td>' . $e((string) ($r['id'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['user_id'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['tourist_name'] ?? '')) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['destination'] ?? '')) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['review_text'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['rating'] ?? '')) . '</td>'
+                . '<td>' . $e((string) ($r['status'] ?? '')) . '</td>'
+                . '<td>' . $e($dateStr) . '</td>'
+                . '<td class="c-long">' . $e((string) ($r['admin_reply'] ?? '')) . '</td>'
+                . '</tr>';
+        }
+
+        $ratingLabel = $pkgRating === 'all' ? 'All ratings' : ($pkgRating . ' star(s)');
+        $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+            body{font-family:DejaVu Sans,sans-serif;font-size:9px;color:#222;}
+            h1{font-size:15px;margin:0 0 8px;}
+            .meta{color:#666;font-size:9px;margin-bottom:10px;line-height:1.4;}
+            table.data{border-collapse:collapse;width:100%;}
+            table.data th,table.data td{border:1px solid #ccc;padding:5px 6px;text-align:left;vertical-align:top;}
+            table.data th{background:#f0f0f0;}
+            table.data tr:nth-child(even){background:#fafafa;}
+            .c-long{max-width:200px;word-wrap:break-word;}
+        </style></head><body>
+            <h1>Package reviews report</h1>
+            <div class="meta">Filter: ' . $e($ratingLabel) . '<br>Generated: ' . $e(date('Y-m-d H:i')) . ' &mdash; Rows: ' . count($rows) . '</div>
+            <table class="data"><thead><tr>
+                <th>Review ID</th><th>User ID</th><th>User Name</th><th>Package</th><th>Comment</th><th>Rating</th><th>Status</th><th>Date</th><th>Admin Reply</th>
+            </tr></thead><tbody>' . $tbody . '</tbody></table>
+        </body></html>';
+
+        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => true]);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+        $dompdf->stream('package_reviews_' . date('Y-m-d_His') . '.pdf', ['Attachment' => true]);
         exit;
     }
 
