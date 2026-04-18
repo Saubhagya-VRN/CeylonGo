@@ -959,12 +959,12 @@
 /* What Our Travelers Say — reviews carousel (data from `reviews` table) */
 .dashboard-travelers-say {
     background: linear-gradient(180deg, #f8faf8 0%, #eef5ef 100%);
-    padding: 72px 24px 32px;
+    padding: 48px 24px 28px;
     text-align: center;
 }
 
 .dashboard-travelers-say .how-it-works-subtitle {
-    margin-bottom: 40px;
+    margin-bottom: 28px;
 }
 
 /* Tight band when inquiry follows reviews (avoid double 96px + 80px-style stack) */
@@ -1163,7 +1163,11 @@
 
 @media (max-width: 640px) {
     .dashboard-travelers-say {
-        padding: 48px 16px 28px;
+        padding: 36px 16px 24px;
+    }
+
+    .dashboard-travelers-say .how-it-works-subtitle {
+        margin-bottom: 22px;
     }
 
     .dash-reviews-carousel {
