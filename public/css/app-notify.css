@@ -1,0 +1,337 @@
+/* In-app toasts — solid bars (brand greens), right edge, slide from right */
+
+:root {
+
+  --app-notify-top: 72px;
+
+  --notify-success: #2c5530;
+
+  --notify-success-hover: #234428;
+
+  /* Same as common.css --color-primary / navbar — no washed gray-green */
+  --notify-info: #2c5530;
+  --notify-info-hover: #234428;
+
+  --notify-error: #b91c1c;
+
+  /* Warning — white card, neutral chrome + brand accent (not mint/success) */
+  --notify-warning-bg: #ffffff;
+  --notify-warning-bg-hover: #f4f4f5;
+  --notify-warning-text: #2b3a2f;
+  --notify-warning-border: #e5e7eb;
+  --notify-warning-accent: #2c5530;
+  --notify-warning-icon: #2c5530;
+
+}
+
+
+
+.app-notify-host {
+
+  position: fixed;
+
+  top: var(--app-notify-top);
+
+  right: 16px;
+
+  left: auto;
+
+  z-index: 100000;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 10px;
+
+  width: min(420px, calc(100vw - 32px));
+
+  max-width: 100%;
+
+  padding: 0;
+
+  pointer-events: none;
+
+  box-sizing: border-box;
+
+}
+
+
+
+@media (max-width: 768px) {
+
+  :root {
+
+    --app-notify-top: 64px;
+
+  }
+
+
+
+  .app-notify-host {
+
+    right: 12px;
+
+    width: min(400px, calc(100vw - 24px));
+
+  }
+
+}
+
+
+
+.app-notify {
+
+  pointer-events: auto;
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 12px 14px;
+
+  border-radius: 6px;
+
+  font-size: 14px;
+
+  line-height: 1.45;
+
+  font-weight: 500;
+
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  color: #fff;
+
+  box-shadow:
+
+    0 4px 14px rgba(0, 0, 0, 0.18),
+
+    0 2px 6px rgba(0, 0, 0, 0.12);
+
+  border: none;
+
+  transform: translate3d(120%, 0, 0);
+
+  opacity: 0;
+
+  transition:
+
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+
+    opacity 0.28s ease;
+
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: transparent;
+
+}
+
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .app-notify {
+
+    transition: opacity 0.2s ease;
+
+    transform: none;
+
+  }
+
+
+
+  .app-notify--visible {
+
+    transform: none;
+
+  }
+
+}
+
+
+
+.app-notify--visible {
+
+  transform: translate3d(0, 0, 0);
+
+  opacity: 1;
+
+}
+
+
+
+.app-notify__icon {
+
+  flex-shrink: 0;
+
+  width: 22px;
+
+  height: 22px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #fff;
+
+}
+
+
+
+.app-notify__icon svg {
+
+  width: 22px;
+
+  height: 22px;
+
+  display: block;
+
+}
+
+
+
+.app-notify__text {
+
+  flex: 1;
+
+  min-width: 0;
+
+  color: #fff;
+
+}
+
+
+
+/* Solid fills — Ceylon Go green for success */
+
+.app-notify--info {
+
+  background: var(--notify-info);
+
+}
+
+
+
+.app-notify--info:hover {
+
+  background: var(--notify-info-hover);
+
+}
+
+
+
+.app-notify--success {
+
+  background: var(--notify-success);
+
+}
+
+
+
+.app-notify--success:hover {
+
+  background: var(--notify-success-hover);
+
+}
+
+
+
+.app-notify--error {
+
+  background: var(--notify-error);
+
+}
+
+
+
+.app-notify--error:hover {
+
+  filter: brightness(1.08);
+
+}
+
+
+
+.app-notify--warning {
+
+  background: var(--notify-warning-bg);
+
+  color: var(--notify-warning-text);
+
+  border: 1px solid var(--notify-warning-border);
+
+  border-left: 3px solid var(--notify-warning-accent);
+
+  box-shadow:
+
+    0 4px 18px rgba(15, 23, 42, 0.07),
+
+    0 2px 6px rgba(0, 0, 0, 0.04);
+
+}
+
+
+
+.app-notify--warning .app-notify__icon {
+
+  color: var(--notify-warning-icon);
+
+}
+
+
+
+.app-notify--warning .app-notify__text {
+
+  color: var(--notify-warning-text);
+
+}
+
+
+
+.app-notify--warning:hover {
+
+  background: var(--notify-warning-bg-hover);
+
+  border-color: #d1d5db;
+
+  border-left-color: var(--notify-warning-accent);
+
+}
+
+
+
+@media (max-width: 480px) {
+
+  .app-notify {
+
+    font-size: 13px;
+
+    padding: 11px 12px;
+
+    gap: 9px;
+
+  }
+
+
+
+  .app-notify__icon,
+
+  .app-notify__icon svg {
+
+    width: 20px;
+
+    height: 20px;
+
+  }
+
+}
+
+
