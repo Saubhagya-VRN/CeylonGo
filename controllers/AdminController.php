@@ -698,8 +698,10 @@ class AdminController {
     }
 
     public function rejectSlipPayment() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        ob_start();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { ob_end_clean(); http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            ob_end_clean();
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
@@ -760,6 +762,7 @@ class AdminController {
             }
         }
 
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -771,8 +774,10 @@ class AdminController {
     }
 
     public function rejectTripSlipPayment() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        ob_start();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { ob_end_clean(); http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            ob_end_clean();
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
@@ -862,6 +867,7 @@ class AdminController {
             }
         }
 
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -873,8 +879,10 @@ class AdminController {
     }
  
     public function approveRefund() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        ob_start(); // prevent any warning/notice from corrupting JSON
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { ob_end_clean(); http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            ob_end_clean();
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
@@ -927,6 +935,7 @@ class AdminController {
             );
         }
  
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -938,8 +947,10 @@ class AdminController {
     }
 
     public function rejectRefund() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        ob_start();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { ob_end_clean(); http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            ob_end_clean();
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
@@ -995,6 +1006,7 @@ class AdminController {
             );
         }
  
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -1004,8 +1016,10 @@ class AdminController {
     }
 
     public function approveTripRefund() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        ob_start();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { ob_end_clean(); http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            ob_end_clean();
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
@@ -1072,6 +1086,7 @@ class AdminController {
             );
         }
  
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -1083,8 +1098,10 @@ class AdminController {
     }
 
     public function rejectTripRefund() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit(); }
+        ob_start();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { ob_end_clean(); http_response_code(405); exit(); }
         if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+            ob_end_clean();
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit();
@@ -1148,6 +1165,7 @@ class AdminController {
             );
         }
  
+        ob_end_clean();
         header('Content-Type: application/json');
         echo json_encode([
             'success' => $affected > 0,
@@ -1172,19 +1190,29 @@ class AdminController {
     }
 
     private function createMailer() {
-        require_once dirname(__DIR__) . '/lib/PHPMailer/Exception.php';
-        require_once dirname(__DIR__) . '/lib/PHPMailer/PHPMailer.php';
-        require_once dirname(__DIR__) . '/lib/PHPMailer/SMTP.php';
+        $base = dirname(__DIR__) . '/lib/PHPMailer/';
+        $exceptionFile  = $base . 'Exception.php';
+        $phpmailerFile  = $base . 'PHPMailer.php';
+        $smtpFile       = $base . 'SMTP.php';
+
+        if (!file_exists($phpmailerFile)) {
+            throw new \RuntimeException('PHPMailer not found at: ' . $phpmailerFile);
+        }
+
+        require_once $exceptionFile;
+        require_once $phpmailerFile;
+        require_once $smtpFile;
 
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'vinudilanya16@gmail.com';  // ← YOUR Gmail address
-        $mail->Password   = 'fcmm ooea bqkz wmce';  // ← YOUR 16-char App Password
-        $mail->SMTPSecure = 'tls';
+        $mail->Username   = 'vinudilanya16@gmail.com';
+        $mail->Password   = 'fcmm ooea bqkz wmce';
+        $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
         $mail->CharSet    = 'UTF-8';
+        $mail->SMTPDebug  = 0; // No debug output — never pollute JSON responses
         $mail->setFrom('vinudilanya16@gmail.com', 'Ceylon Go');
         return $mail;
     }
@@ -1214,6 +1242,7 @@ class AdminController {
         </div>';
 
         try {
+            ob_start(); // buffer any stray output (warnings, notices) so JSON is never corrupted
             $mail = $this->createMailer();
             $mail->addAddress($toEmail, $toName);
             $mail->Subject = 'Your CeylonGo Refund Has Been Approved – Bank Details Required';
@@ -1221,7 +1250,9 @@ class AdminController {
             $mail->Body    = $htmlBody;
             $mail->AltBody = "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} ({$amountFormatted}) has been approved. Please reply with your bank details: 1.Bank Name 2.Branch Name 3.Account Holder Name 4.Account Number";
             $mail->send();
-        } catch (\Exception $e) {
+            ob_end_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
             error_log('[CeylonGo] sendRefundBankDetailsRequest failed: ' . $e->getMessage());
         }
     }
@@ -1248,6 +1279,7 @@ class AdminController {
         </div>';
 
         try {
+            ob_start();
             $mail = $this->createMailer();
             $mail->addAddress($toEmail, $toName);
             $mail->Subject = 'Update on Your CeylonGo Refund Request';
@@ -1255,7 +1287,9 @@ class AdminController {
             $mail->Body    = $htmlBody;
             $mail->AltBody = "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} was not approved. Reason: {$rejectNote}";
             $mail->send();
-        } catch (\Exception $e) {
+            ob_end_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
             error_log('[CeylonGo] sendRefundRejectionEmail failed: ' . $e->getMessage());
         }
     }
@@ -1283,6 +1317,7 @@ class AdminController {
         </div>';
 
         try {
+            ob_start();
             $mail = $this->createMailer();
             $mail->addAddress($toEmail, $toName);
             $mail->Subject = 'Update on Your CeylonGo Bank Transfer Slip';
@@ -1290,7 +1325,9 @@ class AdminController {
             $mail->Body    = $htmlBody;
             $mail->AltBody = "Dear {$toName}, your bank slip for {$typeLabel} #{$refId} could not be verified. Reason: {$rejectNote}. Please log in and upload a new slip.";
             $mail->send();
-        } catch (\Exception $e) {
+            ob_end_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
             error_log('[CeylonGo] sendBankSlipRejectionEmail failed: ' . $e->getMessage());
         }
     }
@@ -2221,4 +2258,3 @@ class AdminController {
 
 }
 ?>
-
