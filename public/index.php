@@ -94,6 +94,7 @@ $router->post('tourist/profile', 'TouristController@profile');
 $router->get('api/geocode', 'GeocodeController@geocode');
 $router->get('api/calculate-fare', 'GeocodeController@calculateFare');
 $router->get('api/places-autocomplete', 'GeocodeController@placesAutocomplete');
+$router->get('api/locations', 'GeocodeController@placesAutocomplete'); // Alias for autocomplete
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
