@@ -2,11 +2,11 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$bookings = $bookings ?? [];
-$custom_trips = $custom_trips ?? [];
+$bookings = isset($bookings) ? $bookings : array();
+$custom_trips = isset($custom_trips) ? $custom_trips : array();
 $tourist_email = isset($tourist_email) ? (string) $tourist_email : '';
 $bookings_custom_only = !empty($bookings_custom_only);
-$asset_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+$asset_base = rtrim(str_replace('\\', '/', dirname(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '')), '/');
 if ($asset_base === '' || $asset_base === '/') {
     $asset_base = '/CeylonGo/public';
 }
@@ -68,9 +68,9 @@ $trip_sidebar_active = 'bookings';
     <?php endif; ?>
 
     <?php
-    $payment_message = $payment_message ?? null;
-    $payment_error = $payment_error ?? null;
-    $payment_info = $payment_info ?? null;
+    $payment_message = isset($payment_message) ? $payment_message : null;
+    $payment_error = isset($payment_error) ? $payment_error : null;
+    $payment_info = isset($payment_info) ? $payment_info : null;
     ?>
     <?php if (!empty($payment_message)): ?>
     <div class="my-bookings-flash my-bookings-flash--ok"><?php echo htmlspecialchars($payment_message); ?></div>
@@ -213,6 +213,7 @@ $trip_sidebar_active = 'bookings';
         <?php foreach (array_reverse($bookings) as $b):
           $is_paid = (isset($b['status']) && $b['status'] === 'paid');
           $is_approved = (isset($b['status']) && $b['status'] === 'approved');
+          $is_cancelled = (isset($b['status']) && ($b['status'] === 'cancelled' || $b['status'] === 'canceled'));
           $bank_transfer_waiting = $is_approved && !empty($b['bank_transfer_submitted_at']);
           $bid = isset($b['id']) ? $b['id'] : '';
         ?>
@@ -220,6 +221,8 @@ $trip_sidebar_active = 'bookings';
           <div class="my-booking-header">
             <?php if ($is_paid): ?>
             <span class="my-booking-status my-booking-status--paid">Completed</span>
+            <?php elseif ($is_cancelled): ?>
+            <span class="my-booking-status my-booking-status--cancelled">Cancelled</span>
             <?php elseif ($bank_transfer_waiting): ?>
             <span class="my-booking-status my-booking-status--awaiting-bank">Payment submitted</span>
             <?php elseif ($is_approved): ?>
@@ -290,6 +293,8 @@ $trip_sidebar_active = 'bookings';
           <p class="my-booking-note">We have recorded your bank transfer. Your booking stays approved while we verify the payment (usually within 1–2 business days).</p>
           <?php elseif ($is_approved): ?>
           <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment?booking_id=<?php echo htmlspecialchars(urlencode($bid)); ?>" class="my-booking-btn-payment">Proceed to payment</a>
+          <?php elseif ($is_cancelled): ?>
+          <!-- No follow-up note for cancelled bookings -->
           <?php else: ?>
           <p class="my-booking-note">We will contact you within 24 hrs. Your booking will be reviewed by our team.</p>
           <?php endif; ?>

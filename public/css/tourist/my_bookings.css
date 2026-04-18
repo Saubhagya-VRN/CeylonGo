@@ -160,6 +160,12 @@
   border: 1px solid #93c5fd;
 }
 
+.my-booking-status--cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
 /* Same pill treatment as .my-booking-status--approved; distinct purple accent */
 .my-booking-status--awaiting-bank {
   display: inline-block;
