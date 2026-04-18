@@ -1019,11 +1019,16 @@ class TouristController {
             $inquiries = $inqModel->getByUserId((int)$_SESSION['user_id'], 5);
         }
 
+        require_once dirname(__DIR__) . '/models/Review.php';
+        $reviewModel = new Review($this->db);
+        $public_reviews = $reviewModel->getApprovedPublicReviews(15);
+
         view('tourist/dashboard', array(
             'tourist_data' => $tourist_data,
             'is_logged_in' => isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist',
             'trending_bar_packages' => $trending_bar_packages,
-            'inquiries' => $inquiries
+            'inquiries' => $inquiries,
+            'public_reviews' => $public_reviews,
         ));
     }
 
@@ -2738,10 +2743,7 @@ class TouristController {
     }
 
     public function addReview() {
-        $packageModel = new Package($this->db);
-        $packagesList = $packageModel->getListForDropdown();
-        $selected_package_id = isset($_GET['package']) ? (int) $_GET['package'] : null;
-        view('tourist/add_review', ['packages' => $packagesList, 'selected_package_id' => $selected_package_id]);
+        view('tourist/add_review');
     }
 
     public function transportProviders() {

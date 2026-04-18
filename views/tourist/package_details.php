@@ -198,7 +198,7 @@ $accommodation = $p['accommodation'] ?? [];
                 <div class="pkg-reviews-empty">
                     <p><strong>No published reviews yet</strong></p>
                     <p>Be the first to share your experience! New submissions are moderated before they appear here.</p>
-                    <a href="/CeylonGo/public/tourist/add-review?package=<?php echo (int)$p['id']; ?>" class="pkg-btn pkg-btn--primary">Write a review</a>
+                    <a href="/CeylonGo/public/tourist/add-review" class="pkg-btn pkg-btn--primary">Write a review</a>
                 </div>
                 <?php else: ?>
                 <ul class="pkg-reviews-list">

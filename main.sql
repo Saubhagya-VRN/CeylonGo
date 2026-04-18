@@ -451,7 +451,7 @@ INSERT INTO `package_bookings` (`id`, `user_id`, `package_id`, `package_name`, `
 DROP TABLE IF EXISTS `package_reviews`;
 CREATE TABLE `package_reviews` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `package_id` int(10) UNSIGNED NOT NULL,
+  `package_id` int(10) UNSIGNED DEFAULT NULL COMMENT 'NULL = general review',
   `user_id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
@@ -483,7 +483,8 @@ CREATE TABLE `reviews` (
   `email` varchar(100) NOT NULL,
   `rating` int(11) NOT NULL CHECK (`rating` >= 1 and `rating` <= 5),
   `review_text` text NOT NULL,
-  `destination` varchar(100) DEFAULT NULL,
+  `admin_reply` text DEFAULT NULL,
+  `replied_at` datetime DEFAULT NULL,
   `status` varchar(20) DEFAULT 'pending' COMMENT 'pending, approved, rejected',
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),

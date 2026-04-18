@@ -10,7 +10,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE `package_reviews` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `package_id` INT UNSIGNED NOT NULL,
+  `package_id` INT UNSIGNED DEFAULT NULL COMMENT 'NULL = general review',
   `user_id` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
   `email` VARCHAR(100) NOT NULL,

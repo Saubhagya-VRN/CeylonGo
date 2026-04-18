@@ -6,38 +6,39 @@ class Review {
         $this->db = $db;
     }
 
-    // Get all package reviews (admin)
+    /** Tourist-submitted reviews (`reviews` table) for admin. */
     public function getAllReviews($rating = 'all')
     {
         if ($rating === 'all') {
             $sql = "
                 SELECT 
-                    pr.id,
-                    pr.user_id,
-                    pr.review_text,
-                    pr.admin_reply,
-                    pr.rating,
-                    pr.status,
+                    r.id,
+                    r.user_id,
+                    r.review_text,
+                    r.admin_reply,
+                    r.rating,
+                    r.status,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
-                FROM package_reviews pr
-                JOIN tourist_users t ON pr.user_id = t.id
-                ORDER BY pr.created_at DESC
+                FROM reviews r
+                JOIN tourist_users t ON r.user_id = t.id
+                ORDER BY r.created_at DESC
             ";
 
             $stmt = $this->db->prepare($sql);
         } else {
             $sql = "
                 SELECT 
-                    pr.id,
-                    pr.user_id,
-                    pr.review_text,
-                    pr.rating,
-                    pr.status,
+                    r.id,
+                    r.user_id,
+                    r.review_text,
+                    r.admin_reply,
+                    r.rating,
+                    r.status,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
-                FROM package_reviews pr
-                JOIN tourist_users t ON pr.user_id = t.id
-                WHERE pr.rating = :rating
-                ORDER BY pr.created_at DESC
+                FROM reviews r
+                JOIN tourist_users t ON r.user_id = t.id
+                WHERE r.rating = :rating
+                ORDER BY r.created_at DESC
             ";
 
             $stmt = $this->db->prepare($sql);
@@ -49,7 +50,7 @@ class Review {
     }
 
     /**
-     * Approved reviews for a public package page.
+     * Approved package-specific reviews for a public package page (`package_reviews` only).
      */
     public function getApprovedForPackage($packageId)
     {
@@ -75,7 +76,7 @@ class Review {
     }
 
     public function deleteReview($id) {
-        $sql = "DELETE FROM package_reviews WHERE id = ?";
+        $sql = "DELETE FROM reviews WHERE id = ?";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([$id]);
     }
@@ -83,7 +84,7 @@ class Review {
     public function saveAdminReply($reviewId, $reply)
     {
         $sql = "
-            UPDATE package_reviews 
+            UPDATE reviews 
             SET admin_reply = :reply,
                 replied_at = NOW()
             WHERE id = :id
@@ -105,7 +106,7 @@ class Review {
                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS total_pending,
                 ROUND(AVG(CASE WHEN status = 'approved' THEN rating END), 1) AS avg_rating,
                 SUM(CASE WHEN status = 'approved' AND rating >= 4 THEN 1 ELSE 0 END) AS positive_reviews
-            FROM package_reviews
+            FROM reviews
         ";
 
         $stmt = $this->db->prepare($sql);
@@ -126,5 +127,30 @@ class Review {
             'average' => $data['avg_rating'] ?? 0,
             'positive_percentage' => $positivePercentage
         ];
+    }
+
+    /**
+     * Approved reviews for public marketing (e.g. tourist dashboard carousel).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getApprovedPublicReviews($limit = 15)
+    {
+        $limit = max(1, min(50, (int) $limit));
+        try {
+            $sql = "
+                SELECT id, name, rating, review_text, created_at
+                FROM reviews
+                WHERE status = 'approved'
+                ORDER BY created_at DESC
+                LIMIT :lim";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':lim', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Review::getApprovedPublicReviews: ' . $e->getMessage());
+            return [];
+        }
     }
 }

@@ -28,6 +28,7 @@ $packages_by_cat = array(
     'beach'     => array(8),
 );
 $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages : array();
+$public_reviews = isset($public_reviews) && is_array($public_reviews) ? $public_reviews : array();
 $tourist_data = isset($tourist_data) ? $tourist_data : null;
 $inq_prefill_first = '';
 $inq_prefill_last = '';
@@ -227,6 +228,78 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
                 </a>
             </div>
         </section>
+
+        <?php if (!empty($public_reviews)): ?>
+        <section class="dashboard-travelers-say" aria-label="What our travelers say">
+            <h2 class="how-it-works-title">What Our <span class="how-it-works-accent">Travelers Say</span></h2>
+            <p class="how-it-works-subtitle">Real stories from travelers who experienced our personalized Sri Lanka trips.</p>
+
+            <div class="dash-reviews-carousel">
+                <button type="button" class="dash-reviews-arrow dash-reviews-arrow--prev" id="dashReviewsPrev" aria-label="Previous reviews">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <div class="dash-reviews-scroll-wrap">
+                    <div class="dash-reviews-scroll" id="dashReviewsScroll" tabindex="0">
+                        <?php foreach ($public_reviews as $rev):
+                            $rt = isset($rev['review_text']) ? (string) $rev['review_text'] : '';
+                            $rating = (int) (isset($rev['rating']) ? $rev['rating'] : 0);
+                            if ($rating < 1) {
+                                $rating = 1;
+                            }
+                            if ($rating > 5) {
+                                $rating = 5;
+                            }
+                            $nm = isset($rev['name']) ? trim((string) $rev['name']) : 'Traveler';
+                            $initial = $nm !== '' ? strtoupper(substr($nm, 0, 1)) : 'T';
+                            $rawTs = isset($rev['created_at']) ? strtotime((string) $rev['created_at']) : false;
+                            $dateLabel = $rawTs ? date('F Y', $rawTs) : '';
+                            $excerptLen = 180;
+                            $needsToggle = function_exists('mb_strlen') ? (mb_strlen($rt) > $excerptLen) : (strlen($rt) > $excerptLen);
+                            $excerpt = $needsToggle
+                                ? ((function_exists('mb_substr') ? mb_substr($rt, 0, $excerptLen) : substr($rt, 0, $excerptLen)) . '…')
+                                : $rt;
+                        ?>
+                        <article class="dash-review-card">
+                            <div class="dash-review-stars" aria-label="<?php echo $rating; ?> out of 5 stars">
+                                <?php for ($si = 1; $si <= 5; $si++): ?>
+                                <span class="dash-review-star<?php echo $si <= $rating ? ' dash-review-star--on' : ''; ?>">★</span>
+                                <?php endfor; ?>
+                            </div>
+                            <blockquote class="dash-review-quote">
+                                <?php if ($needsToggle): ?>
+                                <div class="dash-review-snippet dash-review-snippet--collapsed">
+                                    <span class="dash-review-open">"</span><span class="dash-review-excerpt"><?php echo htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8'); ?></span><span class="dash-review-close">"</span>
+                                </div>
+                                <div class="dash-review-snippet dash-review-snippet--expanded" hidden>
+                                    <span class="dash-review-open">"</span><span class="dash-review-full"><?php echo htmlspecialchars($rt, ENT_QUOTES, 'UTF-8'); ?></span><span class="dash-review-close">"</span>
+                                </div>
+                                <button type="button" class="dash-review-toggle" data-expanded="false">
+                                    <span class="dash-review-toggle-more">View more <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span>
+                                    <span class="dash-review-toggle-less" hidden>View less <i class="fa-solid fa-chevron-up" aria-hidden="true"></i></span>
+                                </button>
+                                <?php else: ?>
+                                <div class="dash-review-snippet">
+                                    <span class="dash-review-open">"</span><span class="dash-review-single"><?php echo htmlspecialchars($rt, ENT_QUOTES, 'UTF-8'); ?></span><span class="dash-review-close">"</span>
+                                </div>
+                                <?php endif; ?>
+                            </blockquote>
+                            <div class="dash-review-footer">
+                                <div class="dash-review-avatar" aria-hidden="true"><?php echo htmlspecialchars($initial, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="dash-review-meta">
+                                    <div class="dash-review-name"><?php echo htmlspecialchars($nm, ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="dash-review-tagline">Experience with Ceylon Go<?php echo $dateLabel !== '' ? ' · ' . htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8') : ''; ?></div>
+                                </div>
+                            </div>
+                        </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <button type="button" class="dash-reviews-arrow dash-reviews-arrow--next" id="dashReviewsNext" aria-label="Next reviews">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="dashboard-inquiry" id="inquiry">
             <h2 class="how-it-works-title">Contact <span class="how-it-works-accent">Inquiry Form</span></h2>
@@ -432,6 +505,52 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
         } catch (e) {
             try { sessionStorage.removeItem(KEY); } catch (x) {}
         }
+    })();
+    </script>
+    <?php endif; ?>
+
+    <?php if (!empty($public_reviews)): ?>
+    <script>
+    (function () {
+        var scrollEl = document.getElementById('dashReviewsScroll');
+        var prev = document.getElementById('dashReviewsPrev');
+        var next = document.getElementById('dashReviewsNext');
+        if (scrollEl && prev && next) {
+            function step() {
+                var w = scrollEl.clientWidth;
+                return Math.max(260, Math.floor(w * 0.88));
+            }
+            prev.addEventListener('click', function () {
+                scrollEl.scrollBy({ left: -step(), behavior: 'smooth' });
+            });
+            next.addEventListener('click', function () {
+                scrollEl.scrollBy({ left: step(), behavior: 'smooth' });
+            });
+        }
+        document.querySelectorAll('.dash-review-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var q = btn.closest('.dash-review-quote');
+                if (!q) return;
+                var shortBlock = q.querySelector('.dash-review-snippet--collapsed');
+                var longBlock = q.querySelector('.dash-review-snippet--expanded');
+                var more = btn.querySelector('.dash-review-toggle-more');
+                var less = btn.querySelector('.dash-review-toggle-less');
+                var expanded = btn.getAttribute('data-expanded') === 'true';
+                if (expanded) {
+                    if (shortBlock) shortBlock.removeAttribute('hidden');
+                    if (longBlock) longBlock.setAttribute('hidden', '');
+                    if (more) more.removeAttribute('hidden');
+                    if (less) less.setAttribute('hidden', '');
+                    btn.setAttribute('data-expanded', 'false');
+                } else {
+                    if (shortBlock) shortBlock.setAttribute('hidden', '');
+                    if (longBlock) longBlock.removeAttribute('hidden');
+                    if (more) more.setAttribute('hidden', '');
+                    if (less) less.removeAttribute('hidden');
+                    btn.setAttribute('data-expanded', 'true');
+                }
+            });
+        });
     })();
     </script>
     <?php endif; ?>
