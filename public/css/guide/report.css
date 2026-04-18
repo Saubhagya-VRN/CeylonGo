@@ -390,6 +390,11 @@
 .chart-canvas-wrap {
     position: relative;
     width: 100%;
+    min-height: 260px;
+}
+.chart-canvas-wrap canvas {
+    width: 100% !important;
+    height: 260px !important;
 }
 
 /* ===== TOUR SUMMARY TABLE ===== */

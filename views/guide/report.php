@@ -31,6 +31,24 @@ if ($start_date && $end_date) {
     $periodLabel = 'All Time';
 }
 
+// Extract main city from location
+function getMainCity($location) {
+    $location = trim((string) $location);
+    if ($location === '') {
+        return 'N/A';
+    }
+
+    $parts = preg_split('/[\,\|\-\/]+/', $location);
+    foreach ($parts as $part) {
+        $value = trim($part);
+        if ($value !== '') {
+            return $value;
+        }
+    }
+
+    return $location;
+}
+
 // Generated timestamp
 $generatedAt = date('F d, Y \a\t h:i A');
 ?>
@@ -62,6 +80,62 @@ $generatedAt = date('F d, Y \a\t h:i A');
     <!-- PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+    @media print {
+        .navbar, .sidebar, .sidebar-overlay, footer,
+        .report-actions, .filter-bar, .charts-row,
+        .kpi-grid, .table-search, #tablePagination,
+        .report-period, .report-page-header { display: none !important; }
+
+        body { background: #fff !important; margin: 0; padding: 0; }
+        .page-wrapper { display: block !important; }
+        .main-content { margin: 0 !important; padding: 20px !important; width: 100% !important; }
+
+        .report-brand-header {
+            display: flex !important;
+            background: #2c5530 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            border-radius: 0 !important;
+            margin: -20px -20px 20px -20px !important;
+            padding: 18px 24px !important;
+        }
+        .report-brand-header .brand-logo { width: 40px; height: 40px; }
+        .report-brand-header .brand-text h1 { font-size: 18px !important; }
+
+        .report-table-section {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        .report-table-header h3 { font-size: 16px !important; color: #000 !important; }
+        .report-table-header h3 i { display: none; }
+        .report-table { font-size: 11px !important; }
+        .report-table thead th {
+            background: #333 !important;
+            color: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            padding: 8px 10px !important;
+            font-size: 10px !important;
+        }
+        .report-table tbody td {
+            padding: 6px 10px !important;
+            font-size: 10px !important;
+            border-bottom: 1px solid #ddd !important;
+        }
+        .report-table tfoot td {
+            background: #f0f0f0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            padding: 10px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            border-top: 2px solid #333 !important;
+        }
+        .table-search { display: none !important; }
+    }
+    </style>
 </head>
 <body>
 
@@ -274,7 +348,7 @@ $generatedAt = date('F d, Y \a\t h:i A');
                                         <td><?= htmlspecialchars($tour["customerName"]) ?></td>
                                         <td><?= date("M d, Y", strtotime($tour["date"])) ?></td>
                                         <td><?= date("h:i A", strtotime($tour["time"])) ?></td>
-                                        <td><?= htmlspecialchars($tour["location"]) ?></td>
+                                        <td><?= htmlspecialchars(getMainCity($tour["location"])) ?></td>
                                         <td><span class="lang-tag"><?= htmlspecialchars($tour["language"]) ?></span></td>
                                         <td class="fee-cell">Rs. <?= number_format($tour["fee"], 2) ?></td>
                                     </tr>
@@ -316,6 +390,13 @@ $generatedAt = date('F d, Y \a\t h:i A');
     // CHART.JS — Revenue Trend
     // ========================
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const guideChartLabels = <?= json_encode($chartLabels) ?>;
+    const guideChartRevenue = <?= json_encode($chartRevenue) ?>;
+    const guideChartBookings = <?= json_encode($chartBookings) ?>;
+    const labels = guideChartLabels.length ? guideChartLabels : ['No Data'];
+    const revenueData = guideChartRevenue.length ? guideChartRevenue : [0];
+    const bookingData = guideChartBookings.length ? guideChartBookings : [0];
+
     const revenueGradient = revenueCtx.createLinearGradient(0, 0, 0, 350);
     revenueGradient.addColorStop(0, 'rgba(61, 139, 64, 0.25)');
     revenueGradient.addColorStop(1, 'rgba(61, 139, 64, 0.02)');
@@ -323,11 +404,11 @@ $generatedAt = date('F d, Y \a\t h:i A');
     new Chart(revenueCtx, {
         type: 'line',
         data: {
-            labels: <?= json_encode($chartLabels) ?>,
+            labels: labels,
             datasets: [
                 {
                     label: 'Revenue (LKR)',
-                    data: <?= json_encode($chartRevenue) ?>,
+                    data: revenueData,
                     borderColor: '#3d8b40',
                     backgroundColor: revenueGradient,
                     fill: true,
@@ -341,7 +422,7 @@ $generatedAt = date('F d, Y \a\t h:i A');
                 },
                 {
                     label: 'Bookings',
-                    data: <?= json_encode($chartBookings) ?>,
+                    data: bookingData,
                     borderColor: '#f39c12',
                     backgroundColor: 'transparent',
                     borderWidth: 2,
@@ -595,7 +676,7 @@ $generatedAt = date('F d, Y \a\t h:i A');
                 '<?= addslashes($tour["customerName"]) ?>',
                 '<?= date("M d, Y", strtotime($tour["date"])) ?>',
                 '<?= date("h:i A", strtotime($tour["time"])) ?>',
-                '<?= addslashes($tour["location"]) ?>',
+                '<?= addslashes(getMainCity($tour["location"])) ?>',
                 '<?= addslashes($tour["language"]) ?>',
                 'Rs. <?= number_format($tour["fee"], 2) ?>'
             ],

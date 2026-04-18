@@ -87,7 +87,7 @@ class GuideRequest {
         $this->time = htmlspecialchars(strip_tags($this->time));
         $this->notes = htmlspecialchars(strip_tags($this->notes ?? ''));
         $this->status = $this->status ?? 'pending';
-        $this->fee = $this->fee ?? 2500.00;
+        $this->fee = 2500.00; // Force guide fee to 2500 for every request
         $this->tourist_id = $this->tourist_id ?? null;
         $this->guide_id = $this->guide_id ?? null;
 
