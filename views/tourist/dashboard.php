@@ -318,7 +318,7 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
                   <?php endif; ?>
                 </div>
               <?php else: ?>
-                <p class="dash-inquiry-guest-hint">Submit opens the login window. After you sign in, your message is kept—submit again to send.</p>
+                <p class="dash-inquiry-guest-hint">Log in to submit your inquiry. We'll get back to you soon.</p>
               <?php endif; ?>
         </section>
     </main>

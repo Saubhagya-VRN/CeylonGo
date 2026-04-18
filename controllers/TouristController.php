@@ -2411,7 +2411,7 @@ class TouristController {
 
         $itinerary = [];
         if ($package && !empty($package['itinerary']) && is_array($package['itinerary'])) {
-            $itinerary = $package['itinerary'];
+            $itinerary = package_itinerary_for_tourist_display($package['itinerary']);
         }
 
         return [
