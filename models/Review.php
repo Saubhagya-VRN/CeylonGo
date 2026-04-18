@@ -6,6 +6,9 @@ class Review {
         $this->db = $db;
     }
 
+    /**
+     * Customized trip reviews from table `reviews` (alias r). Joins tourist_users (t).
+     */
     public function getAllReviews($rating = 'all')
     {
         if ($rating === 'all') {
@@ -104,6 +107,9 @@ class Review {
         ];
     }
 
+    /**
+     * Package bookings reviews from table `package_reviews` (alias pr). Joins tourist_users (t).
+     */
     public function getAllPackageReviews($rating = 'all')
     {
         $base = "

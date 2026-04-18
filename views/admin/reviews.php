@@ -146,9 +146,9 @@
                                             <td><?= htmlspecialchars($review['review_text'] ?? '') ?></td>
                                             <td>
                                                 <?php
-                                                    $r = (int) ($review['rating'] ?? 0);
+                                                    $ratingVal = (int) ($review['rating'] ?? 0);
                                                     for ($i = 1; $i <= 5; $i++) {
-                                                        echo $i <= $r ? '⭐' : '☆';
+                                                        echo $i <= $ratingVal ? '⭐' : '☆';
                                                     }
                                                 ?>
                                             </td>
@@ -263,28 +263,28 @@
                             </thead>
                             <tbody id="packageReviewTableBody">
                                 <?php if (count($packageReviews) > 0): ?>
-                                    <?php foreach ($packageReviews as $pr): ?>
-                                        <tr data-id="<?= (int) $pr['id'] ?>"
+                                    <?php foreach ($packageReviews as $packageReview): ?>
+                                        <tr data-id="<?= (int) $packageReview['id'] ?>"
                                             data-kind="package"
-                                            data-reply="<?= htmlspecialchars($pr['admin_reply'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                                            data-created-at="<?= htmlspecialchars(substr($pr['created_at'] ?? '', 0, 10)) ?>">
-                                            <td><?= htmlspecialchars((string) ($pr['user_id'] ?? '')) ?></td>
-                                            <td><?= htmlspecialchars($pr['tourist_name'] ?? '') ?></td>
-                                            <td><?= htmlspecialchars($pr['destination'] ?? '') ?: '—' ?></td>
-                                            <td><?= htmlspecialchars($pr['review_text'] ?? '') ?></td>
+                                            data-reply="<?= htmlspecialchars($packageReview['admin_reply'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                                            data-created-at="<?= htmlspecialchars(substr($packageReview['created_at'] ?? '', 0, 10)) ?>">
+                                            <td><?= htmlspecialchars((string) ($packageReview['user_id'] ?? '')) ?></td>
+                                            <td><?= htmlspecialchars($packageReview['tourist_name'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($packageReview['destination'] ?? '') ?: '—' ?></td>
+                                            <td><?= htmlspecialchars($packageReview['review_text'] ?? '') ?></td>
                                             <td>
                                                 <?php
-                                                    $r2 = (int) ($pr['rating'] ?? 0);
+                                                    $pkgRatingVal = (int) ($packageReview['rating'] ?? 0);
                                                     for ($i = 1; $i <= 5; $i++) {
-                                                        echo $i <= $r2 ? '⭐' : '☆';
+                                                        echo $i <= $pkgRatingVal ? '⭐' : '☆';
                                                     }
                                                 ?>
                                             </td>
                                             <td>
                                                 <?php
-                                                    $st2 = strtolower((string) ($pr['status'] ?? ''));
-                                                    $hasReply2 = trim((string) ($pr['admin_reply'] ?? '')) !== '';
-                                                    if ($st2 === 'pending' && !$hasReply2) {
+                                                    $pkgStatus = strtolower((string) ($packageReview['status'] ?? ''));
+                                                    $pkgHasReply = trim((string) ($packageReview['admin_reply'] ?? '')) !== '';
+                                                    if ($pkgStatus === 'pending' && !$pkgHasReply) {
                                                         echo '<span style="color:orange;font-weight:bold">Pending</span>';
                                                     } else {
                                                         echo '<span style="color:#198754;font-weight:bold">Replied</span>';
@@ -292,15 +292,15 @@
                                                 ?>
                                             </td>
                                             <td class="actions">
-                                                <?php if (($pr['status'] ?? '') === 'pending'): ?>
+                                                <?php if (($packageReview['status'] ?? '') === 'pending'): ?>
                                                     <button type="button" class="icon-btn pkg-approve-btn" title="Approve">✅</button>
                                                 <?php endif; ?>
                                                 <button type="button" class="icon-btn pkg-reply-btn" title="Comment">💬</button>
                                                 <button type="button" class="icon-btn danger pkg-delete-btn" title="Delete">🗑️</button>
                                             </td>
                                             <td>
-                                                <?php if (!empty($pr['admin_reply'])): ?>
-                                                    <?= htmlspecialchars($pr['admin_reply']) ?>
+                                                <?php if (!empty($packageReview['admin_reply'])): ?>
+                                                    <?= htmlspecialchars($packageReview['admin_reply']) ?>
                                                 <?php else: ?>
                                                     <span style="color:#aaa;font-style:italic;">—</span>
                                                 <?php endif; ?>
