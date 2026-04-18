@@ -149,10 +149,9 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
             </div>
             <div class="dashboard-hero-scroll">↓</div>
             <div class="dashboard-hero-fab">
-                <a href="tel:" class="fab-btn fab-phone" title="Call">📞</a>
-                <a href="#" class="fab-btn fab-instagram" title="Instagram">📷</a>
-                <a href="#" class="fab-btn fab-whatsapp" title="WhatsApp">💬</a>
-                <a href="#" class="fab-btn fab-chat" title="Chat">💭</a>
+                <a href="tel:+94112345678" class="fab-btn fab-call" title="Call +94 11 234 5678" aria-label="Call +94 11 234 5678">📞</a>
+                <a href="mailto:ceylongo@gmail.com" class="fab-btn fab-email" title="Email ceylongo@gmail.com" aria-label="Email ceylongo@gmail.com"><i class="fa-regular fa-envelope"></i></a>
+                <a href="#inquiry" class="fab-btn fab-inquire" title="Inquire" aria-label="Go to inquiry form">💭</a>
             </div>
         </section>
 
@@ -186,6 +185,34 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                     <h3 class="how-step-title">You Travel Stress-Free</h3>
                     <p class="how-step-desc">Everything's handled – from itinerary planning to hotel and transport bookings to 24/7 travel support.</p>
                 </div>
+            </div>
+        </section>
+
+        <section class="dashboard-trending" aria-label="Trending destinations">
+            <h2 class="how-it-works-title">Trending <span class="how-it-works-accent">destinations</span></h2>
+            <p class="how-it-works-subtitle">Most popular choices for travelers from Sri Lanka</p>
+
+            <div class="dash-dest-grid">
+                <a class="dash-dest-card dash-dest-card--colombo" href="/CeylonGo/public/tourist/packages?search=Colombo" style="background-image:url('/CeylonGo/public/images/tuk2.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Colombo</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--kandy" href="/CeylonGo/public/tourist/packages?search=Kandy" style="background-image:url('/CeylonGo/public/images/tuk4.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Kandy</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--nuwara" href="/CeylonGo/public/tourist/packages?search=Nuwara" style="background-image:url('/CeylonGo/public/images/tuk5.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Nuwara Eliya</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--negombo" href="/CeylonGo/public/tourist/packages?search=Negombo" style="background-image:url('/CeylonGo/public/images/tuk6.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Negombo</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--galle" href="/CeylonGo/public/tourist/packages?search=Galle" style="background-image:url('/CeylonGo/public/images/tuk3.webp');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Galle</span>
+                </a>
             </div>
         </section>
 

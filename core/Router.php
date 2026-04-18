@@ -65,8 +65,18 @@ class Router {
         list($controllerName, $methodName) = explode('@', $action);
         $controllerClass = $controllerName;
 
+        // Load controller from project root (do not rely on CWD / autoload order alone).
+        if (defined('BASE_PATH')) {
+            $controllerFile = BASE_PATH . '/controllers/' . $controllerName . '.php';
+            if (is_file($controllerFile)) {
+                require_once $controllerFile;
+            }
+        }
+
         if (!class_exists($controllerClass)) {
-            throw new Exception("Controller $controllerClass not found");
+            throw new Exception(
+                "Controller $controllerClass not found (check controllers/" . $controllerName . ".php exists and defines the class)."
+            );
         }
 
         $controller = new $controllerClass();

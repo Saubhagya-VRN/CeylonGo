@@ -1,8 +1,13 @@
 <div class="trip-modal-overlay trip-modal-overlay--trip-overview" id="tripBudgetSummaryModalOverlay" aria-hidden="true">
   <div class="trip-modal trip-modal--budget-summary" role="dialog" aria-labelledby="tripBudgetSummaryModalTitle" aria-modal="true">
     <header class="trip-modal-header">
-      <h2 class="trip-modal-title" id="tripBudgetSummaryModalTitle">Budget</h2>
-      <button type="button" class="trip-modal-close" id="tripBudgetSummaryModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="trip-modal-title" id="tripBudgetSummaryModalTitle">Trip Summary</h2>
+      <div class="trip-modal-header-actions">
+        <button type="button" class="trip-modal-download-btn" id="tripBudgetSummaryModalDownload" title="Download trip summary as an HTML file">
+          <i class="fa-solid fa-download" aria-hidden="true"></i><span>Download</span>
+        </button>
+        <button type="button" class="trip-modal-close" id="tripBudgetSummaryModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
     </header>
     <div class="trip-modal-budget-body trip-summary-detailed-root" id="tripBudgetSummaryModalMount" aria-live="polite"></div>
   </div>

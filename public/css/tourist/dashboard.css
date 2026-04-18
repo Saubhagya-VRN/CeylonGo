@@ -381,10 +381,9 @@
     color: #fff !important;
 }
 
-.dashboard-page .fab-phone     { background: rgba(37, 99, 235, 0.8); }
-.dashboard-page .fab-instagram { background: rgba(14, 165, 233, 0.8); }
-.dashboard-page .fab-whatsapp  { background: rgba(34, 197, 94, 0.8); }
-.dashboard-page .fab-chat      { background: rgba(30, 64, 175, 0.8); }
+.dashboard-page .fab-call    { background: rgba(37, 99, 235, 0.85); }
+.dashboard-page .fab-email   { background: rgba(14, 165, 233, 0.85); }
+.dashboard-page .fab-inquire { background: rgba(34, 197, 94, 0.85); }
 
 @media (max-width: 768px) {
     .dashboard-hero-fab {
@@ -517,12 +516,105 @@
     opacity: 0.6;
 }
 
+/* Trending destinations (between How it works and Inquiry) */
+.dashboard-trending {
+    max-width: 1140px;
+    margin: 18px auto 54px;
+    padding: 0 16px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid rgba(44, 85, 48, 0.12);
+}
+
+.dashboard-trending .how-it-works-title,
+.dashboard-trending .how-it-works-subtitle {
+    text-align: center;
+}
+
+.dashboard-trending .how-it-works-title {
+    font-size: clamp(24px, 4vw, 34px);
+    margin-bottom: 10px;
+}
+
+.dashboard-trending .how-it-works-subtitle {
+    margin-bottom: 18px;
+    max-width: 640px;
+}
+
+.dash-dest-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.dash-dest-card {
+    position: relative;
+    display: block;
+    border-radius: 18px;
+    overflow: hidden;
+    min-height: 170px;
+    background-size: cover;
+    background-position: center;
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    transform: translateZ(0);
+}
+
+.dash-dest-card__shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+}
+
+.dash-dest-card__title {
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    color: #fff;
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 0.2px;
+    text-shadow: 0 6px 16px rgba(0,0,0,0.45);
+}
+
+.dash-dest-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+}
+
+.dash-dest-card--colombo { grid-column: span 6; }
+.dash-dest-card--kandy   { grid-column: span 6; }
+.dash-dest-card--nuwara  { grid-column: span 4; }
+.dash-dest-card--negombo { grid-column: span 4; }
+.dash-dest-card--galle   { grid-column: span 4; }
+
+@media (max-width: 900px) {
+    .dash-dest-card--colombo,
+    .dash-dest-card--kandy { grid-column: span 12; }
+    .dash-dest-card--nuwara,
+    .dash-dest-card--negombo,
+    .dash-dest-card--galle { grid-column: span 12; }
+    .dash-dest-card { min-height: 160px; }
+}
+
 /* Inquiry section */
 .dashboard-inquiry {
     max-width: 980px;
-    margin: 18px auto 28px auto;
-    padding: 18px 16px 10px;
+    margin: 36px auto 34px auto;
+    padding: 40px 28px 26px;
     text-align: initial;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(44, 85, 48, 0.10);
+    border-radius: 18px;
+    box-shadow: 0 14px 45px rgba(0,0,0,0.10);
+    backdrop-filter: blur(6px);
+}
+
+@media (max-width: 768px) {
+    .dashboard-inquiry {
+        margin-left: 16px;
+        margin-right: 16px;
+        padding: 32px 18px 18px;
+    }
 }
 
 .dashboard-inquiry .how-it-works-title,

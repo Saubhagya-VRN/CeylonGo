@@ -187,20 +187,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Share Your Experience - Ceylon Go</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="../../public/css/common.css">
   <link rel="stylesheet" href="../../public/css/tourist/add_review.css">
   <link rel="stylesheet" href="../../public/css/tourist/navbar.css">
   <link rel="stylesheet" href="../../public/css/tourist/footer.css">
+  <?php if ($is_logged_in): ?>
+  <link rel="stylesheet" href="../../public/css/tourist/trip_layout.css">
+  <link rel="stylesheet" href="../../public/css/tourist/sidebar.css">
+  <link rel="stylesheet" href="../../public/css/tourist/trip.css">
+  <?php endif; ?>
 </head>
-<body class="bg-app">
+<body class="<?php echo $is_logged_in ? 'trip-page-body ' : ''; ?>bg-app">
   <!-- Navbar include -->
   <?php include 'header.php'; ?>
 
-  <section class="review-form-container">
-    <div class="review-header">
-      <h1>Share Your Experience</h1>
-      <p>Help others discover the beauty of Sri Lanka through your experiences</p>
-    </div>
+  <?php if ($is_logged_in):
+    $scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+    $asset_base = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+    if ($asset_base === '' || $asset_base === '/') { $asset_base = '/CeylonGo/public'; }
+    $tourist_email = isset($_SESSION['user_email']) ? trim((string) $_SESSION['user_email']) : '';
+    $user_email_sidebar = $tourist_email;
+    $avatar_initial = $user_name !== '' ? strtoupper(substr($user_name, 0, 1)) : 'T';
+    $trip_sidebar_active = 'reviews';
+  ?>
+  <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
+  <div class="trip-page-wrapper">
+    <?php include __DIR__ . '/_trip_sidebar.php'; ?>
+    <main class="trip-main-content reviews-trip-main">
+      <button type="button" class="hamburger-btn trip-hamburger" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+      <div class="trip-breadcrumbs">
+        <a href="<?php echo htmlspecialchars($asset_base . '/tourist/dashboard-side', ENT_QUOTES, 'UTF-8'); ?>"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <span>&gt;</span>
+        <span>Reviews</span>
+      </div>
+      <div class="trip-header-row" aria-label="Reviews">
+        <div class="trip-stepper-prev" aria-hidden="true"></div>
+        <h1 class="trip-page-title trip-title-centered"><i class="fa-solid fa-star" aria-hidden="true"></i> Reviews</h1>
+        <div class="trip-stepper-next" aria-hidden="true"></div>
+      </div>
+  <?php endif; ?>
+
+  <section class="review-form-container<?php echo $is_logged_in ? ' review-form-container--trip' : ''; ?>">
+    <?php if (!$is_logged_in): ?>
+      <div class="review-header">
+        <h1>Share Your Experience</h1>
+        <p>Help others discover the beauty of Sri Lanka through your experiences</p>
+      </div>
+    <?php endif; ?>
 
     <div id="reviewAjaxError" class="alert alert-error" style="display:none;" role="alert"></div>
 
@@ -293,6 +327,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       </ul>
     </div>
   </section>
+
+  <?php if ($is_logged_in): ?>
+    </main>
+  </div>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var hamburger = document.getElementById('tripHamburgerBtn');
+    var sidebar = document.getElementById('tripSidebar');
+    var overlay = document.getElementById('tripSidebarOverlay');
+    function toggleSidebar() {
+      if (hamburger) hamburger.classList.toggle('active');
+      if (sidebar) sidebar.classList.toggle('active');
+      if (overlay) overlay.classList.toggle('active');
+      document.body.style.overflow = sidebar && sidebar.classList.contains('active') ? 'hidden' : '';
+    }
+    function closeSidebar() {
+      if (hamburger) hamburger.classList.remove('active');
+      if (sidebar) sidebar.classList.remove('active');
+      if (overlay) overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    if (hamburger) hamburger.addEventListener('click', toggleSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
+    document.querySelectorAll('#tripSidebar ul li a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth <= 768) closeSidebar();
+      });
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 768) closeSidebar();
+    });
+  });
+  </script>
+  <?php endif; ?>
 
   <!-- Footer include -->
   <?php include 'footer.php'; ?>

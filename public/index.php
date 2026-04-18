@@ -16,6 +16,8 @@ $router->get('login', 'AuthController@loginView');
 $router->post('login', 'AuthController@login');
 $router->get('register', 'AuthController@registerView');
 $router->get('logout', 'AuthController@logout');
+$router->get('about', 'PagesController@about');
+$router->get('contact', 'PagesController@contact');
 
 // Routes
 $router->get('transporter/register', 'TransportProviderController@registerView');
@@ -45,8 +47,8 @@ $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboardNew');
 $router->get('tourist/dashboard-side', 'TouristController@dashboardSide');
-$router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
+$router->get('tourist/booking-status', 'TouristController@bookingStatusHub');
 $router->get('tourist/custom-trip-summary', 'TouristController@customTripSummary');
 $router->post('tourist/trip-submit', 'TouristController@tripSubmit');
 $router->post('tourist/trip-payment-checkout', 'TouristController@tripPaymentCheckout');
@@ -71,7 +73,6 @@ $router->get('tourist/booking/trip-summary', 'TouristController@packageBookingTr
 $router->get('tourist/booking/trip-summary-json', 'TouristController@packageBookingTripSummaryJson');
 $router->post('tourist/booking/refund-request', 'TouristController@packageBookingRefundRequest');
 $router->post('tourist/trip/refund-request', 'TouristController@customTripRefundRequest');
-$router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
 $router->get('tourist/packages', 'TouristController@packages');
 $router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
 $router->get('tourist/package_details', 'TouristController@packageDetailsQuery');
@@ -83,9 +84,10 @@ $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete
 $router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSubmit');
 $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
-$router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 $router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
 $router->post('tourist/inquiries', 'TouristController@inquirySubmit');
+$router->get('tourist/profile', 'TouristController@profile');
+$router->post('tourist/profile', 'TouristController@profile');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
@@ -165,5 +167,22 @@ $router->post('admin/packages/update', 'AdminController@packageUpdate');
 $router->post('admin/packages/delete', 'AdminController@packageDelete');
 
 // Dispatch the request
-$router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+try {
+    $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+} catch (Throwable $e) {
+    http_response_code(500);
+    $msg = $e->getMessage();
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Error: ' . $msg;
+    } else {
+        echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Error</title></head><body>';
+        echo '<h1>Something went wrong</h1>';
+        echo '<p>' . htmlspecialchars($msg) . '</p>';
+        if (function_exists('ini_get') && ini_get('display_errors')) {
+            echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+        }
+        echo '</body></html>';
+    }
+}
 ?>
