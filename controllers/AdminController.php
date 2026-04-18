@@ -1156,67 +1156,6 @@ class AdminController {
         exit();
     }
 
-    private function sendRefundBankDetailsRequest(
-        string $toEmail,
-        string $toName,
-        int    $bookingId,
-        float  $amount,
-        string $type   // 'package' or 'trip'
-    ): void {
-        $subject   = "Your CeylonGo Refund Has Been Approved – Bank Details Required";
-        $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
-        $amountFormatted = 'LKR ' . number_format($amount, 2);
- 
-        $body = "Dear {$toName},\n\n"
-            . "We are pleased to inform you that your refund request for {$typeLabel} #{$bookingId} "
-            . "({$amountFormatted}) has been approved.\n\n"
-            . "To process your refund via bank transfer, please reply to this email with the following details:\n\n"
-            . "  1. Bank Name\n"
-            . "  2. Branch Name\n"
-            . "  3. Account Holder Name\n"
-            . "  4. Account Number\n\n"
-            . "Once we receive your details, your refund will be processed within 3–5 business days.\n\n"
-            . "If you have any questions, please don't hesitate to contact us.\n\n"
-            . "Best regards,\n"
-            . "Ceylon Go Support Team\n"
-            . "support@ceylongo.com";
- 
-        $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
-                 . "Reply-To: support@ceylongo.com\r\n"
-                 . "Content-Type: text/plain; charset=UTF-8\r\n";
- 
-        @mail($toEmail, $subject, $body, $headers);
-    }
-
-    // ── Email: notify customer their refund was rejected ─────────────────────
-    private function sendRefundRejectionEmail(
-        string $toEmail,
-        string $toName,
-        int    $bookingId,
-        string $rejectNote,
-        string $type   // 'package' or 'trip'
-    ): void {
-        $subject   = "Update on Your CeylonGo Refund Request";
-        $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
- 
-        $body = "Dear {$toName},\n\n"
-            . "We regret to inform you that your refund request for {$typeLabel} #{$bookingId} "
-            . "has been reviewed and cannot be approved at this time.\n\n"
-            . "Reason: {$rejectNote}\n\n"
-            . "If you believe this decision was made in error or if you have further questions, "
-            . "please contact our support team at support@ceylongo.com.\n\n"
-            . "We apologise for any inconvenience caused.\n\n"
-            . "Best regards,\n"
-            . "Ceylon Go Support Team\n"
-            . "support@ceylongo.com";
- 
-        $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
-                 . "Reply-To: support@ceylongo.com\r\n"
-                 . "Content-Type: text/plain; charset=UTF-8\r\n";
- 
-        @mail($toEmail, $subject, $body, $headers);
-    }
-
     private function removeBankSlipUploadFile(?string $relativePath): void
     {
         if ($relativePath === null || $relativePath === '') {
@@ -1232,30 +1171,128 @@ class AdminController {
         }
     }
 
-    private function sendBankSlipRejectionEmail(
-        string $toEmail,
-        string $toName,
-        int    $refId,
-        string $rejectNote,
-        string $type   // 'package' or 'trip'
+    private function createMailer() {
+        require_once dirname(__DIR__) . '/lib/PHPMailer/Exception.php';
+        require_once dirname(__DIR__) . '/lib/PHPMailer/PHPMailer.php';
+        require_once dirname(__DIR__) . '/lib/PHPMailer/SMTP.php';
+
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host       = 'smtp.gmail.com';
+        $mail->SMTPAuth   = true;
+        $mail->Username   = 'vinudilanya16@gmail.com';  // ← YOUR Gmail address
+        $mail->Password   = 'fcmm ooea bqkz wmce';  // ← YOUR 16-char App Password
+        $mail->SMTPSecure = 'tls';
+        $mail->Port       = 587;
+        $mail->CharSet    = 'UTF-8';
+        $mail->setFrom('vinudilanya16@gmail.com', 'Ceylon Go');
+        return $mail;
+    }
+
+    private function sendRefundBankDetailsRequest(
+        string $toEmail, string $toName, int $bookingId, float $amount, string $type
     ): void {
-        $subject   = 'Update on Your CeylonGo Bank Transfer Slip';
+        $typeLabel       = $type === 'package' ? 'Package Booking' : 'Custom Trip';
+        $amountFormatted = 'LKR ' . number_format($amount, 2);
+
+        $htmlBody = '
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
+            <h2 style="color:#198754;">&#10003; Refund Approved</h2>
+            <p>Dear ' . htmlspecialchars($toName) . ',</p>
+            <p>Your refund request for <strong>' . htmlspecialchars($typeLabel) . ' #' . $bookingId . '</strong>
+            (<strong>' . htmlspecialchars($amountFormatted) . '</strong>) has been approved.</p>
+            <p>Please reply to this email with your bank details:</p>
+            <ol>
+                <li>Bank Name</li>
+                <li>Branch Name</li>
+                <li>Account Holder Name</li>
+                <li>Account Number</li>
+            </ol>
+            <p>Your refund will be processed within <strong>3–5 business days</strong>.</p>
+            <p>Contact us at <a href="mailto:support@ceylongo.com">support@ceylongo.com</a> for questions.</p>
+            <p style="margin-top:32px;color:#555;">Best regards,<br><strong>Ceylon Go Support Team</strong></p>
+        </div>';
+
+        try {
+            $mail = $this->createMailer();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = 'Your CeylonGo Refund Has Been Approved – Bank Details Required';
+            $mail->isHTML(true);
+            $mail->Body    = $htmlBody;
+            $mail->AltBody = "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} ({$amountFormatted}) has been approved. Please reply with your bank details: 1.Bank Name 2.Branch Name 3.Account Holder Name 4.Account Number";
+            $mail->send();
+        } catch (\Exception $e) {
+            error_log('[CeylonGo] sendRefundBankDetailsRequest failed: ' . $e->getMessage());
+        }
+    }
+
+    private function sendRefundRejectionEmail(
+        string $toEmail, string $toName, int $bookingId, string $rejectNote, string $type
+    ): void {
         $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
 
-        $body = "Dear {$toName},\n\n"
-            . "We were unable to verify the bank transfer slip you uploaded for {$typeLabel} #{$refId}.\n\n"
-            . "Reason: {$rejectNote}\n\n"
-            . "Please sign in to your CeylonGo account and upload a new slip if you still wish to pay by bank transfer.\n\n"
-            . "If you have questions, contact us at support@ceylongo.com.\n\n"
-            . "Best regards,\n"
-            . "Ceylon Go Support Team\n"
-            . "support@ceylongo.com";
+        $htmlBody = '
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
+            <h2 style="color:#c0392b;">&#10007; Refund Request Update</h2>
+            <p>Dear ' . htmlspecialchars($toName) . ',</p>
+            <p>Your refund request for <strong>' . htmlspecialchars($typeLabel) . ' #' . $bookingId . '</strong>
+            has been reviewed and cannot be approved at this time.</p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                <tr>
+                    <td style="padding:10px 14px;font-weight:bold;background:#fdf2f2;border-left:4px solid #c0392b;width:30%;">Reason</td>
+                    <td style="padding:10px 14px;background:#fdf2f2;">' . nl2br(htmlspecialchars($rejectNote)) . '</td>
+                </tr>
+            </table>
+            <p>Contact us at <a href="mailto:support@ceylongo.com">support@ceylongo.com</a> if you have questions.</p>
+            <p style="margin-top:32px;color:#555;">Best regards,<br><strong>Ceylon Go Support Team</strong></p>
+        </div>';
 
-        $headers = "From: Ceylon Go <noreply@ceylongo.com>\r\n"
-                 . "Reply-To: support@ceylongo.com\r\n"
-                 . "Content-Type: text/plain; charset=UTF-8\r\n";
+        try {
+            $mail = $this->createMailer();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = 'Update on Your CeylonGo Refund Request';
+            $mail->isHTML(true);
+            $mail->Body    = $htmlBody;
+            $mail->AltBody = "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} was not approved. Reason: {$rejectNote}";
+            $mail->send();
+        } catch (\Exception $e) {
+            error_log('[CeylonGo] sendRefundRejectionEmail failed: ' . $e->getMessage());
+        }
+    }
 
-        @mail($toEmail, $subject, $body, $headers);
+    private function sendBankSlipRejectionEmail(
+        string $toEmail, string $toName, int $refId, string $rejectNote, string $type
+    ): void {
+        $typeLabel = $type === 'package' ? 'Package Booking' : 'Custom Trip';
+
+        $htmlBody = '
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
+            <h2 style="color:#c0392b;">&#10007; Bank Slip Could Not Be Verified</h2>
+            <p>Dear ' . htmlspecialchars($toName) . ',</p>
+            <p>We were unable to verify your bank transfer slip for
+            <strong>' . htmlspecialchars($typeLabel) . ' #' . $refId . '</strong>.</p>
+            <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+                <tr>
+                    <td style="padding:10px 14px;font-weight:bold;background:#fdf2f2;border-left:4px solid #c0392b;width:30%;">Reason</td>
+                    <td style="padding:10px 14px;background:#fdf2f2;">' . nl2br(htmlspecialchars($rejectNote)) . '</td>
+                </tr>
+            </table>
+            <p>Please log in to your CeylonGo account and upload a new slip.</p>
+            <p>Contact us at <a href="mailto:support@ceylongo.com">support@ceylongo.com</a> for help.</p>
+            <p style="margin-top:32px;color:#555;">Best regards,<br><strong>Ceylon Go Support Team</strong></p>
+        </div>';
+
+        try {
+            $mail = $this->createMailer();
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = 'Update on Your CeylonGo Bank Transfer Slip';
+            $mail->isHTML(true);
+            $mail->Body    = $htmlBody;
+            $mail->AltBody = "Dear {$toName}, your bank slip for {$typeLabel} #{$refId} could not be verified. Reason: {$rejectNote}. Please log in and upload a new slip.";
+            $mail->send();
+        } catch (\Exception $e) {
+            error_log('[CeylonGo] sendBankSlipRejectionEmail failed: ' . $e->getMessage());
+        }
     }
 
     public function reviews()
