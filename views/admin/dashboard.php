@@ -52,21 +52,6 @@
   $r = $conn->query("SELECT (SELECT COUNT(*) FROM package_bookings WHERE status='cancelled') + (SELECT COUNT(*) FROM trips WHERE status='cancelled' OR refund_requested_at IS NOT NULL) AS total");
   if ($r) $totalCancellations = $r->fetch_assoc()['total'];
 
-  $pendingInquiries = [];
-  try {
-    $r = $conn->query("
-        SELECT i.id, i.subject, i.message, i.created_at,
-            COALESCE(CONCAT(t.first_name, ' ', t.last_name), i.guest_name, 'Guest') AS name,
-            COALESCE(i.guest_email, '') AS email
-        FROM inquiries i
-        LEFT JOIN tourist_users t ON i.user_id = t.id
-        WHERE i.status = 'pending'
-        ORDER BY i.created_at DESC
-        LIMIT 6
-    ");
-    if ($r) { while ($row = $r->fetch_assoc()) $pendingInquiries[] = $row; }  
-  } catch (Exception $e) { error_log("Dashboard inquiry fetch error: " . $e->getMessage()); }
-
   $period      = in_array($_GET['period'] ?? '', ['weekly','monthly','yearly']) ? $_GET['period'] : 'monthly';
   $bookingType = in_array($_GET['booking_type'] ?? '', ['both','package','custom']) ? $_GET['booking_type'] : 'both';
 
@@ -237,37 +222,6 @@
                             <div class="chart-wrap"><canvas id="cancellationsChart"></canvas></div>
                         </div>
                     </div>
-                </section>
-
-                <section class="inquiries-section">
-                    <div class="section-header">
-                        <h4>Pending Inquiries</h4>
-                        <a href="/CeylonGo/public/admin/inquiries" class="view-all-link">View All &rarr;</a>
-                    </div>
-                    <?php if (empty($pendingInquiries)): ?>
-                        <div class="empty-state">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <p>No pending inquiries — all caught up!</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="inquiry-list">
-                            <?php foreach ($pendingInquiries as $inq): ?>
-                                <div class="inquiry-item">
-                                    <div class="inquiry-avatar"><?= strtoupper(substr($inq['name'] ?? 'U', 0, 1)) ?></div>
-                                    <div class="inquiry-body">
-                                        <p class="inquiry-name"><?= htmlspecialchars($inq['name'] ?? 'Unknown') ?></p>
-                                        <p class="inquiry-subject"><?= htmlspecialchars($inq['subject'] ?? 'No subject') ?></p>
-                                        <p class="inquiry-msg"><?= htmlspecialchars(mb_strimwidth($inq['message'] ?? '', 0, 80, '…')) ?></p>
-                                    </div>
-                                    <div class="inquiry-meta">
-                                        <span class="badge-pending">Pending</span>
-                                        <p class="inquiry-date"><?= date('d M Y', strtotime($inq['created_at'])) ?></p>
-                                        <a href="/CeylonGo/public/admin/inquiries" class="reply-link">💬 Reply</a>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
                 </section>
             </div>
         </div>
