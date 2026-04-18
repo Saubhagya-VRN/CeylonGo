@@ -2848,6 +2848,24 @@ class TouristController {
         view('contact');
     }
 
+    /**
+     * Profile redirect after POST — keeps ?full=1 when the user edited from the minimal (navbar) profile layout.
+     */
+    private function touristProfileRedirectUrl(array $post, $errorMessage = null) {
+        $qs = array();
+        if (!empty($post['full']) && (string) $post['full'] === '1') {
+            $qs['full'] = '1';
+        }
+        if ($errorMessage !== null && $errorMessage !== '') {
+            $qs['error'] = $errorMessage;
+        }
+        $url = '/CeylonGo/public/tourist/profile';
+        if (!empty($qs)) {
+            $url .= '?' . http_build_query($qs);
+        }
+        return $url;
+    }
+
     // Profile methods
     public function profile() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -2883,23 +2901,42 @@ class TouristController {
         $tourist->email = trim($data['email'] ?? '');
 
         if ($tourist->first_name === '' || $tourist->last_name === '' || $tourist->email === '') {
-            header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Please fill in first name, last name, and email."));
+            header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please fill in first name, last name, and email.'));
             exit();
         }
         if (!filter_var($tourist->email, FILTER_VALIDATE_EMAIL)) {
-            header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Please enter a valid email address."));
+            header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please enter a valid email address.'));
             exit();
         }
 
         if (!empty($data['password'])) {
+            $authLookup = new AuthUser($this->db);
+            $userAuthRow = $authLookup->getUserByRefAndRole($tourist_id, 'tourist');
+            $storedHash = '';
+            if ($userAuthRow && !empty($userAuthRow['password'])) {
+                $storedHash = (string) $userAuthRow['password'];
+            } else {
+                $existingRow = $tourist->getTouristById($tourist_id);
+                $storedHash = isset($existingRow['password']) ? (string) $existingRow['password'] : '';
+            }
+            $currentPlain = trim($data['current_password'] ?? '');
+            if ($currentPlain === '') {
+                header('Location: ' . $this->touristProfileRedirectUrl($data, 'Enter your current password to set a new password.'));
+                exit();
+            }
+            if ($storedHash === '' || !password_verify($currentPlain, $storedHash)) {
+                header('Location: ' . $this->touristProfileRedirectUrl($data, 'Current password is incorrect.'));
+                exit();
+            }
+
             $pw = trim($data['password']);
             $pw2 = trim($data['password_confirm'] ?? '');
             if ($pw !== $pw2) {
-                header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("New passwords do not match."));
+                header('Location: ' . $this->touristProfileRedirectUrl($data, 'New passwords do not match.'));
                 exit();
             }
             if (strlen($pw) < 6) {
-                header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Password must be at least 6 characters."));
+                header('Location: ' . $this->touristProfileRedirectUrl($data, 'Password must be at least 6 characters.'));
                 exit();
             }
             $tourist->password = password_hash($pw, PASSWORD_DEFAULT);
@@ -2919,9 +2956,9 @@ class TouristController {
             $_SESSION['success'] = "Profile updated successfully!";
             $_SESSION['user_email'] = $tourist->email;
             $_SESSION['user_name'] = $tourist->first_name . ' ' . $tourist->last_name;
-            header("Location: /CeylonGo/public/tourist/profile");
+            header('Location: ' . $this->touristProfileRedirectUrl($data));
         } else {
-            header("Location: /CeylonGo/public/tourist/profile?error=" . urlencode("Failed to update profile"));
+            header('Location: ' . $this->touristProfileRedirectUrl($data, 'Failed to update profile'));
         }
         exit();
     }

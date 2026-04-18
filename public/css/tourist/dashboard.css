@@ -519,9 +519,8 @@
 /* Trending destinations (between How it works and Inquiry) */
 .dashboard-trending {
     max-width: 1140px;
-    margin: 18px auto 54px;
-    padding: 0 16px;
-    padding-bottom: 22px;
+    margin: 18px auto 52px;
+    padding: 28px 16px 44px;
     border-bottom: 1px solid rgba(44, 85, 48, 0.12);
 }
 
@@ -536,7 +535,7 @@
 }
 
 .dashboard-trending .how-it-works-subtitle {
-    margin-bottom: 18px;
+    margin-bottom: 30px;
     max-width: 640px;
 }
 
@@ -599,7 +598,7 @@
 /* Inquiry section */
 .dashboard-inquiry {
     max-width: 980px;
-    margin: 36px auto 34px auto;
+    margin: 28px auto 34px auto;
     padding: 40px 28px 26px;
     text-align: initial;
     background: rgba(255,255,255,0.92);

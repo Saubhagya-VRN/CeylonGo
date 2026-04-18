@@ -96,6 +96,9 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
 
         <div class="profile-content">
           <form method="post" action="<?php echo $form_action; ?>" class="profile-form" autocomplete="off">
+            <?php if ($full_page): ?>
+            <input type="hidden" name="full" value="1">
+            <?php endif; ?>
             <div class="form-section">
               <h2><i class="fa-solid fa-gear"></i> Personal information</h2>
 
@@ -132,8 +135,17 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
 
             <div class="form-section">
               <h2><i class="fa-solid fa-lock"></i> Change password</h2>
-              <p class="form-note">Leave blank to keep your current password.</p>
+              <p class="form-note">Leave new fields blank to keep your current password. To set a new password, enter your current password first.</p>
               <div class="profile-grid">
+                <div class="profile-field">
+                  <div class="profile-field-label"><i class="fa-solid fa-unlock-keyhole"></i> Current password</div>
+                  <div class="profile-field-inputs">
+                    <div class="profile-input-icon-wrap">
+                      <span class="profile-input-icon" aria-hidden="true"><i class="fa-solid fa-unlock-keyhole"></i></span>
+                      <input type="password" id="current_password" name="current_password" autocomplete="current-password" placeholder="Current Password" class="profile-input--icon">
+                    </div>
+                  </div>
+                </div>
                 <div class="profile-field">
                   <div class="profile-field-label"><i class="fa-solid fa-key"></i> New password</div>
                   <div class="profile-field-inputs">

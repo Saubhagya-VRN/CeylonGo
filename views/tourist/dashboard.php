@@ -205,23 +205,23 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
             <p class="how-it-works-subtitle">Most popular choices for travelers from Sri Lanka</p>
 
             <div class="dash-dest-grid">
-                <a class="dash-dest-card dash-dest-card--colombo" href="/CeylonGo/public/tourist/packages?search=Colombo" style="background-image:url('/CeylonGo/public/images/tuk2.jpg');">
+                <a class="dash-dest-card dash-dest-card--colombo" href="/CeylonGo/public/tourist/packages?search=Colombo" style="background-image:url('/CeylonGo/public/images/colombo.jpg');">
                     <span class="dash-dest-card__shade" aria-hidden="true"></span>
                     <span class="dash-dest-card__title">Colombo</span>
                 </a>
-                <a class="dash-dest-card dash-dest-card--kandy" href="/CeylonGo/public/tourist/packages?search=Kandy" style="background-image:url('/CeylonGo/public/images/tuk4.jpg');">
+                <a class="dash-dest-card dash-dest-card--kandy" href="/CeylonGo/public/tourist/packages?search=Kandy" style="background-image:url('/CeylonGo/public/images/kandy.jpg');">
                     <span class="dash-dest-card__shade" aria-hidden="true"></span>
                     <span class="dash-dest-card__title">Kandy</span>
                 </a>
-                <a class="dash-dest-card dash-dest-card--nuwara" href="/CeylonGo/public/tourist/packages?search=Nuwara" style="background-image:url('/CeylonGo/public/images/tuk5.jpg');">
+                <a class="dash-dest-card dash-dest-card--nuwara" href="/CeylonGo/public/tourist/packages?search=Nuwara" style="background-image:url('/CeylonGo/public/images/Nuwara-Eliya-.jpg');">
                     <span class="dash-dest-card__shade" aria-hidden="true"></span>
                     <span class="dash-dest-card__title">Nuwara Eliya</span>
                 </a>
-                <a class="dash-dest-card dash-dest-card--negombo" href="/CeylonGo/public/tourist/packages?search=Negombo" style="background-image:url('/CeylonGo/public/images/tuk6.jpg');">
+                <a class="dash-dest-card dash-dest-card--negombo" href="/CeylonGo/public/tourist/packages?search=Negombo" style="background-image:url('/CeylonGo/public/images/negombo.jpg');">
                     <span class="dash-dest-card__shade" aria-hidden="true"></span>
                     <span class="dash-dest-card__title">Negombo</span>
                 </a>
-                <a class="dash-dest-card dash-dest-card--galle" href="/CeylonGo/public/tourist/packages?search=Galle" style="background-image:url('/CeylonGo/public/images/tuk3.webp');">
+                <a class="dash-dest-card dash-dest-card--galle" href="/CeylonGo/public/tourist/packages?search=Galle" style="background-image:url('/CeylonGo/public/images/galle.webp');">
                     <span class="dash-dest-card__shade" aria-hidden="true"></span>
                     <span class="dash-dest-card__title">Galle</span>
                 </a>
