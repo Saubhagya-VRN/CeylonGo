@@ -1260,6 +1260,13 @@ class TouristController {
             exit;
         }
 
+        $isTouristLogged = isset($_SESSION['user_id']) && ((isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '') === 'tourist');
+        if (!$isTouristLogged) {
+            $_SESSION['inquiry_error'] = 'Please log in to submit an inquiry.';
+            header('Location: /CeylonGo/public/tourist/dashboard?openLogin=inquiry');
+            exit;
+        }
+
         $subject = trim((string)($_POST['subject'] ?? ''));
         $message = trim((string)($_POST['message'] ?? ''));
         if ($subject === '' || $message === '') {
@@ -1269,25 +1276,10 @@ class TouristController {
         }
 
         $inqModel = new Inquiry($this->db);
-        $isTouristLogged = isset($_SESSION['user_id']) && ((isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '') === 'tourist');
 
         $ok = false;
         try {
-            if ($isTouristLogged) {
-                $ok = $inqModel->create((int)$_SESSION['user_id'], $subject, $message);
-            } else {
-                $fn = trim((string)($_POST['first_name'] ?? ''));
-                $ln = trim((string)($_POST['last_name'] ?? ''));
-                $email = trim((string)($_POST['email'] ?? ''));
-                $name = trim($fn . ' ' . $ln);
-                if ($name === '') $name = 'Guest';
-                if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $_SESSION['inquiry_error'] = 'Please enter a valid email address so we can reply.';
-                    header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
-                    exit;
-                }
-                $ok = $inqModel->createGuest($name, $email, $subject, $message);
-            }
+            $ok = $inqModel->create((int)$_SESSION['user_id'], $subject, $message);
         } catch (\Throwable $e) {
             error_log('inquirySubmit: ' . $e->getMessage());
             $ok = false;
