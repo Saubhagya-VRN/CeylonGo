@@ -184,6 +184,31 @@ class GuideController {
         view('guide/profile');
     }
 
+    public function report() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        if (!$user_id || ($_SESSION['user_role'] ?? '') !== 'guide') {
+            header("Location: /CeylonGo/public/login");
+            exit();
+        }
+
+        $guideRequest = new GuideRequest($this->db);
+
+        // Get date range from query parameters
+        $startDate = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : null;
+        $endDate = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : null;
+
+        $reportData = $guideRequest->getFilteredReportData($user_id, $startDate, $endDate);
+
+        view('guide/report', [
+            'kpi' => $reportData['kpi'],
+            'monthly' => $reportData['monthly'],
+            'tours' => $reportData['tours'],
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+    }
+
     public function places() {
         view('guide/places');
     }

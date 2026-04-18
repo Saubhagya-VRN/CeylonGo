@@ -13,6 +13,7 @@ class GuideRequest {
     public $time;
     public $notes;
     public $status;
+    public $fee;
     public $guide_id;
     public $approved_at;
     public $created_at;
@@ -36,6 +37,7 @@ class GuideRequest {
             time TIME NOT NULL,
             notes TEXT,
             status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+            fee DECIMAL(10, 2) DEFAULT 0.00,
             guide_id INT NULL,
             approved_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,8 +73,8 @@ class GuideRequest {
         $this->createTable();
 
         $query = "INSERT INTO " . $this->table . "
-                  (tourist_id, customerName, contactNumber, location, language, date, time, notes, status, guide_id)
-                  VALUES (:tourist_id, :customerName, :contactNumber, :location, :language, :date, :time, :notes, :status, :guide_id)";
+                  (tourist_id, customerName, contactNumber, location, language, date, time, notes, status, fee, guide_id)
+                  VALUES (:tourist_id, :customerName, :contactNumber, :location, :language, :date, :time, :notes, :status, :fee, :guide_id)";
         
         $stmt = $this->conn->prepare($query);
 
@@ -85,6 +87,7 @@ class GuideRequest {
         $this->time = htmlspecialchars(strip_tags($this->time));
         $this->notes = htmlspecialchars(strip_tags($this->notes ?? ''));
         $this->status = $this->status ?? 'pending';
+        $this->fee = 2500.00; // Force guide fee to 2500 for every request
         $this->tourist_id = $this->tourist_id ?? null;
         $this->guide_id = $this->guide_id ?? null;
 
@@ -97,6 +100,7 @@ class GuideRequest {
         $stmt->bindParam(":time", $this->time);
         $stmt->bindParam(":notes", $this->notes);
         $stmt->bindParam(":status", $this->status);
+        $stmt->bindParam(":fee", $this->fee);
         $stmt->bindParam(":guide_id", $this->guide_id);
 
         try {
@@ -330,6 +334,146 @@ class GuideRequest {
                 error_log("Error fetching payment bookings: " . $e2->getMessage());
                 return [];
             }
+        }
+    }
+    
+    /**
+     * Get filtered report data with date range support for guide
+     * Returns KPIs, monthly breakdown, and individual tour details
+     */
+    public function getFilteredReportData($guide_id, $startDate = null, $endDate = null) {
+        try {
+            $dateCondition = "";
+            $params = [$guide_id];
+
+            if ($startDate && $endDate) {
+                $dateCondition = " AND gr.date BETWEEN ? AND ?";
+                $params[] = $startDate;
+                $params[] = $endDate;
+            }
+
+            // Overall KPIs — all aggregations NULL-safe
+            $queryKPI = "SELECT 
+                            IFNULL(COUNT(*), 0) as total_bookings,
+                            IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN gr.fee ELSE 0 END), 0) as total_revenue,
+                            IFNULL(AVG(CASE WHEN gr.status = 'approved' THEN gr.fee END), 0) as avg_fee,
+                            IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN 1 ELSE 0 END), 0) as approved_count,
+                            IFNULL(SUM(CASE WHEN gr.status = 'rejected' THEN 1 ELSE 0 END), 0) as rejected_count,
+                            IFNULL(SUM(CASE WHEN gr.status = 'pending' THEN 1 ELSE 0 END), 0) as pending_count,
+                            COUNT(DISTINCT gr.customerName) as unique_clients
+                         FROM " . $this->table . " gr
+                         WHERE gr.guide_id = ?" . $dateCondition;
+            $stmtKPI = $this->conn->prepare($queryKPI);
+            $stmtKPI->execute($params);
+            $kpi = $stmtKPI->fetch(PDO::FETCH_ASSOC);
+
+            if (!$kpi) {
+                $kpi = [
+                    'total_bookings' => 0, 'total_revenue' => 0, 'avg_fee' => 0,
+                    'approved_count' => 0, 'rejected_count' => 0, 'pending_count' => 0,
+                    'unique_clients' => 0
+                ];
+            }
+
+            // Completion rate
+            $kpi['completion_rate'] = $kpi['total_bookings'] > 0
+                ? round(($kpi['approved_count'] / $kpi['total_bookings']) * 100, 1)
+                : 0;
+
+            // Monthly breakdown
+            $paramsMonthly = [$guide_id];
+            $dateCondMonthly = "";
+            if ($startDate && $endDate) {
+                $dateCondMonthly = " AND gr.date BETWEEN ? AND ?";
+                $paramsMonthly[] = $startDate;
+                $paramsMonthly[] = $endDate;
+            }
+
+            $queryMonthly = "SELECT 
+                                DATE_FORMAT(gr.date, '%Y-%m') as month,
+                                COUNT(*) as bookings,
+                                IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN gr.fee ELSE 0 END), 0) as revenue,
+                                IFNULL(SUM(CASE WHEN gr.status = 'approved' THEN 1 ELSE 0 END), 0) as approved,
+                                IFNULL(SUM(CASE WHEN gr.status = 'rejected' THEN 1 ELSE 0 END), 0) as rejected
+                             FROM " . $this->table . " gr
+                             WHERE gr.guide_id = ?" . $dateCondMonthly . "
+                             GROUP BY month
+                             ORDER BY month ASC";
+            $stmtMonthly = $this->conn->prepare($queryMonthly);
+            $stmtMonthly->execute($paramsMonthly);
+            $monthly = $stmtMonthly->fetchAll(PDO::FETCH_ASSOC);
+
+            // Individual tour details for summary table
+            $paramsTours = [$guide_id];
+            $dateCondTours = "";
+            if ($startDate && $endDate) {
+                $dateCondTours = " AND gr.date BETWEEN ? AND ?";
+                $paramsTours[] = $startDate;
+                $paramsTours[] = $endDate;
+            }
+
+            $queryTours = "SELECT gr.id, gr.customerName, gr.contactNumber, gr.location, 
+                                  gr.language, gr.date, gr.time, gr.notes, gr.fee, gr.status
+                           FROM " . $this->table . " gr
+                           WHERE gr.guide_id = ?" . $dateCondTours . "
+                           ORDER BY gr.date DESC";
+            $stmtTours = $this->conn->prepare($queryTours);
+            $stmtTours->execute($paramsTours);
+            $tours = $stmtTours->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'kpi' => $kpi,
+                'monthly' => $monthly,
+                'tours' => $tours
+            ];
+        } catch (PDOException $e) {
+            error_log("Error fetching filtered guide report data: " . $e->getMessage());
+            return [
+                'kpi' => [
+                    'total_bookings' => 0, 'total_revenue' => 0, 'avg_fee' => 0,
+                    'approved_count' => 0, 'rejected_count' => 0, 'pending_count' => 0,
+                    'unique_clients' => 0, 'completion_rate' => 0
+                ],
+                'monthly' => [],
+                'tours' => []
+            ];
+        }
+    }
+
+    /**
+     * Get monthly revenue and booking count for reporting
+     */
+    public function getReportData($guide_id) {
+        try {
+            // Get total bookings (approved)
+            $queryTotal = "SELECT COUNT(*) as total_bookings, IFNULL(SUM(fee), 0) as total_revenue 
+                          FROM " . $this->table . " 
+                          WHERE guide_id = ? AND status = 'approved'";
+            $stmtTotal = $this->conn->prepare($queryTotal);
+            $stmtTotal->execute([$guide_id]);
+            $overall = $stmtTotal->fetch(PDO::FETCH_ASSOC);
+
+            // Get monthly breakdown for last 12 months
+            $queryMonthly = "SELECT 
+                                DATE_FORMAT(date, '%Y-%m') as month,
+                                COUNT(*) as bookings,
+                                IFNULL(SUM(fee), 0) as revenue
+                             FROM " . $this->table . "
+                             WHERE guide_id = ? AND status = 'approved'
+                             AND date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                             GROUP BY month
+                             ORDER BY month ASC";
+            $stmtMonthly = $this->conn->prepare($queryMonthly);
+            $stmtMonthly->execute([$guide_id]);
+            $monthly = $stmtMonthly->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'overall' => $overall,
+                'monthly' => $monthly
+            ];
+        } catch (PDOException $e) {
+            error_log("Error fetching guide report data: " . $e->getMessage());
+            return ['overall' => ['total_bookings' => 0, 'total_revenue' => 0], 'monthly' => []];
         }
     }
 }

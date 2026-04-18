@@ -85,6 +85,30 @@ class TransportProviderController {
         view('transport/profile');
     }
 
+    public function report() {
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $driverId = trim($_SESSION['transporter_id']);
+        $requestModel = new TransportRequest($this->db);
+
+        // Get date range from query parameters
+        $startDate = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : null;
+        $endDate = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : null;
+
+        // Use filtered report data method
+        $reportData = $requestModel->getFilteredReportData($driverId, $startDate, $endDate);
+
+        view('transport/report', [
+            'kpi' => $reportData['kpi'],
+            'monthly' => $reportData['monthly'],
+            'tours' => $reportData['tours'],
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+    }
+
     public function vehicle() {
         view('transport/vehicle');
     }

@@ -1,17 +1,15 @@
-/* ===== FOOTER ===== */
 footer {
   background: linear-gradient(135deg, #2c5530, #1e3d22);
   color: white;
   padding: 30px 20px;
   text-align: center;
-  width: 100%;
-  margin-left: 0;
+  margin-left: 260px; /* Aligns with sidebar width */
+  width: calc(100% - 260px);
+  box-sizing: border-box;
   position: relative;
-  left: 0;
-  right: 0;
-  clear: both;
-  margin-top: 40px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto; /* Push to bottom if flex container used */
+  clear: both;
 }
 
 footer ul {
@@ -82,6 +80,7 @@ footer p {
   footer {
     padding: 20px 15px;
     margin-top: 30px;
+    margin-left: 0;
   }
 
   footer ul {

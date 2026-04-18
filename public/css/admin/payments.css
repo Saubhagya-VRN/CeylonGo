@@ -75,13 +75,6 @@
   font-weight: bold;
 }
  
-/* date picker in toolbar */
-.date-filter .date-input {
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
- 
 /* Modal */
 .modal {
   display: none;
