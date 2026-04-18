@@ -111,12 +111,12 @@ class User {
     // Update user profile information
     public function updateUser() {
         $query = "UPDATE " . $this->table . " SET 
-                  full_name = :full_name,
-                  dob = :dob,
-                  address = :address,
-                  contact_no = :contact_no,
-                  email = :email
-                  WHERE user_id = :user_id";
+                    full_name = :full_name,
+                    dob = :dob,
+                    address = :address,
+                    contact_no = :contact_no,
+                    email = :email
+                    WHERE user_id = :user_id";
         
         $stmt = $this->conn->prepare($query);
         

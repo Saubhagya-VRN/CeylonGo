@@ -75,4 +75,51 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Room modal controls
+    const roomModal = document.getElementById('addRoomModal');
+    const openRoomModalButtons = document.querySelectorAll('[data-room-modal-open]');
+    const closeRoomModalButtons = document.querySelectorAll('[data-room-modal-close]');
+
+    function openRoomModal() {
+        if (!roomModal) return;
+        roomModal.classList.add('is-open');
+        document.body.classList.add('room-modal-open');
+
+        const firstField = roomModal.querySelector('input, textarea, select');
+        if (firstField) {
+            firstField.focus();
+        }
+    }
+
+    function closeRoomModal() {
+        if (!roomModal) return;
+        roomModal.classList.remove('is-open');
+        document.body.classList.remove('room-modal-open');
+    }
+
+    openRoomModalButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();
+            openRoomModal();
+        });
+    });
+
+    closeRoomModalButtons.forEach(button => {
+        button.addEventListener('click', closeRoomModal);
+    });
+
+    if (roomModal) {
+        roomModal.addEventListener('click', function(event) {
+            if (event.target === roomModal) {
+                closeRoomModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && roomModal && roomModal.classList.contains('is-open')) {
+            closeRoomModal();
+        }
+    });
 });

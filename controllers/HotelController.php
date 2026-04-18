@@ -96,9 +96,59 @@ class HotelController {
     }
 
     public function rooms() {
-        $roomModel = new Room($this->db);
-        $hotel_id = $_SESSION['user_id'] ?? 1; // Default to 1 if not set
-        $rooms = $roomModel->getRoomsByHotel($hotel_id);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $data = $_POST;
+            $hotel_id = (int) ($_SESSION['id'] ?? ($_SESSION['user_id'] ?? 0));
+
+            if ($hotel_id <= 0) {
+                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Invalid hotel session"));
+                exit();
+            }
+
+            $type = trim((string) ($data['room_type'] ?? ''));
+            $description = trim((string) ($data['description'] ?? ''));
+            $rawRate = (string) ($data['rate'] ?? '0');
+            $rawRate = str_replace(',', '', $rawRate);
+            $priceValue = (float) $rawRate;
+
+            if ($type === '' || $priceValue <= 0) {
+                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Room type and valid price are required"));
+                exit();
+            }
+
+            $roomRecord = [
+                'type' => $type,
+                'description' => $description,
+                'price' => 'Rs.' . number_format($priceValue, 0),
+                'priceValue' => $priceValue,
+                'image' => '/img/5star.jpg'
+            ];
+
+            $hotelModel = new Hotel($this->db);
+            if ($hotelModel->AddOrUpdateRoom($hotel_id, $roomRecord)) {
+                header("Location: /CeylonGo/public/hotel/rooms?success=" . urlencode("Room added successfully"));
+            } else {
+                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Failed to add room"));
+            }
+            exit();
+        }
+
+        $hotel = new Hotel($this->db);
+        $hotel_id = $_SESSION['id'];
+        $hotels = $hotel->GetAccommodationCatalogByUserId($hotel_id);
+        
+        $rooms = [];
+        if (!empty($hotels) && isset($hotels[0]->room_details)) {
+            if (is_string($hotels[0]->room_details)) {
+                $decodedRooms = json_decode($hotels[0]->room_details, true);
+                if (is_array($decodedRooms)) {
+                    $rooms = $decodedRooms;
+                }
+            } elseif (is_array($hotels[0]->room_details)) {
+                $rooms = $hotels[0]->room_details;
+            }
+        }
+
         view('hotel/rooms', ['rooms' => $rooms]);
     }
 
@@ -107,30 +157,8 @@ class HotelController {
     }
 
     public function addRoom() {
-        $data = $_POST;
-        $hotel_id = $_SESSION['user_id'] ?? 1; // Default to 1 if not set
-
-        $room = new Room($this->db);
-        $room->hotel_id = $hotel_id;
-        $room->room_number = $data['room_number'] ?? '';
-        $room->room_type = $data['room_type'] ?? '';
-        $room->rate = $data['rate'] ?? 0;
-        $room->capacity = $data['capacity'] ?? 1;
-        $room->status = $data['status'] ?? 'available';
-        $room->description = $data['description'] ?? null;
-        
-        $amenities = [];
-        if (isset($data['amenities']) && is_array($data['amenities'])) {
-            $amenities = $data['amenities'];
-        }
-        $room->amenities = json_encode($amenities);
-
-        if ($room->addRoom()) {
-            header("Location: /CeylonGo/public/hotel/rooms?success=" . urlencode("Room added successfully"));
-        } else {
-            header("Location: /CeylonGo/public/hotel/add-room?error=" . urlencode("Failed to add room"));
-        }
-        exit();
+        // Backward compatibility: route legacy submissions through rooms() handler.
+        $this->rooms();
     }
 
     public function editRoomView($id) {
@@ -182,7 +210,11 @@ class HotelController {
     }
 
     public function bookings() {
-        view('hotel/bookings');
+        $hotelBookings = new HotelBookings($this->db);
+        $hotel_id = $_SESSION['id'];
+
+        $bookings = $hotelBookings->getHotelBookings($hotel_id);
+        view('hotel/bookings', ['bookings' =>$bookings]);
     }
 
     public function availability() {

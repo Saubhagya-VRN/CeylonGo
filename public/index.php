@@ -120,6 +120,7 @@ $router->get('hotel/register', 'HotelController@registerView');
 $router->post('hotel/register', 'HotelController@register');
 $router->get('hotel/dashboard', 'HotelController@dashboard');
 $router->get('hotel/rooms', 'HotelController@rooms');
+$router->post('hotel/rooms', 'HotelController@rooms');
 $router->get('hotel/add-room', 'HotelController@addRoomView');
 $router->post('hotel/add-room', 'HotelController@addRoom');
 $router->get('hotel/edit-room/{id}', 'HotelController@editRoomView');
