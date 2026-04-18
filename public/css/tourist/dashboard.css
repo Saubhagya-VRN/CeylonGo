@@ -416,7 +416,7 @@
 /* How It Works – booking steps section */
 .dashboard-how-it-works {
     background: #ffffff;
-    padding: 76px 32px 84px;
+    padding: 96px 32px 100px;
     text-align: center;
 }
 
@@ -432,7 +432,7 @@
 }
 
 .how-it-works-subtitle {
-    margin: 0 auto 20px;
+    margin: 0 auto 28px;
     max-width: 560px;
     font-size: 16px;
     line-height: 1.6;
@@ -933,11 +933,11 @@
 
 @media (max-width: 768px) {
     .dashboard-how-it-works {
-        padding: 48px 20px 64px;
+        padding: 60px 20px 80px;
     }
 
     .how-it-works-subtitle {
-        margin-bottom: 48px;
+        margin-bottom: 40px;
     }
 
     .how-it-works-steps {
