@@ -40,10 +40,10 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/sidebar.css">
   <?php endif; ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/footer.css">
-  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/profile.css">
   <?php if (!$full_page): ?>
   <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip.css">
   <?php endif; ?>
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($asset_base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/profile.css">
 </head>
 <body class="<?php echo $full_page ? 'profile-full-page' : 'trip-page-body'; ?>">
   <?php include __DIR__ . '/header.php'; ?>

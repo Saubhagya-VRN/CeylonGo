@@ -486,18 +486,73 @@ $main_cities = array(
   <?php include __DIR__ . '/tour_guide_request_modal.php'; ?>
   <?php include __DIR__ . '/_trip_overview_modals.php'; ?>
 
+  <div id="tripClearDataModal" class="trip-clear-data-modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tripClearDataModalTitle">
+    <div class="trip-clear-data-modal" role="document">
+      <h2 id="tripClearDataModalTitle" class="trip-clear-data-modal__title">Clear trip data?</h2>
+      <p class="trip-clear-data-modal__text">Clear all trip details saved on this device and start again at Travel Group? This does not delete past bookings from your account.</p>
+      <div class="trip-clear-data-modal__actions">
+        <button type="button" class="trip-clear-data-modal__btn trip-clear-data-modal__btn--cancel" id="tripClearDataModalCancel">Cancel</button>
+        <button type="button" class="trip-clear-data-modal__btn trip-clear-data-modal__btn--ok" id="tripClearDataModalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script>
   document.addEventListener('DOMContentLoaded', function () {
     (function bindTripClearData() {
       var clearBtn = document.getElementById('tripClearDataBtn');
+      var modal = document.getElementById('tripClearDataModal');
+      var modalOk = document.getElementById('tripClearDataModalOk');
+      var modalCancel = document.getElementById('tripClearDataModalCancel');
       if (!clearBtn) return;
       var fallbackCustomizeUrl = <?php echo json_encode(rtrim(defined('BASE_URL') ? BASE_URL : '/CeylonGo/public', '/') . '/tourist/customize-trip'); ?>;
-      clearBtn.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        if (!window.confirm('Clear all trip details saved on this device and start again at Travel Group? This does not delete past bookings from your account.')) {
+      var trapFocus = null;
+
+      function closeTripClearDataModal() {
+        if (!modal || !modal.classList.contains('trip-clear-data-modal-overlay--open')) return;
+        modal.classList.remove('trip-clear-data-modal-overlay--open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (trapFocus) {
+          document.removeEventListener('keydown', trapFocus);
+          trapFocus = null;
+        }
+        if (clearBtn && typeof clearBtn.focus === 'function') {
+          try { clearBtn.focus(); } catch (eF) {}
+        }
+      }
+
+      function openTripClearDataModal() {
+        if (!modal) {
+          try { localStorage.removeItem('ceylonTripWizardDraftV2'); } catch (e0) {}
+          try {
+            sessionStorage.removeItem('ceylonTripWizardSubmitted');
+            sessionStorage.removeItem('ceylonTripWizardTripId');
+            sessionStorage.removeItem('ceylonTripWizardFingerprint');
+            sessionStorage.removeItem('ceylonTripWizardProceededToPayment');
+            sessionStorage.removeItem('ceylonTripWizardReturnToReview');
+          } catch (e1) {}
+          var path0 = (window.location && window.location.pathname) ? String(window.location.pathname) : '';
+          var target0 = (path0 && path0.indexOf('customize-trip') !== -1) ? (path0 + '?reset=1') : (fallbackCustomizeUrl + '?reset=1');
+          window.location.replace(target0);
           return;
         }
+        modal.classList.add('trip-clear-data-modal-overlay--open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        if (modalOk && typeof modalOk.focus === 'function') {
+          try { modalOk.focus(); } catch (eFo) {}
+        }
+        trapFocus = function (kev) {
+          if (kev.key === 'Escape') {
+            kev.preventDefault();
+            closeTripClearDataModal();
+          }
+        };
+        document.addEventListener('keydown', trapFocus);
+      }
+
+      function runClearAndRedirect() {
         try { localStorage.removeItem('ceylonTripWizardDraftV2'); } catch (e0) {}
         try {
           sessionStorage.removeItem('ceylonTripWizardSubmitted');
@@ -509,7 +564,23 @@ $main_cities = array(
         var path = (window.location && window.location.pathname) ? String(window.location.pathname) : '';
         var target = (path && path.indexOf('customize-trip') !== -1) ? (path + '?reset=1') : (fallbackCustomizeUrl + '?reset=1');
         window.location.replace(target);
+      }
+
+      clearBtn.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openTripClearDataModal();
       });
+      if (modalOk) modalOk.addEventListener('click', function () {
+        closeTripClearDataModal();
+        runClearAndRedirect();
+      });
+      if (modalCancel) modalCancel.addEventListener('click', closeTripClearDataModal);
+      if (modal) {
+        modal.addEventListener('click', function (ev) {
+          if (ev.target === modal) closeTripClearDataModal();
+        });
+      }
     })();
 
     var tripPageWizardFresh = !!(document.body && document.body.getAttribute('data-wizard-fresh') === '1');
@@ -2586,10 +2657,9 @@ $main_cities = array(
           }
         });
 
-        // Fetch the submitted trip acceptance status from DB (this is what changes within ~24 hours).
+        // Trip acceptance still comes from DB (footnote + Proceed); list rows are transport/hotel only.
         var tripStatusRaw = '';
         if (!tripId) {
-          rows.unshift({ label: 'Submitted trip', disp: mapVerifyTripStatus('pending') });
           finalizeRender(false);
         } else {
           fetch('/CeylonGo/public/tourist/trip-payment-status/' + encodeURIComponent(tripId), {
@@ -2603,13 +2673,10 @@ $main_cities = array(
               } else {
                 tripStatusRaw = '';
               }
-              var dispTrip = mapVerifyTripStatus(tripStatusRaw || 'pending');
               var acceptedTrip = isVerifyTripAccepted(tripStatusRaw);
-              rows.unshift({ label: 'Submitted trip', disp: dispTrip });
               finalizeRender(acceptedTrip);
             })
             .catch(function () {
-              rows.unshift({ label: 'Submitted trip', disp: mapVerifyTripStatus('pending') });
               finalizeRender(false);
             });
         }

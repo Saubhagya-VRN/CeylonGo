@@ -11,6 +11,7 @@ if ($asset_base === '' || $asset_base === '/') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <?php require_once dirname(__DIR__) . '/partials/app_notify_script.php'; ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Payment - Ceylon Go</title>

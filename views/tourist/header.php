@@ -2,6 +2,7 @@
 // header.php (inside views/tourist)
 // Check if user is logged in
 $is_user_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist';
+require_once dirname(__DIR__) . '/partials/app_notify_script.php';
 ?>
 <header class="navbar">
   <div class="branding">
