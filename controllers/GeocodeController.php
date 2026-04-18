@@ -3,6 +3,7 @@ class GeocodeController {
     /**
      * Places autocomplete for stop locations (Google Places API, Sri Lanka).
      * Optional GET 'district' biases results to that area so stops match where the tourist is staying.
+     * Fallback: Uses a local database of Sri Lankan locations if Google API returns no results.
      */
     public function placesAutocomplete() {
         if (ob_get_level()) ob_end_clean();
@@ -19,6 +20,8 @@ class GeocodeController {
 
         $predictions = [];
         $apiKey = defined('GOOGLE_MAPS_API_KEY') ? GOOGLE_MAPS_API_KEY : '';
+        
+        // 1. Try Google Places API
         if (!empty($apiKey)) {
             $params = [
                 'input' => $input,
@@ -48,9 +51,48 @@ class GeocodeController {
             }
         }
 
+        // 2. Fallback to local database if no predictions found (or API empty/errored)
+        if (empty($predictions)) {
+            $lowerInput = strtolower($input);
+            foreach (self::$localLocations as $loc) {
+                if (stripos($loc, $lowerInput) !== false) {
+                    $predictions[] = [
+                        'description' => $loc,
+                        'place_id' => '', // Local matches don't have place IDs
+                        'types' => ['locality', 'political'],
+                        'terms' => [['offset' => 0, 'value' => $loc]]
+                    ];
+                }
+                if (count($predictions) >= 10) break;
+            }
+        }
+
         ob_end_clean();
         echo json_encode(['predictions' => $predictions]);
     }
+
+    /** Local Sri Lankan locations database (fallback) */
+    private static $localLocations = [
+        'Colombo, Sri Lanka', 'Kandy, Sri Lanka', 'Galle, Sri Lanka', 'Jaffna, Sri Lanka', 'Negombo, Sri Lanka',
+        'Trincomalee, Sri Lanka', 'Anuradhapura, Sri Lanka', 'Polonnaruwa, Sri Lanka', 'Nuwara Eliya, Sri Lanka',
+        'Ella, Sri Lanka', 'Matara, Sri Lanka', 'Batticaloa, Sri Lanka', 'Ratnapura, Sri Lanka', 'Badulla, Sri Lanka',
+        'Vavuniya, Sri Lanka', 'Kurunegala, Sri Lanka', 'Gampaha, Sri Lanka', 'Kalutara, Sri Lanka', 'Ampara, Sri Lanka',
+        'Hambantota, Sri Lanka', 'Sigiriya, Sri Lanka', 'Mirissa, Sri Lanka', 'Bentota, Sri Lanka', 'Hikkaduwa, Sri Lanka',
+        'Arugam Bay, Sri Lanka', 'Dambulla, Sri Lanka', 'Unawatuna, Sri Lanka', 'Tangalle, Sri Lanka', 'Weligama, Sri Lanka',
+        'Koggala, Sri Lanka', 'Beruwala, Sri Lanka', 'Pasikudah, Sri Lanka', 'Nilaveli, Sri Lanka', 'Uppuveli, Sri Lanka',
+        'Galle Fort, Galle', 'Temple of the Tooth, Kandy', 'Sigiriya Rock Fortress', 'Dambulla Cave Temple',
+        'Anuradhapura Ancient City', 'Polonnaruwa Ancient City', 'Mihintale, Anuradhapura', 'Yapahuwa Rock Fortress',
+        'Yala National Park', 'Udawalawe National Park', 'Horton Plains National Park', 'Wilpattu National Park',
+        'Minneriya National Park', 'Kaudulla National Park', 'Sinharaja Rainforest', 'Knuckles Mountain Range',
+        "Adam's Peak (Sri Pada)", 'Pidurangala Rock', "Little Adam's Peak, Ella", 'Nine Arch Bridge, Ella',
+        'Ravana Falls, Ella', 'Jetwing Lighthouse, Galle', 'Jetwing Beach, Negombo', 'Jetwing Vil Uyana, Sigiriya',
+        'Jetwing Lake, Dambulla', 'Cinnamon Grand, Colombo', 'Cinnamon Lakeside, Colombo', 'Galle Face Hotel, Colombo',
+        'Shangri-La Colombo', 'Hilton Colombo', 'Taj Samudra, Colombo', 'Heritance Kandalama, Dambulla',
+        'Heritance Tea Factory, Nuwara Eliya', 'Amangalla, Galle', 'Cape Weligama', 'Anantara Peace Haven, Tangalle',
+        'Uga Bay, Pasikudah', 'Nuwara Eliya Town', 'Hatton, Sri Lanka', 'Haputale, Sri Lanka', 'Bandarawela, Sri Lanka',
+        'Welimada, Sri Lanka', 'Pinnawala Elephant Orphanage', 'Udawalawe Elephant Transit Home', 'Bundala National Park',
+        'Ritigala Forest Monastery', 'Mulkirigala Rock Temple', 'Buduruwagala Temple', 'Aukana Buddha Statue'
+    ];
 
     /** District centers (lat/lon) for biasing stop suggestions to the selected destination area */
     private static $districtCenter = [

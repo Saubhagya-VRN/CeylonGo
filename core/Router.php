@@ -24,10 +24,11 @@ class Router {
         $requestedUri = '/' . trim($requestedUri, '/');
 
         // Adjust your project folder here
-        $basePath = '/CeylonGo/public';
+        // If BASE_URL is defined in config, use it; otherwise default to the suspected path.
+        $basePath = defined('BASE_URL') ? BASE_URL : '/CeylonGo/public';
 
-        // Remove base path
-        if (str_starts_with($requestedUri, $basePath)) {
+        // Remove base path from requested URI
+        if (!empty($basePath) && strpos($requestedUri, $basePath) === 0) {
             $requestedUri = substr($requestedUri, strlen($basePath));
         }
 
