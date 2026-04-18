@@ -21,7 +21,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 0 14px;
+  padding: 14px 14px 0;
 }
 
 .trip-sidebar-nav::-webkit-scrollbar {
@@ -43,7 +43,7 @@
 
 .trip-sidebar ul {
   list-style: none;
-  padding: 6px 0;
+  padding: 4px 0 6px;
   margin: 0;
 }
 

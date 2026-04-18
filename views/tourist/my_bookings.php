@@ -6,7 +6,8 @@ $bookings = isset($bookings) ? $bookings : array();
 $custom_trips = isset($custom_trips) ? $custom_trips : array();
 $tourist_email = isset($tourist_email) ? (string) $tourist_email : '';
 $bookings_custom_only = !empty($bookings_custom_only);
-$asset_base = rtrim(str_replace('\\', '/', dirname(isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '')), '/');
+$scriptName = isset($_SERVER['SCRIPT_NAME']) ? $_SERVER['SCRIPT_NAME'] : '';
+$asset_base = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
 if ($asset_base === '' || $asset_base === '/') {
     $asset_base = '/CeylonGo/public';
 }
@@ -99,19 +100,19 @@ $trip_sidebar_active = 'bookings';
       <?php if ($bookings_custom_only && !empty($custom_trips)): ?>
       <div class="my-bookings-list my-bookings-list--custom">
         <?php foreach ($custom_trips as $ct):
-          $ctid = (int) ($ct['id'] ?? 0);
+          $ctid = (int) (isset($ct['id']) ? $ct['id'] : 0);
           $overview_href = htmlspecialchars($asset_base) . '/tourist/customize-trip?step=14&trip_id=' . urlencode((string) $ctid);
           $badge_submitted = !empty($ct['is_bank_submitted']);
           $badge_text = $badge_submitted ? 'Payment submitted' : 'Completed';
-          $travelers = (int) ($ct['travelers'] ?? 0);
-          $budget = (float) ($ct['budget_lkr'] ?? 0);
+          $travelers = (int) (isset($ct['travelers']) ? $ct['travelers'] : 0);
+          $budget = (float) (isset($ct['budget_lkr']) ? $ct['budget_lkr'] : 0);
           $total_line = $budget > 0 ? ('LKR ' . number_format((int) round($budget))) : 'LKR —';
-          $cust = trim((string) ($ct['customer_name'] ?? ''));
+          $cust = trim((string) (isset($ct['customer_name']) ? $ct['customer_name'] : ''));
           $em = trim($tourist_email);
           $contact_line = ($cust === '' && $em === '') ? '' : ($cust . ($em !== '' ? ' · ' . $em : ''));
           $refund_requested = !empty($ct['refund_requested']);
           $refund_eligible = !empty($ct['refund_eligible']) && !$badge_submitted;
-          $paid_raw = (string) ($ct['paid_at_raw'] ?? '');
+          $paid_raw = (string) (isset($ct['paid_at_raw']) ? $ct['paid_at_raw'] : '');
           $paid_label = '';
           if ($paid_raw !== '') {
             $pts = strtotime($paid_raw);
@@ -122,7 +123,7 @@ $trip_sidebar_active = 'bookings';
             $deadline_label = date('F j, Y \a\t g:i A', (int) $ct['refund_deadline_ts']);
           }
           $total_lkr_int = (int) round($budget);
-          $refund_rr = trim((string) ($ct['refund_requested_at'] ?? ''));
+          $refund_rr = trim((string) (isset($ct['refund_requested_at']) ? $ct['refund_requested_at'] : ''));
         ?>
         <div class="my-booking-card" role="region" aria-label="Custom trip booking">
           <div class="my-booking-header">
@@ -131,7 +132,7 @@ $trip_sidebar_active = 'bookings';
             <?php else: ?>
             <span class="my-booking-status my-booking-status--paid"><?php echo htmlspecialchars($badge_text); ?></span>
             <?php endif; ?>
-            <span class="my-booking-date"><?php echo htmlspecialchars($ct['date_label'] ?? '—'); ?></span>
+            <span class="my-booking-date"><?php echo htmlspecialchars(isset($ct['date_label']) ? $ct['date_label'] : '—'); ?></span>
           </div>
           <h2 class="my-booking-package"><?php echo htmlspecialchars($ct['destination'] ?: 'Your trip'); ?></h2>
           <?php if ($badge_submitted): ?>
@@ -143,7 +144,7 @@ $trip_sidebar_active = 'bookings';
           </ul>
           <p class="my-booking-note">We have recorded your bank transfer. Your booking stays approved while we verify the payment (usually within 1–2 business days).</p>
           <div class="my-booking-custom-actions">
-            <a class="my-booking-btn-trip-summary" href="<?php echo $overview_href; ?>">View trip summary</a>
+            <button type="button" class="my-booking-btn-trip-summary js-custom-trip-summary-open" data-trip-id="<?php echo (int) $ctid; ?>">View trip summary</button>
           </div>
           <?php elseif ($refund_requested): ?>
           <ul class="my-booking-details my-booking-details--paid-follow">
@@ -164,7 +165,7 @@ $trip_sidebar_active = 'bookings';
               <div class="my-booking-cell my-booking-cell--refund">
               </div>
               <div class="my-booking-cell my-booking-cell--trip">
-                <a class="my-booking-btn-trip-summary" href="<?php echo $overview_href; ?>">View trip summary</a>
+                <button type="button" class="my-booking-btn-trip-summary js-custom-trip-summary-open" data-trip-id="<?php echo (int) $ctid; ?>">View trip summary</button>
               </div>
             </div>
           </div>
@@ -193,7 +194,7 @@ $trip_sidebar_active = 'bookings';
                 <?php endif; ?>
               </div>
               <div class="my-booking-cell my-booking-cell--trip">
-                <a class="my-booking-btn-trip-summary" href="<?php echo $overview_href; ?>">View trip summary</a>
+                <button type="button" class="my-booking-btn-trip-summary js-custom-trip-summary-open" data-trip-id="<?php echo (int) $ctid; ?>">View trip summary</button>
               </div>
             </div>
             <?php if ($paid_raw !== '' && !$refund_eligible): ?>
@@ -213,7 +214,6 @@ $trip_sidebar_active = 'bookings';
         <?php foreach (array_reverse($bookings) as $b):
           $is_paid = (isset($b['status']) && $b['status'] === 'paid');
           $is_approved = (isset($b['status']) && $b['status'] === 'approved');
-          $is_cancelled = (isset($b['status']) && ($b['status'] === 'cancelled' || $b['status'] === 'canceled'));
           $bank_transfer_waiting = $is_approved && !empty($b['bank_transfer_submitted_at']);
           $bid = isset($b['id']) ? $b['id'] : '';
         ?>
@@ -221,8 +221,6 @@ $trip_sidebar_active = 'bookings';
           <div class="my-booking-header">
             <?php if ($is_paid): ?>
             <span class="my-booking-status my-booking-status--paid">Completed</span>
-            <?php elseif ($is_cancelled): ?>
-            <span class="my-booking-status my-booking-status--cancelled">Cancelled</span>
             <?php elseif ($bank_transfer_waiting): ?>
             <span class="my-booking-status my-booking-status--awaiting-bank">Payment submitted</span>
             <?php elseif ($is_approved): ?>
@@ -230,21 +228,21 @@ $trip_sidebar_active = 'bookings';
             <?php else: ?>
             <span class="my-booking-status my-booking-status--pending">Pending</span>
             <?php endif; ?>
-            <span class="my-booking-date"><?php echo htmlspecialchars($b['travel_date'] ?? '-'); ?></span>
+            <span class="my-booking-date"><?php echo htmlspecialchars(isset($b['travel_date']) ? $b['travel_date'] : '-'); ?></span>
           </div>
-          <h2 class="my-booking-package"><?php echo htmlspecialchars($b['package_name'] ?? 'Package'); ?></h2>
+          <h2 class="my-booking-package"><?php echo htmlspecialchars(isset($b['package_name']) ? $b['package_name'] : 'Package'); ?></h2>
           <ul class="my-booking-details<?php echo $is_paid ? ' my-booking-details--paid-follow' : ''; ?>">
-            <li><strong>Travelers:</strong> <?php echo (int)($b['travelers'] ?? 0); ?><?php if (isset($b['adults']) || isset($b['children']) || isset($b['infants'])): ?> (<?php echo (int)($b['adults'] ?? 0); ?> adult<?php echo ((int)($b['adults'] ?? 0)) !== 1 ? 's' : ''; ?><?php if (!empty($b['children'])): ?>, <?php echo (int)$b['children']; ?> child<?php echo (int)$b['children'] !== 1 ? 'ren' : ''; ?><?php endif; ?><?php if (!empty($b['infants'])): ?>, <?php echo (int)$b['infants']; ?> infant<?php echo (int)$b['infants'] !== 1 ? 's' : ''; ?><?php endif; ?>)<?php endif; ?></li>
-            <li><strong>Total:</strong> LKR <?php echo number_format((int)($b['total_amount'] ?? 0)); ?></li>
+            <li><strong>Travelers:</strong> <?php echo (int)(isset($b['travelers']) ? $b['travelers'] : 0); ?><?php if (isset($b['adults']) || isset($b['children']) || isset($b['infants'])): ?> (<?php echo (int)(isset($b['adults']) ? $b['adults'] : 0); ?> adult<?php echo ((int)(isset($b['adults']) ? $b['adults'] : 0)) !== 1 ? 's' : ''; ?><?php if (!empty($b['children'])): ?>, <?php echo (int)$b['children']; ?> child<?php echo (int)$b['children'] !== 1 ? 'ren' : ''; ?><?php endif; ?><?php if (!empty($b['infants'])): ?>, <?php echo (int)$b['infants']; ?> infant<?php echo (int)$b['infants'] !== 1 ? 's' : ''; ?><?php endif; ?>)<?php endif; ?></li>
+            <li><strong>Total:</strong> LKR <?php echo number_format((int)(isset($b['total_amount']) ? $b['total_amount'] : 0)); ?></li>
             <?php if (!$is_paid): ?>
-            <li><strong>Contact:</strong> <?php echo htmlspecialchars($b['fullname'] ?? ''); ?> · <?php echo htmlspecialchars($b['email'] ?? ''); ?></li>
+            <li><strong>Contact:</strong> <?php echo htmlspecialchars(isset($b['fullname']) ? $b['fullname'] : ''); ?> · <?php echo htmlspecialchars(isset($b['email']) ? $b['email'] : ''); ?></li>
             <?php endif; ?>
             <?php if (!empty($b['special_requests'])): ?>
             <li><strong>Requests:</strong> <?php echo htmlspecialchars($b['special_requests']); ?></li>
             <?php endif; ?>
           </ul>
           <?php if ($is_paid):
-            $paid_at_raw = $b['paid_at'] ?? null;
+            $paid_at_raw = isset($b['paid_at']) ? $b['paid_at'] : null;
             $refund_requested = !empty($b['refund_requested_at']);
             $refund_eligible = false;
             $refund_deadline_ts = null;
@@ -259,13 +257,13 @@ $trip_sidebar_active = 'bookings';
           <div class="my-booking-paid-footer">
             <?php if ($refund_requested): ?>
             <p class="my-booking-refund-status--above">Refund request submitted<?php
-              $rr = $b['refund_requested_at'] ?? '';
+              $rr = isset($b['refund_requested_at']) ? $b['refund_requested_at'] : '';
               if ($rr !== ''): ?> on <?php echo htmlspecialchars(date('F j, Y \a\t g:i A', strtotime($rr))); ?><?php endif; ?>. We will email you about the next steps.</p>
             <?php endif; ?>
             <div class="my-booking-paid-grid">
               <div class="my-booking-cell my-booking-cell--contact">
                 <ul class="my-booking-details my-booking-details--contact-only">
-                  <li><strong>Contact:</strong> <?php echo htmlspecialchars($b['fullname'] ?? ''); ?> · <?php echo htmlspecialchars($b['email'] ?? ''); ?></li>
+                  <li><strong>Contact:</strong> <?php echo htmlspecialchars(isset($b['fullname']) ? $b['fullname'] : ''); ?> · <?php echo htmlspecialchars(isset($b['email']) ? $b['email'] : ''); ?></li>
                 </ul>
                 <p class="my-booking-note my-booking-paymsg-line">Payment complete. Thank you for choosing Ceylon Go.</p>
               </div>
@@ -275,7 +273,7 @@ $trip_sidebar_active = 'bookings';
                   data-booking-id="<?php echo htmlspecialchars($bid); ?>"
                   data-paid-label="<?php echo htmlspecialchars(date('F j, Y \a\t g:i A', strtotime($paid_at_raw))); ?>"
                   data-deadline-label="<?php echo htmlspecialchars(date('F j, Y \a\t g:i A', (int) $refund_deadline_ts)); ?>"
-                  data-total-lkr="<?php echo (int) round((float) ($b['total_amount'] ?? 0)); ?>"
+                  data-total-lkr="<?php echo (int) round((float) (isset($b['total_amount']) ? $b['total_amount'] : 0)); ?>"
                 >Request refund</button>
                 <?php endif; ?>
               </div>
@@ -293,8 +291,6 @@ $trip_sidebar_active = 'bookings';
           <p class="my-booking-note">We have recorded your bank transfer. Your booking stays approved while we verify the payment (usually within 1–2 business days).</p>
           <?php elseif ($is_approved): ?>
           <a href="<?php echo htmlspecialchars($asset_base); ?>/tourist/payment?booking_id=<?php echo htmlspecialchars(urlencode($bid)); ?>" class="my-booking-btn-payment">Proceed to payment</a>
-          <?php elseif ($is_cancelled): ?>
-          <!-- No follow-up note for cancelled bookings -->
           <?php else: ?>
           <p class="my-booking-note">We will contact you within 24 hrs. Your booking will be reviewed by our team.</p>
           <?php endif; ?>
@@ -573,6 +569,18 @@ $trip_sidebar_active = 'bookings';
           }).catch(function () {
             tripBodyEl.innerHTML = '<p class="trip-sum-err">Could not load trip summary. Please try again.</p>';
           });
+        });
+      });
+
+      document.querySelectorAll('.js-custom-trip-summary-open').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-trip-id');
+          if (!id) return;
+          tripBodyEl.innerHTML =
+            '<iframe class="trip-summary-modal__frame" title="Trip summary" src="' +
+            esc(base + '/tourist/custom-trip-summary?trip_id=' + encodeURIComponent(id)) +
+            '" loading="lazy"></iframe>';
+          openTripModal();
         });
       });
 
