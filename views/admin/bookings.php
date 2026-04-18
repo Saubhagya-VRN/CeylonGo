@@ -21,6 +21,21 @@
         }
         return true;
     });
+
+    $adminView = $_GET['view'] ?? 'all';
+    if (!in_array($adminView, ['all', 'custom', 'package'], true)) {
+        $adminView = 'all';
+    }
+    $showCustomBookings = ($adminView === 'all' || $adminView === 'custom');
+    $showPackageBookings = ($adminView === 'all' || $adminView === 'package');
+
+    $adminViewQuery = $_GET;
+    $adminViewQuery['view'] = 'all';
+    $bookingsViewUrlAll = '/CeylonGo/public/admin/bookings?' . http_build_query($adminViewQuery);
+    $adminViewQuery['view'] = 'custom';
+    $bookingsViewUrlCustom = '/CeylonGo/public/admin/bookings?' . http_build_query($adminViewQuery);
+    $adminViewQuery['view'] = 'package';
+    $bookingsViewUrlPackage = '/CeylonGo/public/admin/bookings?' . http_build_query($adminViewQuery);
 ?>
 
 <!DOCTYPE html>
@@ -77,9 +92,20 @@
             <div class="main-content">
                 <div class="booking-management">
                     <h2 class="page-title">Booking Management</h2>
+                    <div class="toolbar" style="margin-bottom:18px;flex-wrap:wrap;">
+                        <div class="filter-buttons" style="align-items:center;">
+                            <span style="font-size:14px;margin-right:6px;">Table view:</span>
+                            <a href="<?= htmlspecialchars($bookingsViewUrlAll) ?>" class="filter-btn <?= $adminView === 'all' ? 'active' : '' ?>">All</a>
+                            <a href="<?= htmlspecialchars($bookingsViewUrlCustom) ?>" class="filter-btn <?= $adminView === 'custom' ? 'active' : '' ?>">Customized</a>
+                            <a href="<?= htmlspecialchars($bookingsViewUrlPackage) ?>" class="filter-btn <?= $adminView === 'package' ? 'active' : '' ?>">Package</a>
+                        </div>
+                    </div>
+
+                    <div style="<?= $showCustomBookings ? '' : 'display:none;' ?>">
                     <h4 class="page-title" style="font-size:16px;">Customized Booking Requests</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/bookings">
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($adminView) ?>">
                         <input type="hidden" name="pkg_search" value="<?= htmlspecialchars($pkgSearch) ?>">
                         <input type="hidden" name="pkg_status" value="<?= htmlspecialchars($pkgSelectedStatus) ?>">
                         <input type="hidden" name="pkg_date"   value="<?= htmlspecialchars($pkgDate) ?>">
@@ -198,11 +224,14 @@
                             Generate Bookings Report
                         </a>
                     </div>
+                    </div>
 
+                    <div style="<?= $showPackageBookings ? '' : 'display:none;' ?>">
                     <br><br>
                     <h4 class="page-title" style="font-size:16px;">Package Booking Requests</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/bookings">
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($adminView) ?>">
                         <input type="hidden" name="search" value="<?= htmlspecialchars($searchId ?? '') ?>">
                         <input type="hidden" name="status" value="<?= htmlspecialchars($selectedStatus ?? 'all') ?>">
                         <input type="hidden" name="date"   value="<?= htmlspecialchars($date ?? '') ?>">
@@ -330,6 +359,7 @@
                         <a href="/CeylonGo/public/admin/reports?type=bookings" class="report-link-btn">
                             Generate Package Bookings Report
                         </a>
+                    </div>
                     </div>
                 </div>
             </div>

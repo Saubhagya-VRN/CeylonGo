@@ -10,6 +10,21 @@
     $packageReviews = $packageReviews ?? [];
     $metrics = $metrics ?? ['total' => 0, 'pending' => 0, 'average' => 0];
     $packageMetrics = $packageMetrics ?? ['total' => 0, 'pending' => 0, 'average' => 0];
+
+    $adminView = $_GET['view'] ?? 'all';
+    if (!in_array($adminView, ['all', 'custom', 'package'], true)) {
+        $adminView = 'all';
+    }
+    $showCustomReviews = ($adminView === 'all' || $adminView === 'custom');
+    $showPackageReviews = ($adminView === 'all' || $adminView === 'package');
+
+    $adminViewQuery = $_GET;
+    $adminViewQuery['view'] = 'all';
+    $reviewsViewUrlAll = '/CeylonGo/public/admin/reviews?' . http_build_query($adminViewQuery);
+    $adminViewQuery['view'] = 'custom';
+    $reviewsViewUrlCustom = '/CeylonGo/public/admin/reviews?' . http_build_query($adminViewQuery);
+    $adminViewQuery['view'] = 'package';
+    $reviewsViewUrlPackage = '/CeylonGo/public/admin/reviews?' . http_build_query($adminViewQuery);
 ?>
 
 <!DOCTYPE html>
@@ -66,10 +81,20 @@
             <div class="main-content">
                 <div class="reviews-management">
                     <h2 class="page-title">Reviews Management</h2>
+                    <div class="toolbar" style="margin-bottom:18px;flex-wrap:wrap;">
+                        <div class="filter-buttons" style="align-items:center;">
+                            <span style="font-size:14px;margin-right:6px;">Table view:</span>
+                            <a href="<?= htmlspecialchars($reviewsViewUrlAll) ?>" class="filter-btn <?= $adminView === 'all' ? 'active' : '' ?>">All</a>
+                            <a href="<?= htmlspecialchars($reviewsViewUrlCustom) ?>" class="filter-btn <?= $adminView === 'custom' ? 'active' : '' ?>">Customized</a>
+                            <a href="<?= htmlspecialchars($reviewsViewUrlPackage) ?>" class="filter-btn <?= $adminView === 'package' ? 'active' : '' ?>">Package</a>
+                        </div>
+                    </div>
 
+                    <div style="<?= $showCustomReviews ? '' : 'display:none;' ?>">
                     <h4 class="page-title" style="font-size:16px;">Customized Trip Reviews</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/reviews">
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($adminView) ?>">
                         <input type="hidden" name="pkg_rating" value="<?= htmlspecialchars((string) $selectedPkgRating) ?>">
                         <div class="toolbar">
                             <div class="filter-buttons">
@@ -193,11 +218,14 @@
                            class="report-link-btn">Download Customized Review Report
                         </a>
                     </div>
+                    </div>
 
+                    <div style="<?= $showPackageReviews ? '' : 'display:none;' ?>">
                     <br><br>
                     <h4 class="page-title" style="font-size:16px;">Package Reviews</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/reviews">
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($adminView) ?>">
                         <input type="hidden" name="rating" value="<?= htmlspecialchars((string) $selectedRating) ?>">
                         <div class="toolbar">
                             <div class="filter-buttons">
@@ -320,6 +348,7 @@
                         <a href="/CeylonGo/public/admin/reviews/export-package?pkg_rating=<?= rawurlencode((string) $selectedPkgRating) ?>"
                            class="report-link-btn">Download Package Review Report
                         </a>
+                    </div>
                     </div>
                 </div>
             </div>

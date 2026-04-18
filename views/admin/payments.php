@@ -4,6 +4,13 @@
         exit();
     }
 
+    $adminView = $_GET['view'] ?? 'all';
+    if (!in_array($adminView, ['all', 'custom', 'package'], true)) {
+        $adminView = 'all';
+    }
+    $showTripPaymentsBlock = ($adminView === 'all' || $adminView === 'custom');
+    $showPackagePaymentsBlock = ($adminView === 'all' || $adminView === 'package');
+
     // ── Trip Payments: Server-side filtering (by Payment Status column) ──
     $tripPaySearch         = $_GET['trip_pay_search'] ?? '';
     $tripPaySelectedStatus = $_GET['trip_pay_status'] ?? 'all';
@@ -72,6 +79,14 @@
         $c = htmlspecialchars($display['color']);
         return '<span style="color:' . $c . ';font-weight:700">' . $text . '</span>';
     }
+
+    $adminViewQuery = $_GET;
+    $adminViewQuery['view'] = 'all';
+    $paymentsViewUrlAll = '/CeylonGo/public/admin/payments?' . http_build_query($adminViewQuery);
+    $adminViewQuery['view'] = 'custom';
+    $paymentsViewUrlCustom = '/CeylonGo/public/admin/payments?' . http_build_query($adminViewQuery);
+    $adminViewQuery['view'] = 'package';
+    $paymentsViewUrlPackage = '/CeylonGo/public/admin/payments?' . http_build_query($adminViewQuery);
 
 ?>
 
@@ -188,9 +203,19 @@
             <div class="main-content">
                 <div class="payments-management">
                     <h2 class="page-title">Payments Management</h2>
+                    <div class="toolbar" style="margin-bottom:18px;flex-wrap:wrap;">
+                        <div class="filter-buttons" style="align-items:center;">
+                            <span style="font-size:14px;margin-right:6px;">Table view:</span>
+                            <a href="<?= htmlspecialchars($paymentsViewUrlAll) ?>" class="filter-btn <?= $adminView === 'all' ? 'active' : '' ?>">All</a>
+                            <a href="<?= htmlspecialchars($paymentsViewUrlCustom) ?>" class="filter-btn <?= $adminView === 'custom' ? 'active' : '' ?>">Customized</a>
+                            <a href="<?= htmlspecialchars($paymentsViewUrlPackage) ?>" class="filter-btn <?= $adminView === 'package' ? 'active' : '' ?>">Package</a>
+                        </div>
+                    </div>
 
+                    <div style="<?= $showTripPaymentsBlock ? '' : 'display:none;' ?>">
                     <h4 class="page-title" style="font-size:16px;">Customized Booking Payments</h4>
                     <form method="GET" action="/CeylonGo/public/admin/payments">
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($adminView) ?>">
                         <input type="hidden" name="pay_status" value="<?= htmlspecialchars($paySelectedStatus) ?>">
                         <input type="hidden" name="pay_date"   value="<?= htmlspecialchars($payDate) ?>">
                         <div class="toolbar">
@@ -330,11 +355,14 @@
                             Generate Payments Report
                         </a>
                     </div>
+                    </div>
 
+                    <div style="<?= $showPackagePaymentsBlock ? '' : 'display:none;' ?>">
                     <br><br>
                     <h4 class="page-title" style="font-size:16px;">Package Booking Payments</h4>
 
                     <form method="GET" action="/CeylonGo/public/admin/payments">
+                        <input type="hidden" name="view" value="<?= htmlspecialchars($adminView) ?>">
                         <input type="hidden" name="trip_pay_status" value="<?= htmlspecialchars($tripPaySelectedStatus) ?>">
                         <input type="hidden" name="trip_pay_date"   value="<?= htmlspecialchars($tripPayDate) ?>">
                         <div class="toolbar">
@@ -477,6 +505,7 @@
                         <a href="/CeylonGo/public/admin/reports?type=payments" class="report-link-btn">
                             Generate Package Payments Report
                         </a>
+                    </div>
                     </div>
                 </div>
             </div>

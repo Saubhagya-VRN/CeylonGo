@@ -59,6 +59,17 @@
   color: white;
 }
 
+a.filter-btn {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+a.filter-btn.active {
+  color: #fff;
+}
+
 .stats-section {
   margin-top: 30px;
 }
