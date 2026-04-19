@@ -715,9 +715,6 @@ $generatedAt = date('F d, Y \a\t h:i A');
         }
 
         doc.save('guide_performance_report.pdf');
-        });
-
-        buttons.forEach(el => el.style.display = '');
     }
 
     // ========================
