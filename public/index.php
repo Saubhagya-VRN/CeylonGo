@@ -16,6 +16,8 @@ $router->get('login', 'AuthController@loginView');
 $router->post('login', 'AuthController@login');
 $router->get('register', 'AuthController@registerView');
 $router->get('logout', 'AuthController@logout');
+$router->get('about', 'PagesController@about');
+$router->get('contact', 'PagesController@contact');
 
 // Routes
 $router->get('transporter/register', 'TransportProviderController@registerView');
@@ -26,6 +28,7 @@ $router->get('transporter/pending', 'TransportProviderController@pending');
 $router->get('transporter/cancelled', 'TransportProviderController@cancelled');
 $router->get('transporter/review', 'TransportProviderController@review');
 $router->get('transporter/profile', 'TransportProviderController@profile');
+$router->get('transporter/report', 'TransportProviderController@report');
 $router->post('transporter/profile', 'TransportProviderController@profile');
 $router->get('transporter/info', 'TransportProviderController@info');
 $router->get('transporter/pending_info', 'TransportProviderController@pendingInfo');
@@ -45,8 +48,8 @@ $router->get('tourist/register', 'TouristController@registerView');
 $router->post('tourist/register', 'TouristController@register');
 $router->get('tourist/dashboard', 'TouristController@dashboardNew');
 $router->get('tourist/dashboard-side', 'TouristController@dashboardSide');
-$router->get('tourist/old-dashboard', 'TouristController@oldDashboard');
 $router->get('tourist/customize-trip', 'TouristController@trip');
+$router->get('tourist/booking-status', 'TouristController@bookingStatusHub');
 $router->get('tourist/custom-trip-summary', 'TouristController@customTripSummary');
 $router->post('tourist/trip-submit', 'TouristController@tripSubmit');
 $router->post('tourist/trip-payment-checkout', 'TouristController@tripPaymentCheckout');
@@ -71,7 +74,6 @@ $router->get('tourist/booking/trip-summary', 'TouristController@packageBookingTr
 $router->get('tourist/booking/trip-summary-json', 'TouristController@packageBookingTripSummaryJson');
 $router->post('tourist/booking/refund-request', 'TouristController@packageBookingRefundRequest');
 $router->post('tourist/trip/refund-request', 'TouristController@customTripRefundRequest');
-$router->get('tourist/recommended-packages', 'TouristController@recommendedPackages');
 $router->get('tourist/packages', 'TouristController@packages');
 $router->get('tourist/package-details/{id}', 'TouristController@packageDetails');
 $router->get('tourist/package_details', 'TouristController@packageDetailsQuery');
@@ -83,14 +85,16 @@ $router->get('tourist/transport-delete/{id}', 'TouristController@transportDelete
 $router->post('tourist/tour-guide-submit', 'TouristController@tourGuideRequestSubmit');
 $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestReport');
 $router->get('tourist/contact', 'TouristController@contact');
-$router->get('tourist/public-diaries', 'TouristController@publicDiaries');
 $router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
 $router->post('tourist/inquiries', 'TouristController@inquirySubmit');
+$router->get('tourist/profile', 'TouristController@profile');
+$router->post('tourist/profile', 'TouristController@profile');
 
 // ========== API ROUTES ==========
 $router->get('api/geocode', 'GeocodeController@geocode');
 $router->get('api/calculate-fare', 'GeocodeController@calculateFare');
 $router->get('api/places-autocomplete', 'GeocodeController@placesAutocomplete');
+$router->get('api/locations', 'GeocodeController@placesAutocomplete'); // Alias for autocomplete
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
@@ -101,6 +105,7 @@ $router->get('guide/pending', 'GuideController@pending');
 $router->get('guide/cancelled', 'GuideController@cancelled');
 $router->get('guide/review', 'GuideController@review');
 $router->get('guide/profile', 'GuideController@profile');
+$router->get('guide/report', 'GuideController@report');
 $router->post('guide/profile', 'GuideController@profile');
 $router->get('guide/places', 'GuideController@places');
 $router->get('guide/info', 'GuideController@info');
@@ -124,6 +129,11 @@ $router->post('hotel/update-room', 'HotelController@updateRoom');
 $router->get('hotel/delete-room/{id}', 'HotelController@deleteRoom');
 $router->get('hotel/bookings', 'HotelController@bookings');
 $router->post('hotel/update-booking-status', 'HotelController@updateBookingStatus');
+$router->get('hotel/bookings-calendar', 'HotelController@getBookingsCalendar');
+$router->get('hotel/dashboard-stats', 'HotelController@getDashboardStats');
+$router->get('hotel/revenue-data', 'HotelController@getRevenueData');
+$router->get('hotel/availability-data', 'HotelController@getAvailabilityData');
+$router->get('hotel/recent-bookings', 'HotelController@getRecentBookings');
 $router->get('hotel/availability', 'HotelController@availability');
 $router->get('hotel/inquiries', 'HotelController@inquiries');
 $router->get('hotel/notifications', 'HotelController@notifications');
@@ -146,20 +156,34 @@ $router->post('admin/package-booking/status', 'AdminController@updatePackageBook
 $router->get('admin/payments', 'AdminController@payments');
 $router->post('admin/payment/verify', 'AdminController@verifyPayment');
 $router->post('admin/payment/approve-slip',   'AdminController@approveSlipPayment');
+$router->post('admin/payment/reject-slip',    'AdminController@rejectSlipPayment');
 $router->post('admin/payment/approve-refund', 'AdminController@approveRefund');
+$router->post('admin/payment/reject-refund',      'AdminController@rejectRefund');
+$router->post('admin/trip-payment/approve-slip', 'AdminController@approveTripSlipPayment');
+$router->post('admin/trip-payment/reject-slip',  'AdminController@rejectTripSlipPayment');
+$router->post('admin/trip-payment/approve-refund', 'AdminController@approveTripRefund');
+$router->post('admin/trip-payment/reject-refund',  'AdminController@rejectTripRefund');
 $router->get('admin/reviews', 'AdminController@reviews');
 $router->post('admin/review/delete', 'AdminController@deleteReview');
 $router->post('admin/review/reply', 'AdminController@replyToReview');
 $router->post('admin/review/approve', 'AdminController@approveReview');
+$router->post('admin/package-review/delete', 'AdminController@deletePackageReview');
+$router->post('admin/package-review/reply', 'AdminController@replyToPackageReview');
+$router->post('admin/package-review/approve', 'AdminController@approvePackageReview');
 $router->get('admin/inquiries', 'AdminController@inquiries');
+$router->get('admin/inquiries/export', 'AdminController@exportInquiriesPdf');
+$router->get('admin/reviews/export', 'AdminController@exportReviewsPdf');
+$router->get('admin/reviews/export-package', 'AdminController@exportPackageReviewsPdf');
 $router->post('admin/inquiry/delete', 'AdminController@deleteInquiry');
 $router->post('admin/inquiry/reply',  'AdminController@replyToInquiry');
-$router->get('admin/reports', 'AdminController@reports');
+$router->get('admin/reports', 'AdminReportController@index');
+$router->get('admin/reports/export-pdf', 'AdminReportController@exportPdf');
 $router->get('admin/service', 'AdminController@service');
 $router->post('admin/provider/status', 'AdminController@toggleProviderStatus');
 $router->get('admin/settings', 'AdminController@settings');
 $router->get('admin/forgot-password', 'AdminController@forgotPassword');
 $router->get('admin/packages', 'AdminController@packages');
+$router->get('admin/packages/export', 'AdminController@exportPackagesPdf');
 $router->get('admin/packages/new', 'AdminController@packageNew');
 $router->post('admin/packages/create', 'AdminController@packageCreate');
 $router->get('admin/packages/edit', 'AdminController@packageEdit');
@@ -170,5 +194,22 @@ $router->post('admin/packages/delete', 'AdminController@packageDelete');
 $router->post('hotel/bookings', 'HotelController@updateBookingStatus');
 
 // Dispatch the request
-$router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+try {
+    $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+} catch (Throwable $e) {
+    http_response_code(500);
+    $msg = $e->getMessage();
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower((string) $_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Error: ' . $msg;
+    } else {
+        echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Error</title></head><body>';
+        echo '<h1>Something went wrong</h1>';
+        echo '<p>' . htmlspecialchars($msg) . '</p>';
+        if (function_exists('ini_get') && ini_get('display_errors')) {
+            echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+        }
+        echo '</body></html>';
+    }
+}
 ?>

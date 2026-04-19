@@ -12,23 +12,17 @@ class AuthController {
 
     public function login() {
         $email = trim($_POST['email'] ?? '');
-        $password = trim($_POST['password'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-        if (empty($email) || empty($password)) {
-            view('login', ['error' => 'Please fill in all fields.']);
+        $emailErr = Validation::loginEmail($email);
+        $passErr = Validation::loginPassword(is_string($password) ? $password : '');
+        if ($emailErr !== null || $passErr !== null) {
+            view('login', ['error' => $emailErr ?? $passErr]);
             return;
         }
 
         $authUser = new AuthUser($this->db);
         $user = $authUser->getUserByEmail($email);
-
-        // Debug: Log what we found
-        error_log("Login attempt for: $email");
-        error_log("User found: " . ($user ? 'YES' : 'NO'));
-        if ($user) {
-            error_log("User role: " . $user['role']);
-            error_log("User ref_id: " . ($user['ref_id'] ?? 'NULL'));
-        }
 
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['id'] = $user['id'];

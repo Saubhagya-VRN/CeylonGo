@@ -7,6 +7,38 @@ define('DB_PASS', '');
 // App path constants
 // Project root directory (one level up from this config folder)
 define('BASE_PATH', dirname(__DIR__));
+
+// Load `.env` from project root (see `.env.example`). Does not override existing OS/server env vars.
+$ceylonGoEnv = BASE_PATH . DIRECTORY_SEPARATOR . '.env';
+if (is_readable($ceylonGoEnv)) {
+    foreach (file($ceylonGoEnv, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (!str_contains($line, '=')) {
+            continue;
+        }
+        [$name, $value] = explode('=', $line, 2);
+        $name = trim($name);
+        $value = trim($value);
+        if ($name === '') {
+            continue;
+        }
+        if (
+            strlen($value) >= 2
+            && (($value[0] === '"' && str_ends_with($value, '"'))
+                || ($value[0] === "'" && str_ends_with($value, "'")))
+        ) {
+            $value = substr($value, 1, -1);
+        }
+        if (getenv($name) !== false) {
+            continue;
+        }
+        putenv("{$name}={$value}");
+        $_ENV[$name] = $value;
+    }
+}
 // Absolute path to the public web root
 define('PUBLIC_PATH', BASE_PATH . '/public');
 // Absolute path to views directory

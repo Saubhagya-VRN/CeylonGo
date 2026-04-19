@@ -1,11 +1,5 @@
 @import url("common.css");
 
-.date-filter .date-input {
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
 .booking-table {
   width: 100%;
   border-collapse: collapse;
@@ -41,7 +35,6 @@
     color: red;
 }
 
-/* Package bookings — approved = green, rejected = red */
 .status.approved {
     color: green;
 }
@@ -117,3 +110,4 @@
 #bookingDetailsContent th {
     background-color: #f2f2f2;
 }
+

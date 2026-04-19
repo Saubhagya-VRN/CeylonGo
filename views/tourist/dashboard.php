@@ -28,6 +28,19 @@ $packages_by_cat = array(
     'beach'     => array(8),
 );
 $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages : array();
+$public_reviews = isset($public_reviews) && is_array($public_reviews) ? $public_reviews : array();
+$tourist_data = isset($tourist_data) ? $tourist_data : null;
+$inq_prefill_first = '';
+$inq_prefill_last = '';
+$inq_prefill_email = '';
+if ($is_logged_in && is_array($tourist_data)) {
+    $inq_prefill_first = isset($tourist_data['first_name']) ? (string) $tourist_data['first_name'] : '';
+    $inq_prefill_last = isset($tourist_data['last_name']) ? (string) $tourist_data['last_name'] : '';
+    $inq_prefill_email = isset($tourist_data['email']) ? (string) $tourist_data['email'] : '';
+}
+if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])) {
+    $inq_prefill_email = (string) $_SESSION['user_email'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -149,10 +162,9 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
             </div>
             <div class="dashboard-hero-scroll">↓</div>
             <div class="dashboard-hero-fab">
-                <a href="tel:" class="fab-btn fab-phone" title="Call">📞</a>
-                <a href="#" class="fab-btn fab-instagram" title="Instagram">📷</a>
-                <a href="#" class="fab-btn fab-whatsapp" title="WhatsApp">💬</a>
-                <a href="#" class="fab-btn fab-chat" title="Chat">💭</a>
+                <a href="tel:+94112345678" class="fab-btn fab-call" title="Call +94 11 234 5678" aria-label="Call +94 11 234 5678">📞</a>
+                <a href="mailto:ceylongo@gmail.com" class="fab-btn fab-email" title="Email ceylongo@gmail.com" aria-label="Email ceylongo@gmail.com"><i class="fa-regular fa-envelope"></i></a>
+                <a href="#inquiry" class="fab-btn fab-inquire" title="Inquire" aria-label="Go to inquiry form">💭</a>
             </div>
         </section>
 
@@ -165,8 +177,8 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                         <i class="fa-regular fa-comment-dots"></i>
                         <span class="how-step-num">1</span>
                     </div>
-                    <h3 class="how-step-title">Tell Us What You Want</h3>
-                    <p class="how-step-desc">Fill out your travel preferences – destination, dates, budget, and special requirements.</p>
+                    <h3 class="how-step-title">Tell Us Your Travel Plans</h3>
+                    <p class="how-step-desc">Share your destination, dates, budget, and any special requirements.</p>
                 </div>
                 <div class="how-step-connector"></div>
                 <div class="how-step">
@@ -174,8 +186,8 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                         <span class="how-step-num">2</span>
                     </div>
-                    <h3 class="how-step-title">We Craft the Perfect Plan</h3>
-                    <p class="how-step-desc">Our travel experts create a personalized itinerary tailored just for you in 24 hours.</p>
+                    <h3 class="how-step-title">We Find the Best Options</h3>
+                    <p class="how-step-desc">CeylonGo matches you with the most suitable transport, guides, and stays.</p>
                 </div>
                 <div class="how-step-connector"></div>
                 <div class="how-step">
@@ -183,11 +195,111 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                         <i class="fa-solid fa-plane"></i>
                         <span class="how-step-num">3</span>
                     </div>
-                    <h3 class="how-step-title">You Travel Stress-Free</h3>
-                    <p class="how-step-desc">Everything's handled – from itinerary planning to hotel and transport bookings to 24/7 travel support.</p>
+                    <h3 class="how-step-title">Travel with Ease</h3>
+                    <p class="how-step-desc">Confirm your bookings and enjoy a smooth, stress-free journey.</p>
                 </div>
             </div>
         </section>
+
+        <section class="dashboard-trending" aria-label="Trending destinations">
+            <h2 class="how-it-works-title">Trending <span class="how-it-works-accent">destinations</span></h2>
+            <p class="how-it-works-subtitle">Most popular choices for travelers from Sri Lanka</p>
+
+            <div class="dash-dest-grid">
+                <a class="dash-dest-card dash-dest-card--colombo" href="/CeylonGo/public/tourist/packages?search=Colombo" style="background-image:url('/CeylonGo/public/images/colombo.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Colombo</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--kandy" href="/CeylonGo/public/tourist/packages?search=Kandy" style="background-image:url('/CeylonGo/public/images/kandy.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Kandy</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--nuwara" href="/CeylonGo/public/tourist/packages?search=Nuwara" style="background-image:url('/CeylonGo/public/images/Nuwara-Eliya-.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Nuwara Eliya</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--negombo" href="/CeylonGo/public/tourist/packages?search=Negombo" style="background-image:url('/CeylonGo/public/images/negombo.jpg');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Negombo</span>
+                </a>
+                <a class="dash-dest-card dash-dest-card--galle" href="/CeylonGo/public/tourist/packages?search=Galle" style="background-image:url('/CeylonGo/public/images/galle.webp');">
+                    <span class="dash-dest-card__shade" aria-hidden="true"></span>
+                    <span class="dash-dest-card__title">Galle</span>
+                </a>
+            </div>
+        </section>
+
+        <?php if (!empty($public_reviews)): ?>
+        <section class="dashboard-travelers-say" aria-label="What our travelers say">
+            <h2 class="how-it-works-title">What Our <span class="how-it-works-accent">Travelers Say</span></h2>
+            <p class="how-it-works-subtitle">Real stories from travelers who experienced our personalized Sri Lanka trips.</p>
+
+            <div class="dash-reviews-carousel">
+                <button type="button" class="dash-reviews-arrow dash-reviews-arrow--prev" id="dashReviewsPrev" aria-label="Previous reviews">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <div class="dash-reviews-scroll-wrap">
+                    <div class="dash-reviews-scroll" id="dashReviewsScroll" tabindex="0">
+                        <?php foreach ($public_reviews as $rev):
+                            $rt = isset($rev['review_text']) ? (string) $rev['review_text'] : '';
+                            $rating = (int) (isset($rev['rating']) ? $rev['rating'] : 0);
+                            if ($rating < 1) {
+                                $rating = 1;
+                            }
+                            if ($rating > 5) {
+                                $rating = 5;
+                            }
+                            $nm = isset($rev['name']) ? trim((string) $rev['name']) : 'Traveler';
+                            $initial = $nm !== '' ? strtoupper(substr($nm, 0, 1)) : 'T';
+                            $rawTs = isset($rev['created_at']) ? strtotime((string) $rev['created_at']) : false;
+                            $dateLabel = $rawTs ? date('F Y', $rawTs) : '';
+                            $excerptLen = 180;
+                            $needsToggle = function_exists('mb_strlen') ? (mb_strlen($rt) > $excerptLen) : (strlen($rt) > $excerptLen);
+                            $excerpt = $needsToggle
+                                ? ((function_exists('mb_substr') ? mb_substr($rt, 0, $excerptLen) : substr($rt, 0, $excerptLen)) . '…')
+                                : $rt;
+                        ?>
+                        <article class="dash-review-card">
+                            <div class="dash-review-stars" aria-label="<?php echo $rating; ?> out of 5 stars">
+                                <?php for ($si = 1; $si <= 5; $si++): ?>
+                                <span class="dash-review-star<?php echo $si <= $rating ? ' dash-review-star--on' : ''; ?>">★</span>
+                                <?php endfor; ?>
+                            </div>
+                            <blockquote class="dash-review-quote">
+                                <?php if ($needsToggle): ?>
+                                <div class="dash-review-snippet dash-review-snippet--collapsed">
+                                    <span class="dash-review-open">"</span><span class="dash-review-excerpt"><?php echo htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8'); ?></span><span class="dash-review-close">"</span>
+                                </div>
+                                <div class="dash-review-snippet dash-review-snippet--expanded" hidden>
+                                    <span class="dash-review-open">"</span><span class="dash-review-full"><?php echo htmlspecialchars($rt, ENT_QUOTES, 'UTF-8'); ?></span><span class="dash-review-close">"</span>
+                                </div>
+                                <button type="button" class="dash-review-toggle" data-expanded="false">
+                                    <span class="dash-review-toggle-more">View more <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></span>
+                                    <span class="dash-review-toggle-less" hidden>View less <i class="fa-solid fa-chevron-up" aria-hidden="true"></i></span>
+                                </button>
+                                <?php else: ?>
+                                <div class="dash-review-snippet">
+                                    <span class="dash-review-open">"</span><span class="dash-review-single"><?php echo htmlspecialchars($rt, ENT_QUOTES, 'UTF-8'); ?></span><span class="dash-review-close">"</span>
+                                </div>
+                                <?php endif; ?>
+                            </blockquote>
+                            <div class="dash-review-footer">
+                                <div class="dash-review-avatar" aria-hidden="true"><?php echo htmlspecialchars($initial, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="dash-review-meta">
+                                    <div class="dash-review-name"><?php echo htmlspecialchars($nm, ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="dash-review-tagline">Experience with Ceylon Go<?php echo $dateLabel !== '' ? ' · ' . htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8') : ''; ?></div>
+                                </div>
+                            </div>
+                        </article>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <button type="button" class="dash-reviews-arrow dash-reviews-arrow--next" id="dashReviewsNext" aria-label="Next reviews">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+            </div>
+        </section>
+        <?php endif; ?>
 
         <section class="dashboard-inquiry" id="inquiry">
             <h2 class="how-it-works-title">Contact <span class="how-it-works-accent">Inquiry Form</span></h2>
@@ -208,15 +320,15 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
             <?php endif; ?>
 
             <div class="dash-inquiry-card">
-                <form class="dash-inquiry-form" method="post" action="/CeylonGo/public/tourist/inquiries">
+                <form class="dash-inquiry-form" id="dash-inquiry-form" method="post" action="/CeylonGo/public/tourist/inquiries">
                   <div class="dash-inquiry-row dash-inquiry-row--split">
                     <div class="dash-inquiry-field">
                       <label for="inq_first_name">1. Full name</label>
-                      <input type="text" id="inq_first_name" name="first_name" placeholder="First Name" autocomplete="given-name">
+                      <input type="text" id="inq_first_name" name="first_name" placeholder="First Name" autocomplete="given-name" value="<?php echo $is_logged_in ? htmlspecialchars($inq_prefill_first, ENT_QUOTES, 'UTF-8') : ''; ?>">
                     </div>
                     <div class="dash-inquiry-field">
                       <label class="dash-inquiry-label-spacer" aria-hidden="true">&nbsp;</label>
-                      <input type="text" id="inq_last_name" name="last_name" placeholder="Last Name" autocomplete="family-name">
+                      <input type="text" id="inq_last_name" name="last_name" placeholder="Last Name" autocomplete="family-name" value="<?php echo $is_logged_in ? htmlspecialchars($inq_prefill_last, ENT_QUOTES, 'UTF-8') : ''; ?>">
                     </div>
                   </div>
 
@@ -225,7 +337,7 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                       <label for="inq_email">2. Email</label>
                       <div class="dash-inquiry-input-icon-wrap">
                         <span class="dash-inquiry-icon"><i class="fa-regular fa-envelope"></i></span>
-                        <input type="email" id="inq_email" name="email" placeholder="Email" autocomplete="email" <?php echo $is_logged_in ? '' : 'required'; ?>>
+                        <input type="email" id="inq_email" name="email" placeholder="Email" autocomplete="email" value="<?php echo $is_logged_in ? htmlspecialchars($inq_prefill_email, ENT_QUOTES, 'UTF-8') : ''; ?>">
                       </div>
                     </div>
                   </div>
@@ -279,7 +391,7 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                   <?php endif; ?>
                 </div>
               <?php else: ?>
-                <p style="max-width:560px;margin:12px auto 0;color:#6b7280;">Tip: Log in to view your inquiry history and admin replies inside your dashboard.</p>
+                <p class="dash-inquiry-guest-hint">Log in to submit your inquiry. We'll get back to you soon.</p>
               <?php endif; ?>
         </section>
     </main>
@@ -295,7 +407,7 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
                 <div class="login-modal-error"><?php echo htmlspecialchars($loginError); ?></div>
             <?php endif; ?>
             <form class="login-modal-form" method="POST" action="/CeylonGo/public/login">
-                <input type="hidden" name="redirect" value="/CeylonGo/public/tourist/customize-trip">
+                <input type="hidden" name="redirect" id="login-modal-redirect" value="/CeylonGo/public/tourist/customize-trip">
                 <div class="form-group">
                     <label for="login-modal-email">Email Address</label>
                     <input type="email" id="login-modal-email" name="email" placeholder="Enter your email" required>
@@ -314,9 +426,27 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
     (function () {
         var modal = document.getElementById('login-modal');
         var openBtn = document.getElementById('customise-trip-btn');
+        var inqForm = document.getElementById('dash-inquiry-form');
         var closeBtn = document.getElementById('login-modal-close');
-        function openModal() {
+        var redirectInput = document.getElementById('login-modal-redirect');
+        var titleEl = document.getElementById('login-modal-title');
+        var customizeRedirect = '/CeylonGo/public/tourist/customize-trip';
+        var inquiryRedirect = '/CeylonGo/public/tourist/dashboard#inquiry';
+
+        function setLoginRedirect(url) {
+            if (redirectInput) redirectInput.value = url;
+        }
+        function setModalTitleForRedirect(url) {
+            if (!titleEl) return;
+            titleEl.textContent = (url && url.indexOf('#inquiry') !== -1)
+                ? 'Login to submit an inquiry'
+                : 'Login to Customise Your Trip';
+        }
+        function openModal(redirectUrl) {
             if (!modal) return;
+            var url = redirectUrl || customizeRedirect;
+            setLoginRedirect(url);
+            setModalTitleForRedirect(url);
             modal.classList.add('login-modal-open');
             modal.setAttribute('aria-hidden', 'false');
             document.body.style.overflow = 'hidden';
@@ -327,16 +457,100 @@ $trending_bar_packages = isset($trending_bar_packages) ? $trending_bar_packages 
             modal.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
         }
-        if (openBtn) openBtn.addEventListener('click', function (e) { e.preventDefault(); openModal(); });
+        if (openBtn) openBtn.addEventListener('click', function (e) { e.preventDefault(); openModal(customizeRedirect); });
+        if (inqForm) inqForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            try {
+                var draft = {
+                    subject: (document.getElementById('inq_type') || {}).value || '',
+                    message: (document.getElementById('inq_message') || {}).value || ''
+                };
+                sessionStorage.setItem('CeylonGo_inquiry_draft', JSON.stringify(draft));
+            } catch (err) {}
+            openModal(inquiryRedirect);
+        });
         if (closeBtn) closeBtn.addEventListener('click', closeModal);
         if (modal) modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal.classList.contains('login-modal-open')) closeModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modal && modal.classList.contains('login-modal-open')) closeModal(); });
 
-        // If coming from header "Customize Trip" as guest, open modal automatically
         try {
             var params = new URLSearchParams(window.location.search || '');
-            if (params.get('openLogin') === '1') openModal();
+            if (params.get('openLogin') === '1') openModal(customizeRedirect);
+            else if (params.get('openLogin') === 'inquiry') {
+                openModal(inquiryRedirect);
+                var sec = document.getElementById('inquiry');
+                if (sec) setTimeout(function () { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+                if (history.replaceState) {
+                    history.replaceState({}, '', window.location.pathname + '#inquiry');
+                }
+            }
         } catch (e) {}
+    })();
+    </script>
+    <?php endif; ?>
+
+    <?php if ($is_logged_in): ?>
+    <script>
+    (function () {
+        var KEY = 'CeylonGo_inquiry_draft';
+        try {
+            var raw = sessionStorage.getItem(KEY);
+            if (!raw) return;
+            var d = JSON.parse(raw);
+            sessionStorage.removeItem(KEY);
+            var sub = document.getElementById('inq_type');
+            var msg = document.getElementById('inq_message');
+            if (sub && d && typeof d.subject === 'string') sub.value = d.subject;
+            if (msg && d && typeof d.message === 'string') msg.value = d.message;
+        } catch (e) {
+            try { sessionStorage.removeItem(KEY); } catch (x) {}
+        }
+    })();
+    </script>
+    <?php endif; ?>
+
+    <?php if (!empty($public_reviews)): ?>
+    <script>
+    (function () {
+        var scrollEl = document.getElementById('dashReviewsScroll');
+        var prev = document.getElementById('dashReviewsPrev');
+        var next = document.getElementById('dashReviewsNext');
+        if (scrollEl && prev && next) {
+            function step() {
+                var w = scrollEl.clientWidth;
+                return Math.max(260, Math.floor(w * 0.88));
+            }
+            prev.addEventListener('click', function () {
+                scrollEl.scrollBy({ left: -step(), behavior: 'smooth' });
+            });
+            next.addEventListener('click', function () {
+                scrollEl.scrollBy({ left: step(), behavior: 'smooth' });
+            });
+        }
+        document.querySelectorAll('.dash-review-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var q = btn.closest('.dash-review-quote');
+                if (!q) return;
+                var shortBlock = q.querySelector('.dash-review-snippet--collapsed');
+                var longBlock = q.querySelector('.dash-review-snippet--expanded');
+                var more = btn.querySelector('.dash-review-toggle-more');
+                var less = btn.querySelector('.dash-review-toggle-less');
+                var expanded = btn.getAttribute('data-expanded') === 'true';
+                if (expanded) {
+                    if (shortBlock) shortBlock.removeAttribute('hidden');
+                    if (longBlock) longBlock.setAttribute('hidden', '');
+                    if (more) more.removeAttribute('hidden');
+                    if (less) less.setAttribute('hidden', '');
+                    btn.setAttribute('data-expanded', 'false');
+                } else {
+                    if (shortBlock) shortBlock.setAttribute('hidden', '');
+                    if (longBlock) longBlock.removeAttribute('hidden');
+                    if (more) more.setAttribute('hidden', '');
+                    if (less) less.removeAttribute('hidden');
+                    btn.setAttribute('data-expanded', 'true');
+                }
+            });
+        });
     })();
     </script>
     <?php endif; ?>

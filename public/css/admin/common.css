@@ -59,33 +59,47 @@
   color: white;
 }
 
-/* Stats Section */
+a.filter-btn {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  box-sizing: border-box;
+}
+
+a.filter-btn.active {
+  color: #fff;
+}
+
 .stats-section {
   margin-top: 30px;
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center; 
+  align-items: center;
 }
 
 .stat-box {
   border: 1px solid #ccc;
-  padding: 15px;
+  min-width: 200px;  
+  max-width: 140px;      
+  padding: 10px 12px;      
   text-align: center;
   background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 6px;       
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .stat-box strong {
-  font-size: 13px;
+  font-size: 12px;
   color: #555;
 }
 
 .stat-box span {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: #000;
 }
@@ -108,4 +122,93 @@
   background: #000;
   color: #fff;
   font-weight: bold;
+}
+
+.date-filter .date-input {
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.export-timeline-toolbar {
+  font-size: 12px;
+  color: #555;
+}
+
+.export-timeline-toolbar label {
+  font-weight: 500;
+  color: #555;
+}
+
+.export-timeline-toolbar .search-input,
+.export-timeline-toolbar select.search-input {
+  font-size: 12px;
+}
+
+.export-timeline-toolbar .date-filter .date-input {
+  font-size: 12px;
+}
+
+.export-custom-date-range {
+  align-items: center;
+  font-size: 12px;
+}
+
+.export-custom-date-range .export-range-label {
+  font-size: 12px;
+  color: #555;
+}
+
+/* Pagination styles */
+.small-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.page-info {
+  padding: 4px 10px;
+  font-size: 13px;
+  color: #555;
+}
+
+.filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.report-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #2c5530;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: none;
+    transition: background 0.2s ease;
+}
+
+button.report-link-btn {
+    border: none;
+    cursor: pointer;
+    font: inherit;
+}
+
+.report-link-btn:hover {
+    background: #1e3d21;
+    color: #fff;
+}
+
+/* Secondary action — e.g. Download PDF (muted grey, no drop shadow) */
+.report-link-btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.report-link-btn-secondary:hover {
+    background: #5c636a;
+    color: #fff;
 }

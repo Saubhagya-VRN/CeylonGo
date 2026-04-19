@@ -1,162 +1,86 @@
-document.addEventListener("DOMContentLoaded", function() {
+/**
+ * Reports & Analysis — one Chart.js visualization matching current report filters.
+ * Expects window.REPORT_PAGE_CHART when a report has been generated with chart data.
+ */
+(function () {
+    'use strict';
 
-    function renderBarChart(canvasId, labelText, color) {
-        const canvas = document.getElementById(canvasId);
-        
-        if (!canvas) {
-            console.error(`Canvas with ID "${canvasId}" not found`);
-            return null;
-        }
-
-        // Read data from canvas attributes
-        const labelsAttr = canvas.dataset.labels;
-        const valuesAttr = canvas.dataset.values;
-
-        console.log(`${canvasId} - Labels:`, labelsAttr);
-        console.log(`${canvasId} - Values:`, valuesAttr);
-
-        let labels, values;
-
-        try {
-            labels = JSON.parse(labelsAttr || '[]');
-            values = JSON.parse(valuesAttr || '[]');
-        } catch (e) {
-            console.error(`Error parsing data for ${canvasId}:`, e);
-            labels = [];
-            values = [];
-        }
-
-        // Convert string values to numbers
-        values = values.map(v => parseInt(v) || 0);
-
-        console.log(`${canvasId} - Parsed Labels:`, labels);
-        console.log(`${canvasId} - Parsed Values:`, values);
-
-        return new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: labelText,
-                    data: values,
-                    backgroundColor: color,
-                    borderColor: color,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0
+    function chartOpts(isCurrency) {
+        return {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (ctx) {
+                            const v = ctx.parsed.y;
+                            if (v === undefined || v === null) {
+                                return '';
+                            }
+                            return isCurrency
+                                ? ' LKR ' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                : ' ' + v;
                         }
                     }
-                },
-                plugins: {
-                    legend: {
-                        display: true
-                    },
-                    tooltip: {
-                        enabled: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: isCurrency
+                            ? function (v) {
+                                return 'LKR ' + Number(v).toLocaleString();
+                            }
+                            : undefined
                     }
                 }
             }
-        });
+        };
     }
 
-    // Render both charts
-    const bookingsChart = renderBarChart('bookingsChart', 'Bookings', '#2c3e50');
-    const cancellationsChart = renderBarChart('cancellationsChart', 'Cancellations', '#e74c3c');
+    document.addEventListener('DOMContentLoaded', function () {
+        var cfg = window.REPORT_PAGE_CHART;
+        if (!cfg || typeof cfg !== 'object' || !cfg.labels || !cfg.values) {
+            return;
+        }
+        if (!cfg.labels.length) {
+            return;
+        }
 
-    // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+        var canvas = document.getElementById('reportChartCanvas');
+        if (!canvas) {
+            return;
+        }
 
-            const period = this.getAttribute('data-period') || this.textContent.toLowerCase();
-            const url = new URL(window.location.href);
-            url.searchParams.set('period', period);
-            window.location.href = url.toString();
+        var isCurrency = cfg.valueKind === 'currency';
+        var type = cfg.chartKind === 'line' ? 'line' : 'bar';
+        var label = cfg.title || 'Series';
+
+        var ctx = canvas.getContext('2d');
+        var dataset = {
+            label: label,
+            data: cfg.values,
+            backgroundColor: type === 'line'
+                ? 'rgba(25, 135, 84, 0.12)'
+                : 'rgba(13, 110, 253, 0.65)',
+            borderColor: type === 'line' ? 'rgba(25, 135, 84, 1)' : 'rgba(13, 110, 253, 1)',
+            borderWidth: type === 'line' ? 2 : 1,
+            fill: type === 'line',
+            tension: 0.3
+        };
+        if (type === 'bar') {
+            dataset.borderRadius = 4;
+        }
+
+        new Chart(ctx, {
+            type: type,
+            data: {
+                labels: cfg.labels,
+                datasets: [dataset]
+            },
+            options: chartOpts(isCurrency)
         });
     });
-
-    // Export buttons
-    document.querySelectorAll('.footer-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const action = this.textContent.toLowerCase();
-            if (action.includes('pdf')) exportChartsPDF();
-            if (action.includes('excel')) exportChartsExcel();
-        });
-    });
-
-    // PDF Export using html2canvas + jsPDF
-    function exportChartsPDF() {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF();
-        
-        const bookingsCanvas = document.getElementById('bookingsChart');
-        const cancellationsCanvas = document.getElementById('cancellationsChart');
-        
-        let chartsProcessed = 0;
-
-        html2canvas(bookingsCanvas).then(canvasImg => {
-            const imgData = canvasImg.toDataURL('image/png');
-            pdf.text('Number of Bookings', 10, 10);
-            pdf.addImage(imgData, 'PNG', 10, 20, 180, 90);
-            chartsProcessed++;
-
-            if (chartsProcessed === 2) {
-                pdf.save('report.pdf');
-            }
-        });
-
-        html2canvas(cancellationsCanvas).then(canvasImg => {
-            const imgData = canvasImg.toDataURL('image/png');
-            pdf.addPage();
-            pdf.text('Cancellations', 10, 10);
-            pdf.addImage(imgData, 'PNG', 10, 20, 180, 90);
-            chartsProcessed++;
-
-            if (chartsProcessed === 2) {
-                pdf.save('report.pdf');
-            }
-        });
-    }
-
-    // Excel export (CSV)
-    function exportChartsExcel() {
-        const bookingsCanvas = document.getElementById('bookingsChart');
-        const cancellationsCanvas = document.getElementById('cancellationsChart');
-
-        const labels = JSON.parse(bookingsCanvas.dataset.labels || '[]');
-        const bookings = JSON.parse(bookingsCanvas.dataset.values || '[]');
-        const cancellations = JSON.parse(cancellationsCanvas.dataset.values || '[]');
-
-        const table = [['Period', 'Bookings', 'Cancellations']];
-
-        labels.forEach((label, i) => {
-            table.push([
-                label, 
-                bookings[i] || 0, 
-                cancellations[i] || 0
-            ]);
-        });
-
-        let csvContent = "data:text/csv;charset=utf-8,"
-            + table.map(e => e.join(",")).join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "report.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-});
+})();

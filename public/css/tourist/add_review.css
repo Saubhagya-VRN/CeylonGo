@@ -19,6 +19,22 @@
   padding: 20px;
 }
 
+.review-form-container--trip {
+  margin: 0 auto 24px;
+  padding-top: 0;
+}
+
+/* Make the logged-in trip header match Bookings */
+.reviews-trip-main .trip-breadcrumbs {
+  margin-bottom: 10px;
+}
+
+.reviews-trip-main .trip-header-row {
+  margin-bottom: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 /* Header */
 .review-header {
   text-align: center;

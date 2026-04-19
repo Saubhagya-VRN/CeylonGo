@@ -16,6 +16,7 @@ $customerPhone = $booking['contact_number'] ?? '';
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <?php require_once __DIR__ . '/../partials/app_notify_script.php'; ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Pending Booking Details</title>
@@ -76,6 +77,7 @@ $customerPhone = $booking['contact_number'] ?? '';
         <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
         <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+        <li><a href="/CeylonGo/public/transporter/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
       </ul>
     </aside>
 

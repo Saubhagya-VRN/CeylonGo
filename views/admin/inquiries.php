@@ -8,53 +8,40 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <?php require_once __DIR__ . '/../partials/app_notify_script.php'; ?>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
-        <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/inquiries.css">
-        
-        <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
-        <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
         <title>Inquiry Management</title>
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
-        <div class="branding">
-            <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
-            <div class="logo-text">Ceylon Go</div>
-        </div>
+            <div class="branding">
+                <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
+                <div class="logo-text">Ceylon Go</div>
+            </div>
 
-        <nav class="nav-links">
-            <a href="/CeylonGo/public/admin/dashboard">Home</a>
-            <div class="profile-dropdown">
-            <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
-            <div class="profile-dropdown-menu" id="profileDropdown">
-                <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
-                <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
-            </div>
-            </div>
-        </nav>
+            <nav class="nav-links">
+                <a href="/CeylonGo/public/admin/dashboard">Home</a>
+                <div class="profile-dropdown">
+                <img src="/CeylonGo/public/images/profile.jpg" alt="User" class="profile-pic" onclick="toggleProfileDropdown()">
+                <div class="profile-dropdown-menu" id="profileDropdown">
+                    <a href="/CeylonGo/public/admin/profile"><i class="fa-regular fa-user"></i> My Profile</a>
+                    <a href="/CeylonGo/public/logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+                </div>
+                </div>
+            </nav>
         </header>
 
-        <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -64,19 +51,15 @@
                     <li><a href="/CeylonGo/public/admin/payments"><i class="fa-solid fa-credit-card"></i> Payments</a></li>
                     <li class="active"><a href="/CeylonGo/public/admin/inquiries"><i class="fa-solid fa-circle-question"></i> Inquiries</a></li>
                     <li><a href="/CeylonGo/public/admin/packages"><i class="fa-solid fa-bullhorn"></i> Packages</a></li>
-                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-solid fa-star"></i> Reviews</a></li>
+                    <li><a href="/CeylonGo/public/admin/reviews"><i class="fa-regular fa-star"></i> Reviews</a></li>
                     <li><a href="/CeylonGo/public/admin/reports"><i class="fa-solid fa-chart-line"></i> Reports & Analysis</a></li>
                 </ul>
             </div>
 
             <div class="main-content">
                 <div class="inquiry-management">
-
                     <h2 class="page-title">Inquiry Management</h2>
-
                     <div class="stats-section">
-                        <h4>Inquiry Statistics</h4><br>
-                        <p class="sub-text">Overview of all submitted inquiries</p><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total Inquiries</strong><br>
@@ -103,12 +86,13 @@
                             <div class="search-section">
                                 <input
                                     type="text"
+                                    id="searchInput"
                                     name="search"
-                                    placeholder="Search by user"
+                                    placeholder="Search by customer"
                                     class="search-input"
                                     value="<?= htmlspecialchars($search ?? '') ?>"
                                 >
-                                <button type="submit" class="search-btn">🔍</button>
+                                <button type="button" class="search-btn" onclick="applySearch()">🔍</button>
                             </div>
                             <div class="filter-buttons">
                                 <button type="submit" name="status" value="all"
@@ -128,10 +112,27 @@
                     </form>
 
                     <div class="inquiries-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                            <!-- LEFT: Show entries -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+
+                                <select id="rowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+                            <!-- RIGHT: Pagination -->
+                            <div id="paginationControls" class="filter-buttons"></div>
+                        </div>
                         <table class="inquiry-table">
                             <thead>
                                 <tr>
-                                    <th>User</th>
+                                    <th>Customer</th>
                                     <th>Subject</th>
                                     <th>Message</th>
                                     <th>Status</th>
@@ -143,7 +144,8 @@
                             <tbody id="inquiryTableBody">
                                 <?php if (count($inquiries) > 0): ?>
                                     <?php foreach ($inquiries as $inquiry): ?>
-                                        <tr data-id="<?= $inquiry['id'] ?>">
+                                        <tr data-id="<?= $inquiry['id'] ?>"
+                                            data-created-at="<?= !empty($inquiry['created_at']) ? htmlspecialchars(date('Y-m-d', strtotime($inquiry['created_at']))) : '' ?>">
                                             <td>
                                                 <?php if (!empty($inquiry['tourist_name'])): ?>
                                                     <?= htmlspecialchars($inquiry['tourist_name']) ?>
@@ -187,23 +189,22 @@
                             </tbody>
                         </table>
                     </div>
-                    <br>
 
-                    <div class="footer-buttons">
-                        <button class="footer-btn black" id="exportBtn">Export Inquiries</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a id="inquiryExportLink" href="/CeylonGo/public/admin/inquiries/export?status=<?= rawurlencode($selectedStatus ?? 'all') ?><?= !empty($search) ? '&search=' . rawurlencode($search) : '' ?>"
+                           class="report-link-btn">Download Inquiry Report
+                        </a>
                     </div>
-
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
-        <ul>
-            <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
-            <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
-            <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
-        </ul>
+            <ul>
+                <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
+                <li><a href="/CeylonGo/public/admin/reports">Generate Reports</a></li>
+                <li><a href="/CeylonGo/public/admin/payments">Payments</a></li>
+            </ul>
         </footer>
 
         <script>
@@ -276,33 +277,122 @@
                 }
             });
 
-            // Export Inquiries
-            document.getElementById("exportBtn").addEventListener("click", () => {
-                const rows = document.querySelectorAll("#inquiryTableBody tr");
-                if (rows.length === 0) return alert("No inquiries to export!");
+            function applySearch() {
+                const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+                const tbody = document.getElementById("inquiryTableBody");
+                let visibleCount = 0;
 
-                let txt = "User\tSubject\tMessage\tStatus\tDate\n";
-
-                rows.forEach(row => {
-                    if (row.style.display !== "none") {
-                        const cells = [...row.cells];
-                        const user    = cells[0].innerText.trim();
-                        const subject = cells[1].innerText.trim();
-                        const message = cells[2].innerText.trim();
-                        const status  = cells[3].innerText.trim();
-                        const date    = cells[4].innerText.trim();
-
-                        txt += [user, subject, message, status, date].join("\t") + "\n";
+                allUserRows.forEach(row => {
+                    if (row.id === "noResultsRow") return;
+                    const text = row.innerText.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        row.style.display = "";
+                        visibleCount++;
+                    } else {
+                        row.style.display = "none";
                     }
                 });
 
-                const blob = new Blob([txt], { type: "text/plain" });
-                const link = document.createElement("a");
-                const date = new Date().toISOString().slice(0, 10);
-                link.download = `inquiries_${date}.txt`;
-                link.href = URL.createObjectURL(blob);
-                link.click();
+                const existing = document.getElementById("noResultsRow");
+                if (existing) existing.remove();
+
+                if (visibleCount === 0) {
+                    const noResultsRow = document.createElement("tr");
+                    noResultsRow.id = "noResultsRow";
+                    noResultsRow.innerHTML = `<td colspan="7" style="text-align:center; padding:20px; color:#888;">No inquiries found.</td>`;
+                    tbody.appendChild(noResultsRow);
+                }
+            }
+
+            document.getElementById("searchInput").addEventListener("keydown", function(e) {
+                if (e.key === "Enter") { e.preventDefault(); applySearch(); }
             });
+
+            document.getElementById("searchInput").addEventListener("input", applySearch);
+
+            // ── PAGINATION FOR USERS ───────────────────
+
+            // Get all rows initially rendered by PHP
+            const allUserRows = Array.from(document.querySelectorAll("#inquiryTableBody tr"))
+                .filter(row => row.children.length > 1); // ignore "no data" row
+
+            const rowsPerPageSelect = document.getElementById("rowsPerPage");
+            const paginationControls = document.getElementById("paginationControls");
+
+            let currentPage = 1;
+            let rowsPerPage = parseInt(rowsPerPageSelect.value);
+
+            // Render table based on page
+            function renderTable() {
+                const tbody = document.getElementById("inquiryTableBody");
+                tbody.innerHTML = "";
+
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+
+                const pageRows = allUserRows.slice(start, end);
+
+                pageRows.forEach(row => tbody.appendChild(row));
+
+                renderPagination();
+            }
+
+            // Pagination buttons
+            function renderPagination() {
+                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
+
+                paginationControls.innerHTML = `
+                    <button class="filter-btn small-btn" ${currentPage === 1 ? "disabled" : ""} onclick="prevPage()">Prev</button>
+
+                    <span class="page-info">
+                        Page ${currentPage} of ${totalPages}
+                    </span>
+
+                    <button class="filter-btn small-btn" ${currentPage === totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
+                `;
+            }
+
+            // Navigation
+            function nextPage() {
+                const totalPages = Math.ceil(allUserRows.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            }
+
+            function prevPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            }
+
+            // Change rows per page
+            rowsPerPageSelect.addEventListener("change", function() {
+                rowsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
+
+            // Initialize
+            renderTable();
+
+            // Keep PDF export URL in sync with search box (server-side search filter)
+            (function syncInquiryExportLink() {
+                const link = document.getElementById('inquiryExportLink');
+                const inp = document.getElementById('searchInput');
+                if (!link || !inp) return;
+                const status = <?= json_encode($selectedStatus ?? 'all') ?>;
+                function build() {
+                    let u = '/CeylonGo/public/admin/inquiries/export?status=' + encodeURIComponent(status);
+                    const q = inp.value.trim();
+                    if (q) u += '&search=' + encodeURIComponent(q);
+                    link.href = u;
+                }
+                inp.addEventListener('input', build);
+                build();
+            })();
         </script>
     </body>
 </html>

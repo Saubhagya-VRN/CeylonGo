@@ -3,6 +3,34 @@
  * Uses --trip-* variables from trip_layout.css
  */
 
+/* Clear data — sits left of Next in header row */
+.trip-stepper-next-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.btn-trip-clear-data {
+  flex-shrink: 0;
+  font-size: 13px;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.btn-trip-clear-data:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
 /* Breadcrumbs */
 .trip-breadcrumbs {
   display: flex;
@@ -50,6 +78,9 @@
 
 .trip-stepper-next {
   text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .trip-clear-all-btn {
@@ -2802,6 +2833,15 @@ body.trip-page-body {
     text-align: center;
   }
 
+  .trip-stepper-next {
+    justify-content: center;
+  }
+
+  .trip-stepper-next-group {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
   .trip-page-title.trip-title-centered {
     order: -1;
     font-size: 18px;
@@ -2873,12 +2913,43 @@ body.trip-page-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   flex-shrink: 0;
 }
 .trip-modal-title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
+  flex: 1;
+  min-width: 0;
+}
+.trip-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.trip-modal-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.trip-modal-download-btn:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+.trip-modal-download-btn:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 .trip-modal-close {
   width: 36px;
@@ -3095,4 +3166,125 @@ body.trip-page-body {
   .trip-modal-form-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Dashboard iframe embed: hide wizard chrome; only budget summary modal is visible */
+body.trip-summary-embed header.navbar,
+body.trip-summary-embed .sidebar-overlay.trip-overlay,
+body.trip-summary-embed .trip-page-wrapper {
+  display: none !important;
+}
+
+body.trip-summary-embed {
+  padding-top: 0 !important;
+  margin: 0;
+  min-height: 0;
+  background: #fff;
+}
+
+body.trip-summary-embed .trip-modal-overlay--trip-overview {
+  z-index: 10050;
+}
+
+/* Inside dashboard iframe: no extra shell behind the green header */
+body.trip-summary-embed .trip-modal-overlay--trip-overview.trip-modal-open {
+  background: transparent !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  padding: 0 !important;
+}
+
+body.trip-summary-embed .trip-modal.trip-modal--budget-summary {
+  max-width: 100% !important;
+  width: 100%;
+  max-height: 100vh !important;
+  height: 100vh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.trip-summary-embed .trip-modal--budget-summary .trip-modal-budget-body {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Clear trip data confirmation (replaces native confirm) */
+.trip-clear-data-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.55);
+}
+.trip-clear-data-modal-overlay.trip-clear-data-modal-overlay--open {
+  display: flex;
+}
+.trip-clear-data-modal {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  background: #fff;
+  color: #1f2937;
+  border: 1px solid rgba(44, 85, 48, 0.18);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  padding: 22px 22px 18px;
+  box-sizing: border-box;
+}
+.trip-clear-data-modal__title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #2c5530;
+}
+.trip-clear-data-modal__text {
+  margin: 0 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4b5563;
+}
+.trip-clear-data-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.trip-clear-data-modal__btn {
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 999px;
+  transition: background 0.2s, opacity 0.2s;
+}
+.trip-clear-data-modal__btn--cancel {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+.trip-clear-data-modal__btn--cancel:hover {
+  background: #e5e7eb;
+}
+.trip-clear-data-modal__btn--ok {
+  background: #2c5530;
+  color: #fff;
+}
+.trip-clear-data-modal__btn--ok:hover {
+  background: #234428;
+}
+.trip-clear-data-modal__btn:focus {
+  outline: 2px solid #2c5530;
+  outline-offset: 2px;
+}
+.trip-clear-data-modal__btn:focus:not(:focus-visible) {
+  outline: none;
+}
+.trip-clear-data-modal__btn:focus-visible {
+  outline: 2px solid #2c5530;
+  outline-offset: 2px;
 }

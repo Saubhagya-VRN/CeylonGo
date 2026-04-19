@@ -160,6 +160,12 @@
   border: 1px solid #93c5fd;
 }
 
+.my-booking-status--cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
 /* Same pill treatment as .my-booking-status--approved; distinct purple accent */
 .my-booking-status--awaiting-bank {
   display: inline-block;
@@ -576,6 +582,15 @@ a.my-booking-btn-trip-summary:visited {
   color: #6b7280;
   text-align: center;
   padding: 24px;
+}
+
+.trip-summary-modal__frame {
+  display: block;
+  width: 100%;
+  height: min(72vh, 760px);
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
 }
 
 .trip-sum-card {

@@ -62,6 +62,7 @@
         <li><a href="/CeylonGo/public/transporter/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/transporter/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
         <li><a href="/CeylonGo/public/transporter/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+        <li><a href="/CeylonGo/public/transporter/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
       </ul>
     </div>
 
@@ -79,7 +80,7 @@
               <th>Customer</th>
               <th>Date</th>
               <th>Pickup Time</th>
-              <th>Pickup Location</th>
+              <th class="col-location">Pickup Location</th>
               <th>Vehicle Type</th>
               <th></th>
             </tr>
@@ -91,7 +92,7 @@
               <td><?= htmlspecialchars($booking['customer_name']) ?></td>
               <td><?= date('Y-m-d', strtotime($booking['date'])) ?></td>
               <td><?= date('h:i A', strtotime($booking['pickup_time'])) ?></td>
-              <td><?= htmlspecialchars($booking['pickup_location']) ?></td>
+              <td class="col-location"><?= htmlspecialchars($booking['pickup_location']) ?></td>
               <td><?= htmlspecialchars($booking['vehicle_type']) ?></td>
               <td><a href="/CeylonGo/public/transporter/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>

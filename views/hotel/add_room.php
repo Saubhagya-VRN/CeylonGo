@@ -83,7 +83,6 @@
 
         <section class="content">
             <?php
-            require_once '../../config/db.php';
             $error = isset($_GET['error']) ? $_GET['error'] : '';
             $success = isset($_GET['success']) ? $_GET['success'] : '';
             ?>

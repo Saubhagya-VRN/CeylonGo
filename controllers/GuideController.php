@@ -184,6 +184,31 @@ class GuideController {
         view('guide/profile');
     }
 
+    public function report() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user_id = $_SESSION['user_id'] ?? null;
+        if (!$user_id || ($_SESSION['user_role'] ?? '') !== 'guide') {
+            header("Location: /CeylonGo/public/login");
+            exit();
+        }
+
+        $guideRequest = new GuideRequest($this->db);
+
+        // Get date range from query parameters
+        $startDate = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : null;
+        $endDate = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : null;
+
+        $reportData = $guideRequest->getFilteredReportData($user_id, $startDate, $endDate);
+
+        view('guide/report', [
+            'kpi' => $reportData['kpi'],
+            'monthly' => $reportData['monthly'],
+            'tours' => $reportData['tours'],
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+    }
+
     public function places() {
         view('guide/places');
     }
@@ -253,10 +278,26 @@ class GuideController {
         $guideRequest = new GuideRequest($this->db);
         $booking = $guideRequest->getById($request_id);
 
-        // Verify this booking is assigned to the current guide
-        if (!$booking || (int) $booking['guide_id'] !== (int) $user_id) {
-            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking not found or not assigned to you"));
+        if (!$booking) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking not found"));
             exit();
+        }
+
+        // Check if booking is either assigned to this guide OR unassigned
+        $isAssignedToMe = (isset($booking['guide_id']) && (int)$booking['guide_id'] === (int)$user_id);
+        $isUnassigned = (!isset($booking['guide_id']) || empty($booking['guide_id']));
+
+        if (!$isAssignedToMe && !$isUnassigned) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking is already assigned to another guide"));
+            exit();
+        }
+
+        // If unassigned, we must assign it to the current guide first
+        if ($isUnassigned) {
+            if (!$guideRequest->reassignGuide($request_id, $user_id)) {
+                header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Failed to assign booking to you"));
+                exit();
+            }
         }
 
         if ($guideRequest->updateStatus($request_id, 'approved')) {

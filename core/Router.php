@@ -24,10 +24,11 @@ class Router {
         $requestedUri = '/' . trim($requestedUri, '/');
 
         // Adjust your project folder here
-        $basePath = '/CeylonGo/public';
+        // If BASE_URL is defined in config, use it; otherwise default to the suspected path.
+        $basePath = defined('BASE_URL') ? BASE_URL : '/CeylonGo/public';
 
-        // Remove base path
-        if (str_starts_with($requestedUri, $basePath)) {
+        // Remove base path from requested URI
+        if (!empty($basePath) && strpos($requestedUri, $basePath) === 0) {
             $requestedUri = substr($requestedUri, strlen($basePath));
         }
 
@@ -65,8 +66,18 @@ class Router {
         list($controllerName, $methodName) = explode('@', $action);
         $controllerClass = $controllerName;
 
+        // Load controller from project root (do not rely on CWD / autoload order alone).
+        if (defined('BASE_PATH')) {
+            $controllerFile = BASE_PATH . '/controllers/' . $controllerName . '.php';
+            if (is_file($controllerFile)) {
+                require_once $controllerFile;
+            }
+        }
+
         if (!class_exists($controllerClass)) {
-            throw new Exception("Controller $controllerClass not found");
+            throw new Exception(
+                "Controller $controllerClass not found (check controllers/" . $controllerName . ".php exists and defines the class)."
+            );
         }
 
         $controller = new $controllerClass();

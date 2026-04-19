@@ -52,6 +52,7 @@
         <li><a href="/CeylonGo/public/guide/review"><i class="fa-regular fa-star"></i> Reviews</a></li>
         <li><a href="/CeylonGo/public/guide/profile"><i class="fa-regular fa-user"></i> My Profile</a></li>
         <li><a href="/CeylonGo/public/guide/payment"><i class="fa-solid fa-credit-card"></i> My Payment</a></li>
+        <li><a href="/CeylonGo/public/guide/report"><i class="fa-solid fa-chart-line"></i> Performance Report</a></li>
       </ul>
     </div>
 
@@ -77,7 +78,7 @@
               <th>Tourist Name</th>
               <th>Date</th>
               <th>Time</th>
-              <th>Location</th>
+              <th class="col-location">Location</th>
               <th>Language</th>
               <th>Status</th>
               <th>Actions</th>
@@ -92,7 +93,7 @@
                 <td><?= htmlspecialchars($booking['customerName']) ?></td>
                 <td><?= htmlspecialchars($booking['date']) ?></td>
                 <td><?= date('h:i A', strtotime($booking['time'])) ?></td>
-                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td class="col-location"><?= htmlspecialchars($booking['location']) ?></td>
                 <td><?= htmlspecialchars($booking['language']) ?></td>
                 <td><span class="status-badge pending">Pending</span></td>
                 <td>

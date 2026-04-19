@@ -85,6 +85,30 @@ class TransportProviderController {
         view('transport/profile');
     }
 
+    public function report() {
+        if (!isset($_SESSION['transporter_id'])) {
+            header('Location: /CeylonGo/public/login');
+            exit();
+        }
+        $driverId = trim($_SESSION['transporter_id']);
+        $requestModel = new TransportRequest($this->db);
+
+        // Get date range from query parameters
+        $startDate = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : null;
+        $endDate = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : null;
+
+        // Use filtered report data method
+        $reportData = $requestModel->getFilteredReportData($driverId, $startDate, $endDate);
+
+        view('transport/report', [
+            'kpi' => $reportData['kpi'],
+            'monthly' => $reportData['monthly'],
+            'tours' => $reportData['tours'],
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ]);
+    }
+
     public function vehicle() {
         view('transport/vehicle');
     }
@@ -273,10 +297,47 @@ class TransportProviderController {
         }
         $requestModel = new TransportRequest($this->db);
         $booking = $requestModel->getRequestByIdFull($bookingId);
-        if (!$booking || trim($booking['assigned_driver_id']) !== trim($_SESSION['transporter_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Booking not found or not assigned to you']);
+        $driverId = trim($_SESSION['transporter_id']);
+        
+        if (!$booking) {
+            echo json_encode(['success' => false, 'message' => 'Booking not found']);
             exit();
         }
+
+        // Check if booking is either assigned to this driver OR unassigned
+        $isAssignedToMe = (isset($booking['assigned_driver_id']) && trim($booking['assigned_driver_id']) === $driverId);
+        $isUnassigned = (!isset($booking['assigned_driver_id']) || empty(trim($booking['assigned_driver_id'])));
+
+        if (!$isAssignedToMe && !$isUnassigned) {
+            echo json_encode(['success' => false, 'message' => 'Booking is already assigned to another driver']);
+            exit();
+        }
+
+        // If unassigned, we must assign it to the current driver first
+        if ($isUnassigned) {
+            $vehicleModel = new Vehicle($this->db);
+            $vehicles = $vehicleModel->getVehiclesByUser($driverId);
+            $matchingVehicle = null;
+            // Try to find a vehicle of the same type requested
+            foreach ($vehicles as $v) {
+                if ($v['vehicle_type'] == $booking['vehicle_type']) {
+                    $matchingVehicle = $v['vehicle_no'];
+                    break;
+                }
+            }
+            // Fallback to first vehicle if no type match (shouldn't happen with filtering, but safe)
+            if (!$matchingVehicle && !empty($vehicles)) {
+                $matchingVehicle = $vehicles[0]['vehicle_no'];
+            }
+            
+            if (!$requestModel->assignDriver($bookingId, $driverId, $matchingVehicle)) {
+                echo json_encode(['success' => false, 'message' => 'Failed to assign booking to you']);
+                exit();
+            }
+            // Refresh booking data for email notification
+            $booking = $requestModel->getRequestByIdFull($bookingId);
+        }
+
         if ($requestModel->updateStatus($bookingId, 'confirmed')) {
             $this->sendTransportConfirmationEmail($booking);
             echo json_encode(['success' => true, 'message' => 'Booking accepted successfully! The tourist has been notified.']);
