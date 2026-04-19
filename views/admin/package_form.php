@@ -38,27 +38,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
         <link rel="stylesheet" href="/CeylonGo/public/css/admin/packages.css">
-
-        <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGo/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGo/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGo/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGo/public/css/transport/footer.css">
-
-        <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGo/public/css/transport/responsive.css">
-
         <title><?= $pageTitle ?>Manage Packages - Add Package</title>
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -76,12 +66,8 @@
             </nav>
         </header>
 
-        <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -98,13 +84,10 @@
 
             <div class="main-content">
                 <div class="user-management">
-
                     <h2 class="page-title"><?= $pageTitle ?></h2>
-
                     <?php if ($error): ?>
                     <div class="pkg-alert pkg-alert--error"><?= $error ?></div>
                     <?php endif; ?>
-
                     <div class="form-section">
                         <form method="POST" action="<?= $formAction ?>">
                             <?php if ($isEdit): ?>
@@ -306,7 +289,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>

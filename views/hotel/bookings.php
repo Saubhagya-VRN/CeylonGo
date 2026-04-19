@@ -21,24 +21,8 @@
       <a href="/CeylonGo/public/logout" class="btn-login">Logout</a>
     </nav>
   </header>
-
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-text">Ceylon Go</div>
-    </div>
-    <nav class="nav">
-      <a class="nav-link" href="/CeylonGo/public/hotel/dashboard">Dashboard</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/availability">Availability</a>
-      <a class="nav-link active" href="/CeylonGo/public/hotel/bookings">Bookings</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/add-room">Booking Management</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/payments">Payments</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/reviews">Reviews</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/inquiries">Inquiries</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/report-issue">Report Issue</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/notifications">Notifications</a>
-    </nav>
-  </aside>
-
+  
+  <?php $active_page = 'bookings'; include(__DIR__ . '/components/hotel_sidebar.php'); ?>
   <div class="main">
     <header class="topbar">
       <div class="left">
@@ -74,13 +58,44 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody></tbody>
+              <tbody>
+                <?php foreach($bookings as $booking) { ?>
+                  <tr>
+                    <td><?php echo $booking['id']; ?></td>
+                    <td><?php echo $booking['guest_name']; ?></td>
+                    <td><?php echo $booking['check_in']; ?></td>
+                    <td><?php echo $booking['check_out']; ?></td>
+                    <td><?php echo $booking['total_price'] . ' ' . $booking['currency']; ?></td>
+                    <td><?php echo $booking['status']; ?></td>
+                    <td>
+                      <button class="btn btn-sm btn-secondary"
+                              data-booking-modal-open
+                              data-booking-id="<?php echo $booking['id']; ?>"
+                              data-guest-name="<?php echo htmlspecialchars($booking['guest_name']); ?>"
+                              data-guest-email="<?php echo htmlspecialchars('deegagan@gmail.com'); ?>"
+                              data-guest-phone="<?php echo htmlspecialchars($booking['contact_number'] ?? ''); ?>"
+                              data-room-type="<?php echo htmlspecialchars($booking['room_type'] ?? ''); ?>"
+                              data-check-in="<?php echo $booking['check_in']; ?>"
+                              data-check-out="<?php echo $booking['check_out']; ?>"
+                              data-num-guests="<?php echo $booking['num_guests'] ?? '1'; ?>"
+                              data-total-amount="<?php echo $booking['total_price'] . ' ' . $booking['currency']; ?>"
+                              data-payment-status="<?php echo htmlspecialchars($booking['payment_status'] ?? 'Pending'); ?>"
+                              data-booking-status="<?php echo htmlspecialchars($booking['status']); ?>"
+                              data-special-requests="<?php echo htmlspecialchars($booking['special_requests'] ?? 'None'); ?>">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                <?php } ?>
+              </tbody>
             </table>
           </div>
         </div>
       </div>
     </section>
   </div>
+
+  <?php include(__DIR__ . '/components/booking_modal.php'); ?>
 
   <script src="../../public/js/hotel.js"></script>
 </body>

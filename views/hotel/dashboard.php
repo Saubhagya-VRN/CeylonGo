@@ -7,6 +7,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <?php require_once __DIR__ . '/../partials/app_notify_script.php'; ?>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ceylon Go • Hotel Dashboard</title>
@@ -108,22 +109,7 @@
     </nav>
   </header>
 
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-text">Ceylon Go</div>
-    </div>
-    <nav class="nav">
-      <a class="nav-link active" href="/CeylonGo/public/hotel/dashboard">Dashboard</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/availability">Availability</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/bookings">Bookings</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/add-room">Booking Management</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/payments">Payments</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/reviews">Reviews</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/inquiries">Inquiries</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/report-issue">Report Issue</a>
-      <a class="nav-link" href="/CeylonGo/public/hotel/notifications">Notifications</a>
-    </nav>
-  </aside>
+  <?php $active_page = 'dashboard'; include(__DIR__ . '/components/hotel_sidebar.php'); ?>
 
   <div class="main">
     <header class="topbar">

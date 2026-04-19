@@ -67,7 +67,7 @@
               <th>Customer</th>
               <th>Date</th>
               <th>Pickup Time</th>
-              <th>Pickup Location</th>
+              <th class="col-location">Pickup Location</th>
               <th>Vehicle Type</th>
               <th></th>
             </tr>
@@ -79,7 +79,7 @@
               <td><?= htmlspecialchars($booking['customer_name']) ?></td>
               <td><?= date('Y-m-d', strtotime($booking['date'])) ?></td>
               <td><?= date('h:i A', strtotime($booking['pickup_time'])) ?></td>
-              <td><?= htmlspecialchars($booking['pickup_location']) ?></td>
+              <td class="col-location"><?= htmlspecialchars($booking['pickup_location']) ?></td>
               <td><?= htmlspecialchars($booking['vehicle_type']) ?></td>
               <td><a href="/CeylonGo/public/transporter/cancelled_info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
             </tr>

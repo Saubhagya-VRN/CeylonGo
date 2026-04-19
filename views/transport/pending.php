@@ -4,6 +4,7 @@ $pending_bookings = $pending_bookings ?? [];
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <?php require_once __DIR__ . '/../partials/app_notify_script.php'; ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceylon Go - Pending Bookings</title>
@@ -89,7 +90,7 @@ $pending_bookings = $pending_bookings ?? [];
               <th>Booking No</th>
               <th>Date</th>
               <th>Pickup Time</th>
-              <th>Pickup Location</th>
+              <th class="col-location">Pickup Location</th>
               <th>Passengers</th>
               <th>Manage Request</th>
               <th></th>
@@ -101,7 +102,7 @@ $pending_bookings = $pending_bookings ?? [];
               <td>#<?php echo htmlspecialchars($booking['id']); ?></td>
               <td><?php echo htmlspecialchars($booking['date']); ?></td>
               <td><?php echo date('h:i A', strtotime($booking['pickup_time'])); ?></td>
-              <td><?php echo htmlspecialchars($booking['pickup_location']); ?></td>
+              <td class="col-location"><?php echo htmlspecialchars($booking['pickup_location']); ?></td>
               <td><?php echo htmlspecialchars($booking['num_people']); ?></td>
               <td>
                 <button class="accept-btn" onclick="handleBooking(<?php echo $booking['id']; ?>, 'accept')">Accept</button>

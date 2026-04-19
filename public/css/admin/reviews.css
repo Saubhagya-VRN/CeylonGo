@@ -25,6 +25,22 @@
   gap: 8px;
 }
 
+/* Keep <td class="actions"> as table-cell — flex on a td breaks row border alignment */
+.user-table td.actions {
+  display: table-cell;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.user-table td.actions .icon-btn + .icon-btn {
+  margin-left: 8px;
+}
+
+.user-table td.actions .icon-btn {
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .icon-btn {
   background: transparent;
   border: none;

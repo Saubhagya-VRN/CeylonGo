@@ -49,11 +49,6 @@ class Tourist {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /* =========================
-       Admin Functions (NEW)
-    ========================== */
-
-    // Get all tourists for admin panel
     public function getAllTourists() {
         $query = "SELECT id, first_name, last_name, contact_number, email, is_active
                   FROM " . $this->table . "
@@ -63,7 +58,6 @@ class Tourist {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Activate / Deactivate tourist (SOFT DELETE)
     public function updateStatus($touristId, $status) {
         // Update tourist_users table
         $stmt1 = $this->conn->prepare(

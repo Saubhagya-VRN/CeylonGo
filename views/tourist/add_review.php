@@ -32,7 +32,7 @@ if ($is_logged_in) {
                 $_SESSION['user_name'] = $user_name;
             }
             $stmt->close();
-            $conn->close();
+            // Leave $conn open; POST handler may need the same connection
         } catch (Exception $e) {
             error_log($e->getMessage());
         }
@@ -63,17 +63,11 @@ function add_review_json_exit($ok, $message)
     exit;
 }
 
-// Packages list and selected package (from controller or GET)
-$packages = $packages ?? [];
-$selected_package_id = $selected_package_id ?? (isset($_GET['package']) ? (int) $_GET['package'] : null);
-
 // Initialize form variables
 $name = '';
 $email = '';
 $rating = 0;
 $review_text = '';
-$destination = '';
-$package_id_form = isset($selected_package_id) ? (int) $selected_package_id : 0;
 
 // If user is logged in, pre-populate with their info
 if ($is_logged_in && $_SERVER["REQUEST_METHOD"] != "POST") {
@@ -107,17 +101,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $email = isset($_POST['email']) ? htmlspecialchars(trim($_POST['email'])) : '';
         $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
         $review_text = isset($_POST['review']) ? htmlspecialchars(trim($_POST['review'])) : '';
-        $package_id_post = isset($_POST['package_id']) ? (int) $_POST['package_id'] : 0;
-        $package_id_form = $package_id_post;
-        $destination = '';
-        if ($package_id_post > 0 && !empty($packages)) {
-            foreach ($packages as $pkg) {
-                if ((int) ($pkg['id'] ?? 0) === $package_id_post) {
-                    $destination = $pkg['title'] ?? '';
-                    break;
-                }
-            }
-        }
         
         // Validation
         if (empty($name) || empty($email) || empty($review_text)) {
@@ -125,11 +108,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 add_review_json_exit(false, 'Please fill in all required fields.');
             }
             $error_message = "Please fill in all required fields.";
-        } elseif ($package_id_post <= 0) {
-            if ($ajax_submit) {
-                add_review_json_exit(false, 'Please select a package.');
-            }
-            $error_message = "Please select a package.";
         } elseif ($rating < 1 || $rating > 5) {
             if ($ajax_submit) {
                 add_review_json_exit(false, 'Please select a valid rating (1–5 stars).');
@@ -141,16 +119,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             $error_message = "Please enter a valid email address.";
         } else {
-            // Save to database (single table: package_reviews)
+            // Save to `reviews` (tourist feedback). Package-specific rows use `package_reviews` elsewhere.
             try {
                 require_once __DIR__ . '/../../config/database.php';
-                
-                $stmt = $conn->prepare("INSERT INTO package_reviews (package_id, user_id, name, email, rating, review_text, destination, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
-                $stmt->bind_param("iississ", $package_id_post, $_SESSION['user_id'], $name, $email, $rating, $review_text, $destination);
-                
-                if ($stmt->execute()) {
+
+                $uid = (int) $_SESSION['user_id'];
+                $stmt = $conn->prepare("INSERT INTO reviews (user_id, name, email, rating, review_text, status) VALUES (?, ?, ?, ?, ?, 'pending')");
+                if (!$stmt) {
+                    error_log('add_review prepare failed: ' . $conn->error);
+                    if ($ajax_submit) {
+                        add_review_json_exit(false, 'Could not save your review. Please try again.');
+                    }
+                    $error_message = "An error occurred while submitting your review. Please try again.";
+                } elseif (!$stmt->bind_param("issis", $uid, $name, $email, $rating, $review_text)) {
+                    error_log('add_review bind_param failed: ' . $stmt->error);
                     $stmt->close();
-                    $conn->close();
+                    if ($ajax_submit) {
+                        add_review_json_exit(false, 'Could not save your review. Please try again.');
+                    }
+                    $error_message = "An error occurred while submitting your review. Please try again.";
+                } elseif ($stmt->execute()) {
+                    $stmt->close();
                     if ($ajax_submit) {
                         add_review_json_exit(true, 'Review submitted successfully.');
                     }
@@ -161,14 +150,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     header('Location: ' . BASE_URL . '/tourist/add-review', true, 303);
                     exit;
                 } else {
+                    error_log('add_review execute failed: ' . $stmt->error);
+                    $stmt->close();
                     if ($ajax_submit) {
                         add_review_json_exit(false, 'Could not save your review. Please try again.');
                     }
                     $error_message = "An error occurred while submitting your review. Please try again.";
                 }
-                
-                $stmt->close();
-                $conn->close();
                 
             } catch (Exception $e) {
                 if ($ajax_submit) {
@@ -267,16 +255,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <label for="email">Email Address <span class="required">*</span></label>
           <input type="email" id="email" name="email" value="<?= htmlspecialchars($email) ?>" placeholder="your.email@example.com" required <?= !$is_logged_in ? 'disabled' : '' ?>>
         </div>
-      </div>
-
-      <div class="form-group">
-        <label for="destination">Package Selected</label>
-        <select id="destination" name="package_id" <?= !$is_logged_in ? 'disabled' : '' ?> required>
-          <option value="">Select a package</option>
-          <?php foreach ($packages as $pkg): ?>
-          <option value="<?= (int)$pkg['id'] ?>" <?= ($package_id_form && (int)$pkg['id'] === (int)$package_id_form) ? 'selected' : '' ?>><?= htmlspecialchars($pkg['title']) ?></option>
-          <?php endforeach; ?>
-        </select>
       </div>
 
       <div class="form-group">
@@ -456,10 +434,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               var emailEl = document.getElementById('email');
               if (nameEl) nameEl.value = prefName;
               if (emailEl) emailEl.value = prefEmail;
-              var params = new URLSearchParams(window.location.search);
-              var pkg = params.get('package');
-              var dest = document.getElementById('destination');
-              if (pkg && dest) dest.value = pkg;
               var ta = document.getElementById('review');
               var cc = document.getElementById('charCount');
               if (ta && cc) cc.textContent = String(ta.value.length);

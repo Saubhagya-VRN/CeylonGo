@@ -10,7 +10,6 @@
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 800px;
 }
 
 thead {
@@ -23,6 +22,20 @@ td {
   padding: 14px;
   border-bottom: 1px solid #eee;
   font-size: 14px;
+  vertical-align: middle;
+}
+
+/* Specific column adjustments to fit screen */
+.col-location {
+  max-width: 250px;
+  white-space: normal;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* Prevent other small columns from wrapping too much */
+th:not(.col-location),
+td:not(.col-location) {
   white-space: nowrap;
 }
 

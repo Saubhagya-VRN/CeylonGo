@@ -13,7 +13,7 @@ $pr_avg = $pr_count > 0 ? round(array_sum(array_column($package_reviews, 'rating
 $pr_satisfaction = $pr_count > 0 ? min(100, (int) round(($pr_avg / 5) * 100)) : 0;
 $overview = $p['overview'] ?? [];
 $highlights = $p['highlights'] ?? [];
-$itinerary = $p['itinerary'] ?? [];
+$itinerary = package_itinerary_for_tourist_display($p['itinerary'] ?? []);
 $included = $p['included'] ?? [];
 $excluded = $p['excluded'] ?? [];
 $accommodation = $p['accommodation'] ?? [];
@@ -198,7 +198,7 @@ $accommodation = $p['accommodation'] ?? [];
                 <div class="pkg-reviews-empty">
                     <p><strong>No published reviews yet</strong></p>
                     <p>Be the first to share your experience! New submissions are moderated before they appear here.</p>
-                    <a href="/CeylonGo/public/tourist/add-review?package=<?php echo (int)$p['id']; ?>" class="pkg-btn pkg-btn--primary">Write a review</a>
+                    <a href="/CeylonGo/public/tourist/add-review" class="pkg-btn pkg-btn--primary">Write a review</a>
                 </div>
                 <?php else: ?>
                 <ul class="pkg-reviews-list">

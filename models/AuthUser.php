@@ -20,6 +20,13 @@ class AuthUser {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function getUserByRefAndRole($ref_id, $role) {
+        $query = "SELECT * FROM " . $this->table . " WHERE ref_id = ? AND role = ? LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([$ref_id, $role]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function addUser() {
         $query = "INSERT INTO " . $this->table . "
                   (ref_id, email, password, role)

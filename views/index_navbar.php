@@ -1,11 +1,6 @@
 <?php
-
+// Slim guest nav: same structure/classes as views/tourist/header.php (styled by tourist/navbar.css).
 ?>
-
-<head>
-  <link rel="stylesheet" href="../public/css/index_navbar.css">
-</head>
-
 <header class="navbar">
   <div class="branding">
       <a href="/CeylonGo/public/tourist/dashboard" class="branding-link">

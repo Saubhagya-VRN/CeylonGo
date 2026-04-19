@@ -67,7 +67,7 @@
               <th>Booking No</th>
               <th>Tourist Name</th>
               <th>Date</th>
-              <th>Location</th>
+              <th class="col-location">Location</th>
               <th>Language</th>
               <th>Status</th>
               <th>Reason</th>
@@ -81,7 +81,7 @@
                 <td>#TG<?= str_pad($booking['id'], 3, '0', STR_PAD_LEFT) ?></td>
                 <td><?= htmlspecialchars($booking['customerName']) ?></td>
                 <td><?= htmlspecialchars($booking['date']) ?></td>
-                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td class="col-location"><?= htmlspecialchars($booking['location']) ?></td>
                 <td><?= htmlspecialchars($booking['language']) ?></td>
                 <td><span class="status-badge cancelled">Cancelled</span></td>
                 <td><?= htmlspecialchars($booking['notes'] ?? '—') ?></td>

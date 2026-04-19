@@ -94,6 +94,7 @@ $router->post('tourist/profile', 'TouristController@profile');
 $router->get('api/geocode', 'GeocodeController@geocode');
 $router->get('api/calculate-fare', 'GeocodeController@calculateFare');
 $router->get('api/places-autocomplete', 'GeocodeController@placesAutocomplete');
+$router->get('api/locations', 'GeocodeController@placesAutocomplete'); // Alias for autocomplete
 
 // ========== GUIDE ROUTES ==========
 $router->get('guide/register', 'GuideController@registerView');
@@ -120,12 +121,19 @@ $router->get('hotel/register', 'HotelController@registerView');
 $router->post('hotel/register', 'HotelController@register');
 $router->get('hotel/dashboard', 'HotelController@dashboard');
 $router->get('hotel/rooms', 'HotelController@rooms');
+$router->post('hotel/rooms', 'HotelController@rooms');
 $router->get('hotel/add-room', 'HotelController@addRoomView');
 $router->post('hotel/add-room', 'HotelController@addRoom');
 $router->get('hotel/edit-room/{id}', 'HotelController@editRoomView');
 $router->post('hotel/update-room', 'HotelController@updateRoom');
 $router->get('hotel/delete-room/{id}', 'HotelController@deleteRoom');
 $router->get('hotel/bookings', 'HotelController@bookings');
+$router->post('hotel/update-booking-status', 'HotelController@updateBookingStatus');
+$router->get('hotel/bookings-calendar', 'HotelController@getBookingsCalendar');
+$router->get('hotel/dashboard-stats', 'HotelController@getDashboardStats');
+$router->get('hotel/revenue-data', 'HotelController@getRevenueData');
+$router->get('hotel/availability-data', 'HotelController@getAvailabilityData');
+$router->get('hotel/recent-bookings', 'HotelController@getRecentBookings');
 $router->get('hotel/availability', 'HotelController@availability');
 $router->get('hotel/inquiries', 'HotelController@inquiries');
 $router->get('hotel/notifications', 'HotelController@notifications');
@@ -148,25 +156,42 @@ $router->post('admin/package-booking/status', 'AdminController@updatePackageBook
 $router->get('admin/payments', 'AdminController@payments');
 $router->post('admin/payment/verify', 'AdminController@verifyPayment');
 $router->post('admin/payment/approve-slip',   'AdminController@approveSlipPayment');
+$router->post('admin/payment/reject-slip',    'AdminController@rejectSlipPayment');
 $router->post('admin/payment/approve-refund', 'AdminController@approveRefund');
+$router->post('admin/payment/reject-refund',      'AdminController@rejectRefund');
+$router->post('admin/trip-payment/approve-slip', 'AdminController@approveTripSlipPayment');
+$router->post('admin/trip-payment/reject-slip',  'AdminController@rejectTripSlipPayment');
+$router->post('admin/trip-payment/approve-refund', 'AdminController@approveTripRefund');
+$router->post('admin/trip-payment/reject-refund',  'AdminController@rejectTripRefund');
 $router->get('admin/reviews', 'AdminController@reviews');
 $router->post('admin/review/delete', 'AdminController@deleteReview');
 $router->post('admin/review/reply', 'AdminController@replyToReview');
 $router->post('admin/review/approve', 'AdminController@approveReview');
+$router->post('admin/package-review/delete', 'AdminController@deletePackageReview');
+$router->post('admin/package-review/reply', 'AdminController@replyToPackageReview');
+$router->post('admin/package-review/approve', 'AdminController@approvePackageReview');
 $router->get('admin/inquiries', 'AdminController@inquiries');
+$router->get('admin/inquiries/export', 'AdminController@exportInquiriesPdf');
+$router->get('admin/reviews/export', 'AdminController@exportReviewsPdf');
+$router->get('admin/reviews/export-package', 'AdminController@exportPackageReviewsPdf');
 $router->post('admin/inquiry/delete', 'AdminController@deleteInquiry');
 $router->post('admin/inquiry/reply',  'AdminController@replyToInquiry');
-$router->get('admin/reports', 'AdminController@reports');
+$router->get('admin/reports', 'AdminReportController@index');
+$router->get('admin/reports/export-pdf', 'AdminReportController@exportPdf');
 $router->get('admin/service', 'AdminController@service');
 $router->post('admin/provider/status', 'AdminController@toggleProviderStatus');
 $router->get('admin/settings', 'AdminController@settings');
 $router->get('admin/forgot-password', 'AdminController@forgotPassword');
 $router->get('admin/packages', 'AdminController@packages');
+$router->get('admin/packages/export', 'AdminController@exportPackagesPdf');
 $router->get('admin/packages/new', 'AdminController@packageNew');
 $router->post('admin/packages/create', 'AdminController@packageCreate');
 $router->get('admin/packages/edit', 'AdminController@packageEdit');
 $router->post('admin/packages/update', 'AdminController@packageUpdate');
 $router->post('admin/packages/delete', 'AdminController@packageDelete');
+
+//Hotel Booking controller routes
+$router->post('hotel/bookings', 'HotelController@updateBookingStatus');
 
 // Dispatch the request
 try {

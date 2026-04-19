@@ -35,7 +35,6 @@
     color: red;
 }
 
-/* Package bookings — approved = green, rejected = red */
 .status.approved {
     color: green;
 }
@@ -112,18 +111,3 @@
     background-color: #f2f2f2;
 }
 
-.filter-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.small-btn {
-  padding: 4px 10px;
-  font-size: 13px;
-}
-
-.page-info {
-  padding: 4px 10px;
-  font-size: 13px;
-  color: #555;
-}

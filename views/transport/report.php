@@ -33,6 +33,25 @@ if ($start_date && $end_date) {
 
 // Generated timestamp
 $generatedAt = date('F d, Y \a\t h:i A');
+
+/**
+ * Extract the primary city name from a long location string
+ */
+function getMainCity($location) {
+    if (!$location || $location === 'N/A') return 'N/A';
+    
+    // Split by common delimiters
+    $parts = preg_split('/[\,\|\-\/]+/', $location);
+    foreach ($parts as $part) {
+        $value = trim($part);
+        // Skip generic labels
+        if ($value !== '' && !preg_match('/district|province|sri lanka|regional/i', $value)) {
+            return $value;
+        }
+    }
+    
+    return $location;
+}
 ?>
 
 <!DOCTYPE html>
@@ -312,17 +331,18 @@ $generatedAt = date('F d, Y \a\t h:i A');
                                 <th>Tour ID</th>
                                 <th>Customer</th>
                                 <th>Date</th>
+                                <th>Time</th>
                                 <th>Location</th>
                                 <th>Vehicle</th>
-                                <th>Pax</th>
-                                <th>Distance</th>
-                                <th>Fare</th>
+                                <th style="text-align: center;">Pax</th>
+                                <th style="text-align: center;">Distance</th>
+                                <th style="text-align: right;">Fare (LKR)</th>
                             </tr>
                         </thead>
                         <tbody id="tourTableBody">
                             <?php if (empty($tours)): ?>
                                 <tr class="no-data-row">
-                                    <td colspan="8">
+                                    <td colspan="9">
                                         <i class="fa-regular fa-folder-open"></i>
                                         No tour records found for the selected period.
                                     </td>
@@ -331,24 +351,32 @@ $generatedAt = date('F d, Y \a\t h:i A');
                                 <?php foreach ($tours as $tour): ?>
                                     <tr>
                                         <td class="tour-id">#TR<?= str_pad($tour["id"], 3, "0", STR_PAD_LEFT) ?></td>
-                                        <td><?= htmlspecialchars($tour["customerName"]) ?></td>
+                                        <td>
+                                            <div style="font-weight: 600;"><?= htmlspecialchars($tour["customerName"]) ?></div>
+                                        </td>
                                         <td><?= date("M d, Y", strtotime($tour["date"])) ?></td>
-                                        <td><?= htmlspecialchars($tour["pickup_location"] ?? "N/A") ?></td>
-                                        <td><?= htmlspecialchars($tour["vehicle_type"]) ?></td>
-                                        <td><?= htmlspecialchars($tour["pax"]) ?></td>
-                                        <td><?= number_format($tour["distance"], 1) ?> km</td>
-                                        <td class="fare-cell">Rs. <?= number_format($tour["fare"], 2) ?></td>
+                                        <td><i class="fa-regular fa-clock" style="font-size: 0.9em; opacity: 0.6; margin-right: 4px;"></i> <?= !empty($tour["time"]) ? date("h:i A", strtotime($tour["time"])) : "N/A" ?></td>
+                                        <td>
+                                            <span title="<?= htmlspecialchars($tour["pickup_location"]) ?>">
+                                                <i class="fa-solid fa-location-dot" style="color: #2c5530; font-size: 0.85em;"></i> 
+                                                <?= htmlspecialchars(getMainCity($tour["pickup_location"])) ?>
+                                            </span>
+                                        </td>
+                                        <td><span class="vehicle-badge"><?= htmlspecialchars($tour["vehicle_type"]) ?></span></td>
+                                        <td style="text-align: center;"><?= htmlspecialchars($tour["pax"]) ?></td>
+                                        <td style="text-align: center; color: #666; font-size: 0.9em;"><?= number_format($tour["distance"], 1) ?> km</td>
+                                        <td class="fare-cell" style="text-align: right; font-weight: 700;">Rs. <?= number_format($tour["fare"], 2) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                         <?php if (!empty($tours)): ?>
-                        <tfoot style="background: rgba(0, 119, 182, 0.05); font-weight: 700;">
+                        <tfoot style="background: rgba(44, 85, 48, 0.05); font-weight: 700;">
                             <tr>
-                                <td colspan="5" style="text-align: right; padding: 14px 20px; color: #1a1a2e; font-size: 14px;">TOTALS</td>
-                                <td style="border-top: 2px solid #0077b6; color: #0077b6; padding: 14px 16px;"><?= array_sum(array_column($tours, "pax")) ?></td>
-                                <td style="border-top: 2px solid #0077b6; color: #0077b6; padding: 14px 16px;"><?= number_format(array_sum(array_column($tours, "distance")), 1) ?> km</td>
-                                <td style="border-top: 2px solid #0077b6; color: #1a1a2e; padding: 14px 16px;">Rs. <?= number_format(array_sum(array_column($tours, "fare")), 2) ?></td>
+                                <td colspan="6" style="text-align: right; padding: 14px 20px; color: #1a1a2e; font-size: 14px;">TOTALS</td>
+                                <td style="border-top: 2px solid #2c5530; color: #2c5530; padding: 14px 16px; text-align: center;"><?= array_sum(array_column($tours, "pax")) ?></td>
+                                <td style="border-top: 2px solid #2c5530; color: #2c5530; padding: 14px 16px; text-align: center;"><?= number_format(array_sum(array_column($tours, "distance")), 1) ?> km</td>
+                                <td style="border-top: 2px solid #2c5530; color: #1a1a2e; padding: 14px 16px; text-align: right;">Rs. <?= number_format(array_sum(array_column($tours, "fare")), 2) ?></td>
                             </tr>
                         </tfoot>
                         <?php endif; ?>
@@ -380,8 +408,8 @@ $generatedAt = date('F d, Y \a\t h:i A');
     // ========================
     const revenueCtx = document.getElementById('revenueChart').getContext('2d');
     const revenueGradient = revenueCtx.createLinearGradient(0, 0, 0, 350);
-    revenueGradient.addColorStop(0, 'rgba(0, 119, 182, 0.25)');
-    revenueGradient.addColorStop(1, 'rgba(0, 119, 182, 0.02)');
+    revenueGradient.addColorStop(0, 'rgba(44, 85, 48, 0.25)'); // Branded Green
+    revenueGradient.addColorStop(1, 'rgba(44, 85, 48, 0.02)');
 
     new Chart(revenueCtx, {
         type: 'line',
@@ -391,12 +419,12 @@ $generatedAt = date('F d, Y \a\t h:i A');
                 {
                     label: 'Revenue (LKR)',
                     data: <?= json_encode($chartRevenue) ?>,
-                    borderColor: '#0077b6',
+                    borderColor: '#2c5530',
                     backgroundColor: revenueGradient,
                     fill: true,
                     tension: 0.4,
                     borderWidth: 3,
-                    pointBackgroundColor: '#0077b6',
+                    pointBackgroundColor: '#2c5530',
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     pointRadius: 5,
@@ -674,7 +702,8 @@ $generatedAt = date('F d, Y \a\t h:i A');
                 '#TR<?= str_pad($tour["id"], 3, "0", STR_PAD_LEFT) ?>',
                 '<?= addslashes($tour["customerName"]) ?>',
                 '<?= date("M d, Y", strtotime($tour["date"])) ?>',
-                '<?= addslashes($tour["pickup_location"] ?? "N/A") ?>',
+                '<?= !empty($tour["time"]) ? date("h:i A", strtotime($tour["time"])) : "N/A" ?>',
+                '<?= addslashes(getMainCity($tour["pickup_location"] ?? "N/A")) ?>',
                 '<?= addslashes($tour["vehicle_type"]) ?>',
                 '<?= $tour["pax"] ?>',
                 '<?= number_format($tour["distance"], 1) ?> km',
@@ -690,9 +719,9 @@ $generatedAt = date('F d, Y \a\t h:i A');
 
         doc.autoTable({
             startY: y,
-            head: [['Tour ID', 'Customer', 'Date', 'Location', 'Vehicle', 'Pax', 'Distance', 'Fare (LKR)']],
+            head: [['Tour ID', 'Customer', 'Date', 'Time', 'Location', 'Vehicle', 'Pax', 'Distance', 'Fare (LKR)']],
             body: tourRows,
-            foot: [['', '', '', '', 'TOTALS', totalPax, totalDist.toFixed(1) + ' km', 'Rs. ' + totalFare.toLocaleString('en-US', {minimumFractionDigits: 2})]],
+            foot: [['', '', '', '', '', 'TOTALS', totalPax, totalDist.toFixed(1) + ' km', 'Rs. ' + totalFare.toLocaleString('en-US', {minimumFractionDigits: 2})]],
             theme: 'grid',
             headStyles: { fillColor: [44, 85, 48], textColor: 255, fontStyle: 'bold', fontSize: 9, cellPadding: 3 },
             bodyStyles: { fontSize: 8.5, cellPadding: 2.5 },
@@ -700,7 +729,7 @@ $generatedAt = date('F d, Y \a\t h:i A');
             columnStyles: {
                 0: { cellWidth: 20 },
                 1: { cellWidth: 40 },
-                7: { halign: 'right', fontStyle: 'bold' }
+                8: { halign: 'right', fontStyle: 'bold' }
             },
             margin: { left: 14, right: 14 }
         });
