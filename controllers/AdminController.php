@@ -1897,7 +1897,7 @@ class AdminController {
                 g.is_active,
                 u.created_at AS registered_at
             FROM users u
-            JOIN guide_users g ON u.ref_id = g.id
+            JOIN guide_users g ON u.ref_id COLLATE utf8mb4_unicode_ci = g.id
             WHERE u.role = 'guide' $whereStatus
 
             UNION ALL
@@ -1909,7 +1909,7 @@ class AdminController {
                 t.is_active,
                 u.created_at AS registered_at
             FROM users u
-            JOIN transport_users t ON u.ref_id = t.user_id
+            JOIN transport_users t ON u.ref_id COLLATE utf8mb4_unicode_ci = t.user_id
             WHERE u.role = 'transport' $whereStatus
 
             UNION ALL
@@ -1921,7 +1921,7 @@ class AdminController {
                 h.is_active,
                 u.created_at AS registered_at
             FROM users u
-            JOIN hotel_users h ON u.ref_id = h.id
+            JOIN hotel_users h ON u.ref_id COLLATE utf8mb4_unicode_ci = h.id
             WHERE u.role = 'hotel' $whereStatus
         ";
 
