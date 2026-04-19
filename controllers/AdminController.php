@@ -1189,32 +1189,55 @@ class AdminController {
         }
     }
 
-    private function createMailer() {
-        $base = dirname(__DIR__) . '/lib/PHPMailer/';
-        $exceptionFile  = $base . 'Exception.php';
-        $phpmailerFile  = $base . 'PHPMailer.php';
-        $smtpFile       = $base . 'SMTP.php';
-
-        if (!file_exists($phpmailerFile)) {
-            throw new \RuntimeException('PHPMailer not found at: ' . $phpmailerFile);
+    /**
+     * Send email via Brevo HTTP API (no SMTP — works on localhost).
+     */
+    private function sendEmail(
+        string $toEmail,
+        string $toName,
+        string $subject,
+        string $htmlBody,
+        string $altBody = ''
+    ): void {
+        $apiKey = getenv('SENDINBLUE_API_KEY') ?: ($_ENV['SENDINBLUE_API_KEY'] ?? '');
+        if ($apiKey === '') {
+            error_log('[CeylonGo] Brevo: set SENDINBLUE_API_KEY in .env (see .env.example); email not sent.');
+            return;
         }
+        $fromEmail = 'vinudilanya16@gmail.com';
+        $fromName  = 'Ceylon Go';
 
-        require_once $exceptionFile;
-        require_once $phpmailerFile;
-        require_once $smtpFile;
+        $payload = json_encode([
+            'sender'      => ['name' => $fromName, 'email' => $fromEmail],
+            'to'          => [['email' => $toEmail, 'name'  => $toName]],
+            'subject'     => $subject,
+            'htmlContent' => $htmlBody,
+            'textContent' => $altBody ?: strip_tags($htmlBody),
+        ]);
 
-        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-        $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = 'vinudilanya16@gmail.com';
-        $mail->Password   = 'fcmm ooea bqkz wmce';
-        $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
-        $mail->CharSet    = 'UTF-8';
-        $mail->SMTPDebug  = 0; // No debug output — never pollute JSON responses
-        $mail->setFrom('vinudilanya16@gmail.com', 'Ceylon Go');
-        return $mail;
+        $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_HTTPHEADER     => [
+                'accept: application/json',
+                'api-key: ' . $apiKey,
+                'content-type: application/json',
+            ],
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            error_log('[CeylonGo] Brevo cURL error: ' . $curlErr);
+        } elseif ($httpCode < 200 || $httpCode >= 300) {
+            error_log('[CeylonGo] Brevo API error (' . $httpCode . '): ' . $response);
+        }
     }
 
     private function sendRefundBankDetailsRequest(
@@ -1241,20 +1264,13 @@ class AdminController {
             <p style="margin-top:32px;color:#555;">Best regards,<br><strong>Ceylon Go Support Team</strong></p>
         </div>';
 
-        try {
-            ob_start(); // buffer any stray output (warnings, notices) so JSON is never corrupted
-            $mail = $this->createMailer();
-            $mail->addAddress($toEmail, $toName);
-            $mail->Subject = 'Your CeylonGo Refund Has Been Approved – Bank Details Required';
-            $mail->isHTML(true);
-            $mail->Body    = $htmlBody;
-            $mail->AltBody = "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} ({$amountFormatted}) has been approved. Please reply with your bank details: 1.Bank Name 2.Branch Name 3.Account Holder Name 4.Account Number";
-            $mail->send();
-            ob_end_clean();
-        } catch (\Throwable $e) {
-            ob_end_clean();
-            error_log('[CeylonGo] sendRefundBankDetailsRequest failed: ' . $e->getMessage());
-        }
+        $this->sendEmail(
+            $toEmail,
+            $toName,
+            'Your CeylonGo Refund Has Been Approved – Bank Details Required',
+            $htmlBody,
+            "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} ({$amountFormatted}) has been approved. Please reply with your bank details: 1.Bank Name 2.Branch Name 3.Account Holder Name 4.Account Number"
+        );
     }
 
     private function sendRefundRejectionEmail(
@@ -1278,20 +1294,13 @@ class AdminController {
             <p style="margin-top:32px;color:#555;">Best regards,<br><strong>Ceylon Go Support Team</strong></p>
         </div>';
 
-        try {
-            ob_start();
-            $mail = $this->createMailer();
-            $mail->addAddress($toEmail, $toName);
-            $mail->Subject = 'Update on Your CeylonGo Refund Request';
-            $mail->isHTML(true);
-            $mail->Body    = $htmlBody;
-            $mail->AltBody = "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} was not approved. Reason: {$rejectNote}";
-            $mail->send();
-            ob_end_clean();
-        } catch (\Throwable $e) {
-            ob_end_clean();
-            error_log('[CeylonGo] sendRefundRejectionEmail failed: ' . $e->getMessage());
-        }
+        $this->sendEmail(
+            $toEmail,
+            $toName,
+            'Update on Your CeylonGo Refund Request',
+            $htmlBody,
+            "Dear {$toName}, your refund for {$typeLabel} #{$bookingId} was not approved. Reason: {$rejectNote}"
+        );
     }
 
     private function sendBankSlipRejectionEmail(
@@ -1316,20 +1325,13 @@ class AdminController {
             <p style="margin-top:32px;color:#555;">Best regards,<br><strong>Ceylon Go Support Team</strong></p>
         </div>';
 
-        try {
-            ob_start();
-            $mail = $this->createMailer();
-            $mail->addAddress($toEmail, $toName);
-            $mail->Subject = 'Update on Your CeylonGo Bank Transfer Slip';
-            $mail->isHTML(true);
-            $mail->Body    = $htmlBody;
-            $mail->AltBody = "Dear {$toName}, your bank slip for {$typeLabel} #{$refId} could not be verified. Reason: {$rejectNote}. Please log in and upload a new slip.";
-            $mail->send();
-            ob_end_clean();
-        } catch (\Throwable $e) {
-            ob_end_clean();
-            error_log('[CeylonGo] sendBankSlipRejectionEmail failed: ' . $e->getMessage());
-        }
+        $this->sendEmail(
+            $toEmail,
+            $toName,
+            'Update on Your CeylonGo Bank Transfer Slip',
+            $htmlBody,
+            "Dear {$toName}, your bank slip for {$typeLabel} #{$refId} could not be verified. Reason: {$rejectNote}. Please log in and upload a new slip."
+        );
     }
 
     public function reviews()

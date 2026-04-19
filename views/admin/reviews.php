@@ -151,7 +151,6 @@
                                 <tr>
                                     <th>User ID</th>
                                     <th>User Name</th>
-                                    <th>Destination</th>
                                     <th>Comment</th>
                                     <th>Rating</th>
                                     <th>Status</th>
@@ -168,7 +167,6 @@
                                             data-created-at="<?= htmlspecialchars(substr($review['created_at'] ?? '', 0, 10)) ?>">
                                             <td><?= htmlspecialchars((string) $review['user_id']) ?></td>
                                             <td><?= htmlspecialchars($review['tourist_name'] ?? '') ?></td>
-                                            <td><?= htmlspecialchars($review['destination'] ?? '') ?: '—' ?></td>
                                             <td><?= htmlspecialchars($review['review_text'] ?? '') ?></td>
                                             <td>
                                                 <?php
@@ -207,7 +205,7 @@
                                     <?php endforeach; ?>
                                 <?php else: ?>
                                     <tr>
-                                        <td colspan="8" style="text-align:center;">No customized reviews found.</td>
+                                        <td colspan="7" style="text-align:center;">No customized reviews found.</td>
                                     </tr>
                                 <?php endif; ?>
                             </tbody>
