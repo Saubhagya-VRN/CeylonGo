@@ -152,6 +152,7 @@
 		</div>
 
 		<form action="/CeylonGo/public/hotel/rooms" method="POST" class="room-modal-form" id="addRoomForm">
+			<input type="hidden" id="room_id" name="room_id" value="">
 			<div class="room-modal-grid room-modal-grid-tight">
 				<div class="form-group">
 					<label for="room_number">Room Number</label>
@@ -160,14 +161,22 @@
 
 				<div class="form-group">
 					<label for="room_type">Room Type</label>
-					<input type="text" id="room_type" name="room_type" class="form-control" placeholder="Standard Room" required maxlength="50">
-					<div class="room-helper">Use the room title you want to show to guests.</div>
+					<select id="room_type" name="room_type" class="form-control" required>
+						<option value="">Select Room Type</option>
+						<option value="Standard Room">Standard Room</option>
+						<option value="Deluxe Room">Deluxe Room</option>
+						<option value="Suite">Suite</option>
+						<option value="Family Room">Family Room</option>
+						<option value="Executive Room">Executive Room</option>
+						<option value="Presidential Suite">Presidential Suite</option>
+					</select>
+					<div class="room-helper">Choose the room type from the available options.</div>
 				</div>
 
 				<div class="form-group input-prefix">
 					<label for="rate">Price Per Night</label>
 					<span style="margin-top: 15px;">LKR</span>
-					<input type="number" id="rate" name="rate" class="form-control" placeholder="12500" min="0" step="0.01" required>
+					<input type="number" id="rate" name="rate" class="form-control" placeholder="12500" min="0" step="1" required>
 				</div>
 
 				<div class="form-group">
@@ -185,8 +194,87 @@
 
 			<div class="room-modal-actions">
 				<button type="button" class="btn btn-secondary" data-room-modal-close>Cancel</button>
-				<button type="submit" class="btn btn-primary">Save Room</button>
+				<button type="submit" class="btn btn-primary" id="submitBtn">Save Room</button>
 			</div>
 		</form>
 	</div>
 </div>
+
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const modal = document.getElementById('addRoomModal');
+		const modalTitle = document.getElementById('addRoomModalTitle');
+		const submitBtn = document.getElementById('submitBtn');
+		const form = document.getElementById('addRoomForm');
+		const roomIdInput = document.getElementById('room_id');
+
+		// Open modal for adding new room
+		document.querySelectorAll('[data-room-modal-open]').forEach(btn => {
+			btn.addEventListener('click', function() {
+				modalTitle.textContent = 'Add a New Room';
+				submitBtn.textContent = 'Save Room';
+				roomIdInput.value = '';
+				form.reset();
+				form.method = 'POST';
+				form.action = '/CeylonGo/public/hotel/rooms';
+				modal.classList.add('is-open');
+				document.body.classList.add('room-modal-open');
+			});
+		});
+
+		// Open modal for editing room
+		document.querySelectorAll('[data-room-modal-edit]').forEach(btn => {
+			btn.addEventListener('click', function() {
+				const roomId = this.dataset.roomId;
+				const roomNumber = this.dataset.roomNumber;
+				const roomType = this.dataset.roomType;
+				const price = this.dataset.price;
+				const capacity = this.dataset.capacity;
+				const description = this.dataset.description;
+
+				// Populate form fields
+				document.getElementById('room_number').value = roomNumber || '';
+				document.getElementById('room_type').value = roomType || '';
+				document.getElementById('rate').value = price || '';
+				document.getElementById('capacity').value = capacity || '2';
+				document.getElementById('description').value = description || '';
+				roomIdInput.value = roomId || '';
+
+				// Update modal title and button
+				modalTitle.textContent = 'Edit Room';
+				submitBtn.textContent = 'Update Room';
+
+				// Change form to POST method for updates
+				form.method = 'POST';
+				form.action = '/CeylonGo/public/hotel/rooms';
+
+				// Open modal
+				modal.classList.add('is-open');
+				document.body.classList.add('room-modal-open');
+			});
+		});
+
+		// Close modal
+		document.querySelectorAll('[data-room-modal-close]').forEach(btn => {
+			btn.addEventListener('click', function() {
+				modal.classList.remove('is-open');
+				document.body.classList.remove('room-modal-open');
+			});
+		});
+
+		// Close modal when clicking overlay
+		modal.addEventListener('click', function(e) {
+			if (e.target === modal) {
+				modal.classList.remove('is-open');
+				document.body.classList.remove('room-modal-open');
+			}
+		});
+
+		// Dismiss notice
+		document.querySelectorAll('[data-dismiss-notice]').forEach(btn => {
+			btn.addEventListener('click', function() {
+				this.closest('[role="status"], [role="alert"]').style.display = 'none';
+			});
+		});
+	});
+</script>
