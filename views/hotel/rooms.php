@@ -353,7 +353,6 @@
                                         <th>Rate (Per Night)</th>
                                         <th>Capacity</th>
                                         <th>Description</th>
-                                        <th>Amenities</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -367,7 +366,7 @@
                                         $roomNumber = $roomData['room_number'] ?? ($roomData['number'] ?? '-');
                                         $roomType = $roomData['room_type'] ?? ($roomData['type'] ?? 'N/A');
 
-                                        $rateSource = $roomData['rate'] ?? ($roomData['priceValue'] ?? ($roomData['price'] ?? null));
+                                        $rateSource = $roomData['rate'] ?? ($roomData['priceValue'] ?? ($roomData['price_per_night'] ?? null));
                                         if (is_numeric($rateSource)) {
                                             $rateDisplay = 'LKR ' . number_format((float) $rateSource, 2);
                                         } elseif (is_string($rateSource) && trim($rateSource) !== '') {
@@ -411,30 +410,32 @@
                                                 ?>
                                             </td>
                                             <td>
-                                                <?php 
-                                                if (empty($amenities)) {
-                                                    echo '<span class="text-muted">No amenities</span>';
-                                                } else {
-                                                    $amenity_names = array_map(function($amenity) {
-                                                        return ucwords(str_replace('_', ' ', $amenity));
-                                                    }, $amenities);
-                                                    echo htmlspecialchars(implode(', ', $amenity_names));
-                                                }
-                                                ?>
-                                            </td>
-                                            <td>
                                                 <span class="status-badge status-<?php echo htmlspecialchars($statusClass); ?>">
                                                     <?php echo htmlspecialchars($status); ?>
                                                 </span>
                                             </td>
                                             <td>
                                                 <?php if (!empty($roomId)): ?>
-                                                    <a href="/CeylonGo/public/hotel/edit-room/<?php echo (int) $roomId; ?>" class="btn btn-sm btn-secondary">
-                                                        ✏ Edit
-                                                    </a>
-                                                    <a href="/CeylonGo/public/hotel/delete-room/<?php echo (int) $roomId; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this room?');">
-                                                        🗑 Delete
-                                                    </a>
+                                                    <div style="display: flex; gap: 5px;">
+                                                        <button 
+                                                            type="button" 
+                                                            class="btn btn-sm btn-secondary" 
+                                                            data-room-modal-edit
+                                                            data-room-id="<?php echo (int) $roomId; ?>"
+                                                            data-room-number="<?php echo htmlspecialchars($roomNumber); ?>"
+                                                            data-room-type="<?php echo htmlspecialchars($roomType); ?>"
+                                                            data-price="<?php echo is_numeric($rateSource) ? (float)$rateSource : ''; ?>"
+                                                            data-capacity="<?php echo htmlspecialchars($capacity); ?>"
+                                                            data-description="<?php echo htmlspecialchars($description); ?>"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <form action="/CeylonGo/public/hotel/rooms" method="POST" >
+                                                            <input type="hidden" name="_method" value="DELETE">    
+                                                            <input type="hidden" name="id" value="<?php echo (int) $roomId; ?>">
+                                                            <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('Are you sure you want to delete this room?');">Delete</button>
+                                                        </form>
+                                                    </div>
                                                 <?php else: ?>
                                                     <span class="text-muted">N/A</span>
                                                 <?php endif; ?>

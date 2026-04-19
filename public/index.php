@@ -128,6 +128,7 @@ $router->get('hotel/edit-room/{id}', 'HotelController@editRoomView');
 $router->post('hotel/update-room', 'HotelController@updateRoom');
 $router->get('hotel/delete-room/{id}', 'HotelController@deleteRoom');
 $router->get('hotel/bookings', 'HotelController@bookings');
+$router->post('hotel/update-booking-status', 'HotelController@updateBookingStatus');
 $router->get('hotel/bookings-calendar', 'HotelController@getBookingsCalendar');
 $router->get('hotel/dashboard-stats', 'HotelController@getDashboardStats');
 $router->get('hotel/revenue-data', 'HotelController@getRevenueData');
@@ -188,6 +189,9 @@ $router->post('admin/packages/create', 'AdminController@packageCreate');
 $router->get('admin/packages/edit', 'AdminController@packageEdit');
 $router->post('admin/packages/update', 'AdminController@packageUpdate');
 $router->post('admin/packages/delete', 'AdminController@packageDelete');
+
+//Hotel Booking controller routes
+$router->post('hotel/bookings', 'HotelController@updateBookingStatus');
 
 // Dispatch the request
 try {
