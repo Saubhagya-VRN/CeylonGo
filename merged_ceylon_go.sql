@@ -469,7 +469,7 @@ CREATE TABLE `package_reviews` (
   `email` varchar(100) NOT NULL,
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
-  `package_id` int(10) UNSIGNED NOT NULL,
+  `package_id` int(10) UNSIGNED DEFAULT NULL COMMENT 'NULL = general review',
   `rating` tinyint(4) NOT NULL,
   `replied_at` datetime DEFAULT NULL,
   `review_text` text NOT NULL,
@@ -521,24 +521,29 @@ CREATE TABLE `packages` (
 -- --------------------------------------------------------
 DROP TABLE IF EXISTS `reviews`;
 CREATE TABLE `reviews` (
-  `created_at` datetime DEFAULT current_timestamp(),
-  `destination` varchar(100) DEFAULT NULL,
-  `email` varchar(100) NOT NULL,
   `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
   `rating` int(11) NOT NULL CHECK (`rating` >= 1 and `rating` <= 5),
   `review_text` text NOT NULL,
+  `admin_reply` text DEFAULT NULL,
+  `replied_at` datetime DEFAULT NULL,
   `status` varchar(20) DEFAULT 'pending' COMMENT 'pending, approved, rejected',
+  `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `user_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_rating` (`rating`),
+  KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-INSERT INTO `reviews` (`created_at`, `destination`, `email`, `id`, `name`, `rating`, `review_text`, `status`, `updated_at`, `user_id`) VALUES
-('2025-10-20 12:21:59', 'Kandy', 'kandauda91@gmail.com', 1, 'Abhijeeth Kandauda', 4, 'good', 'pending', '2025-10-20 12:21:59', 6),
-('2026-04-04 19:31:43', 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla', 'dee@gmail.com', 2, 'Dee Gagan', 4, 'it was greatbad', 'pending', '2026-04-04 19:31:43', 12),
-('2026-04-04 19:32:18', 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla', 'dee@gmail.com', 3, 'Dee Gagan', 3, 'nice trip', 'pending', '2026-04-04 19:32:18', 12),
-('2026-04-04 19:35:34', 'Cultural Triangle 4N5D — Kandy, Sigiriya & Dambulla', 'dee@gmail.com', 4, 'Dee Gagan', 5, 'my friends really enjoyed this', 'pending', '2026-04-04 19:35:34', 12);
+INSERT INTO `reviews` (`id`, `user_id`, `name`, `email`, `rating`, `review_text`, `admin_reply`, `replied_at`, `status`, `created_at`, `updated_at`) VALUES
+(1, 6, 'Abhijeeth Kandauda', 'kandauda91@gmail.com', 4, 'good', NULL, NULL, 'pending', '2025-10-20 12:21:59', '2025-10-20 12:21:59'),
+(2, 12, 'Dee Gagan', 'dee@gmail.com', 4, 'it was greatbad', NULL, NULL, 'pending', '2026-04-04 19:31:43', '2026-04-04 19:31:43'),
+(3, 12, 'Dee Gagan', 'dee@gmail.com', 3, 'nice trip', NULL, NULL, 'pending', '2026-04-04 19:32:18', '2026-04-04 19:32:18'),
+(4, 12, 'Dee Gagan', 'dee@gmail.com', 5, 'my friends really enjoyed this', NULL, NULL, 'pending', '2026-04-04 19:35:34', '2026-04-04 19:35:34');
 
 -- --------------------------------------------------------
 -- Table structure for table `tourist_guide_requests`

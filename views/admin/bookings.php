@@ -39,19 +39,29 @@
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/admin/bookings.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-        <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-        <title>Booking Management</title>
-    </head>
+    <html lang="en">
+        <head>
+            <?php require_once __DIR__ . '/../partials/app_notify_script.php'; ?>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            <!-- Font Awesome (REQUIRED) -->
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+            <!-- Optional admin-only overrides -->
+            <link rel="stylesheet" href="/CeylonGO/public/css/admin/bookings.css">
+
+            <!-- Shared Transport Layout -->
+            <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
+            <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
+            <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
+            <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
+            
+            <!-- Responsive styles (always last) -->
+            <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
+
+            <title>Booking Management</title>
+        </head>
 
     <body>
         <header class="navbar">

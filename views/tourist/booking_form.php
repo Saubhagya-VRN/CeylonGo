@@ -7,7 +7,7 @@ if (!$p) {
     header('Location: /CeylonGo/public/tourist/packages');
     exit;
 }
-$itinerary = $p['itinerary'] ?? [];
+$itinerary = package_itinerary_for_tourist_display($p['itinerary'] ?? []);
 $fullname = $fullname ?? '';
 $email = $email ?? '';
 $phone = $phone ?? '';
