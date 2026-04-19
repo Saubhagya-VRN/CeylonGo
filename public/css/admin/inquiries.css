@@ -44,3 +44,16 @@
 .icon-btn.danger {
   color: red;
 }
+
+.inquiry-table td.actions {
+    display: table-cell;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-width: 60px; 
+}

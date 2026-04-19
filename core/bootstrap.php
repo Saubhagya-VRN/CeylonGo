@@ -29,7 +29,10 @@ date_default_timezone_set('Asia/Colombo');
 // Load configuration (this will define BASE_PATH)
 require_once dirname(__DIR__) . '/config/config.php';
 
-// Load core files
+// Composer first so PSR-4 packages (e.g. Dompdf) resolve before the app autoloader.
+if (is_readable(BASE_PATH . '/vendor/autoload.php')) {
+    require_once BASE_PATH . '/vendor/autoload.php';
+}
 require_once BASE_PATH . '/core/autoload.php';
 require_once BASE_PATH . '/core/helpers.php';
 require_once BASE_PATH . '/core/Database.php';

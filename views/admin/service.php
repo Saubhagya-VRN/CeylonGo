@@ -17,27 +17,17 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-        <!-- Font Awesome (REQUIRED) -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-        <!-- Optional admin-only overrides -->
         <link rel="stylesheet" href="/CeylonGO/public/css/admin/service.css">
-        
-        <!-- Shared Transport Layout -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/base.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/navbar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/sidebar.css">
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/footer.css">
-
-        <!-- Responsive styles (always last) -->
         <link rel="stylesheet" href="/CeylonGO/public/css/transport/responsive.css">
-
         <title>Service Provider Management</title>
     </head>
 
     <body>
-        <!-- Navbar -->
         <header class="navbar">
             <div class="branding">
                 <img src="/CeylonGo/public/images/logo.png" class="logo-img" alt="Ceylon Go Logo">
@@ -56,12 +46,8 @@
             </nav>
         </header>
 
-        <!-- Sidebar Overlay for Mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
         <div class="page-wrapper">
-
-            <!-- Sidebar -->
             <div class="sidebar">
                 <ul>
                     <li><a href="/CeylonGo/public/admin/dashboard"><i class="fa-solid fa-table-columns"></i> Dashboard</a></li>
@@ -78,10 +64,8 @@
 
             <div class="main-content">
                 <div class="provider-management">
-                
                     <h2 class="page-title">Service Provider Management</h2>
                     <br>
-                    
                     <form method="GET" action="/CeylonGo/public/admin/service">
                         <div class="toolbar">
                             <div class="search-section">
@@ -91,15 +75,17 @@
 
                             <div class="filter-buttons">
                                 <button type="submit" name="status" value="all"
-                                    class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All</button>
+                                    class="filter-btn <?= ($selectedStatus=='all')?'active':'' ?>">All
+                                </button>
 
                                 <button type="submit" name="status" value="active"
-                                    class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active</button>
+                                    class="filter-btn <?= ($selectedStatus=='active')?'active':'' ?>">Active
+                                </button>
 
                                 <button type="submit" name="status" value="inactive"
-                                    class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive</button>
+                                    class="filter-btn <?= ($selectedStatus=='inactive')?'active':'' ?>">Inactive
+                                </button>
 
-                                <!-- role filters can stay JS-based -->
                                 <button type="button" class="filter-btn" onclick="filterProviders('guide')">Tour Guides</button>
                                 <button type="button" class="filter-btn" onclick="filterProviders('hotel')">Hotels</button>
                                 <button type="button" class="filter-btn" onclick="filterProviders('transport')">Transport Providers</button>
@@ -108,7 +94,6 @@
                     </form>
 
                     <div class="stats-section">
-                        <h4>Provider Statistics</h4><br>
                         <div class="stats-grid">
                             <div class="stat-box">
                                 <strong>Total Providers</strong><br>
@@ -131,6 +116,23 @@
                     <br>
 
                     <div class="providers-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                            <!-- LEFT: Show entries -->
+                            <div class="filter-buttons" style="align-items:center;">
+                                <span style="font-size:14px;">Show</span>
+
+                                <select id="rowsPerPage" class="filter-btn small-btn">
+                                    <option value="10" selected>10</option>
+                                    <option value="15">15</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                </select>
+
+                                <span style="font-size:14px;">entries</span>
+                            </div>
+                            <!-- RIGHT: Pagination -->
+                            <div id="paginationControls" class="filter-buttons"></div>
+                        </div>
                         <table class="provider-table">
                             <thead>
                                 <tr>
@@ -172,31 +174,15 @@
                         </table>
                     </div>
                     
-                    <div class="footer-buttons" style="flex-direction:column;align-items:flex-start;gap:10px;">
-                        <div class="export-timeline-toolbar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                            <label for="exportTimelinePreset">Report period:</label>
-                            <select id="exportTimelinePreset" class="search-input" style="max-width:220px;padding:6px 8px;">
-                                <option value="all">All time</option>
-                                <option value="7d">Last 7 days</option>
-                                <option value="30d">Last 30 days</option>
-                                <option value="90d">Last 90 days</option>
-                                <option value="ytd">Year to date</option>
-                                <option value="custom">Custom range</option>
-                            </select>
-                            <span id="exportCustomRangeWrap" class="export-custom-date-range" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span class="export-range-label">From</span>
-                                <div class="date-filter"><input type="date" id="exportDateFrom" class="date-input"></div>
-                                <span class="export-range-label">To</span>
-                                <div class="date-filter"><input type="date" id="exportDateTo" class="date-input"></div>
-                            </span>
-                        </div>
-                        <button class="footer-btn black" id="exportBtn">Export Details</button>
+                    <div class="footer-buttons" style="margin-top: 24px;">
+                        <a href="/CeylonGo/public/admin/reports?type=providers" class="report-link-btn">
+                            Generate Service Provider Report
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
         <footer>
             <ul>
                 <li><a href="/CeylonGo/public/admin/bookings">View All Bookings</a></li>
@@ -222,15 +208,12 @@
             });
 
             function applySearch() {
-                const searchTerm = document
-                    .getElementById("searchInput")
-                    .value
-                    .toLowerCase();
-
-                document.querySelectorAll("#providerTableBody tr").forEach(row => {
-                    const text = row.innerText.toLowerCase();
-                    row.style.display = text.includes(searchTerm) ? "" : "none";
+                const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+                allUserRows.forEach(row => {
+                    row.style.display = row.innerText.toLowerCase().includes(searchTerm) ? "" : "none";
                 });
+                currentPage = 1;
+                renderTable();
             }
 
             // Enter key search
@@ -245,16 +228,12 @@
             document.getElementById("searchInput").addEventListener("input", applySearch);
 
             function filterProviders(role) {
-                const rows = document.querySelectorAll("#providerTableBody tr");
                 const buttons = document.querySelectorAll(".filter-btn");
-
-                // Toggle active class
                 buttons.forEach(btn => btn.classList.remove("active"));
                 event.target.classList.add("active");
 
-                rows.forEach(row => {
+                allUserRows.forEach(row => {
                     const roleCell = row.cells[0].innerText.toLowerCase();
-
                     if (role === "all") {
                         row.style.display = "";
                     } else if (role === "guide" && roleCell.includes("guide")) {
@@ -267,109 +246,106 @@
                         row.style.display = "none";
                     }
                 });
+                currentPage = 1;
+                renderTable();
             }
 
             // Activate / Deactivate providers
-                document.getElementById("providerTableBody").addEventListener("click", function(e) {
-                    const button = e.target.closest("button");
-                    if (!button) return;
+            document.getElementById("providerTableBody").addEventListener("click", function(e) {
+                const button = e.target.closest("button");
+                if (!button) return;
 
-                    if (!button.classList.contains("deactivate-btn") &&
-                        !button.classList.contains("activate-btn")) return;
+                if (!button.classList.contains("deactivate-btn") &&
+                    !button.classList.contains("activate-btn")) return;
 
-                    const row = button.closest("tr");
-                    const providerId = row.dataset.id;
-                    const status = button.classList.contains("deactivate-btn") ? 0 : 1;
+                const row = button.closest("tr");
+                const providerId = row.dataset.id;
+                const status = button.classList.contains("deactivate-btn") ? 0 : 1;
 
-                    if (!confirm("Are you sure you want to change this provider's status?")) return;
+                if (!confirm("Are you sure you want to change this provider's status?")) return;
 
-                    fetch("/CeylonGo/public/admin/provider/status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: `provider_id=${providerId}&status=${status}`
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload(); // simple way to refresh table
-                        } else {
-                            alert("Failed to update provider status");
-                        }
-                    })
-                    .catch(() => alert("Server error"));
-                });
-
-            (function() {
-                const presetEl = document.getElementById("exportTimelinePreset");
-                const wrap = document.getElementById("exportCustomRangeWrap");
-                function pad(n) { return String(n).padStart(2, "0"); }
-                function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
-                function toggleCustom() {
-                    if (!presetEl || !wrap) return;
-                    wrap.style.display = presetEl.value === "custom" ? "inline-flex" : "none";
-                }
-                if (presetEl) { presetEl.addEventListener("change", toggleCustom); toggleCustom(); }
-
-                function resolveExportRange() {
-                    const v = presetEl ? presetEl.value : "all";
-                    if (v === "custom") {
-                        const f = document.getElementById("exportDateFrom").value;
-                        const t = document.getElementById("exportDateTo").value;
-                        if (!f || !t) { alert("Please select both From and To dates for a custom range."); return null; }
-                        if (f > t) { alert("From date must be before or equal to To date."); return null; }
-                        return { start: f, end: t };
+                fetch("/CeylonGo/public/admin/provider/status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `provider_id=${providerId}&status=${status}`
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // simple way to refresh table
+                    } else {
+                        alert("Failed to update provider status");
                     }
-                    if (v === "all") return { start: null, end: null };
-                    const today = new Date();
-                    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                    let start = new Date(end);
-                    if (v === "7d") start.setDate(start.getDate() - 6);
-                    else if (v === "30d") start.setDate(start.getDate() - 29);
-                    else if (v === "90d") start.setDate(start.getDate() - 89);
-                    else if (v === "ytd") start = new Date(today.getFullYear(), 0, 1);
-                    else return { start: null, end: null };
-                    return { start: ymd(start), end: ymd(end) };
+                })
+                .catch(() => alert("Server error"));
+            });
+
+            // ── PAGINATION FOR USERS ───────────────────
+
+            // Get all rows initially rendered by PHP
+            const allUserRows = Array.from(document.querySelectorAll("#providerTableBody tr"))
+                .filter(row => row.children.length > 1); // ignore "no data" row
+
+            const rowsPerPageSelect = document.getElementById("rowsPerPage");
+            const paginationControls = document.getElementById("paginationControls");
+
+            let currentPage = 1;
+            let rowsPerPage = parseInt(rowsPerPageSelect.value);
+
+            // Render table based on page
+            function renderTable() {
+                const tbody = document.getElementById("providerTableBody");
+                tbody.innerHTML = "";
+
+                const visibleRows = allUserRows.filter(row => row.style.display !== "none");
+                const start = (currentPage - 1) * rowsPerPage;
+                const end = start + rowsPerPage;
+                const pageRows = visibleRows.slice(start, end);
+
+                if (visibleRows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">No service providers found.</td></tr>';
+                    paginationControls.innerHTML = '';
+                    return;
                 }
-                function inRange(dateStr, range) {
-                    if (!range || (!range.start && !range.end)) return true;
-                    const d = (dateStr && String(dateStr).trim().slice(0, 10)) || "";
-                    if (!d) return false;
-                    if (range.start && d < range.start) return false;
-                    if (range.end && d > range.end) return false;
-                    return true;
+
+                pageRows.forEach(row => tbody.appendChild(row));
+                renderPagination(visibleRows.length);
+            }
+
+            // Pagination buttons
+            function renderPagination(totalVisible) {
+                const totalPages = Math.ceil(totalVisible / rowsPerPage);
+
+                paginationControls.innerHTML = `
+                    <button class="filter-btn small-btn" ${currentPage === 1 ? "disabled" : ""} onclick="prevPage()">Prev</button>
+                    <span class="page-info">Page ${currentPage} of ${totalPages || 1}</span>
+                    <button class="filter-btn small-btn" ${currentPage >= totalPages ? "disabled" : ""} onclick="nextPage()">Next</button>
+                `;
+            }
+
+            // Navigation
+            function nextPage() {
+                const visibleRows = allUserRows.filter(row => row.style.display !== "none");
+                const totalPages = Math.ceil(visibleRows.length / rowsPerPage);
+                if (currentPage < totalPages) { currentPage++; renderTable(); }
+            }
+
+            function prevPage() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
                 }
+            }
 
-                document.getElementById("exportBtn").addEventListener("click", () => {
-                    const range = resolveExportRange();
-                    if (range === null) return;
+            // Change rows per page
+            rowsPerPageSelect.addEventListener("change", function() {
+                rowsPerPage = parseInt(this.value);
+                currentPage = 1;
+                renderTable();
+            });
 
-                    const rows = document.querySelectorAll("#providerTableBody tr");
-                    if (rows.length === 0) return alert("No providers to export!");
-
-                    let txt = "Role\tName\tEmail\tStatus\tRegistered (date)\n";
-                    let count = 0;
-                    rows.forEach(r => {
-                        if (r.style.display !== "none" && inRange(r.dataset.registeredAt, range)) {
-                            const role = r.cells[0].innerText.trim();
-                            const name = r.cells[1].innerText.trim();
-                            const email = r.cells[2].innerText.trim();
-                            const status = r.cells[3].innerText.trim();
-                            const reg = r.dataset.registeredAt || "—";
-                            txt += [role, name, email, status, reg].join("\t") + "\n";
-                            count++;
-                        }
-                    });
-                    if (count === 0) { alert("No providers in the selected period."); return; }
-
-                    const blob = new Blob([txt], { type: "text/plain" });
-                    const link = document.createElement("a");
-                    const stamp = new Date().toISOString().slice(0, 10);
-                    const tag = range.start && range.end ? `${range.start}_to_${range.end}` : "all_time";
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `service_providers_${tag}_${stamp}.txt`;
-                    link.click();
-                });
-            })();
+            // Initialize
+            renderTable();
         </script>
     </body>
 </html>

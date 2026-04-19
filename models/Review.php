@@ -6,18 +6,22 @@ class Review {
         $this->db = $db;
     }
 
-    // Get all package reviews (admin)
+    /**
+     * Customized trip reviews from table `reviews` (alias r). Joins tourist_users (t).
+     */
     public function getAllReviews($rating = 'all')
     {
         if ($rating === 'all') {
             $sql = "
                 SELECT 
-                    pr.id,
-                    pr.user_id,
-                    pr.review_text,
-                    pr.admin_reply,
-                    pr.rating,
-                    pr.status,
+                    r.id,
+                    r.user_id,
+                    r.destination,
+                    r.review_text,
+                    r.admin_reply,
+                    r.rating,
+                    r.status,
+                    r.created_at,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
                 FROM package_reviews pr
                 JOIN tourist_users t ON pr.user_id = t.id
@@ -28,11 +32,14 @@ class Review {
         } else {
             $sql = "
                 SELECT 
-                    pr.id,
-                    pr.user_id,
-                    pr.review_text,
-                    pr.rating,
-                    pr.status,
+                    r.id,
+                    r.user_id,
+                    r.destination,
+                    r.review_text,
+                    r.admin_reply,
+                    r.rating,
+                    r.status,
+                    r.created_at,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
                 FROM package_reviews pr
                 JOIN tourist_users t ON pr.user_id = t.id
@@ -126,5 +133,82 @@ class Review {
             'average' => $data['avg_rating'] ?? 0,
             'positive_percentage' => $positivePercentage
         ];
+    }
+
+    /**
+     * Package bookings reviews from table `package_reviews` (alias pr). Joins tourist_users (t).
+     */
+    public function getAllPackageReviews($rating = 'all')
+    {
+        $base = "
+            SELECT 
+                pr.id,
+                pr.user_id,
+                pr.destination,
+                pr.review_text,
+                pr.admin_reply,
+                pr.rating,
+                pr.status,
+                pr.created_at,
+                CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
+            FROM package_reviews pr
+            JOIN tourist_users t ON pr.user_id = t.id
+        ";
+
+        if ($rating === 'all') {
+            $sql = $base . " ORDER BY pr.created_at DESC";
+            $stmt = $this->db->prepare($sql);
+        } else {
+            $sql = $base . " WHERE pr.rating = :rating ORDER BY pr.created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':rating', (int) $rating, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getPackageReviewMetrics()
+    {
+        $sql = "
+            SELECT
+                COUNT(*) AS total_all,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS total_pending,
+                ROUND(IFNULL(AVG(rating), 0), 1) AS avg_rating
+            FROM package_reviews
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'total' => (int) ($data['total_all'] ?? 0),
+            'pending' => (int) ($data['total_pending'] ?? 0),
+            'average' => $data['avg_rating'] ?? 0,
+        ];
+    }
+
+    public function deletePackageReview($id)
+    {
+        $sql = 'DELETE FROM package_reviews WHERE id = ?';
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([(int) $id]);
+    }
+
+    public function savePackageAdminReply($reviewId, $reply)
+    {
+        $sql = "
+            UPDATE package_reviews
+            SET admin_reply = :reply,
+                replied_at = NOW()
+            WHERE id = :id
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':reply' => $reply,
+            ':id' => (int) $reviewId,
+        ]);
     }
 }

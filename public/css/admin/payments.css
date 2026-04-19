@@ -1,37 +1,9 @@
 @import url("common.css");
- 
-.stats-section {
-  display: block;
-  margin-top: 30px;
+
+.payments-management .stats-section {
   margin-bottom: 20px;
 }
- 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
- 
-.stat-box {
-  border: 1px solid #ccc;
-  padding: 15px;
-  text-align: center;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
- 
-.stat-box strong {
-  font-size: 13px;
-  color: #555;
-}
- 
-.stat-box span {
-  font-size: 18px;
-  font-weight: bold;
-  color: #000;
-}
- 
+
 .payments-table {
   width: 100%;
   border-collapse: collapse;
@@ -52,30 +24,11 @@
   background: #f1f1f1;
 }
  
-.status.completed {
-  color: green;
-  font-weight: bold;
+.icon-btn[title="Reject Refund"],
+.icon-btn[title="Reject bank slip"] {
+    color: #c0392b;
 }
  
-.status.pending {
-  color: orange;
-  font-weight: bold;
-}
- 
-.status.canceled {
-  color: red;
-  font-weight: bold;
-}
- 
-/* ── Additions for real data (do not alter above) ─────────── */
- 
-/* approved = blue (booking confirmed, payment not yet received) */
-.status.approved {
-  color: #007bff;
-  font-weight: bold;
-}
- 
-/* Modal */
 .modal {
   display: none;
   position: fixed;
@@ -115,8 +68,7 @@
   margin-top: 10px;
 }
  
-#paymentDetailsContent th,
-#paymentDetailsContent td {
+#paymentDetailsContent th, #paymentDetailsContent td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
@@ -126,146 +78,29 @@
   background-color: #f2f2f2;
 }
  
-/* icon buttons (shared with other admin pages) */
 .icon-btn {
   background: transparent;
   border: none;
   cursor: pointer;
   font-size: 16px;
+  vertical-align: middle;
+  display: inline-block;
+  margin-right: 4px;
 }
  
 .actions {
-  display: flex;
   gap: 8px;
   align-items: center;
   justify-content: flex-start;
-  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
 }
- 
+
 .payments-table td.actions {
   vertical-align: middle;
-}
- 
-/* ── Refund indicator ────────────────────────────────────── */
-.refund-badge {
-  font-size: 11px;
-  font-weight: bold;
-  color: #e65100;
+  text-align: left;
 }
  
 .stat-box.refund-card span {
   color: #e65100;
-}
- 
-common.css
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-} 
- 
-.page-title {
-  font-size: 22px;
-  font-weight: bold;
-  margin: 0;
-}
- 
-.profile-dropdown-menu a:last-child:hover {
-  color: #b02a37;
-}
- 
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
- 
-.search-section {
-  display: flex;
-  gap: 5px;
-}
- 
-.search-input {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
- 
-.search-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 0 15px;
-  border-radius: 6px;
-  cursor: pointer;
-}
- 
-.filter-buttons {
-  display: flex;
-  gap: 10px;
-}
- 
-.filter-btn {
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
- 
-.filter-btn.active {
-  background: #007bff;
-  color: white;
-}
- 
-/* Stats Section */
-.stats-section {
-  margin-top: 30px;
-}
- 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-}
- 
-.stat-box {
-  border: 1px solid #ccc;
-  padding: 15px;
-  text-align: center;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
- 
-.stat-box strong {
-  font-size: 13px;
-  color: #555;
-}
- 
-.stat-box span {
-  font-size: 18px;
-  font-weight: bold;
-  color: #000;
-}
- 
-.footer-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
- 
-.footer-btn {
-  padding: 10px 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  cursor: pointer;
-  background: white;
-}
- 
-.footer-btn.black {
-  background: #000;
-  color: #fff;
-  font-weight: bold;
 }

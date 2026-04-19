@@ -99,6 +99,47 @@ class Inquiry {
             error_log('Inquiry::reply: ' . $e->getMessage());
             return false;
         }
+    public function getInquiryStats(): array
+    {
+        $sql = "
+            SELECT
+                COUNT(*)                                              AS total,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) AS replied,
+                SUM(CASE WHEN user_id IS NULL    THEN 1 ELSE 0 END) AS guest
+            FROM inquiries
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return [
+            'total'   => (int)($row['total']   ?? 0),
+            'pending' => (int)($row['pending']  ?? 0),
+            'replied' => (int)($row['replied']  ?? 0),
+            'guest'   => (int)($row['guest']    ?? 0),
+        ];
+    }
+
+    public function saveAdminReply(int $inquiryId, string $reply): bool
+    {
+        $sql = "
+            UPDATE inquiries
+            SET admin_reply = :reply,
+                status      = 'replied',
+                replied_at  = NOW()
+            WHERE id = :id
+        ";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([':reply' => $reply, ':id' => $inquiryId]);
+    }
+
+    public function deleteInquiry(int $id): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM inquiries WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 }
 

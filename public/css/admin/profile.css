@@ -43,7 +43,6 @@ body {
   font-weight: 700;
 }
 
-/* Success and Error Messages */
 .success-msg {
   background: #d4edda;
   color: #155724;
@@ -91,7 +90,6 @@ body {
   display: inline-block;
 }
 
-/* Edit Profile Section */
 .edit-profile {
   margin-top: 30px;
 }
@@ -115,8 +113,7 @@ body {
   color: var(--text-color, #333);
 }
 
-.form-group input,
-.form-group select {
+.form-group input, .form-group select {
   width: 100%;
   padding: 12px 15px;
   border-radius: 8px;
@@ -128,14 +125,12 @@ body {
   color: var(--text-color, #333);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus, .form-group select:focus {
   border-color: var(--primary-color, #2c5530);
   outline: none;
   box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.1);
 }
 
-/* Select Dropdown Styling */
 .form-group select {
   cursor: pointer;
   appearance: none;
@@ -152,7 +147,6 @@ body {
   padding: 10px;
 }
 
-/* Buttons */
 .save-btn {
   width: 100%;
   background: var(--primary-color, #2c5530);
@@ -221,8 +215,6 @@ body {
   color: #ffffff;
   text-decoration: none;
 }
-
-/* ===== RESPONSIVE STYLES ===== */
 
 /* Tablet */
 @media (max-width: 768px) {
