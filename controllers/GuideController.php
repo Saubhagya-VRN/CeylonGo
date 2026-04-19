@@ -278,10 +278,26 @@ class GuideController {
         $guideRequest = new GuideRequest($this->db);
         $booking = $guideRequest->getById($request_id);
 
-        // Verify this booking is assigned to the current guide
-        if (!$booking || (int) $booking['guide_id'] !== (int) $user_id) {
-            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking not found or not assigned to you"));
+        if (!$booking) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking not found"));
             exit();
+        }
+
+        // Check if booking is either assigned to this guide OR unassigned
+        $isAssignedToMe = (isset($booking['guide_id']) && (int)$booking['guide_id'] === (int)$user_id);
+        $isUnassigned = (!isset($booking['guide_id']) || empty($booking['guide_id']));
+
+        if (!$isAssignedToMe && !$isUnassigned) {
+            header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Booking is already assigned to another guide"));
+            exit();
+        }
+
+        // If unassigned, we must assign it to the current guide first
+        if ($isUnassigned) {
+            if (!$guideRequest->reassignGuide($request_id, $user_id)) {
+                header("Location: /CeylonGo/public/guide/pending?error=" . urlencode("Failed to assign booking to you"));
+                exit();
+            }
         }
 
         if ($guideRequest->updateStatus($request_id, 'approved')) {

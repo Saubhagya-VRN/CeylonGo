@@ -270,11 +270,23 @@ class GuideRequest {
      */
     public function getPendingByGuide($guide_id) {
         try {
-            $query = "SELECT * FROM " . $this->table . " 
-                      WHERE guide_id = ? AND status = 'pending' 
-                      ORDER BY date ASC";
+            $query = "SELECT gr.* FROM " . $this->table . " gr
+                      WHERE (
+                        gr.guide_id = ? 
+                        OR (
+                            gr.guide_id IS NULL 
+                            AND gr.status = 'pending'
+                            AND EXISTS (
+                                SELECT 1 FROM guide_users gu 
+                                WHERE gu.id = ? 
+                                AND gu.languages LIKE CONCAT('%', gr.language, '%')
+                            )
+                        )
+                      )
+                      AND gr.status = 'pending' 
+                      ORDER BY gr.date ASC";
             $stmt = $this->conn->prepare($query);
-            $stmt->execute([$guide_id]);
+            $stmt->execute([$guide_id, $guide_id]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             $this->createTable();

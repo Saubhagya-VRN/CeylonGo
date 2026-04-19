@@ -137,11 +137,23 @@ class TransportRequest {
                   tu.email AS tourist_email
                   FROM " . $this->table . " tr
                   LEFT JOIN tourist_users tu ON tr.user_id = tu.id
-                  WHERE TRIM(tr.assigned_driver_id) = TRIM(:driver_id)
-                    AND tr.status = 'pending'
+                  WHERE (
+                    TRIM(tr.assigned_driver_id) = TRIM(:driver_id)
+                    OR (
+                        tr.assigned_driver_id IS NULL 
+                        AND tr.status = 'pending'
+                        AND tr.vehicle_type IN (
+                            SELECT v.vehicle_type 
+                            FROM transport_vehicle v 
+                            WHERE TRIM(v.user_id) = TRIM(:driver_id_sub)
+                        )
+                    )
+                  )
+                  AND tr.status = 'pending'
                   ORDER BY tr.date ASC, tr.pickup_time ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":driver_id", $driverId);
+        $stmt->bindParam(":driver_id_sub", $driverId);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
