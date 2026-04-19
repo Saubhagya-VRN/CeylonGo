@@ -246,57 +246,217 @@ class HotelController {
         header('Content-Type: application/json');
         
         $bookings = [];
+        $hotel_id = $_SESSION['id'] ?? 0;
         
-        // Query bookings table if it exists
-        try {
-            $query = "SELECT * FROM hotel_bookings WHERE hotel_id = ? ORDER BY check_in ASC";
-            $stmt = $this->db->prepare($query);
-            $hotel_id = $_SESSION['hotel_id'] ?? 1; // Get from session or default
-            $stmt->execute([$hotel_id]);
-            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            foreach ($results as $booking) {
-                $bookings[] = [
-                    'id' => $booking['id'] ?? 0,
-                    'start' => $booking['check_in'] ?? '',
-                    'end' => $booking['check_out'] ?? $booking['check_in'] ?? '',
-                    'guest' => $booking['guest_name'] ?? '',
-                    'room' => $booking['room_number'] ?? ''
-                ];
+        if ($hotel_id > 0) {
+            try {
+                $query = "SELECT * FROM hotel_bookings WHERE hotel_user_id = ? ORDER BY check_in ASC";
+                $stmt = $this->db->prepare($query);
+                $stmt->execute([$hotel_id]);
+                $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                foreach ($results as $booking) {
+                    $bookings[] = [
+                        'id' => $booking['id'] ?? 0,
+                        'start' => $booking['check_in'] ?? '',
+                        'end' => $booking['check_out'] ?? $booking['check_in'] ?? '',
+                        'guest' => $booking['guest_name'] ?? '',
+                        'room' => $booking['room_type'] ?? ''
+                    ];
+                }
+            } catch (Exception $e) {
+                // Return empty if error
             }
-        } catch (Exception $e) {
-            // If table doesn't exist, continue to add sample data
-        }
-        
-        // Add sample bookings if no bookings exist (for testing)
-        if (empty($bookings)) {
-            $bookings = [
-                [
-                    'id' => 1,
-                    'start' => date('Y-m-d', strtotime('+3 days')) . 'T10:00:00',
-                    'end' => date('Y-m-d', strtotime('+5 days')) . 'T10:00:00',
-                    'guest' => 'John Doe',
-                    'room' => '101'
-                ],
-                [
-                    'id' => 2,
-                    'start' => date('Y-m-d', strtotime('+7 days')) . 'T14:00:00',
-                    'end' => date('Y-m-d', strtotime('+9 days')) . 'T14:00:00',
-                    'guest' => 'Jane Smith',
-                    'room' => '205'
-                ],
-                [
-                    'id' => 3,
-                    'start' => date('Y-m-d', strtotime('+15 days')) . 'T12:00:00',
-                    'end' => date('Y-m-d', strtotime('+17 days')) . 'T12:00:00',
-                    'guest' => 'Robert Brown',
-                    'room' => '302'
-                ]
-            ];
         }
         
         echo json_encode($bookings);
         exit;
+    }
+
+    // API endpoint for dashboard summary stats
+    public function getDashboardStats() {
+        header('Content-Type: application/json');
+        
+        $stats = [
+            'totalBookings' => 0,
+            'pendingRequests' => 0,
+            'totalReviews' => 0,
+            'totalEarnings' => 0.00,
+            'hotelName' => 'Hotel'
+        ];
+        
+        $user_id = trim($_SESSION['id'] ?? '0');
+        $hotel_pk = trim($_SESSION['user_id'] ?? '0');
+        
+        if ($user_id !== '0') {
+            try {
+                // 1. Fetch Name & Reviews - Use TRIM to handle database text field inconsistencies
+                $hQuery = "SELECT hotel_name, review_count FROM accommodation_catalog 
+                          WHERE TRIM(hotel_user_id) = ? OR TRIM(hotel_user_id) = ? LIMIT 1";
+                $hStmt = $this->db->prepare($hQuery);
+                $hStmt->execute([$user_id, $hotel_pk]);
+                $hData = $hStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($hData) {
+                    $stats['hotelName'] = $hData['hotel_name'];
+                    $stats['totalReviews'] = (int)$hData['review_count'];
+                }
+
+                // 2. Bookings count & earnings
+                $bQuery = "SELECT COUNT(*) as total, SUM(total_price) as earnings FROM hotel_bookings 
+                          WHERE TRIM(hotel_user_id) = ? OR TRIM(hotel_user_id) = ?";
+                $bStmt = $this->db->prepare($bQuery);
+                $bStmt->execute([$user_id, $hotel_pk]);
+                $bData = $bStmt->fetch(PDO::FETCH_ASSOC);
+                $stats['totalBookings'] = (int)($bData['total'] ?? 0);
+                $stats['totalEarnings'] = round((float)($bData['earnings'] ?? 0), 2);
+
+                // 3. Pending requests
+                $rQuery = "SELECT COUNT(*) as total FROM hotel_requests 
+                          WHERE (TRIM(hotel_id) = ? OR TRIM(hotel_id) = ?) AND status = 'pending'";
+                $rStmt = $this->db->prepare($rQuery);
+                $rStmt->execute([$user_id, $hotel_pk]);
+                $stats['pendingRequests'] = (int)($rStmt->fetchColumn() ?: 0);
+
+            } catch (Exception $e) {
+                error_log("Dashboard Stats Error: " . $e->getMessage());
+            }
+        }
+        
+        echo json_encode($stats);
+        exit;
+    }
+
+    // API endpoint for recent bookings list
+    public function getRecentBookings() {
+        header('Content-Type: application/json');
+        $hotel_id = $_SESSION['id'] ?? 0;
+        $bookings = [];
+        
+        if ($hotel_id > 0) {
+            try {
+                $query = "SELECT * FROM hotel_bookings WHERE hotel_user_id = ? ORDER BY created_at DESC LIMIT 5";
+                $stmt = $this->db->prepare($query);
+                $stmt->execute([$hotel_id]);
+                $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                // Fail silently
+            }
+        }
+        
+        echo json_encode($bookings);
+        exit;
+    }
+
+    // API endpoint for monthly revenue data (Last 6 months)
+    public function getRevenueData() {
+        header('Content-Type: application/json');
+        $hotel_id = $_SESSION['id'] ?? 0;
+        
+        $months = [];
+        $revenue = [];
+        
+        if ($hotel_id > 0) {
+            try {
+                // Get data for last 6 months including current
+                for ($i = 5; $i >= 0; $i--) {
+                    $monthText = date('M', strtotime("-$i months"));
+                    $yearMonth = date('Y-m', strtotime("-$i months"));
+                    
+                    $months[] = $monthText;
+                    
+                    $query = "SELECT SUM(total_price) as monthly_total FROM hotel_bookings 
+                              WHERE hotel_user_id = ? AND created_at LIKE ? AND status = 'confirmed'";
+                    $stmt = $this->db->prepare($query);
+                    $stmt->execute([$hotel_id, "$yearMonth%"]);
+                    $data = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    $revenue[] = (float)($data['monthly_total'] ?? 0);
+                }
+            } catch (Exception $e) {
+                // Return empty if error
+            }
+        }
+        
+        echo json_encode([
+            'labels' => $months,
+            'data' => $revenue
+        ]);
+        exit;
+    }
+
+    // API endpoint for 14-day availability calculation
+    public function getAvailabilityData() {
+        header('Content-Type: application/json');
+        $hotel_id = trim($_SESSION['id'] ?? '0');
+        $hotel_pk = trim($_SESSION['user_id'] ?? '0');
+        
+        $availability = [];
+        
+        if ($hotel_id != '0') {
+            try {
+                // 1. Get Room Inventory Counts
+                $roomsQuery = "SELECT room_type, COUNT(*) as count FROM hotel_rooms 
+                              WHERE TRIM(hotel_id) = ? OR TRIM(hotel_id) = ? GROUP BY room_type";
+                $rStmt = $this->db->prepare($roomsQuery);
+                $rStmt->execute([$hotel_id, $hotel_pk]);
+                $inventoryRaw = $rStmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                $inventory = ['Single' => 0, 'Double' => 0, 'Suite' => 0, 'Deluxe' => 0];
+                foreach ($inventoryRaw as $inv) {
+                    $type = $this->mapRoomType($inv['room_type']);
+                    $inventory[$type] += $inv['count'];
+                }
+
+                // 2. Fetch Bookings for the next 14 days
+                $startDate = date('Y-m-d');
+                $endDate = date('Y-m-d', strtotime('+14 days'));
+                
+                $bQuery = "SELECT check_in, check_out, room_type FROM hotel_bookings 
+                          WHERE (TRIM(hotel_user_id) = ? OR TRIM(hotel_user_id) = ?) 
+                          AND status = 'confirmed' 
+                          AND ((check_in BETWEEN ? AND ?) OR (check_out BETWEEN ? AND ?))";
+                $bStmt = $this->db->prepare($bQuery);
+                $bStmt->execute([$hotel_id, $hotel_pk, $startDate, $endDate, $startDate, $endDate]);
+                $bookings = $bStmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // 3. Calculate Daily Availability
+                for ($i = 0; $i < 14; $i++) {
+                    $currentDate = date('Y-m-d', strtotime("+$i days"));
+                    $dailyStatus = [
+                        'date' => date('d M', strtotime($currentDate)),
+                        'Single' => $inventory['Single'],
+                        'Double' => $inventory['Double'],
+                        'Suite' => $inventory['Suite'],
+                        'Deluxe' => $inventory['Deluxe']
+                    ];
+                    
+                    foreach ($bookings as $booking) {
+                        if ($currentDate >= $booking['check_in'] && $currentDate < $booking['check_out']) {
+                            $type = $this->mapRoomType($booking['room_type']);
+                            if (isset($dailyStatus[$type])) {
+                                $dailyStatus[$type] = max(0, $dailyStatus[$type] - 1);
+                            }
+                        }
+                    }
+                    $availability[] = $dailyStatus;
+                }
+            } catch (Exception $e) {
+                error_log("Availability API Error: " . $e->getMessage());
+            }
+        }
+        
+        echo json_encode($availability);
+        exit;
+    }
+
+    private function mapRoomType($type) {
+        $type = strtolower($type);
+        if (strpos($type, 'single') !== false) return 'Single';
+        if (strpos($type, 'double') !== false) return 'Double';
+        if (strpos($type, 'suite') !== false || strpos($type, 'view') !== false) return 'Suite';
+        if (strpos($type, 'deluxe') !== false) return 'Deluxe';
+        return 'Double'; // Fallback
     }
 }
 ?>

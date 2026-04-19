@@ -2093,6 +2093,17 @@ $main_cities = array(
       // Prevent "Submitted" from carrying over to a different trip in the same tab/session.
       // Do not drop trip id after PayHere: full page reload leaves an empty form fingerprint.
       try {
+        var params = new URLSearchParams(window.location.search || '');
+        var urlTid = String(params.get('trip_id') || '').trim();
+        var urlSub = params.get('submitted') === '1';
+        var urlStep = params.get('step');
+        
+        if (urlTid) {
+          sessionStorage.setItem(tripWizardTripIdKey, urlTid);
+          if (urlSub) sessionStorage.setItem(tripWizardSubmittedKey, '1');
+          if (urlStep) sessionStorage.setItem(tripWizardProceedKey, urlTid);
+        }
+
         var currentFp = tripWizardFingerprint();
         var storedFp = sessionStorage.getItem(tripWizardFingerprintKey) || '';
         var submitted = sessionStorage.getItem(tripWizardSubmittedKey) === '1';
@@ -2108,6 +2119,64 @@ $main_cities = array(
         }
         sessionStorage.setItem(tripWizardFingerprintKey, currentFp);
       } catch (e) {}
+    }
+
+    async function hydrateWizardFromDatabase(tripId) {
+      if (!tripId) return;
+      try {
+        const response = await fetch('/CeylonGo/public/tourist/trip-payment-status/' + tripId);
+        const data = await response.json();
+        if (data && data.success && data.snapshot) {
+          // Hydrate the fields and stops from the snapshot
+          applyTripWizardDraft(data.snapshot);
+          
+          // Apply sub-booking statuses to the DOM cards/items for Step 12 to pick up
+          if (data.subBookings) {
+            const subs = data.subBookings;
+            // Transport
+            (subs.transport || []).forEach(tr => {
+               document.querySelectorAll('.trip-stop-card').forEach(card => {
+                 const cardDate = card.querySelector('.trip-stop-tr-date')?.value;
+                 if (cardDate === tr.date) {
+                   card.setAttribute('data-transport-booking-status', tr.status);
+                 }
+               });
+            });
+            // Guide
+            (subs.guide || []).forEach(g => {
+               document.querySelectorAll('.trip-stop-card').forEach(card => {
+                 const cardDate = card.querySelector('.trip-stop-guide-date')?.value;
+                 if (cardDate === g.date) {
+                   card.setAttribute('data-guide-booking-status', g.status);
+                 }
+               });
+            });
+            // Hotels
+            (subs.hotel || []).forEach(h => {
+               document.querySelectorAll('.trip-accommodation-summary-item').forEach(item => {
+                 const ps = item.querySelectorAll('p');
+                 let found = false;
+                 ps.forEach(p => {
+                    if (p.textContent.includes(h.hotel_name)) found = true;
+                 });
+                 if (found) {
+                   item.setAttribute('data-booking-id', h.id);
+                   item.setAttribute('data-booking-status', h.status);
+                 }
+               });
+            });
+          }
+          
+          // Refresh UI components
+          updateAddStopsButtonLabel();
+          updateLegStepperVisibility();
+          
+          // Re-render the current step to show hydrated data
+          showStep(currentStep);
+        }
+      } catch (e) {
+        console.error('Hydration failed:', e);
+      }
     }
     function bindTripWizardSubmitButton() {
       syncTripWizardSubmissionState();
@@ -5263,7 +5332,21 @@ $main_cities = array(
         try { scheduleSaveTripWizardDraft(); } catch (eEmb) {}
         return;
       }
-      if (tripPageWizardFresh) {
+      
+      // Parse URL for trip context
+      var params = new URLSearchParams(window.location.search || '');
+      var urlTid = String(params.get('trip_id') || '').trim();
+      var urlStep = parseInt(params.get('step'), 10);
+      
+      if (urlTid) {
+        syncTripWizardSubmissionState();
+        if (!isNaN(urlStep) && urlStep >= 1 && urlStep <= totalSteps) {
+          tripWizardPendingInitialStep = urlStep;
+          tripWizardUrlForcedStep = true;
+        }
+        // Trigger background hydration
+        hydrateWizardFromDatabase(urlTid);
+      } else if (tripPageWizardFresh) {
         tripWizardPendingInitialStep = 1;
         tripWizardUrlForcedStep = true;
       } else {

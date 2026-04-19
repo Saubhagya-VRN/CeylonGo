@@ -194,7 +194,11 @@ class TouristController {
      * Customise trip page (trip.php). Requires tourist login.
      */
     public function trip() {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
+        $isTourist = ($role === 'tourist' || $type === 'tourist');
+        
+        if (!isset($_SESSION['user_id']) || !$isTourist) {
             header('Location: /CeylonGo/public/tourist/dashboard');
             exit();
         }
@@ -285,7 +289,11 @@ class TouristController {
      * Hub: list submitted customised trips that are not fully paid; each card links to that trip's wizard (step 11).
      */
     public function bookingStatusHub() {
-        if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'tourist') {
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
+        $isTourist = ($role === 'tourist' || $type === 'tourist');
+
+        if (!isset($_SESSION['user_id']) || !$isTourist) {
             $base = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '/CeylonGo/public';
             header('Location: ' . $base . '/tourist/dashboard-side');
             exit();
@@ -365,9 +373,10 @@ class TouristController {
      * Read-only summary for a submitted customised trip (`trips` + optional `trip_submissions` snapshot).
      */
     public function customTripSummary() {
-        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
-        $type = isset($_SESSION['user_type']) ? (string) $_SESSION['user_type'] : '';
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
         $isTourist = ($role === 'tourist' || $type === 'tourist');
+        
         if (!isset($_SESSION['user_id']) || !$isTourist) {
             header('Location: /CeylonGo/public/tourist/dashboard');
             exit;
@@ -424,8 +433,11 @@ class TouristController {
      * Pay for a customise-trip row: card (PayHere) or bank transfer. POST trip_id, payment_method.
      */
     public function tripPaymentCheckout() {
-        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
-        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
+        $isTourist = ($role === 'tourist' || $type === 'tourist');
+
+        if (!isset($_SESSION['user_id']) || !$isTourist) {
             header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/customize-trip'));
             exit;
         }
@@ -659,9 +671,10 @@ class TouristController {
     public function tripPaymentStatus($id) {
         header('Content-Type: application/json; charset=utf-8');
 
-        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
-        $type = isset($_SESSION['user_type']) ? (string) $_SESSION['user_type'] : '';
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
         $isTourist = ($role === 'tourist' || $type === 'tourist');
+        
         if (!isset($_SESSION['user_id']) || !$isTourist) {
             http_response_code(401);
             echo json_encode(array('success' => false, 'error' => 'Unauthenticated.'));
@@ -708,6 +721,34 @@ class TouristController {
             error_log('tripPaymentStatus snapshot: ' . $e->getMessage());
         }
 
+        // Try to fetch sub-booking statuses for hydration
+        $subBookings = array(
+            'transport' => array(),
+            'guide' => array(),
+            'hotel' => array()
+        );
+
+        try {
+            // Find transport requests linked to this trip
+            // Search in notes for "Trip #ID" or via the link table if it exists
+            $stmtT = $this->db->prepare("SELECT id, status, pickup_location, date FROM transport_requests WHERE user_id = ? AND (notes LIKE ? OR id IN (SELECT transport_request_id FROM transport_request_trip_links WHERE trip_id = ?))");
+            $stmtT->execute(array($uid, "%Trip #$tripId%", $tripId));
+            $subBookings['transport'] = $stmtT->fetchAll(PDO::FETCH_ASSOC);
+
+            // Find guide requests
+            $stmtG = $this->db->prepare("SELECT id, status, location, date FROM guide_requests WHERE tourist_id = ? AND (notes LIKE ? OR location IN (SELECT destination FROM trips WHERE id = ?))");
+            // Note: guide_requests doesn't have a trip_id column in main.sql, using location/user_id as proxy if notes don't match
+            $stmtG->execute(array($uid, "%Trip #$tripId%", $tripId));
+            $subBookings['guide'] = $stmtG->fetchAll(PDO::FETCH_ASSOC);
+
+            // Find hotel bookings
+            $stmtH = $this->db->prepare("SELECT id, status, hotel_name, check_in FROM hotel_bookings WHERE user_id = ? AND (hotel_name IN (SELECT destination FROM trips WHERE id = ?))");
+            $stmtH->execute(array($uid, $tripId));
+            $subBookings['hotel'] = $stmtH->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $eB) {
+            error_log('tripPaymentStatus subBookings: ' . $eB->getMessage());
+        }
+
         $stLc = strtolower((string) (isset($row['status']) ? $row['status'] : ''));
         $hasPaidAt = isset($row['paid_at']) && trim((string) $row['paid_at']) !== '';
         $hasPayhere = isset($row['payhere_payment_id']) && trim((string) $row['payhere_payment_id']) !== '';
@@ -734,6 +775,7 @@ class TouristController {
                 'payment_state' => $paymentState,
             ),
             'snapshot' => $snapshot,
+            'subBookings' => $subBookings
         ));
         exit;
     }
@@ -748,10 +790,14 @@ class TouristController {
             header('Content-Type: application/json; charset=utf-8');
         }
 
-        $role = isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : '';
-        if (!isset($_SESSION['user_id']) || $role !== 'tourist') {
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
+        $isTourist = ($role === 'tourist' || $type === 'tourist');
+
+        if (!isset($_SESSION['user_id']) || !$isTourist) {
             if ($ajax) {
                 http_response_code(401);
+                error_log("tripSubmit Auth Failed: id=" . ($_SESSION['user_id'] ?? 'null') . " role=$role type=$type");
                 echo json_encode(array('success' => false, 'error' => 'Please log in as a tourist to submit your trip.'));
                 exit;
             }
@@ -878,7 +924,7 @@ class TouristController {
                         $gr->language = $g['language'];
                         $gr->date = $g['date'];
                         $gr->time = $g['time'];
-                        $gr->notes = $g['notes'];
+                        $gr->notes = ($g['notes'] ? $g['notes'] . " " : "") . "(Trip #$tripId)";
                         $gr->tourist_id = $userId;
                         $gr->status = 'pending';
 
@@ -952,6 +998,13 @@ class TouristController {
 
                             if ($tr->addRequest()) {
                                 $createdTransportRequests++;
+                                // Link to trip_id
+                                try {
+                                    $stmtLink = $this->db->prepare("INSERT INTO transport_request_trip_links (transport_request_id, trip_id, user_id) VALUES (?, ?, ?)");
+                                    $stmtLink->execute(array($tr->id, $tripId, $userId));
+                                } catch (\Throwable $eL) {
+                                    error_log("Transport Link Error: " . $eL->getMessage());
+                                }
                             }
                         }
                     }
