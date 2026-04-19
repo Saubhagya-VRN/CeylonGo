@@ -122,4 +122,17 @@ document.addEventListener('DOMContentLoaded', function() {
             closeRoomModal();
         }
     });
+
+    // Dismiss success/error notices on room pages
+    document.addEventListener('click', function(event) {
+        const dismissButton = event.target.closest('[data-dismiss-notice]');
+        if (!dismissButton) {
+            return;
+        }
+
+        const notice = dismissButton.closest('.room-notice');
+        if (notice) {
+            notice.remove();
+        }
+    });
 });

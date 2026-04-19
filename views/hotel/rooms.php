@@ -116,6 +116,35 @@
             padding: 12px 16px;
             border-radius: 10px;
             font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .room-notice-message {
+            flex: 1;
+        }
+
+        .room-notice-close {
+            border: 0;
+            background: transparent;
+            color: inherit;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 2px;
+            opacity: 0.85;
+        }
+
+        .room-notice-close:hover {
+            opacity: 1;
+        }
+
+        .room-notice-close:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+            border-radius: 4px;
         }
 
         .room-notice.success {
@@ -283,11 +312,17 @@
             </div>
 
             <?php if (!empty($_GET['success'])): ?>
-                <div class="room-notice success"><?php echo htmlspecialchars($_GET['success']); ?></div>
+                <div class="room-notice success" role="status" aria-live="polite">
+                    <span class="room-notice-message"><?php echo htmlspecialchars($_GET['success']); ?></span>
+                    <button type="button" class="room-notice-close" data-dismiss-notice aria-label="Close message">&times;</button>
+                </div>
             <?php endif; ?>
 
             <?php if (!empty($_GET['error'])): ?>
-                <div class="room-notice error"><?php echo htmlspecialchars($_GET['error']); ?></div>
+                <div class="room-notice error" role="alert">
+                    <span class="room-notice-message"><?php echo htmlspecialchars($_GET['error']); ?></span>
+                    <button type="button" class="room-notice-close" data-dismiss-notice aria-label="Close message">&times;</button>
+                </div>
             <?php endif; ?>
 
             <div class="panel">
