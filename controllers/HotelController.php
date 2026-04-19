@@ -261,6 +261,52 @@ class HotelController {
         view('hotel/bookings', ['bookings' =>$bookings]);
     }
 
+    public function updateBookingStatus() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+            exit;
+        }
+
+        $booking_id = $_POST['booking_id'] ?? 0;
+        $status = $_POST['status'] ?? '';
+
+        if (!$booking_id || !in_array($status, ['confirmed', 'cancelled'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid data']);
+            exit;
+        }
+
+        $hotelBookings = new HotelBookings($this->db);
+        $hotel_id = $_SESSION['id'];
+
+        // Verify the booking belongs to this hotel
+        $booking = $hotelBookings->getBookingById($booking_id);
+        if (!$booking || $booking['hotel_user_id'] != $hotel_id) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            exit;
+        }
+
+        if ($hotelBookings->updateBookingStatus($booking_id, $status)) {
+            echo json_encode(['success' => true, 'message' => 'Booking status updated successfully']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to update booking status']);
+        }
+        exit;
+    }
+
+    public function acceptBooking($id) {
+        $hotelBookings = new HotelBookings($this->db);
+        if ($hotelBookings->updateBookingStatus($id, 'Accepted')) {
+            echo json_encode(['success' => true, 'message' => 'Booking accepted']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update booking status']);
+        }
+        exit();
+    }
+
     public function availability() {
         view('hotel/availability');
     }

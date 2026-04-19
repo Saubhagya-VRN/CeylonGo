@@ -67,7 +67,24 @@
                     <td><?php echo $booking['check_out']; ?></td>
                     <td><?php echo $booking['total_price'] . ' ' . $booking['currency']; ?></td>
                     <td><?php echo $booking['status']; ?></td>
-                    <td><button class="btn-action">View</button></td>
+                    <td>
+                      <button class="btn btn-sm btn-secondary"
+                              data-booking-modal-open
+                              data-booking-id="<?php echo $booking['id']; ?>"
+                              data-guest-name="<?php echo htmlspecialchars($booking['guest_name']); ?>"
+                              data-guest-email="<?php echo htmlspecialchars('deegagan@gmail.com'); ?>"
+                              data-guest-phone="<?php echo htmlspecialchars($booking['contact_number'] ?? ''); ?>"
+                              data-room-type="<?php echo htmlspecialchars($booking['room_type'] ?? ''); ?>"
+                              data-check-in="<?php echo $booking['check_in']; ?>"
+                              data-check-out="<?php echo $booking['check_out']; ?>"
+                              data-num-guests="<?php echo $booking['num_guests'] ?? '1'; ?>"
+                              data-total-amount="<?php echo $booking['total_price'] . ' ' . $booking['currency']; ?>"
+                              data-payment-status="<?php echo htmlspecialchars($booking['payment_status'] ?? 'Pending'); ?>"
+                              data-booking-status="<?php echo htmlspecialchars($booking['status']); ?>"
+                              data-special-requests="<?php echo htmlspecialchars($booking['special_requests'] ?? 'None'); ?>">
+                        View
+                      </button>
+                    </td>
                   </tr>
                 <?php } ?>
               </tbody>
@@ -77,6 +94,8 @@
       </div>
     </section>
   </div>
+
+  <?php include(__DIR__ . '/components/booking_modal.php'); ?>
 
   <script src="../../public/js/hotel.js"></script>
 </body>

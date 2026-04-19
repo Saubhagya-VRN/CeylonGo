@@ -123,6 +123,7 @@ $router->get('hotel/edit-room/{id}', 'HotelController@editRoomView');
 $router->post('hotel/update-room', 'HotelController@updateRoom');
 $router->get('hotel/delete-room/{id}', 'HotelController@deleteRoom');
 $router->get('hotel/bookings', 'HotelController@bookings');
+$router->post('hotel/update-booking-status', 'HotelController@updateBookingStatus');
 $router->get('hotel/availability', 'HotelController@availability');
 $router->get('hotel/inquiries', 'HotelController@inquiries');
 $router->get('hotel/notifications', 'HotelController@notifications');
@@ -164,6 +165,9 @@ $router->post('admin/packages/create', 'AdminController@packageCreate');
 $router->get('admin/packages/edit', 'AdminController@packageEdit');
 $router->post('admin/packages/update', 'AdminController@packageUpdate');
 $router->post('admin/packages/delete', 'AdminController@packageDelete');
+
+//Hotel Booking controller routes
+$router->post('hotel/bookings', 'HotelController@updateBookingStatus');
 
 // Dispatch the request
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
