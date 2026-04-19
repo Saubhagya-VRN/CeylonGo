@@ -56,6 +56,69 @@ class Hotel {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function getRoomsByHotelUserId($hotel_user_id) {
+        $query = "SELECT * FROM rooms WHERE hotel_user_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([(int)$hotel_user_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function createRoom($hotel_user_id, array $roomData) {
+        $query = "INSERT INTO rooms 
+                  (hotel_user_id, room_number, room_type, price_per_night, capacity, description)
+                  VALUES (:hotel_user_id, :room_number, :room_type, :price_per_night, :capacity, :description)";
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindValue(':hotel_user_id', (int)$hotel_user_id, PDO::PARAM_INT);
+        $stmt->bindValue(':room_number', $roomData['room_number'] ?? '', PDO::PARAM_STR);
+        $stmt->bindValue(':room_type', $roomData['room_type'] ?? '', PDO::PARAM_STR);
+        $stmt->bindValue(':price_per_night', $roomData['price_per_night'] ?? $roomData['rate'] ?? 0, PDO::PARAM_STR);
+        $stmt->bindValue(':capacity', $roomData['capacity'] ?? 1, PDO::PARAM_INT);
+        $stmt->bindValue(':description', $roomData['description'] ?? null, PDO::PARAM_STR);
+
+        return $stmt->execute();
+    }
+
+    public function getRoomById($room_id) {
+        try {
+            $query = "SELECT * FROM rooms WHERE id = ?";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute([(int)$room_id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Get room by ID error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function editRoom($room_id, array $roomData) {
+        $query = "UPDATE rooms SET
+                  room_number = :room_number,
+                  room_type = :room_type,
+                  price_per_night = :price_per_night,
+                  capacity = :capacity,
+                  description = :description
+                  WHERE id = :id";
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindValue(':room_number', $roomData['room_number'] ?? '', PDO::PARAM_STR);
+        $stmt->bindValue(':room_type', $roomData['room_type'] ?? '', PDO::PARAM_STR);
+        $stmt->bindValue(':price_per_night', $roomData['price_per_night'] ?? $roomData['rate'] ?? 0, PDO::PARAM_STR);
+        $stmt->bindValue(':capacity', $roomData['capacity'] ?? 1, PDO::PARAM_INT);
+        $stmt->bindValue(':description', $roomData['description'] ?? null, PDO::PARAM_STR);
+        $stmt->bindValue(':id', (int)$room_id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function deleteRoom($room_id) {
+        $query = "DELETE FROM rooms WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        return $stmt->execute([(int)$room_id]);
+    }
+
     public function GetAccommodationCatalog() {
         try {
             $query = "SELECT * FROM accommodation_catalog";

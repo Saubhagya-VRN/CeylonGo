@@ -96,60 +96,104 @@ class HotelController {
     }
 
     public function rooms() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['_method'] ?? '') === 'DELETE') {
+            $id = $_POST['id'] ?? 0;
+            $hotelModel = new Hotel($this->db);
+
+            if ($id <= 0) {
+                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Invalid room ID"));
+                exit();
+            }
+            $res = $hotelModel->deleteRoom($id);
+            if ($res) {
+                header("Location: /CeylonGo/public/hotel/rooms?success=" . urlencode("Room deleted successfully"));
+            } else {
+                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Failed to delete room"));
+            }
+            exit();
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = $_POST;
-            $hotel_id = (int) ($_SESSION['id'] ?? ($_SESSION['user_id'] ?? 0));
+            $hotel_id = (int) $_SESSION['id'];
 
             if ($hotel_id <= 0) {
                 header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Invalid hotel session"));
                 exit();
             }
 
-            $type = trim((string) ($data['room_type'] ?? ''));
-            $description = trim((string) ($data['description'] ?? ''));
-            $rawRate = (string) ($data['rate'] ?? '0');
-            $rawRate = str_replace(',', '', $rawRate);
-            $priceValue = (float) $rawRate;
+            // Check if this is an update (room_id present) or create
+            if (!empty($data['room_id'])) {
+                // UPDATE ROOM LOGIC
+                $room_id = (int)$data['room_id'];
 
-            if ($type === '' || $priceValue <= 0) {
-                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Room type and valid price are required"));
+                if ($room_id <= 0) {
+                    header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Invalid room ID"));
+                    exit();
+                }
+
+                // Verify room belongs to current hotel user
+                $hotelModel = new Hotel($this->db);
+                $existingRoom = $hotelModel->getRoomById($room_id);
+                if (!$existingRoom || (int)$existingRoom['hotel_user_id'] !== $hotel_id) {
+                    header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Room not found or access denied"));
+                    exit();
+                }
+
+                $roomData = [
+                    'room_number' => $data['room_number'] ?? '',
+                    'room_type' => trim((string)($data['room_type'] ?? '')),
+                    'price_per_night' => (float) str_replace(',', '', $data['rate'] ?? '0'),
+                    'capacity' => (int)($data['capacity'] ?? 1),
+                    'description' => trim((string)($data['description'] ?? ''))
+                ];
+
+                if ($roomData['room_type'] === '' || $roomData['price_per_night'] <= 0) {
+                    header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Room type and valid price are required"));
+                    exit();
+                }
+
+                if ($hotelModel->editRoom($room_id, $roomData)) {
+                    header("Location: /CeylonGo/public/hotel/rooms?success=" . urlencode("Room updated successfully"));
+                } else {
+                    header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Failed to update room"));
+                }
+                exit();
+            } else {
+                // CREATE ROOM LOGIC
+                $room_type = trim((string) ($data['room_type'] ?? ''));
+                $description = trim((string) ($data['description'] ?? ''));
+                $rawRate = (string) ($data['rate'] ?? '0');
+                $rawRate = str_replace(',', '', $rawRate);
+                $priceValue = (float) $rawRate;
+
+                if ($room_type === '' || $priceValue <= 0) {
+                    header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Room type and valid price are required"));
+                    exit();
+                }
+
+                $roomData = [
+                    'room_number' => $data['room_number'] ?? '',
+                    'room_type' => $room_type,
+                    'price_per_night' => $priceValue,
+                    'capacity' => (int)($data['capacity'] ?? 1),
+                    'description' => $description
+                ];
+
+                $hotelModel = new Hotel($this->db);
+                if ($hotelModel->createRoom($hotel_id, $roomData)) {
+                    header("Location: /CeylonGo/public/hotel/rooms?success=" . urlencode("Room added successfully"));
+                } else {
+                    header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Failed to add room"));
+                }
                 exit();
             }
-
-            $roomRecord = [
-                'type' => $type,
-                'description' => $description,
-                'price' => 'Rs.' . number_format($priceValue, 0),
-                'priceValue' => $priceValue,
-                'image' => '/img/5star.jpg'
-            ];
-
-            $hotelModel = new Hotel($this->db);
-            if ($hotelModel->AddOrUpdateRoom($hotel_id, $roomRecord)) {
-                header("Location: /CeylonGo/public/hotel/rooms?success=" . urlencode("Room added successfully"));
-            } else {
-                header("Location: /CeylonGo/public/hotel/rooms?error=" . urlencode("Failed to add room"));
-            }
-            exit();
         }
 
         $hotel = new Hotel($this->db);
         $hotel_id = $_SESSION['id'];
-        $hotels = $hotel->GetAccommodationCatalogByUserId($hotel_id);
-        
-        $rooms = [];
-        if (!empty($hotels) && isset($hotels[0]->room_details)) {
-            if (is_string($hotels[0]->room_details)) {
-                $decodedRooms = json_decode($hotels[0]->room_details, true);
-                if (is_array($decodedRooms)) {
-                    $rooms = $decodedRooms;
-                }
-            } elseif (is_array($hotels[0]->room_details)) {
-                $rooms = $hotels[0]->room_details;
-            }
-        }
-
-        view('hotel/rooms', ['rooms' => $rooms]);
+        $hotels = $hotel->getRoomsByHotelUserId($hotel_id);    
+        view('hotel/rooms', ['rooms' => $hotels]);
     }
 
     public function addRoomView() {
