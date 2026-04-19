@@ -23,9 +23,9 @@ class Review {
                     r.status,
                     r.created_at,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
-                FROM package_reviews pr
-                JOIN tourist_users t ON pr.user_id = t.id
-                ORDER BY pr.created_at DESC
+                FROM reviews r
+                JOIN tourist_users t ON r.user_id = t.id
+                ORDER BY r.created_at DESC
             ";
 
             $stmt = $this->db->prepare($sql);
@@ -41,10 +41,10 @@ class Review {
                     r.status,
                     r.created_at,
                     CONCAT(t.first_name, ' ', t.last_name) AS tourist_name
-                FROM package_reviews pr
-                JOIN tourist_users t ON pr.user_id = t.id
-                WHERE pr.rating = :rating
-                ORDER BY pr.created_at DESC
+                FROM reviews r
+                JOIN tourist_users t ON r.user_id = t.id
+                WHERE r.rating = :rating
+                ORDER BY r.created_at DESC
             ";
 
             $stmt = $this->db->prepare($sql);
@@ -90,9 +90,10 @@ class Review {
     public function saveAdminReply($reviewId, $reply)
     {
         $sql = "
-            UPDATE package_reviews 
+            UPDATE reviews 
             SET admin_reply = :reply,
-                replied_at = NOW()
+                replied_at = NOW(),
+                status = 'replied'
             WHERE id = :id
         ";
 

@@ -327,6 +327,7 @@ CREATE TABLE `hotel_users` (
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -484,8 +485,10 @@ CREATE TABLE `reviews` (
   `rating` int(11) NOT NULL CHECK (`rating` >= 1 and `rating` <= 5),
   `review_text` text NOT NULL,
   `destination` varchar(100) DEFAULT NULL,
+  `admin_reply` text DEFAULT NULL,
   `status` varchar(20) DEFAULT 'pending' COMMENT 'pending, approved, rejected',
   `created_at` datetime DEFAULT current_timestamp(),
+  `replied_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
