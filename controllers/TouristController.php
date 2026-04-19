@@ -346,6 +346,53 @@ class TouristController {
             }
             $hasBank = isset($tr['bank_transfer_submitted_at']) && trim((string) $tr['bank_transfer_submitted_at']) !== '';
             $status = isset($tr['status']) ? trim((string) $tr['status']) : '';
+            
+            // Dynamic Sub-Booking Intelligence
+            if (!in_array(strtolower($status), ['accepted', 'completed', 'confirmed', 'approved', 'rejected', 'cancelled'])) {
+                $hasBookings = false;
+                $allApproved = true;
+
+                // Check Guide
+                $stmtG = $this->db->prepare("SELECT status FROM guide_requests WHERE tourist_id = ? AND notes LIKE ?");
+                $stmtG->execute([$uid, "%Trip #$tid%"]);
+                $guides = $stmtG->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($guides as $g) {
+                    $hasBookings = true;
+                    $st = strtolower($g['status'] ?? '');
+                    if (!in_array($st, ['confirmed', 'approved', 'accepted', 'completed'])) {
+                        $allApproved = false;
+                    }
+                }
+                
+                // Check Transport
+                $stmtT = $this->db->prepare("SELECT t.status FROM transport_requests t WHERE t.user_id = ? AND (t.notes LIKE ? OR t.id IN (SELECT transport_request_id FROM transport_request_trip_links WHERE trip_id = ?))");
+                $stmtT->execute([$uid, "%Trip #$tid%", $tid]);
+                $transports = $stmtT->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($transports as $t) {
+                    $hasBookings = true;
+                    $st = strtolower($t['status'] ?? '');
+                    if (!in_array($st, ['confirmed', 'approved', 'accepted', 'completed'])) {
+                        $allApproved = false;
+                    }
+                }
+                
+                // Check Hotels
+                $stmtH = $this->db->prepare("SELECT status FROM hotel_bookings WHERE user_id = ? AND (hotel_name IN (SELECT destination FROM trips WHERE id = ?))");
+                $stmtH->execute([$uid, $tid]);
+                $hotels = $stmtH->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($hotels as $h) {
+                    $hasBookings = true;
+                    $st = strtolower($h['status'] ?? '');
+                    if (!in_array($st, ['confirmed', 'approved', 'accepted', 'completed'])) {
+                        $allApproved = false;
+                    }
+                }
+                
+                if ($hasBookings && $allApproved) {
+                    $status = 'accepted';
+                }
+            }
+            
             $dest = isset($tr['destination']) ? trim((string) $tr['destination']) : '';
             $sd = isset($tr['start_date']) ? trim((string) $tr['start_date']) : '';
             $budget = isset($tr['budget_lkr']) ? (float) $tr['budget_lkr'] : 0.0;
@@ -730,19 +777,17 @@ class TouristController {
 
         try {
             // Find transport requests linked to this trip
-            // Search in notes for "Trip #ID" or via the link table if it exists
-            $stmtT = $this->db->prepare("SELECT id, status, pickup_location, date FROM transport_requests WHERE user_id = ? AND (notes LIKE ? OR id IN (SELECT transport_request_id FROM transport_request_trip_links WHERE trip_id = ?))");
+            $stmtT = $this->db->prepare("SELECT t.id, t.status, t.pickup_location, t.dropoff_location, t.date, t.pickup_time, t.estimated_fare, t.vehicle_type, u.full_name as driver_name FROM transport_requests t LEFT JOIN transport_users u ON t.assigned_driver_id = u.user_id WHERE t.user_id = ? AND (t.notes LIKE ? OR t.id IN (SELECT transport_request_id FROM transport_request_trip_links WHERE trip_id = ?))");
             $stmtT->execute(array($uid, "%Trip #$tripId%", $tripId));
             $subBookings['transport'] = $stmtT->fetchAll(PDO::FETCH_ASSOC);
 
             // Find guide requests
-            $stmtG = $this->db->prepare("SELECT id, status, location, date FROM guide_requests WHERE tourist_id = ? AND (notes LIKE ? OR location IN (SELECT destination FROM trips WHERE id = ?))");
-            // Note: guide_requests doesn't have a trip_id column in main.sql, using location/user_id as proxy if notes don't match
-            $stmtG->execute(array($uid, "%Trip #$tripId%", $tripId));
+            $stmtG = $this->db->prepare("SELECT g.id, g.status, g.location, g.date, g.time, g.fee, g.language, u.first_name, u.last_name FROM guide_requests g LEFT JOIN guide_users u ON g.guide_id = u.id WHERE g.tourist_id = ? AND g.notes LIKE ?");
+            $stmtG->execute(array($uid, "%Trip #$tripId%"));
             $subBookings['guide'] = $stmtG->fetchAll(PDO::FETCH_ASSOC);
 
             // Find hotel bookings
-            $stmtH = $this->db->prepare("SELECT id, status, hotel_name, check_in FROM hotel_bookings WHERE user_id = ? AND (hotel_name IN (SELECT destination FROM trips WHERE id = ?))");
+            $stmtH = $this->db->prepare("SELECT id, status, hotel_name, check_in, check_out, total_price, room_type FROM hotel_bookings WHERE user_id = ? AND (hotel_name IN (SELECT destination FROM trips WHERE id = ?))");
             $stmtH->execute(array($uid, $tripId));
             $subBookings['hotel'] = $stmtH->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Throwable $eB) {

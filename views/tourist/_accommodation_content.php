@@ -291,6 +291,7 @@ if ($trip_accommodation_block === 'secondary') {
         <input type="hidden" id="<?php echo $p; ?>AccommodationHotelId" name="hotel_id" value="">
         <input type="hidden" id="<?php echo $p; ?>AccommodationNights" name="nights" value="1">
         <input type="hidden" name="user_id" value="<?php echo isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0; ?>">
+        <input type="hidden" id="<?php echo $p; ?>AccommodationBookingStatus" name="booking_status" value="">
 
         <div class="form-group">
           <label for="<?php echo $p; ?>AccommodationCustomerName">Customer Name</label>
