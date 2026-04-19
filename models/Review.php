@@ -14,7 +14,6 @@ class Review {
                 SELECT 
                     r.id,
                     r.user_id,
-                    r.destination,
                     r.review_text,
                     r.admin_reply,
                     r.rating,
@@ -32,7 +31,6 @@ class Review {
                 SELECT 
                     r.id,
                     r.user_id,
-                    r.destination,
                     r.review_text,
                     r.admin_reply,
                     r.rating,
