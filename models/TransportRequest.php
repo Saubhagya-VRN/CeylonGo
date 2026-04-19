@@ -325,9 +325,9 @@ class TransportRequest {
                 $paramsTours[] = $endDate;
             }
 
-            $queryTours = "SELECT tr.id, tr.customer_name, tr.vehicle_type, tr.date, 
-                                  tr.pickup_time, tr.pickup_location, tr.dropoff_location,
-                                  tr.num_people, tr.estimated_fare, tr.distance, tr.status,
+            $queryTours = "SELECT tr.id, tr.customer_name AS customerName, tr.vehicle_type, tr.date, 
+                                  tr.pickup_time AS time, tr.pickup_location, tr.dropoff_location,
+                                  tr.num_people AS pax, tr.estimated_fare AS fare, tr.distance, tr.status,
                                   tr.assigned_vehicle_no
                            FROM " . $this->table . " tr
                            WHERE TRIM(tr.assigned_driver_id) = TRIM(?)" . $dateCondTours . "

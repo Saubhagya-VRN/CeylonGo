@@ -96,7 +96,7 @@
 }
 
 .report-page-header .header-left h2 i {
-    color: #0077b6;
+    color: #2c5530;
     font-size: 0.9em;
 }
 
@@ -127,14 +127,14 @@
 }
 
 .btn-report.primary {
-    background: linear-gradient(135deg, #0077b6 0%, #005a8d 100%);
+    background: linear-gradient(135deg, #2c5530 0%, #1a3d1e 100%);
     color: #fff;
-    box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
+    box-shadow: 0 4px 15px rgba(44, 85, 48, 0.3);
 }
 
 .btn-report.primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 119, 182, 0.4);
+    box-shadow: 0 6px 20px rgba(44, 85, 48, 0.4);
 }
 
 .btn-report.dark {
@@ -189,9 +189,9 @@
 
 .filter-bar input[type="date"]:focus {
     outline: none;
-    border-color: #0077b6;
+    border-color: #2c5530;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.1);
+    box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.1);
 }
 
 .filter-bar .quick-filters {
@@ -215,22 +215,22 @@
 
 .quick-filter-btn:hover,
 .quick-filter-btn.active {
-    border-color: #0077b6;
-    color: #0077b6;
-    background: rgba(0, 119, 182, 0.05);
+    border-color: #2c5530;
+    color: #2c5530;
+    background: rgba(44, 85, 48, 0.05);
 }
 
 .quick-filter-btn.active {
-    background: #0077b6;
+    background: #2c5530;
     color: #fff;
-    border-color: #0077b6;
+    border-color: #2c5530;
 }
 
 .filter-bar .btn-apply {
     padding: 10px 20px;
     border: none;
     border-radius: 10px;
-    background: linear-gradient(135deg, #0077b6 0%, #005a8d 100%);
+    background: linear-gradient(135deg, #2c5530 0%, #1a3d1e 100%);
     color: #fff;
     font-size: 14px;
     font-weight: 600;
@@ -243,7 +243,7 @@
 
 .filter-bar .btn-apply:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
+    box-shadow: 0 4px 15px rgba(44, 85, 48, 0.3);
 }
 
 .filter-bar .btn-reset {
@@ -338,8 +338,8 @@
 }
 
 /* KPI Card Variants */
-.kpi-card.revenue::before { background: linear-gradient(90deg, #0077b6, #00b4d8); }
-.kpi-card.revenue .kpi-icon { background: rgba(0, 119, 182, 0.1); color: #0077b6; }
+.kpi-card.revenue::before { background: linear-gradient(90deg, #2c5530, #00b4d8); }
+.kpi-card.revenue .kpi-icon { background: rgba(44, 85, 48, 0.1); color: #2c5530; }
 
 .kpi-card.bookings::before { background: linear-gradient(90deg, #6f42c1, #9b59b6); }
 .kpi-card.bookings .kpi-icon { background: rgba(111, 66, 193, 0.1); color: #6f42c1; }
@@ -396,7 +396,7 @@
 }
 
 .chart-card .chart-header h3 i {
-    color: #0077b6;
+    color: #2c5530;
 }
 
 .chart-canvas-wrap {
@@ -434,7 +434,7 @@
 }
 
 .report-table-header h3 i {
-    color: #0077b6;
+    color: #2c5530;
 }
 
 .table-search {
@@ -454,9 +454,9 @@
 
 .table-search input:focus {
     outline: none;
-    border-color: #0077b6;
+    border-color: #2c5530;
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.1);
+    box-shadow: 0 0 0 3px rgba(44, 85, 48, 0.1);
 }
 
 .table-search i {
@@ -510,7 +510,7 @@
 }
 
 .report-table tbody tr:hover {
-    background: rgba(0, 119, 182, 0.03);
+    background: rgba(44, 85, 48, 0.03);
 }
 
 .report-table tbody tr:last-child td {
@@ -552,7 +552,7 @@
 /* Tour ID */
 .tour-id {
     font-weight: 700;
-    color: #0077b6;
+    color: #2c5530;
 }
 
 /* Fare cell */
@@ -592,7 +592,7 @@
 }
 
 .table-scroll::-webkit-scrollbar-thumb {
-    background: #0077b6;
+    background: #2c5530;
     border-radius: 10px;
 }
 
@@ -633,9 +633,9 @@
 
 .page-btn:hover,
 .page-btn.active {
-    background: #0077b6;
+    background: #2c5530;
     color: #fff;
-    border-color: #0077b6;
+    border-color: #2c5530;
 }
 
 .page-btn:disabled {
@@ -649,8 +649,8 @@
     align-items: center;
     gap: 8px;
     padding: 6px 16px;
-    background: rgba(0, 119, 182, 0.08);
-    color: #0077b6;
+    background: rgba(44, 85, 48, 0.08);
+    color: #2c5530;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 600;

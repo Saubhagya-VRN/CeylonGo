@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 class TouristController {
     private $db;
 
@@ -849,23 +849,26 @@ class TouristController {
             // Record submission snapshot + initial payment status in trip_submissions.
             $this->tripSubmissionUpsert($tripId, $userId, $submissionArr);
 
+            // --- CONTACT INFO EXTRACTION ---
+            $contact = '';
+            try {
+                $touristModel = new Tourist($this->db);
+                $tourist = $touristModel->getTouristById($userId);
+                if (is_array($tourist) && isset($tourist['contact_number'])) {
+                    $contact = trim((string) $tourist['contact_number']);
+                }
+            } catch (\Throwable $eT) {
+                // Ignore and fall back to session.
+            }
+            if ($contact === '' && isset($_SESSION['user_contact'])) $contact = trim((string) $_SESSION['user_contact']);
+            if ($contact === '' && isset($_SESSION['user_phone'])) $contact = trim((string) $_SESSION['user_phone']);
+            if ($contact === '' && isset($_SESSION['contact_number'])) $contact = trim((string) $_SESSION['contact_number']);
+            if ($contact === '') $contact = 'N/A';
+            // --- END CONTACT INFO EXTRACTION ---
+
             $createdGuideRequests = 0;
             if ($tripId > 0 && count($guideReqs) > 0) {
                 try {
-                    $contact = '';
-                    try {
-                        $touristModel = new Tourist($this->db);
-                        $tourist = $touristModel->getTouristById($userId);
-                        if (is_array($tourist) && isset($tourist['contact_number'])) {
-                            $contact = trim((string) $tourist['contact_number']);
-                        }
-                    } catch (\Throwable $eT) {
-                        // Ignore and fall back to session.
-                    }
-                    if ($contact === '' && isset($_SESSION['user_contact'])) $contact = trim((string) $_SESSION['user_contact']);
-                    if ($contact === '' && isset($_SESSION['user_phone'])) $contact = trim((string) $_SESSION['user_phone']);
-                    if ($contact === '' && isset($_SESSION['contact_number'])) $contact = trim((string) $_SESSION['contact_number']);
-                    if ($contact === '') $contact = 'N/A';
 
                     $gr = new GuideRequest($this->db);
                     foreach ($guideReqs as $g) {
@@ -876,17 +879,96 @@ class TouristController {
                         $gr->date = $g['date'];
                         $gr->time = $g['time'];
                         $gr->notes = $g['notes'];
+                        $gr->tourist_id = $userId;
                         $gr->status = 'pending';
+
+                        // Attempt to find and assign an available guide
+                        $availableGuide = $gr->findAvailableGuide($g['language']);
+                        if ($availableGuide) {
+                            $gr->guide_id = $availableGuide['id'];
+                        } else {
+                            $gr->guide_id = null;
+                        }
+
                         if ($gr->create()) {
                             $createdGuideRequests++;
                         }
                     }
                 } catch (\Throwable $eG) {
-                    error_log('tripSubmit create guide requests: ' . $eG->getMessage());
+                    error_log("Guide Request Creation Error: " . $eG->getMessage());
                 }
             }
+
+            // --- TRANSPORT REQUESTS LOGIC ---
+            $createdTransportRequests = 0;
+            if ($tripId > 0 && isset($submissionArr['wizard_snapshot']['legs'])) {
+                try {
+                    $tr = new TransportRequest($this->db);
+                    $vModel = new Vehicle($this->db);
+                    
+                    // Vehicle Type Mapping
+                    $vTypeMap = [
+                        'Tuk' => '1', 'TUK' => '1',
+                        'Car' => '2',
+                        'Minivan' => '3',
+                        'Minivan AC' => '4',
+                        'Bus' => '5',
+                        'Bus AC' => '6'
+                    ];
+
+                    foreach ($submissionArr['wizard_snapshot']['legs'] as $leg) {
+                        if (!isset($leg['stops']) || !is_array($leg['stops'])) continue;
+                        
+                        foreach ($leg['stops'] as $stop) {
+                            if (!isset($stop['transport']) || isset($stop['transport']['notRequested'])) continue;
+                            
+                            $t = $stop['transport'];
+                            
+                            $tr->userId = $userId;
+                            $tr->customerName = $customerName;
+                            $tr->contactNumber = $contact;
+                            $tr->vehicleType = $t['vehicle'] ?? 'Car';
+                            $tr->date = $t['date'] ?? $startDate;
+                            $tr->pickupTime = $t['time'] ?? '09:00:00';
+                            $tr->pickupLocation = $t['pickup'] ?? $leg['destination'];
+                            $tr->dropoffLocation = $t['dropoff'] ?? $leg['destination'];
+                            $tr->numPeople = (int)($t['people'] ?? $numPeople);
+                            $tr->notes = "Added via trip wizard submission (Trip #$tripId)";
+                            $tr->estimatedFare = $t['fare'] ?? 0;
+                            $tr->distance = 0; // Distance not calculated during submission yet
+                            $tr->status = 'pending';
+
+                            // Attempt to find and assign an available vehicle/driver
+                            $vTypeId = $vTypeMap[$tr->vehicleType] ?? '2';
+                            $availableVehicle = $vModel->findAvailableVehicle($vTypeId, $tr->date, $tr->numPeople);
+                            
+                            if ($availableVehicle) {
+                                $tr->assignedDriverId = $availableVehicle['user_id'];
+                                $tr->assignedVehicleNo = $availableVehicle['vehicle_no'];
+                            } else {
+                                $tr->assignedDriverId = null;
+                                $tr->assignedVehicleNo = null;
+                            }
+
+                            if ($tr->addRequest()) {
+                                $createdTransportRequests++;
+                            }
+                        }
+                    }
+                } catch (\Throwable $eT) {
+                    error_log("Transport Request Creation Error: " . $eT->getMessage());
+                }
+            }
+            // --- END TRANSPORT REQUESTS LOGIC ---
+
             if ($ajax) {
-                echo json_encode(array('success' => true, 'trip_id' => $tripId, 'created_guide_requests' => $createdGuideRequests));
+                echo json_encode(array(
+                    'success' => true,
+                    'trip_id' => $tripId,
+                    'guide_requests' => $createdGuideRequests,
+                    'transport_requests' => $createdTransportRequests,
+                    'message' => 'Trip and all requests submitted successfully.'
+                ));
                 exit;
             }
             header('Location: /CeylonGo/public/tourist/customize-trip?success=' . urlencode('Trip submitted.'));

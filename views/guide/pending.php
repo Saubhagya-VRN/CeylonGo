@@ -78,7 +78,7 @@
               <th>Tourist Name</th>
               <th>Date</th>
               <th>Time</th>
-              <th>Location</th>
+              <th class="col-location">Location</th>
               <th>Language</th>
               <th>Status</th>
               <th>Actions</th>
@@ -93,7 +93,7 @@
                 <td><?= htmlspecialchars($booking['customerName']) ?></td>
                 <td><?= htmlspecialchars($booking['date']) ?></td>
                 <td><?= date('h:i A', strtotime($booking['time'])) ?></td>
-                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td class="col-location"><?= htmlspecialchars($booking['location']) ?></td>
                 <td><?= htmlspecialchars($booking['language']) ?></td>
                 <td><span class="status-badge pending">Pending</span></td>
                 <td>

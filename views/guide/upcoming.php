@@ -72,7 +72,7 @@
               <th>Tourist Name</th>
               <th>Date</th>
               <th>Time</th>
-              <th>Location</th>
+              <th class="col-location">Location</th>
               <th>Language</th>
               <th></th>
             </tr>
@@ -85,7 +85,7 @@
                 <td><?= htmlspecialchars($booking['customerName']) ?></td>
                 <td><?= htmlspecialchars($booking['date']) ?></td>
                 <td><?= date('h:i A', strtotime($booking['time'])) ?></td>
-                <td><?= htmlspecialchars($booking['location']) ?></td>
+                <td class="col-location"><?= htmlspecialchars($booking['location']) ?></td>
                 <td><?= htmlspecialchars($booking['language']) ?></td>
                 <td><a href="/CeylonGo/public/guide/info?id=<?= $booking['id'] ?>" class="see-more-link">See More <i class="fa-solid fa-arrow-right"></i></a></td>
               </tr>
