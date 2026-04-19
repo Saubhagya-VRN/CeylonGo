@@ -1423,17 +1423,13 @@ class AdminController {
             exit();
         }
 
-        // FIX: removed approved_at — that column does not exist in the reviews table
-        $stmt = $this->db->prepare(
-            "UPDATE reviews SET status = 'approved' WHERE id = :id"
-        );
-        $success = $stmt->execute([':id' => $reviewId]);
-        $affected = $stmt->rowCount();
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->approveReview($reviewId);
 
         header('Content-Type: application/json');
         echo json_encode([
-            'success' => $success && $affected > 0,
-            'message' => $affected > 0 ? 'Approved' : 'No rows updated — check the ID',
+            'success' => $success,
+            'message' => $success ? 'Approved' : 'Failed to approve or no changes made',
         ]);
         exit();
     }
@@ -1506,18 +1502,11 @@ class AdminController {
             echo json_encode(['success' => false, 'message' => 'Invalid review ID']);
             exit();
         }
-
-        $stmt = $this->db->prepare(
-            'UPDATE package_reviews SET status = :st, approved_at = COALESCE(approved_at, NOW()) WHERE id = :id'
-        );
-        $success = $stmt->execute([':st' => 'approved', ':id' => $reviewId]);
-        $affected = $stmt->rowCount();
+        $reviewModel = new Review($this->db);
+        $success = $reviewModel->approvePackageReview($reviewId);
 
         header('Content-Type: application/json');
-        echo json_encode([
-            'success' => $success && $affected > 0,
-            'message' => $affected > 0 ? 'Approved' : 'No rows updated — check the ID',
-        ]);
+        echo json_encode(['success' => $success]);
         exit();
     }
 

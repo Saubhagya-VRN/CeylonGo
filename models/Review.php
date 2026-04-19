@@ -102,6 +102,13 @@ class Review {
         ]);
     }
 
+    public function approveReview($id)
+    {
+        $sql = "UPDATE reviews SET status = 'approved' WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([(int)$id]);
+    }
+
     public function getReviewMetrics()
     {
         $sql = "
@@ -172,8 +179,9 @@ class Review {
         $sql = "
             SELECT
                 COUNT(*) AS total_all,
+                SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) AS total_approved,
                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS total_pending,
-                ROUND(IFNULL(AVG(rating), 0), 1) AS avg_rating
+                ROUND(AVG(CASE WHEN status = 'approved' THEN rating END), 1) AS avg_rating
             FROM package_reviews
         ";
 
@@ -183,6 +191,7 @@ class Review {
 
         return [
             'total' => (int) ($data['total_all'] ?? 0),
+            'approved' => (int) ($data['total_approved'] ?? 0),
             'pending' => (int) ($data['total_pending'] ?? 0),
             'average' => $data['avg_rating'] ?? 0,
         ];
@@ -209,6 +218,16 @@ class Review {
             ':reply' => $reply,
             ':id' => (int) $reviewId,
         ]);
+    }
+
+    public function approvePackageReview($id)
+    {
+        $sql = "UPDATE package_reviews SET status = 'approved', approved_at = NOW() WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([(int)$id]);
+    }
+
+    /**
      * Approved reviews for public marketing (e.g. tourist dashboard carousel).
      *
      * @return array<int, array<string, mixed>>
