@@ -23,11 +23,21 @@ $fn = htmlspecialchars((string) (isset($tourist['first_name']) ? $tourist['first
 $ln = htmlspecialchars((string) (isset($tourist['last_name']) ? $tourist['last_name'] : ''), ENT_QUOTES, 'UTF-8');
 $contact = htmlspecialchars((string) (isset($tourist['contact_number']) ? $tourist['contact_number'] : ''), ENT_QUOTES, 'UTF-8');
 $em = htmlspecialchars((string) (isset($tourist['email']) ? $tourist['email'] : ''), ENT_QUOTES, 'UTF-8');
-$profile_img = (string) (isset($tourist['profile_image']) ? $tourist['profile_image'] : '');
-$profile_img = trim($profile_img);
 $profile_img_url = '';
-if ($profile_img !== '') {
-    $profile_img_url = htmlspecialchars($asset_base . '/uploads/' . ltrim(str_replace('\\', '/', $profile_img), '/'), ENT_QUOTES, 'UTF-8');
+$uid = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+$sessionProfileRel = isset($_SESSION['tourist_profile_image']) ? trim((string) $_SESSION['tourist_profile_image']) : '';
+if ($sessionProfileRel !== '') {
+    $profile_img_url = htmlspecialchars($asset_base . '/uploads/' . ltrim(str_replace('\\', '/', $sessionProfileRel), '/'), ENT_QUOTES, 'UTF-8');
+} elseif ($uid > 0) {
+    // DB-less profile photo: check stable filenames in public/uploads/profile/
+    $baseFs = defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__, 2) . '/public/uploads');
+    $candidateJpg = $baseFs . '/profile/tourist_' . $uid . '.jpg';
+    $candidatePng = $baseFs . '/profile/tourist_' . $uid . '.png';
+    if (is_file($candidateJpg)) {
+        $profile_img_url = htmlspecialchars($asset_base . '/uploads/profile/tourist_' . $uid . '.jpg', ENT_QUOTES, 'UTF-8');
+    } elseif (is_file($candidatePng)) {
+        $profile_img_url = htmlspecialchars($asset_base . '/uploads/profile/tourist_' . $uid . '.png', ENT_QUOTES, 'UTF-8');
+    }
 }
 $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'UTF-8');
 $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';

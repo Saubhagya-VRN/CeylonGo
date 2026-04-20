@@ -3306,8 +3306,8 @@ class TouristController {
         $tourist->last_name = trim($data['last_name'] ?? '');
         $tourist->contact_number = trim($data['contact_number'] ?? '');
         $tourist->email = trim($data['email'] ?? '');
-        $existingTouristRow = $tourist->getTouristById($tourist_id);
-        $tourist->profile_image = isset($existingTouristRow['profile_image']) ? (string) $existingTouristRow['profile_image'] : null;
+        // Profile photo is stored as a file under public/uploads/profile/ and displayed from there.
+        // We intentionally do not persist its path in the DB.
 
         if ($tourist->first_name === '' || $tourist->last_name === '' || $tourist->email === '') {
             header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please fill in first name, last name, and email.'));
@@ -3390,7 +3390,7 @@ class TouristController {
                 exit();
             }
             if (is_string($imgPath) && $imgPath !== '') {
-                $tourist->profile_image = $imgPath;
+                $_SESSION['tourist_profile_image'] = $imgPath;
             }
         }
 
@@ -3419,7 +3419,7 @@ class TouristController {
      * @return string|null Relative path under public/uploads/ (e.g. profile/tourist_1_....jpg),
      *                     '__invalid__' for validation failure, or null for "no file".
      */
-    private function saveTouristProfileImage(int $touristId, array $file) {
+    private function saveTouristProfileImage($touristId, $file) {
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return null;
         }
@@ -3449,7 +3449,9 @@ class TouristController {
             error_log('saveTouristProfileImage: cannot create ' . $dir);
             return '__invalid__';
         }
-        $basename = 'tourist_' . $touristId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $touristId = (int) $touristId;
+        // Use a stable filename per user (no DB needed). If user uploads again, it replaces the old image.
+        $basename = 'tourist_' . $touristId . '.' . $ext;
         $dest = $dir . DIRECTORY_SEPARATOR . $basename;
         if (!move_uploaded_file($tmp, $dest)) {
             return '__invalid__';
