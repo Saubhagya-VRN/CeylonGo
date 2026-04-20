@@ -63,6 +63,36 @@
   padding: 16px 0 18px;
 }
 
+.profile-topcard-edit {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.profile-topcard-edit i {
+  color: #2c5530;
+}
+
+.profile-topcard-edit:hover {
+  background: #f3f4f6;
+}
+
+.profile-topcard-edit.profile-topcard-edit--disabled,
+.profile-topcard-edit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .profile-avatar-wrap {
   position: relative;
   width: 62px;
@@ -197,6 +227,7 @@
 /* Make ALL profile inputs look consistent (rounded, spaced) */
 .profile-content input[type="text"],
 .profile-content input[type="email"],
+.profile-content input[type="tel"],
 .profile-content input[type="password"] {
   width: 100%;
   padding: 14px 18px;
@@ -212,12 +243,14 @@
 
 .profile-content input[type="text"]::placeholder,
 .profile-content input[type="email"]::placeholder,
+.profile-content input[type="tel"]::placeholder,
 .profile-content input[type="password"]::placeholder {
   color: #9ca3af;
 }
 
 .profile-content input[type="text"]:focus,
 .profile-content input[type="email"]:focus,
+.profile-content input[type="tel"]:focus,
 .profile-content input[type="password"]:focus {
   border-color: #4a7c59;
   box-shadow: 0 0 0 4px rgba(74,124,89,0.12);

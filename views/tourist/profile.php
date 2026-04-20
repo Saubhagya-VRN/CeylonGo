@@ -85,6 +85,10 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
             <div class="profile-name"><?php echo htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8'); ?></div>
             <div class="profile-subtitle">Update your name, contact details, and password.</div>
           </div>
+          <button type="button" class="profile-topcard-edit" id="profileEditToggleBtn" aria-label="Enable editing">
+            <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+            <span>Update</span>
+          </button>
         </div>
 
         <?php if ($success_message !== ''): ?>
@@ -95,7 +99,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
         <?php endif; ?>
 
         <div class="profile-content">
-          <form method="post" action="<?php echo $form_action; ?>" class="profile-form" autocomplete="off">
+          <form method="post" action="<?php echo $form_action; ?>" class="profile-form" autocomplete="off" id="profileForm">
             <?php if ($full_page): ?>
             <input type="hidden" name="full" value="1">
             <?php endif; ?>
@@ -106,8 +110,8 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                 <div class="profile-field">
                   <div class="profile-field-label"><i class="fa-regular fa-user"></i> Full name</div>
                   <div class="profile-field-inputs">
-                    <input type="text" id="first_name" name="first_name" value="<?php echo $fn; ?>" required maxlength="120" placeholder="First name">
-                    <input type="text" id="last_name" name="last_name" value="<?php echo $ln; ?>" required maxlength="120" placeholder="Last name">
+                    <input type="text" id="first_name" name="first_name" value="<?php echo $fn; ?>" required maxlength="120" placeholder="First name" pattern="[A-Za-z\u00C0-\u024F\u1E00-\u1EFF\s\-']{1,120}" disabled>
+                    <input type="text" id="last_name" name="last_name" value="<?php echo $ln; ?>" required maxlength="120" placeholder="Last name" pattern="[A-Za-z\u00C0-\u024F\u1E00-\u1EFF\s\-']{1,120}" disabled>
                   </div>
                 </div>
 
@@ -116,7 +120,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                   <div class="profile-field-inputs">
                     <div class="profile-input-icon-wrap">
                       <span class="profile-input-icon" aria-hidden="true"><i class="fa-regular fa-envelope"></i></span>
-                      <input type="email" id="email" name="email" value="<?php echo $em; ?>" required maxlength="190" placeholder="Email address" class="profile-input--icon">
+                      <input type="email" id="email" name="email" value="<?php echo $em; ?>" required maxlength="190" placeholder="Email address" class="profile-input--icon" disabled>
                     </div>
                   </div>
                 </div>
@@ -126,7 +130,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                   <div class="profile-field-inputs">
                     <div class="profile-input-icon-wrap">
                       <span class="profile-input-icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
-                      <input type="text" id="contact_number" name="contact_number" value="<?php echo $contact; ?>" maxlength="30" placeholder="e.g. +94 77 123 4567" class="profile-input--icon">
+                      <input type="tel" id="contact_number" name="contact_number" value="<?php echo $contact; ?>" maxlength="10" inputmode="numeric" placeholder="e.g. 0771234567" class="profile-input--icon" pattern="[0-9]{10}" title="Enter exactly 10 digits (example: 0771234567)" disabled>
                     </div>
                   </div>
                 </div>
@@ -142,7 +146,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                   <div class="profile-field-inputs">
                     <div class="profile-input-icon-wrap">
                       <span class="profile-input-icon" aria-hidden="true"><i class="fa-solid fa-unlock-keyhole"></i></span>
-                      <input type="password" id="current_password" name="current_password" autocomplete="current-password" placeholder="Current Password" class="profile-input--icon">
+                      <input type="password" id="current_password" name="current_password" autocomplete="current-password" placeholder="Current Password" class="profile-input--icon" disabled>
                     </div>
                   </div>
                 </div>
@@ -151,7 +155,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                   <div class="profile-field-inputs">
                     <div class="profile-input-icon-wrap">
                       <span class="profile-input-icon" aria-hidden="true"><i class="fa-solid fa-key"></i></span>
-                      <input type="password" id="password" name="password" autocomplete="new-password" minlength="6" placeholder="New password" class="profile-input--icon">
+                      <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" placeholder="New password" class="profile-input--icon" disabled>
                     </div>
                   </div>
                 </div>
@@ -160,14 +164,14 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                   <div class="profile-field-inputs">
                     <div class="profile-input-icon-wrap">
                       <span class="profile-input-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
-                      <input type="password" id="password_confirm" name="password_confirm" autocomplete="new-password" minlength="6" placeholder="Confirm password" class="profile-input--icon">
+                      <input type="password" id="password_confirm" name="password_confirm" autocomplete="new-password" minlength="8" placeholder="Confirm password" class="profile-input--icon" disabled>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="form-actions">
+            <div class="form-actions" id="profileFormActions" hidden>
               <button type="submit" class="btn btn-primary">Save changes</button>
             </div>
           </form>
@@ -183,6 +187,26 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
   <?php if (!$full_page): ?>
   <script>
   document.addEventListener('DOMContentLoaded', function () {
+    var editBtn = document.getElementById('profileEditToggleBtn');
+    var form = document.getElementById('profileForm');
+    var actions = document.getElementById('profileFormActions');
+    function enableProfileEditing() {
+      if (!form) return;
+      form.querySelectorAll('input, select, textarea').forEach(function (el) {
+        if (el.type === 'hidden') return;
+        el.disabled = false;
+      });
+      if (actions) actions.hidden = false;
+      if (editBtn) {
+        editBtn.disabled = true;
+        editBtn.classList.add('profile-topcard-edit--disabled');
+        editBtn.setAttribute('aria-label', 'Editing enabled');
+      }
+      var first = document.getElementById('first_name');
+      if (first) first.focus();
+    }
+    if (editBtn) editBtn.addEventListener('click', enableProfileEditing);
+
     var hamburger = document.getElementById('tripHamburgerBtn');
     var sidebar = document.getElementById('tripSidebar');
     var overlay = document.getElementById('tripSidebarOverlay');
@@ -208,6 +232,32 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
     window.addEventListener('resize', function () {
       if (window.innerWidth > 768) closeSidebar();
     });
+  });
+  </script>
+  <?php endif; ?>
+
+  <?php if ($full_page): ?>
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var editBtn = document.getElementById('profileEditToggleBtn');
+    var form = document.getElementById('profileForm');
+    var actions = document.getElementById('profileFormActions');
+    function enableProfileEditing() {
+      if (!form) return;
+      form.querySelectorAll('input, select, textarea').forEach(function (el) {
+        if (el.type === 'hidden') return;
+        el.disabled = false;
+      });
+      if (actions) actions.hidden = false;
+      if (editBtn) {
+        editBtn.disabled = true;
+        editBtn.classList.add('profile-topcard-edit--disabled');
+        editBtn.setAttribute('aria-label', 'Editing enabled');
+      }
+      var first = document.getElementById('first_name');
+      if (first) first.focus();
+    }
+    if (editBtn) editBtn.addEventListener('click', enableProfileEditing);
   });
   </script>
   <?php endif; ?>

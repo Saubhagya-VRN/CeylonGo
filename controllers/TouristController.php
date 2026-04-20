@@ -3311,9 +3311,31 @@ class TouristController {
             header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please fill in first name, last name, and email.'));
             exit();
         }
+        // Names: letters/spaces only (basic guard against numbers/symbols).
+        // Accepts unicode letters via \p{L}. Hyphen and apostrophe are allowed for real names.
+        $nameRe = '/^[\\p{L}][\\p{L} \\-\\\']{0,119}$/u';
+        if (!preg_match($nameRe, $tourist->first_name) || !preg_match($nameRe, $tourist->last_name)) {
+            header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please enter a valid first name and last name (letters only).'));
+            exit();
+        }
         if (!filter_var($tourist->email, FILTER_VALIDATE_EMAIL)) {
             header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please enter a valid email address.'));
             exit();
+        }
+        // Contact number: local 10 digits only (no country code).
+        // Accept separators, but normalize before saving/validating.
+        if ($tourist->contact_number !== '') {
+            $rawPhone = $tourist->contact_number;
+            $phone = preg_replace('/\\D+/', '', $rawPhone);
+            if (!is_string($phone)) $phone = $rawPhone;
+            if (!preg_match('/^\\d{10}$/', $phone)) {
+                header('Location: ' . $this->touristProfileRedirectUrl(
+                    $data,
+                    'Please enter a valid contact number with exactly 10 digits (e.g. 0771234567).'
+                ));
+                exit();
+            }
+            $tourist->contact_number = $phone;
         }
 
         if (!empty($data['password'])) {
@@ -3342,8 +3364,17 @@ class TouristController {
                 header('Location: ' . $this->touristProfileRedirectUrl($data, 'New passwords do not match.'));
                 exit();
             }
-            if (strlen($pw) < 6) {
-                header('Location: ' . $this->touristProfileRedirectUrl($data, 'Password must be at least 6 characters.'));
+            // Strong password: at least 8 chars + upper + lower + number + symbol.
+            if (strlen($pw) < 8
+                || !preg_match('/[a-z]/', $pw)
+                || !preg_match('/[A-Z]/', $pw)
+                || !preg_match('/\\d/', $pw)
+                || !preg_match('/[^A-Za-z0-9]/', $pw)
+            ) {
+                header('Location: ' . $this->touristProfileRedirectUrl(
+                    $data,
+                    'Use a stronger password (8+ chars with upper, lower, number, and symbol).'
+                ));
                 exit();
             }
             $tourist->password = password_hash($pw, PASSWORD_DEFAULT);
