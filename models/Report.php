@@ -76,10 +76,10 @@ class Report
                     END = 0
                 ) AS inactive
             FROM users u
-            LEFT JOIN tourist_users tu   ON u.role = 'tourist'   AND u.ref_id = tu.id
-            LEFT JOIN guide_users gu     ON u.role = 'guide'     AND u.ref_id = gu.id
-            LEFT JOIN hotel_users hu     ON u.role = 'hotel'     AND u.ref_id = hu.id
-            LEFT JOIN transport_users tr ON u.role = 'transport' AND u.ref_id = tr.user_id
+            LEFT JOIN tourist_users tu   ON u.role = 'tourist'   AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN guide_users gu     ON u.role = 'guide'     AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(gu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN hotel_users hu     ON u.role = 'hotel'     AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(hu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN transport_users tr ON u.role = 'transport' AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tr.user_id USING utf8mb4) COLLATE utf8mb4_general_ci
             {$where}
         ";
 
@@ -158,10 +158,10 @@ class Report
 
         $countSql = "
             SELECT COUNT(*) FROM users u
-            LEFT JOIN tourist_users tu   ON u.role = 'tourist'   AND u.ref_id = tu.id
-            LEFT JOIN guide_users gu     ON u.role = 'guide'     AND u.ref_id = gu.id
-            LEFT JOIN hotel_users hu     ON u.role = 'hotel'     AND u.ref_id = hu.id
-            LEFT JOIN transport_users tr ON u.role = 'transport' AND u.ref_id = tr.user_id
+            LEFT JOIN tourist_users tu   ON u.role = 'tourist'   AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN guide_users gu     ON u.role = 'guide'     AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(gu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN hotel_users hu     ON u.role = 'hotel'     AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(hu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN transport_users tr ON u.role = 'transport' AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tr.user_id USING utf8mb4) COLLATE utf8mb4_general_ci
             {$where}
         ";
         $stmt = $this->db->prepare($countSql);
@@ -187,10 +187,10 @@ class Report
                     ELSE 1
                 END AS account_active
             FROM users u
-            LEFT JOIN tourist_users tu   ON u.role = 'tourist'   AND u.ref_id = tu.id
-            LEFT JOIN guide_users gu     ON u.role = 'guide'     AND u.ref_id = gu.id
-            LEFT JOIN hotel_users hu     ON u.role = 'hotel'     AND u.ref_id = hu.id
-            LEFT JOIN transport_users tr ON u.role = 'transport' AND u.ref_id = tr.user_id
+            LEFT JOIN tourist_users tu   ON u.role = 'tourist'   AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN guide_users gu     ON u.role = 'guide'     AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(gu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN hotel_users hu     ON u.role = 'hotel'     AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(hu.id USING utf8mb4) COLLATE utf8mb4_general_ci
+            LEFT JOIN transport_users tr ON u.role = 'transport' AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tr.user_id USING utf8mb4) COLLATE utf8mb4_general_ci
             {$where}
             ORDER BY {$orderCol} {$orderDir}
             LIMIT :lim OFFSET :off
@@ -322,24 +322,24 @@ class Report
 
         $innerSql = "
             SELECT
-                'package' AS booking_type,
+                CONVERT('package' USING utf8mb4) COLLATE utf8mb4_general_ci AS booking_type,
                 pb.id AS row_id,
-                pb.fullname AS customer,
-                pb.status AS status,
+                CONVERT(pb.fullname USING utf8mb4) COLLATE utf8mb4_general_ci AS customer,
+                CONVERT(pb.status USING utf8mb4) COLLATE utf8mb4_general_ci AS status,
                 pb.created_at,
                 pb.total_amount AS amount,
-                pb.package_name AS detail
+                CONVERT(pb.package_name USING utf8mb4) COLLATE utf8mb4_general_ci AS detail
             FROM package_bookings pb
             {$pbWhere} {$searchPb}
             UNION ALL
             SELECT
-                'custom' AS booking_type,
+                CONVERT('custom' USING utf8mb4) COLLATE utf8mb4_general_ci AS booking_type,
                 t.id AS row_id,
-                t.customer_name AS customer,
-                t.status AS status,
+                CONVERT(t.customer_name USING utf8mb4) COLLATE utf8mb4_general_ci AS customer,
+                CONVERT(t.status USING utf8mb4) COLLATE utf8mb4_general_ci AS status,
                 t.created_at,
                 t.budget_lkr AS amount,
-                t.destination AS detail
+                CONVERT(t.destination USING utf8mb4) COLLATE utf8mb4_general_ci AS detail
             FROM trips t
             {$trWhere} {$searchTr}
         ";
@@ -590,7 +590,7 @@ class Report
                     g.is_active,
                     u.created_at AS registered_at
                 FROM users u
-                JOIN guide_users g ON u.ref_id = g.id
+                JOIN guide_users g ON CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(g.id USING utf8mb4) COLLATE utf8mb4_general_ci
                 WHERE u.role = 'guide' {$whereStatus}
             ";
         }
@@ -603,7 +603,7 @@ class Report
                     t.is_active,
                     u.created_at AS registered_at
                 FROM users u
-                JOIN transport_users t ON u.ref_id = t.user_id
+                JOIN transport_users t ON CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(t.user_id USING utf8mb4) COLLATE utf8mb4_general_ci
                 WHERE u.role = 'transport' {$whereStatus}
             ";
         }
@@ -616,7 +616,7 @@ class Report
                     h.is_active,
                     u.created_at AS registered_at
                 FROM users u
-                JOIN hotel_users h ON u.ref_id = h.id
+                JOIN hotel_users h ON CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(h.id USING utf8mb4) COLLATE utf8mb4_general_ci
                 WHERE u.role = 'hotel' {$whereStatus}
             ";
         }
@@ -880,7 +880,7 @@ class Report
         $sql = "
             SELECT DATE_FORMAT({$dateCol}, '%Y-%m') AS ym, COUNT(*) AS c
             FROM users u
-            LEFT JOIN tourist_users tu ON u.role = 'tourist' AND u.ref_id = tu.id
+            LEFT JOIN tourist_users tu ON u.role = 'tourist' AND CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(tu.id USING utf8mb4) COLLATE utf8mb4_general_ci
             {$where}
             GROUP BY ym
             ORDER BY ym ASC
@@ -1072,7 +1072,7 @@ class Report
             $parts[] = "
                 SELECT u.created_at AS registered_at
                 FROM users u
-                JOIN guide_users g ON u.ref_id = g.id
+                JOIN guide_users g ON CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(g.id USING utf8mb4) COLLATE utf8mb4_general_ci
                 WHERE u.role = 'guide' {$whereStatus}
             ";
         }
@@ -1080,7 +1080,7 @@ class Report
             $parts[] = "
                 SELECT u.created_at AS registered_at
                 FROM users u
-                JOIN transport_users t ON u.ref_id = t.user_id
+                JOIN transport_users t ON CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(t.user_id USING utf8mb4) COLLATE utf8mb4_general_ci
                 WHERE u.role = 'transport' {$whereStatus}
             ";
         }
@@ -1088,7 +1088,7 @@ class Report
             $parts[] = "
                 SELECT u.created_at AS registered_at
                 FROM users u
-                JOIN hotel_users h ON u.ref_id = h.id
+                JOIN hotel_users h ON CONVERT(u.ref_id USING utf8mb4) COLLATE utf8mb4_general_ci = CONVERT(h.id USING utf8mb4) COLLATE utf8mb4_general_ci
                 WHERE u.role = 'hotel' {$whereStatus}
             ";
         }
@@ -1459,32 +1459,32 @@ class Report
 
         $pkgInner = "
             SELECT
-                'package' AS payment_source,
+                CONVERT('package' USING utf8mb4) COLLATE utf8mb4_general_ci AS payment_source,
                 pb.id AS id,
-                pb.fullname AS customer,
-                pb.email AS email,
-                pb.package_name AS detail,
+                CONVERT(pb.fullname USING utf8mb4) COLLATE utf8mb4_general_ci AS customer,
+                CONVERT(pb.email USING utf8mb4) COLLATE utf8mb4_general_ci AS email,
+                CONVERT(pb.package_name USING utf8mb4) COLLATE utf8mb4_general_ci AS detail,
                 pb.total_amount AS amount,
-                pb.status AS status,
-                {$this->paymentMethodExpr()} AS pay_method,
+                CONVERT(pb.status USING utf8mb4) COLLATE utf8mb4_general_ci AS status,
+                CONVERT({$this->paymentMethodExpr()} USING utf8mb4) COLLATE utf8mb4_general_ci AS pay_method,
                 pb.created_at AS created_at,
-                IFNULL(DATE_FORMAT(pb.paid_at, '%Y-%m-%d %H:%i:%s'), '') AS notes
+                CONVERT(IFNULL(DATE_FORMAT(pb.paid_at, '%Y-%m-%d %H:%i:%s'), '') USING utf8mb4) COLLATE utf8mb4_general_ci AS notes
             FROM package_bookings pb
             {$pWhere}
         ";
 
         $tripInner = "
             SELECT
-                'trip' AS payment_source,
+                CONVERT('trip' USING utf8mb4) COLLATE utf8mb4_general_ci AS payment_source,
                 t.id AS id,
-                t.customer_name AS customer,
-                '' AS email,
-                t.destination AS detail,
+                CONVERT(t.customer_name USING utf8mb4) COLLATE utf8mb4_general_ci AS customer,
+                CONVERT('' USING utf8mb4) COLLATE utf8mb4_general_ci AS email,
+                CONVERT(t.destination USING utf8mb4) COLLATE utf8mb4_general_ci AS detail,
                 t.budget_lkr AS amount,
-                t.status AS status,
-                '—' AS pay_method,
+                CONVERT(t.status USING utf8mb4) COLLATE utf8mb4_general_ci AS status,
+                CONVERT('—' USING utf8mb4) COLLATE utf8mb4_general_ci AS pay_method,
                 t.created_at AS created_at,
-                TRIM(CONCAT(IFNULL(t.start_date, ''), ' · ', IFNULL(CAST(t.number_of_people AS CHAR), ''), ' pax')) AS notes
+                CONVERT(TRIM(CONCAT(IFNULL(t.start_date, ''), ' · ', IFNULL(CAST(t.number_of_people AS CHAR), ''), ' pax')) USING utf8mb4) COLLATE utf8mb4_general_ci AS notes
             FROM trips t
             {$tWhere}
         ";
