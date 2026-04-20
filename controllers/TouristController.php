@@ -6,6 +6,27 @@ class TouristController {
         $this->db = Database::getConnection();
     }
 
+    /**
+     * Same rules as trip() / add_review: session must be a tourist (role or type).
+     */
+    private function isTouristSession(): bool {
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+        $role = strtolower((string) ($_SESSION['user_role'] ?? ''));
+        $type = strtolower((string) ($_SESSION['user_type'] ?? ''));
+        return $role === 'tourist' || $type === 'tourist';
+    }
+
+    /**
+     * CSRF token without random_bytes() (can block or stall on some Windows/XAMPP setups).
+     */
+    private function ensureCsrfToken(): void {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = hash('sha256', 'csrf|' . (string) session_id() . '|' . uniqid('', true));
+        }
+    }
+
     private function tripSubmissionUpsert($tripId, $userId, $tripArr) {
         $tripId = (int) $tripId;
         $userId = (int) $userId;
@@ -2924,6 +2945,210 @@ class TouristController {
 
     public function addReview() {
         view('tourist/add_review');
+    }
+
+    /**
+     * List current tourist's reviews (read). Edit/delete only for pending rows (see edit/update/delete handlers).
+     */
+    public function myReviews() {
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-reviews'));
+            exit;
+        }
+        $this->ensureCsrfToken();
+        require_once dirname(__DIR__) . '/models/Review.php';
+        $reviewModel = new Review($this->db);
+        $reviews = $reviewModel->getAllByUserId((int) $_SESSION['user_id']);
+        $flashOk = isset($_GET['ok']) ? trim((string) $_GET['ok']) : '';
+        $flashErr = isset($_GET['error']) ? trim((string) $_GET['error']) : '';
+        view('tourist/my_reviews', [
+            'reviews' => $reviews,
+            'flash_ok' => $flashOk,
+            'flash_err' => $flashErr,
+        ]);
+    }
+
+    public function editReview($id) {
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-reviews'));
+            exit;
+        }
+        $rid = (int) $id;
+        require_once dirname(__DIR__) . '/models/Review.php';
+        $reviewModel = new Review($this->db);
+        $row = $reviewModel->findOwnedPending((int) $_SESSION['user_id'], $rid);
+        if (!$row) {
+            header('Location: /CeylonGo/public/tourist/my-reviews?error=' . urlencode('This review cannot be edited (only pending reviews).'));
+            exit;
+        }
+        $this->ensureCsrfToken();
+        $err = isset($_GET['error']) ? trim((string) $_GET['error']) : '';
+        view('tourist/edit_review', ['review' => $row, 'error_message' => $err]);
+    }
+
+    public function updateReview($id) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/my-reviews');
+            exit;
+        }
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
+        $token = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+        if ($token === '' || !isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], $token)) {
+            header('Location: /CeylonGo/public/tourist/my-reviews?error=' . urlencode('Invalid request.'));
+            exit;
+        }
+        $rid = (int) $id;
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $email = trim((string) ($_POST['email'] ?? ''));
+        $rating = (int) ($_POST['rating'] ?? 0);
+        $reviewText = trim((string) ($_POST['review'] ?? ''));
+        if ($name === '' || $email === '' || $reviewText === '') {
+            header('Location: /CeylonGo/public/tourist/edit-review/' . $rid . '?error=' . urlencode('Please fill in all required fields.'));
+            exit;
+        }
+        if ($rating < 1 || $rating > 5) {
+            header('Location: /CeylonGo/public/tourist/edit-review/' . $rid . '?error=' . urlencode('Please select a valid rating.'));
+            exit;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            header('Location: /CeylonGo/public/tourist/edit-review/' . $rid . '?error=' . urlencode('Please enter a valid email.'));
+            exit;
+        }
+        require_once dirname(__DIR__) . '/models/Review.php';
+        $reviewModel = new Review($this->db);
+        $ok = $reviewModel->updateOwnedPending((int) $_SESSION['user_id'], $rid, $name, $email, $rating, $reviewText);
+        if ($ok) {
+            header('Location: /CeylonGo/public/tourist/my-reviews?ok=' . urlencode('Review updated.'));
+        } else {
+            header('Location: /CeylonGo/public/tourist/my-reviews?error=' . urlencode('Could not update (only pending reviews can be edited).'));
+        }
+        exit;
+    }
+
+    public function deleteReview() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/my-reviews');
+            exit;
+        }
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
+        $token = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+        if ($token === '' || !isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], $token)) {
+            header('Location: /CeylonGo/public/tourist/my-reviews?error=' . urlencode('Invalid request.'));
+            exit;
+        }
+        $rid = isset($_POST['review_id']) ? (int) $_POST['review_id'] : 0;
+        require_once dirname(__DIR__) . '/models/Review.php';
+        $reviewModel = new Review($this->db);
+        $ok = $reviewModel->deleteOwnedPending((int) $_SESSION['user_id'], $rid);
+        if ($ok) {
+            header('Location: /CeylonGo/public/tourist/my-reviews?ok=' . urlencode('Review deleted.'));
+        } else {
+            header('Location: /CeylonGo/public/tourist/my-reviews?error=' . urlencode('Could not delete (only pending reviews can be removed).'));
+        }
+        exit;
+    }
+
+    /**
+     * Full inquiry list for logged-in tourist; edit/delete only while pending.
+     */
+    public function myInquiries() {
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-inquiries'));
+            exit;
+        }
+        $this->ensureCsrfToken();
+        require_once dirname(__DIR__) . '/models/Inquiry.php';
+        $inqModel = new Inquiry($this->db);
+        $rows = $inqModel->getAllByUserId((int) $_SESSION['user_id']);
+        $flashOk = isset($_GET['ok']) ? trim((string) $_GET['ok']) : '';
+        $flashErr = isset($_GET['error']) ? trim((string) $_GET['error']) : '';
+        view('tourist/my_inquiries', [
+            'inquiries' => $rows,
+            'flash_ok' => $flashOk,
+            'flash_err' => $flashErr,
+        ]);
+    }
+
+    public function editInquiry($id) {
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login?redirect=' . urlencode('/CeylonGo/public/tourist/my-inquiries'));
+            exit;
+        }
+        $iid = (int) $id;
+        require_once dirname(__DIR__) . '/models/Inquiry.php';
+        $inqModel = new Inquiry($this->db);
+        $row = $inqModel->findOwnedPending((int) $_SESSION['user_id'], $iid);
+        if (!$row) {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?error=' . urlencode('This inquiry cannot be edited (only pending items).'));
+            exit;
+        }
+        $this->ensureCsrfToken();
+        $err = isset($_GET['error']) ? trim((string) $_GET['error']) : '';
+        view('tourist/edit_inquiry', ['inquiry' => $row, 'error_message' => $err]);
+    }
+
+    public function updateInquiry($id) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/my-inquiries');
+            exit;
+        }
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
+        $token = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+        if ($token === '' || !isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], $token)) {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?error=' . urlencode('Invalid request.'));
+            exit;
+        }
+        $iid = (int) $id;
+        $subject = trim((string) ($_POST['subject'] ?? ''));
+        $message = trim((string) ($_POST['message'] ?? ''));
+        if ($subject === '' || $message === '') {
+            header('Location: /CeylonGo/public/tourist/edit-inquiry/' . $iid . '?error=' . urlencode('Please fill subject and message.'));
+            exit;
+        }
+        require_once dirname(__DIR__) . '/models/Inquiry.php';
+        $inqModel = new Inquiry($this->db);
+        $ok = $inqModel->updateOwnedPending((int) $_SESSION['user_id'], $iid, $subject, $message);
+        if ($ok) {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?ok=' . urlencode('Inquiry updated.'));
+        } else {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?error=' . urlencode('Could not update (only pending inquiries can be edited).'));
+        }
+        exit;
+    }
+
+    public function deleteInquiry() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /CeylonGo/public/tourist/my-inquiries');
+            exit;
+        }
+        if (!$this->isTouristSession()) {
+            header('Location: /CeylonGo/public/login');
+            exit;
+        }
+        $token = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+        if ($token === '' || !isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], $token)) {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?error=' . urlencode('Invalid request.'));
+            exit;
+        }
+        $iid = isset($_POST['inquiry_id']) ? (int) $_POST['inquiry_id'] : 0;
+        require_once dirname(__DIR__) . '/models/Inquiry.php';
+        $inqModel = new Inquiry($this->db);
+        $ok = $inqModel->deleteOwnedPending((int) $_SESSION['user_id'], $iid);
+        if ($ok) {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?ok=' . urlencode('Inquiry deleted.'));
+        } else {
+            header('Location: /CeylonGo/public/tourist/my-inquiries?error=' . urlencode('Could not delete (only pending inquiries can be removed).'));
+        }
+        exit;
     }
 
     public function transportProviders() {

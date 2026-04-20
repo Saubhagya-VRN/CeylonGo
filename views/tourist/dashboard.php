@@ -2,8 +2,10 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// Check if user is logged in
-$is_logged_in = isset($_SESSION['user_id']) && $_SESSION['user_role'] === 'tourist';
+// Check if user is logged in (same rule as header.php / trip(): role OR type)
+$_dash_role = strtolower((string) (isset($_SESSION['user_role']) ? $_SESSION['user_role'] : ''));
+$_dash_type = strtolower((string) (isset($_SESSION['user_type']) ? $_SESSION['user_type'] : ''));
+$is_logged_in = isset($_SESSION['user_id']) && ($_dash_role === 'tourist' || $_dash_type === 'tourist');
 $user_name = $is_logged_in ? (isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Tourist') : '';
 
 // Full package data for dashboard dropdowns (with image, location, duration, rating)
@@ -55,6 +57,30 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
     <link rel="stylesheet" href="/CeylonGo/public/css/tourist/dashboard.css">
 </head>
 <body class="dashboard-page">
+    <script>
+    /* Login modal sets body overflow:hidden; clear on every load/back-forward (bfcache). */
+    (function () {
+        function unlockScroll() {
+            try {
+                document.body.style.overflow = '';
+                document.documentElement.style.overflow = '';
+            } catch (e) {}
+        }
+        unlockScroll();
+        window.addEventListener('pageshow', function (ev) {
+            if (ev.persisted) unlockScroll();
+        });
+        <?php if (!empty($is_logged_in)): ?>
+        try {
+            var u = new URL(window.location.href);
+            if (u.searchParams.has('openLogin')) {
+                u.searchParams.delete('openLogin');
+                window.history.replaceState({}, '', u.pathname + (u.searchParams.toString() ? '?' + u.searchParams.toString() : '') + u.hash);
+            }
+        } catch (e) {}
+        <?php endif; ?>
+    })();
+    </script>
     <?php include __DIR__ . '/header.php'; ?>
 
     <nav class="dashboard-package-bar" aria-label="Package options">
@@ -364,7 +390,12 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
 
               <?php if ($is_logged_in): ?>
                 <div class="dash-inquiry-list">
-                  <h3 class="dash-inquiry-list-title">Your recent inquiries</h3>
+                  <div class="dash-inquiry-list-head">
+                    <h3 class="dash-inquiry-list-title">Your recent inquiries</h3>
+                    <div class="dash-inquiry-list-cta">
+                      <a href="/CeylonGo/public/tourist/my-inquiries" class="dash-inquiry-btn dash-inquiry-btn--outline dash-inquiry-btn--compact">View all my inquiries</a>
+                    </div>
+                  </div>
                   <?php if (empty($inquiries)): ?>
                     <p class="dash-inquiry-empty">No inquiries yet.</p>
                   <?php else: ?>

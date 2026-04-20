@@ -139,5 +139,98 @@ class Inquiry {
         $stmt = $this->conn->prepare("DELETE FROM inquiries WHERE id = ?");
         return $stmt->execute([$id]);
     }
+
+    /**
+     * Full list for a logged-in tourist (excludes guest rows with user_id NULL).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getAllByUserId(int $userId): array
+    {
+        $userId = (int) $userId;
+        if ($userId <= 0) {
+            return [];
+        }
+        try {
+            $sql = "SELECT id, user_id, subject, message, admin_reply, status, created_at, replied_at, guest_name, guest_email
+                    FROM " . $this->table . "
+                    WHERE user_id = :uid
+                    ORDER BY created_at DESC";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([':uid' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('Inquiry::getAllByUserId: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findOwnedPending(int $userId, int $inquiryId): ?array
+    {
+        $userId = (int) $userId;
+        $inquiryId = (int) $inquiryId;
+        if ($userId <= 0 || $inquiryId <= 0) {
+            return null;
+        }
+        try {
+            $sql = "SELECT id, user_id, subject, message, admin_reply, status, created_at, replied_at
+                    FROM " . $this->table . "
+                    WHERE id = :iid AND user_id = :uid AND status = 'pending'
+                    LIMIT 1";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([':iid' => $inquiryId, ':uid' => $userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('Inquiry::findOwnedPending: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function updateOwnedPending(int $userId, int $inquiryId, string $subject, string $message): bool
+    {
+        $userId = (int) $userId;
+        $inquiryId = (int) $inquiryId;
+        if ($userId <= 0 || $inquiryId <= 0) {
+            return false;
+        }
+        try {
+            $sql = "UPDATE " . $this->table . "
+                    SET subject = :sub, message = :msg
+                    WHERE id = :iid AND user_id = :uid AND status = 'pending'";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([
+                ':sub' => $subject,
+                ':msg' => $message,
+                ':iid' => $inquiryId,
+                ':uid' => $userId,
+            ]);
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            error_log('Inquiry::updateOwnedPending: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteOwnedPending(int $userId, int $inquiryId): bool
+    {
+        $userId = (int) $userId;
+        $inquiryId = (int) $inquiryId;
+        if ($userId <= 0 || $inquiryId <= 0) {
+            return false;
+        }
+        try {
+            $sql = "DELETE FROM " . $this->table . " WHERE id = ? AND user_id = ? AND status = 'pending'";
+            $stmt = $this->conn->prepare($sql);
+            $stmt->execute([$inquiryId, $userId]);
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            error_log('Inquiry::deleteOwnedPending: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
 

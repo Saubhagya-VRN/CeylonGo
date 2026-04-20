@@ -35,6 +35,36 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.reviews-trip-main .trip-stepper-prev {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.reviews-trip-main .review-history-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 15px;
+  padding: 10px 16px;
+}
+
+@media (max-width: 640px) {
+  .reviews-trip-main .trip-header-row .trip-page-title {
+    flex: 1 1 100%;
+    text-align: center;
+    order: 0;
+  }
+  .reviews-trip-main .trip-header-row .trip-stepper-prev,
+  .reviews-trip-main .trip-header-row .trip-stepper-next {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-width: 0;
+  }
+}
+
 /* Header */
 .review-header {
   text-align: center;
@@ -369,4 +399,349 @@ button.btn-primary {
 
 .review-success-modal__ok {
   min-width: 120px;
+}
+
+/* —— My reviews list (matches trip hub + CeylonGo green theme) —— */
+.my-reviews-page.trip-page-body {
+  background: var(--trip-bg-light, #f5f7fa);
+}
+
+/* My inquiries: full width (no trip sidebar); same theme as My reviews */
+.my-inquiries-page.trip-page-body {
+  background: var(--trip-bg-light, #f5f7fa);
+}
+
+.my-inquiries-page .reviews-trip-main.trip-main-content {
+  padding: 24px 20px 56px;
+  max-width: none;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+/* Centered column: breadcrumbs, header, and table (narrower than full viewport) */
+.my-inquiries-page-inner {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Keep trip_layout sidebar offset — never use margin: 0 auto here (it clears margin-left). */
+.my-reviews-page .reviews-trip-main.trip-main-content {
+  padding: 24px 20px 56px;
+  max-width: none;
+  width: 100%;
+  margin-left: var(--trip-sidebar-width, 250px);
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+.my-reviews-page .trip-breadcrumbs,
+.my-inquiries-page .trip-breadcrumbs {
+  margin-bottom: 14px;
+}
+
+.my-reviews-page .trip-breadcrumbs a,
+.my-inquiries-page .trip-breadcrumbs a {
+  color: var(--trip-primary, #2c5530);
+  font-weight: 500;
+}
+
+.my-reviews-page .trip-breadcrumbs a:hover,
+.my-inquiries-page .trip-breadcrumbs a:hover {
+  color: var(--trip-primary-dark, #1e3d22);
+}
+
+.my-reviews-page .trip-breadcrumbs span:not(:last-child),
+.my-inquiries-page .trip-breadcrumbs span:not(:last-child) {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.my-reviews-page .trip-breadcrumbs span:last-child,
+.my-inquiries-page .trip-breadcrumbs span:last-child {
+  color: #374151;
+  font-weight: 600;
+}
+
+.my-reviews-page .trip-header-row,
+.my-inquiries-page .trip-header-row {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--trip-border, #e0e0e0);
+}
+
+.my-reviews-page .trip-page-title.trip-title-centered,
+.my-inquiries-page .trip-page-title.trip-title-centered {
+  color: #111827;
+}
+
+.my-reviews-page .trip-page-title.trip-title-centered i,
+.my-inquiries-page .trip-page-title.trip-title-centered i {
+  color: var(--trip-primary, #2c5530);
+}
+
+.my-reviews-section,
+.my-inquiries-section {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.my-inquiries-page .my-inquiries-section {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.my-inquiries-page .my-inquiries-section.review-form-container {
+  max-width: none;
+  width: 100%;
+}
+
+.my-reviews-page .my-reviews-section .alert,
+.my-inquiries-page .my-inquiries-section .alert {
+  border-radius: 10px;
+  border: 1px solid #bae6fd;
+}
+
+.my-reviews-empty {
+  margin: 24px 0;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--color-muted, #5a6b5a);
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #e0e8e0);
+  box-shadow: 0 4px 18px rgba(44, 85, 48, 0.08);
+}
+
+.my-reviews-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #e0e8e0);
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(44, 85, 48, 0.1);
+}
+
+.my-reviews-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.my-reviews-table th,
+.my-reviews-table td {
+  padding: 14px 16px;
+  text-align: left;
+  vertical-align: top;
+  box-sizing: border-box;
+  border-bottom: 1px solid #e8ede9;
+}
+
+.my-reviews-table thead th {
+  font-weight: 600;
+  color: var(--trip-primary, #2c5530);
+  background: linear-gradient(180deg, #f4faf5 0%, #ecf5ee 100%);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid rgba(44, 85, 48, 0.22);
+}
+
+.my-reviews-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.my-reviews-table tbody tr:hover td {
+  background: rgba(236, 253, 245, 0.45);
+}
+
+.my-reviews-col-date {
+  width: 10.5rem;
+  white-space: nowrap;
+  color: #4b5563;
+}
+
+.my-reviews-col-rating {
+  width: 5rem;
+  font-variant-numeric: tabular-nums;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.my-reviews-col-status {
+  width: 7.5rem;
+}
+
+.my-reviews-col-actions {
+  width: 13.5rem;
+  min-width: 13.5rem;
+  white-space: nowrap;
+}
+
+.my-reviews-col-excerpt {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  color: #374151;
+}
+
+.my-inquiries-col-subject {
+  width: 8.5rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.my-inquiries-page .my-reviews-table {
+  min-width: 720px;
+}
+
+.my-reviews-badge {
+  display: inline-block;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  line-height: 1.2;
+}
+
+.my-reviews-badge--pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.my-reviews-badge--approved {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid rgba(74, 124, 89, 0.35);
+}
+
+.my-reviews-badge--replied {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid rgba(74, 124, 89, 0.35);
+}
+
+.my-reviews-badge--rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+.my-reviews-badge--default {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.my-reviews-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.my-reviews-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--color-primary, #2c5530);
+  background: #fff;
+  color: var(--color-primary, #2c5530);
+  text-decoration: none;
+  line-height: 1.2;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.my-reviews-btn-edit:hover {
+  background: rgba(44, 85, 48, 0.08);
+  border-color: var(--color-primary-600, #4a7c59);
+  color: var(--color-primary-600, #4a7c59);
+}
+
+.my-reviews-delete-form {
+  display: inline-flex;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.my-reviews-btn-delete {
+  margin: 0;
+  padding: 7px 14px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid #fecaca;
+  background: #fff;
+  color: #b91c1c;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.my-reviews-btn-delete:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.my-reviews-actions-none {
+  color: #9ca3af;
+  font-size: 1.1rem;
+}
+
+.my-reviews-footnote {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--color-muted, #5a6b5a);
+  line-height: 1.55;
+  text-align: center;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.my-reviews-footnote strong {
+  color: var(--color-primary, #2c5530);
+}
+
+@media (max-width: 768px) {
+  .my-reviews-page .reviews-trip-main.trip-main-content {
+    padding: 16px 14px 40px;
+    margin-left: 0;
+  }
+
+  .my-inquiries-page .reviews-trip-main.trip-main-content {
+    padding: 16px 14px 40px;
+  }
+
+  .my-reviews-table {
+    min-width: 100%;
+  }
+
+  .my-inquiries-page .my-reviews-table {
+    min-width: 100%;
+  }
+
+  .my-reviews-table th,
+  .my-reviews-table td {
+    padding: 11px 12px;
+  }
 }

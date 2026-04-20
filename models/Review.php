@@ -249,4 +249,110 @@ class Review {
             return [];
         }
     }
+
+    /**
+     * All reviews submitted by a tourist (for "My reviews" list).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getAllByUserId(int $userId)
+    {
+        $userId = (int) $userId;
+        if ($userId <= 0) {
+            return [];
+        }
+        try {
+            $sql = "
+                SELECT id, user_id, name, email, rating, review_text, status, created_at, updated_at, admin_reply
+                FROM reviews
+                WHERE user_id = :uid
+                ORDER BY created_at DESC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':uid' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Review::getAllByUserId: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Single row if owned by user and still pending (tourist may edit/delete).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findOwnedPending(int $userId, int $reviewId)
+    {
+        $userId = (int) $userId;
+        $reviewId = (int) $reviewId;
+        if ($userId <= 0 || $reviewId <= 0) {
+            return null;
+        }
+        try {
+            $sql = "
+                SELECT id, user_id, name, email, rating, review_text, status, created_at, updated_at, admin_reply
+                FROM reviews
+                WHERE id = :rid AND user_id = :uid AND status = 'pending'
+                LIMIT 1
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':rid' => $reviewId, ':uid' => $userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (PDOException $e) {
+            error_log('Review::findOwnedPending: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function updateOwnedPending(int $userId, int $reviewId, $name, $email, $rating, $reviewText)
+    {
+        $userId = (int) $userId;
+        $reviewId = (int) $reviewId;
+        $rating = (int) $rating;
+        if ($userId <= 0 || $reviewId <= 0) {
+            return false;
+        }
+        try {
+            $sql = "
+                UPDATE reviews
+                SET name = :name,
+                    email = :email,
+                    rating = :rating,
+                    review_text = :rtext
+                WHERE id = :rid AND user_id = :uid AND status = 'pending'
+            ";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':name' => (string) $name,
+                ':email' => (string) $email,
+                ':rating' => $rating,
+                ':rtext' => (string) $reviewText,
+                ':rid' => $reviewId,
+                ':uid' => $userId,
+            ]) && $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log('Review::updateOwnedPending: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function deleteOwnedPending(int $userId, int $reviewId)
+    {
+        $userId = (int) $userId;
+        $reviewId = (int) $reviewId;
+        if ($userId <= 0 || $reviewId <= 0) {
+            return false;
+        }
+        try {
+            $sql = "DELETE FROM reviews WHERE id = ? AND user_id = ? AND status = 'pending'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$reviewId, $userId]);
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log('Review::deleteOwnedPending: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

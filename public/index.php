@@ -87,6 +87,14 @@ $router->get('tourist/tour-guide-report', 'TouristController@tourGuideRequestRep
 $router->get('tourist/contact', 'TouristController@contact');
 $router->post('tourist/hotel-request', 'TouristController@hotelRequestSubmit');
 $router->post('tourist/inquiries', 'TouristController@inquirySubmit');
+$router->get('tourist/my-reviews', 'TouristController@myReviews');
+$router->get('tourist/edit-review/{id}', 'TouristController@editReview');
+$router->post('tourist/edit-review/{id}', 'TouristController@updateReview');
+$router->post('tourist/delete-review', 'TouristController@deleteReview');
+$router->get('tourist/my-inquiries', 'TouristController@myInquiries');
+$router->get('tourist/edit-inquiry/{id}', 'TouristController@editInquiry');
+$router->post('tourist/edit-inquiry/{id}', 'TouristController@updateInquiry');
+$router->post('tourist/delete-inquiry', 'TouristController@deleteInquiry');
 $router->get('tourist/profile', 'TouristController@profile');
 $router->post('tourist/profile', 'TouristController@profile');
 

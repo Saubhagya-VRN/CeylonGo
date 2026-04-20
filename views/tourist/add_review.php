@@ -207,12 +207,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <div class="trip-breadcrumbs">
         <a href="<?php echo htmlspecialchars($asset_base . '/tourist/dashboard-side', ENT_QUOTES, 'UTF-8'); ?>"><i class="fa-solid fa-house"></i> Dashboard</a>
         <span>&gt;</span>
-        <span>Reviews</span>
+        <span>Write a review</span>
       </div>
       <div class="trip-header-row" aria-label="Reviews">
         <div class="trip-stepper-prev" aria-hidden="true"></div>
         <h1 class="trip-page-title trip-title-centered"><i class="fa-solid fa-star" aria-hidden="true"></i> Reviews</h1>
-        <div class="trip-stepper-next" aria-hidden="true"></div>
+        <div class="trip-stepper-next">
+          <a href="<?php echo htmlspecialchars($asset_base . '/tourist/my-reviews', ENT_QUOTES, 'UTF-8'); ?>" class="btn-secondary review-history-btn"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> View review history</a>
+        </div>
       </div>
   <?php endif; ?>
 
