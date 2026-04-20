@@ -379,7 +379,7 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
                   <div class="dash-inquiry-row">
                     <div class="dash-inquiry-field">
                       <label for="inq_message">4. Message</label>
-                      <textarea id="inq_message" name="message" rows="4" placeholder="Message" required></textarea>
+                      <textarea id="inq_message" name="message" rows="4" placeholder="Message" required minlength="10" maxlength="500" title="Message must be between 10 and 500 characters"></textarea>
                     </div>
                   </div>
 

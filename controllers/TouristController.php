@@ -1481,6 +1481,19 @@ class TouristController {
             exit;
         }
 
+        $subLen = function_exists('mb_strlen') ? mb_strlen($subject, 'UTF-8') : strlen($subject);
+        $msgLen = function_exists('mb_strlen') ? mb_strlen($message, 'UTF-8') : strlen($message);
+        if ($subLen < 3 || $subLen > 150) {
+            $_SESSION['inquiry_error'] = 'Subject must be between 3 and 150 characters.';
+            header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
+            exit;
+        }
+        if ($msgLen < 10 || $msgLen > 500) {
+            $_SESSION['inquiry_error'] = 'Message must be between 10 and 500 characters.';
+            header('Location: /CeylonGo/public/tourist/dashboard#inquiry');
+            exit;
+        }
+
         $inqModel = new Inquiry($this->db);
 
         $ok = false;
