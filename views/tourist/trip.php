@@ -1714,6 +1714,77 @@ $main_cities = array(
       };
     }
 
+    var tripOverviewServiceProvidersCache = null;
+
+    function hasTripServiceProviders(sb) {
+      if (!sb) return false;
+      var tr = sb.transport && sb.transport.length;
+      var gu = sb.guide && sb.guide.length;
+      return (tr > 0) || (gu > 0);
+    }
+
+    function buildTripServiceProviderModalInner(sb) {
+      var mount = document.getElementById('tripServiceProviderModalMount');
+      if (!mount) return;
+      sb = sb || { transport: [], guide: [] };
+      var tr = sb.transport || [];
+      var gu = sb.guide || [];
+      if (!tr.length && !gu.length) {
+        mount.innerHTML = '<p class="trip-provider-empty">No transport or tour guide bookings are linked to this trip yet.</p>';
+        return;
+      }
+      var html = [];
+      if (tr.length) {
+        html.push('<p class="trip-provider-section-title">Transport providers</p>');
+        tr.forEach(function (row) {
+          var name = (row.driver_name && String(row.driver_name).trim()) ? String(row.driver_name).trim() : 'Pending assignment';
+          var phone = (row.driver_contact && String(row.driver_contact).trim()) ? String(row.driver_contact).trim() : '—';
+          var veh = (row.assigned_vehicle_no != null && String(row.assigned_vehicle_no).trim() !== '') ? String(row.assigned_vehicle_no).trim() : '—';
+          html.push(
+            '<div class="trip-provider-card">' +
+            '<div class="trip-provider-card__name">' + escSummaryHtml(name) + '</div>' +
+            '<p class="trip-provider-card__row"><strong>Contact:</strong> ' + escSummaryHtml(phone) + '</p>' +
+            '<p class="trip-provider-card__row"><strong>Vehicle No:</strong> ' + escSummaryHtml(veh) + '</p>' +
+            '</div>'
+          );
+        });
+      }
+      if (gu.length) {
+        html.push('<p class="trip-provider-section-title" style="margin-top:16px;">Tour guides</p>');
+        gu.forEach(function (row) {
+          var fn = (row.first_name || '').trim();
+          var ln = (row.last_name || '').trim();
+          var name = (fn + ' ' + ln).trim() || 'Pending assignment';
+          var phone = (row.guide_contact && String(row.guide_contact).trim()) ? String(row.guide_contact).trim() : '—';
+          html.push(
+            '<div class="trip-provider-card">' +
+            '<div class="trip-provider-card__name">' + escSummaryHtml(name) + '</div>' +
+            '<p class="trip-provider-card__row"><strong>Contact:</strong> ' + escSummaryHtml(phone) + '</p>' +
+            '</div>'
+          );
+        });
+      }
+      mount.innerHTML = html.join('');
+    }
+
+    function openTripServiceProviderModal(sb) {
+      tripOverviewServiceProvidersCache = sb || null;
+      buildTripServiceProviderModalInner(sb);
+      var overlay = document.getElementById('tripServiceProviderModalOverlay');
+      if (!overlay) return;
+      overlay.classList.add('trip-modal-open');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeTripServiceProviderModal() {
+      var overlay = document.getElementById('tripServiceProviderModalOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('trip-modal-open');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
     function renderTripFinalReviewStep() {
       var mount = document.getElementById('tripFinalReviewMount');
       if (!mount) return;
@@ -1795,14 +1866,36 @@ $main_cities = array(
           var noteHtml = isBankSubmitted
             ? '<p class="trip-paid-card__note trip-paid-card__note--pending">Your bank transfer was received. We will confirm payment within 1–2 business days.</p>'
             : '<p class="trip-paid-card__note trip-paid-card__note--success">Payment complete. Thank you for choosing Ceylon Go.</p>';
-          var actionsHtml = isBankSubmitted
-            ? '<div class="trip-paid-card__actions trip-paid-card__actions--single">' +
+
+          tripOverviewServiceProvidersCache = data.subBookings || null;
+          var showProviders = hasTripServiceProviders(data.subBookings);
+          var providerBtn =
+            '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--tertiary js-trip-provider-details-open">Service provider details</button>';
+
+          var actionsHtml;
+          if (isBankSubmitted) {
+            actionsHtml = showProviders
+              ? '<div class="trip-paid-card__actions trip-paid-card__actions--split">' +
+                providerBtn +
+                '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open" data-trip-id="' + escSummaryHtml(String(tidNum || '')) + '">View trip summary</button>' +
+                '</div>'
+              : '<div class="trip-paid-card__actions trip-paid-card__actions--single">' +
+                '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open" data-trip-id="' + escSummaryHtml(String(tidNum || '')) + '">View trip summary</button>' +
+                '</div>';
+          } else if (showProviders) {
+            actionsHtml =
+              '<div class="trip-paid-card__actions trip-paid-card__actions--split trip-paid-card__actions--triple">' +
+              '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--secondary js-trip-refund-open">Request refund</button>' +
+              providerBtn +
               '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open" data-trip-id="' + escSummaryHtml(String(tidNum || '')) + '">View trip summary</button>' +
-              '</div>'
-            : '<div class="trip-paid-card__actions trip-paid-card__actions--split">' +
+              '</div>';
+          } else {
+            actionsHtml =
+              '<div class="trip-paid-card__actions trip-paid-card__actions--split">' +
               '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--secondary js-trip-refund-open">Request refund</button>' +
               '<button type="button" class="trip-paid-card__btn trip-paid-card__btn--primary js-trip-budget-summary-open" data-trip-id="' + escSummaryHtml(String(tidNum || '')) + '">View trip summary</button>' +
               '</div>';
+          }
 
           mount.innerHTML =
             '<div class="trip-paid-card trip-paid-card--overview" role="region" aria-label="Trip overview">' +
@@ -1823,6 +1916,13 @@ $main_cities = array(
 
           var refBtn = mount.querySelector('.js-trip-refund-open');
           var budBtn = mount.querySelector('.js-trip-budget-summary-open');
+          var provBtn = mount.querySelector('.js-trip-provider-details-open');
+          if (provBtn) {
+            provBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              openTripServiceProviderModal(tripOverviewServiceProvidersCache);
+            });
+          }
           if (refBtn && !isBankSubmitted) {
             if (tidNum > 0) refBtn.setAttribute('data-trip-no', String(tidNum));
             refBtn.setAttribute('data-paid-label', rf.paidLabel);
@@ -5443,6 +5543,15 @@ $main_cities = array(
     registerTripAccommodation('trip3', 'start_date_3', 'end_date_3');
 
     (function initTripOverviewModals() {
+      var providerOverlay = document.getElementById('tripServiceProviderModalOverlay');
+      var providerClose = document.getElementById('tripServiceProviderModalClose');
+      if (providerClose) providerClose.addEventListener('click', closeTripServiceProviderModal);
+      if (providerOverlay) {
+        providerOverlay.addEventListener('click', function (e) {
+          if (e.target === providerOverlay) closeTripServiceProviderModal();
+        });
+      }
+
       var budgetOverlay = document.getElementById('tripBudgetSummaryModalOverlay');
       var budgetClose = document.getElementById('tripBudgetSummaryModalClose');
       var budgetDownload = document.getElementById('tripBudgetSummaryModalDownload');

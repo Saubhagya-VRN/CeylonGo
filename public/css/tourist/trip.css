@@ -2316,14 +2316,14 @@
 .trip-paid-card__actions--split {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: flex-end;
   align-items: center;
 }
 
 .trip-paid-card__actions--split .trip-paid-card__btn {
   width: auto;
-  flex: 1 1 140px;
+  flex: 1 1 100px;
   min-width: 0;
 }
 
@@ -2333,12 +2333,14 @@
   justify-content: center;
   width: 100%;
   text-decoration: none;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 7px 10px;
+  border-radius: 10px;
   border: 2px solid #93c5fd;
   color: #1d4ed8;
   background: #ffffff;
-  font-weight: 800;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.25;
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
@@ -2362,6 +2364,24 @@
   background: #dbeafe;
 }
 
+.trip-paid-card__btn--tertiary {
+  border-color: #4a7c59;
+  color: #1e3d22;
+  background: #f0fdf4;
+}
+
+.trip-paid-card__btn--tertiary:hover {
+  background: #dcfce7;
+}
+
+.trip-paid-card__actions--split.trip-paid-card__actions--triple {
+  justify-content: center;
+}
+
+.trip-paid-card__actions--split.trip-paid-card__actions--triple .trip-paid-card__btn {
+  flex: 1 1 92px;
+}
+
 button.trip-paid-card__btn {
   cursor: pointer;
   font: inherit;
@@ -2377,6 +2397,61 @@ button.trip-paid-card__btn {
 .trip-modal.trip-modal--budget-summary {
   max-width: min(1100px, 96vw);
   width: 100%;
+}
+
+.trip-modal.trip-modal--provider-details {
+  max-width: min(480px, 96vw);
+  width: 100%;
+}
+
+.trip-modal-provider-body {
+  padding: 16px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #111827;
+}
+
+.trip-provider-section-title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #2c5530;
+}
+
+.trip-provider-card {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+
+.trip-provider-card:last-child {
+  margin-bottom: 0;
+}
+
+.trip-provider-card__name {
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.trip-provider-card__row {
+  margin: 4px 0 0;
+  font-size: 0.88rem;
+  color: #374151;
+}
+
+.trip-provider-empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 .trip-modal--budget-summary .trip-modal-budget-body {
   padding: 16px 20px 20px;

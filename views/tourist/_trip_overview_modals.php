@@ -13,6 +13,8 @@
   </div>
 </div>
 
+<?php include __DIR__ . '/_trip_service_provider_modal.php'; ?>
+
 <div id="tripCustomRefundModal" class="refund-modal trip-refund-modal" hidden aria-hidden="true">
   <div class="refund-modal__backdrop js-trip-custom-refund-close" tabindex="-1"></div>
   <div class="refund-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tripCustomRefundModalTitle">

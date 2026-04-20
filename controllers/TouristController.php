@@ -798,12 +798,12 @@ class TouristController {
 
         try {
             // Find transport requests linked to this trip
-            $stmtT = $this->db->prepare("SELECT t.id, t.status, t.pickup_location, t.dropoff_location, t.date, t.pickup_time, t.estimated_fare, t.vehicle_type, u.full_name as driver_name FROM transport_requests t LEFT JOIN transport_users u ON t.assigned_driver_id = u.user_id WHERE t.user_id = ? AND (t.notes LIKE ? OR t.id IN (SELECT transport_request_id FROM transport_request_trip_links WHERE trip_id = ?))");
+            $stmtT = $this->db->prepare("SELECT t.id, t.status, t.pickup_location, t.dropoff_location, t.date, t.pickup_time, t.estimated_fare, t.vehicle_type, t.assigned_vehicle_no, u.full_name AS driver_name, u.contact_no AS driver_contact FROM transport_requests t LEFT JOIN transport_users u ON t.assigned_driver_id = u.user_id WHERE t.user_id = ? AND (t.notes LIKE ? OR t.id IN (SELECT transport_request_id FROM transport_request_trip_links WHERE trip_id = ?))");
             $stmtT->execute(array($uid, "%Trip #$tripId%", $tripId));
             $subBookings['transport'] = $stmtT->fetchAll(PDO::FETCH_ASSOC);
 
             // Find guide requests
-            $stmtG = $this->db->prepare("SELECT g.id, g.status, g.location, g.date, g.time, g.fee, g.language, u.first_name, u.last_name FROM guide_requests g LEFT JOIN guide_users u ON g.guide_id = u.id WHERE g.tourist_id = ? AND g.notes LIKE ?");
+            $stmtG = $this->db->prepare("SELECT g.id, g.status, g.location, g.date, g.time, g.fee, g.language, u.first_name, u.last_name, u.contact_number AS guide_contact FROM guide_requests g LEFT JOIN guide_users u ON g.guide_id = u.id WHERE g.tourist_id = ? AND g.notes LIKE ?");
             $stmtG->execute(array($uid, "%Trip #$tripId%"));
             $subBookings['guide'] = $stmtG->fetchAll(PDO::FETCH_ASSOC);
 

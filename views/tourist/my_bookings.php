@@ -143,7 +143,8 @@ $trip_sidebar_active = 'bookings';
             <li><strong>Contact:</strong> <?php echo htmlspecialchars($contact_line !== '' ? $contact_line : '—'); ?></li>
           </ul>
           <p class="my-booking-note">We have recorded your bank transfer. Your booking stays approved while we verify the payment (usually within 1–2 business days).</p>
-          <div class="my-booking-custom-actions">
+          <div class="my-booking-custom-actions my-booking-custom-actions--row">
+            <button type="button" class="my-booking-btn-provider js-custom-trip-provider-open" data-trip-id="<?php echo (int) $ctid; ?>">Service provider details</button>
             <button type="button" class="my-booking-btn-trip-summary js-custom-trip-summary-open" data-trip-id="<?php echo (int) $ctid; ?>">View trip summary</button>
           </div>
           <?php elseif ($refund_requested): ?>
@@ -155,7 +156,7 @@ $trip_sidebar_active = 'bookings';
           <div class="my-booking-paid-footer">
             <p class="my-booking-refund-status--above">Refund request submitted<?php
               if ($refund_rr !== '' && strtotime($refund_rr) !== false): ?> on <?php echo htmlspecialchars(date('F j, Y \a\t g:i A', strtotime($refund_rr))); ?><?php endif; ?>. We will email you about the next steps.</p>
-            <div class="my-booking-paid-grid">
+            <div class="my-booking-paid-grid my-booking-paid-grid--custom">
               <div class="my-booking-cell my-booking-cell--contact">
                 <ul class="my-booking-details my-booking-details--contact-only">
                   <li><strong>Contact:</strong> <?php echo htmlspecialchars($contact_line !== '' ? $contact_line : '—'); ?></li>
@@ -163,6 +164,9 @@ $trip_sidebar_active = 'bookings';
                 <p class="my-booking-note my-booking-paymsg-line">Payment complete. Thank you for choosing Ceylon Go.</p>
               </div>
               <div class="my-booking-cell my-booking-cell--refund">
+              </div>
+              <div class="my-booking-cell my-booking-cell--provider">
+                <button type="button" class="my-booking-btn-provider js-custom-trip-provider-open" data-trip-id="<?php echo (int) $ctid; ?>">Service provider details</button>
               </div>
               <div class="my-booking-cell my-booking-cell--trip">
                 <button type="button" class="my-booking-btn-trip-summary js-custom-trip-summary-open" data-trip-id="<?php echo (int) $ctid; ?>">View trip summary</button>
@@ -176,7 +180,7 @@ $trip_sidebar_active = 'bookings';
             <li><strong>Total:</strong> <?php echo htmlspecialchars($total_line); ?></li>
           </ul>
           <div class="my-booking-paid-footer">
-            <div class="my-booking-paid-grid">
+            <div class="my-booking-paid-grid my-booking-paid-grid--custom">
               <div class="my-booking-cell my-booking-cell--contact">
                 <ul class="my-booking-details my-booking-details--contact-only">
                   <li><strong>Contact:</strong> <?php echo htmlspecialchars($contact_line !== '' ? $contact_line : '—'); ?></li>
@@ -192,6 +196,9 @@ $trip_sidebar_active = 'bookings';
                   data-total-lkr="<?php echo (int) $total_lkr_int; ?>"
                 >Request refund</button>
                 <?php endif; ?>
+              </div>
+              <div class="my-booking-cell my-booking-cell--provider">
+                <button type="button" class="my-booking-btn-provider js-custom-trip-provider-open" data-trip-id="<?php echo (int) $ctid; ?>">Service provider details</button>
               </div>
               <div class="my-booking-cell my-booking-cell--trip">
                 <button type="button" class="my-booking-btn-trip-summary js-custom-trip-summary-open" data-trip-id="<?php echo (int) $ctid; ?>">View trip summary</button>
@@ -329,6 +336,10 @@ $trip_sidebar_active = 'bookings';
     </div>
   </div>
 
+  <?php if ($bookings_custom_only): ?>
+  <?php include __DIR__ . '/_trip_service_provider_modal.php'; ?>
+  <?php endif; ?>
+
   <?php include __DIR__ . '/footer.php'; ?>
   <script>
   (function () {
@@ -337,6 +348,8 @@ $trip_sidebar_active = 'bookings';
     var tripBodyEl = document.getElementById('tripSummaryModalBody');
     var refundModal = document.getElementById('refundModal');
     var refundBodyEl = document.getElementById('refundModalBody');
+    var providerOverlay = document.getElementById('tripServiceProviderModalOverlay');
+    var providerMount = document.getElementById('tripServiceProviderModalMount');
     var refundState = { mode: 'package', bookingId: '', tripId: '', paidLabel: '', deadlineLabel: '', totalLkr: 0 };
 
     function esc(s) {
@@ -359,7 +372,8 @@ $trip_sidebar_active = 'bookings';
       if (!refundModal) return;
       refundModal.hidden = true;
       refundModal.setAttribute('aria-hidden', 'true');
-      if (!tripModal || tripModal.hidden) document.body.style.overflow = '';
+      var providerOpen = providerOverlay && providerOverlay.classList.contains('trip-modal-open');
+      if ((!tripModal || tripModal.hidden) && !providerOpen) document.body.style.overflow = '';
     }
     function showRefundStep1() {
       if (!refundBodyEl) return;
@@ -547,7 +561,67 @@ $trip_sidebar_active = 'bookings';
       if (!tripModal) return;
       tripModal.hidden = true;
       tripModal.setAttribute('aria-hidden', 'true');
-      if (!refundModal || refundModal.hidden) document.body.style.overflow = '';
+      var providerOpen = providerOverlay && providerOverlay.classList.contains('trip-modal-open');
+      if ((!refundModal || refundModal.hidden) && !providerOpen) document.body.style.overflow = '';
+    }
+
+    function buildServiceProviderModalInner(sb) {
+      if (!providerMount) return;
+      sb = sb || { transport: [], guide: [] };
+      var tr = sb.transport || [];
+      var gu = sb.guide || [];
+      if (!tr.length && !gu.length) {
+        providerMount.innerHTML = '<p class="trip-provider-empty">No transport or tour guide bookings are linked to this trip yet.</p>';
+        return;
+      }
+      var html = [];
+      if (tr.length) {
+        html.push('<p class="trip-provider-section-title">Transport providers</p>');
+        tr.forEach(function (row) {
+          var name = (row.driver_name && String(row.driver_name).trim()) ? String(row.driver_name).trim() : 'Pending assignment';
+          var phone = (row.driver_contact && String(row.driver_contact).trim()) ? String(row.driver_contact).trim() : '—';
+          var veh = (row.assigned_vehicle_no != null && String(row.assigned_vehicle_no).trim() !== '') ? String(row.assigned_vehicle_no).trim() : '—';
+          html.push(
+            '<div class="trip-provider-card">' +
+            '<div class="trip-provider-card__name">' + esc(name) + '</div>' +
+            '<p class="trip-provider-card__row"><strong>Contact:</strong> ' + esc(phone) + '</p>' +
+            '<p class="trip-provider-card__row"><strong>Vehicle No:</strong> ' + esc(veh) + '</p>' +
+            '</div>'
+          );
+        });
+      }
+      if (gu.length) {
+        html.push('<p class="trip-provider-section-title" style="margin-top:16px;">Tour guides</p>');
+        gu.forEach(function (row) {
+          var fn = (row.first_name || '').trim();
+          var ln = (row.last_name || '').trim();
+          var name = (fn + ' ' + ln).trim() || 'Pending assignment';
+          var phone = (row.guide_contact && String(row.guide_contact).trim()) ? String(row.guide_contact).trim() : '—';
+          html.push(
+            '<div class="trip-provider-card">' +
+            '<div class="trip-provider-card__name">' + esc(name) + '</div>' +
+            '<p class="trip-provider-card__row"><strong>Contact:</strong> ' + esc(phone) + '</p>' +
+            '</div>'
+          );
+        });
+      }
+      providerMount.innerHTML = html.join('');
+    }
+
+    function openServiceProviderModal() {
+      if (!providerOverlay) return;
+      providerOverlay.classList.add('trip-modal-open');
+      providerOverlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeServiceProviderModal() {
+      if (!providerOverlay) return;
+      providerOverlay.classList.remove('trip-modal-open');
+      providerOverlay.setAttribute('aria-hidden', 'true');
+      if ((!tripModal || tripModal.hidden) && (!refundModal || refundModal.hidden)) {
+        document.body.style.overflow = '';
+      }
     }
 
     if (tripModal && tripBodyEl) {
@@ -589,10 +663,53 @@ $trip_sidebar_active = 'bookings';
       });
     }
 
+    if (providerOverlay) {
+      var providerCloseBtn = document.getElementById('tripServiceProviderModalClose');
+      if (providerCloseBtn) providerCloseBtn.addEventListener('click', closeServiceProviderModal);
+      providerOverlay.addEventListener('click', function (e) {
+        if (e.target === providerOverlay) closeServiceProviderModal();
+      });
+      document.querySelectorAll('.js-custom-trip-provider-open').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-trip-id');
+          if (!id) return;
+          if (providerMount) providerMount.innerHTML = '<p class="trip-provider-empty">Loading…</p>';
+          openServiceProviderModal();
+          fetch(base + '/tourist/trip-payment-status/' + encodeURIComponent(id), {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (!data || !data.success) {
+                if (providerMount) {
+                  providerMount.innerHTML =
+                    '<p class="trip-provider-empty">' +
+                    esc(data && data.error ? data.error : 'Could not load provider details.') +
+                    '</p>';
+                }
+                return;
+              }
+              buildServiceProviderModalInner(data.subBookings || { transport: [], guide: [] });
+            })
+            .catch(function () {
+              if (providerMount) {
+                providerMount.innerHTML =
+                  '<p class="trip-provider-empty">Could not load provider details. Please try again.</p>';
+              }
+            });
+        });
+      });
+    }
+
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       if (refundModal && !refundModal.hidden) {
         closeRefundModal();
+        return;
+      }
+      if (providerOverlay && providerOverlay.classList.contains('trip-modal-open')) {
+        closeServiceProviderModal();
         return;
       }
       if (tripModal && !tripModal.hidden) closeTripModal();
