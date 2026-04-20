@@ -595,6 +595,22 @@ button.btn-primary {
   color: #374151;
 }
 
+.my-inquiries-admin-reply {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid rgba(74, 124, 89, 0.25);
+  color: #065f46;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.my-inquiries-admin-reply strong {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
 .my-inquiries-col-subject {
   width: 8.5rem;
   word-wrap: break-word;

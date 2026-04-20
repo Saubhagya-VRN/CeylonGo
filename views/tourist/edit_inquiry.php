@@ -14,11 +14,10 @@ $tourist_email = isset($_SESSION['user_email']) ? trim((string) $_SESSION['user_
 $user_email_sidebar = $tourist_email;
 $avatar_initial = $user_name !== '' ? strtoupper(substr($user_name, 0, 1)) : 'T';
 $asset_base = $base;
-$trip_sidebar_active = '';
 $csrf = isset($_SESSION['csrf_token']) ? (string) $_SESSION['csrf_token'] : '';
-$iid = (int) ($inquiry['id'] ?? 0);
-$subj = (string) ($inquiry['subject'] ?? '');
-$msg = (string) ($inquiry['message'] ?? '');
+$iid = (int) (isset($inquiry['id']) ? $inquiry['id'] : 0);
+$subj = (string) (isset($inquiry['subject']) ? $inquiry['subject'] : '');
+$msg = (string) (isset($inquiry['message']) ? $inquiry['message'] : '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,22 +29,22 @@ $msg = (string) ($inquiry['message'] ?? '');
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/common.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/navbar.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip_layout.css">
-  <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/sidebar.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/add_review.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/footer.css">
 </head>
-<body class="trip-page-body bg-app">
+<body class="trip-page-body my-inquiries-page">
   <?php include __DIR__ . '/header.php'; ?>
-  <div class="sidebar-overlay trip-overlay" id="tripSidebarOverlay"></div>
-  <div class="trip-page-wrapper">
-    <?php include __DIR__ . '/_trip_sidebar.php'; ?>
-    <main class="trip-main-content reviews-trip-main">
-      <button type="button" class="hamburger-btn trip-hamburger" id="tripHamburgerBtn" aria-label="Toggle menu"><span></span><span></span><span></span></button>
-      <div class="trip-breadcrumbs">
-        <a href="<?php echo htmlspecialchars($base . '/tourist/my-inquiries', ENT_QUOTES, 'UTF-8'); ?>">My inquiries</a>
-        <span>&gt;</span>
-        <span>Edit</span>
+
+  <main class="trip-main-content reviews-trip-main">
+    <div class="my-inquiries-page-inner">
+      <div class="trip-header-row" aria-label="Edit inquiry">
+        <div class="trip-stepper-prev">
+          <a href="<?php echo htmlspecialchars($base . '/tourist/my-inquiries', ENT_QUOTES, 'UTF-8'); ?>" class="btn-secondary review-history-btn"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back</a>
+        </div>
+        <h1 class="trip-page-title trip-title-centered"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Edit inquiry</h1>
+        <div class="trip-stepper-next"></div>
       </div>
-      <h1 class="trip-page-title trip-title-centered" style="margin-bottom:1rem;">Edit inquiry</h1>
 
       <section class="review-form-container review-form-container--trip">
         <?php if ($error_message !== ''): ?>
@@ -71,29 +70,8 @@ $msg = (string) ($inquiry['message'] ?? '');
           </div>
         </form>
       </section>
-    </main>
-  </div>
-  <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var hamburger = document.getElementById('tripHamburgerBtn');
-    var sidebar = document.getElementById('tripSidebar');
-    var overlay = document.getElementById('tripSidebarOverlay');
-    function toggleSidebar() {
-      if (hamburger) hamburger.classList.toggle('active');
-      if (sidebar) sidebar.classList.toggle('active');
-      if (overlay) overlay.classList.toggle('active');
-      document.body.style.overflow = sidebar && sidebar.classList.contains('active') ? 'hidden' : '';
-    }
-    function closeSidebar() {
-      if (hamburger) hamburger.classList.remove('active');
-      if (sidebar) sidebar.classList.remove('active');
-      if (overlay) overlay.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-    if (hamburger) hamburger.addEventListener('click', toggleSidebar);
-    if (overlay) overlay.addEventListener('click', closeSidebar);
-  });
-  </script>
+    </div>
+  </main>
   <?php include __DIR__ . '/footer.php'; ?>
 </body>
 </html>

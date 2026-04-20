@@ -20,6 +20,7 @@ $csrf = isset($_SESSION['csrf_token']) ? (string) $_SESSION['csrf_token'] : '';
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip_layout.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/trip.css">
   <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/add_review.css">
+  <link rel="stylesheet" href="<?php echo htmlspecialchars($base, ENT_QUOTES, 'UTF-8'); ?>/css/tourist/footer.css">
 </head>
 <body class="trip-page-body my-inquiries-page">
   <?php include __DIR__ . '/header.php'; ?>
@@ -68,9 +69,10 @@ $csrf = isset($_SESSION['csrf_token']) ? (string) $_SESSION['csrf_token'] : '';
                   <?php
                     $st = isset($inq['status']) ? (string) $inq['status'] : 'pending';
                     $pending = ($st === 'pending');
-                    $iid = (int) ($inq['id'] ?? 0);
+                    $iid = (int) (isset($inq['id']) ? $inq['id'] : 0);
                     $msg = isset($inq['message']) ? trim((string) $inq['message']) : '';
                     $msgEx = strlen($msg) > 100 ? substr($msg, 0, 100) . '…' : $msg;
+                    $adminReply = isset($inq['admin_reply']) ? trim((string) $inq['admin_reply']) : '';
                     $stSlug = preg_replace('/[^a-z0-9_-]/', '', strtolower($st));
                     if ($stSlug === '') {
                         $stSlug = 'pending';
@@ -92,9 +94,17 @@ $csrf = isset($_SESSION['csrf_token']) ? (string) $_SESSION['csrf_token'] : '';
                   ?>
                   <tr>
                     <td class="my-reviews-col-date"><?php echo htmlspecialchars(isset($inq['created_at']) ? substr((string) $inq['created_at'], 0, 16) : ''); ?></td>
-                    <td class="my-inquiries-col-subject"><?php echo htmlspecialchars((string) ($inq['subject'] ?? '')); ?></td>
+                    <td class="my-inquiries-col-subject"><?php echo htmlspecialchars((string) (isset($inq['subject']) ? $inq['subject'] : '')); ?></td>
                     <td class="my-reviews-col-status"><span class="my-reviews-badge <?php echo htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($st); ?></span></td>
-                    <td class="my-reviews-col-excerpt"><?php echo nl2br(htmlspecialchars($msgEx)); ?></td>
+                    <td class="my-reviews-col-excerpt">
+                      <?php echo nl2br(htmlspecialchars($msgEx)); ?>
+                      <?php if ($stSlug === 'replied' && $adminReply !== ''): ?>
+                        <div class="my-inquiries-admin-reply">
+                          <strong>Admin reply:</strong>
+                          <div><?php echo nl2br(htmlspecialchars($adminReply)); ?></div>
+                        </div>
+                      <?php endif; ?>
+                    </td>
                     <td class="my-reviews-col-actions">
                       <?php if ($pending): ?>
                         <div class="my-reviews-actions">

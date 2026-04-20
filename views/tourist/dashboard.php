@@ -392,35 +392,11 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
               <?php if ($is_logged_in): ?>
                 <div class="dash-inquiry-list">
                   <div class="dash-inquiry-list-head">
-                    <h3 class="dash-inquiry-list-title">Your recent inquiries</h3>
+                    <h3 class="dash-inquiry-list-title">My inquiries</h3>
                     <div class="dash-inquiry-list-cta">
                       <a href="/CeylonGo/public/tourist/my-inquiries" class="dash-inquiry-btn dash-inquiry-btn--outline dash-inquiry-btn--compact">View all my inquiries</a>
                     </div>
                   </div>
-                  <?php if (empty($inquiries)): ?>
-                    <p class="dash-inquiry-empty">No inquiries yet.</p>
-                  <?php else: ?>
-                    <?php foreach ($inquiries as $inq): ?>
-                      <?php $st = isset($inq['status']) ? $inq['status'] : 'pending'; ?>
-                      <article class="dash-inquiry-item">
-                        <div class="dash-inquiry-item-head">
-                          <strong><?php echo htmlspecialchars(isset($inq['subject']) ? $inq['subject'] : ''); ?></strong>
-                          <span class="dash-inquiry-status <?php echo ($st === 'replied') ? 'dash-inquiry-status--replied' : 'dash-inquiry-status--pending'; ?>">
-                            <?php echo htmlspecialchars(ucfirst($st)); ?>
-                          </span>
-                        </div>
-                        <div class="dash-inquiry-item-body"><?php echo nl2br(htmlspecialchars(isset($inq['message']) ? $inq['message'] : '')); ?></div>
-                        <?php if (!empty($inq['admin_reply'])): ?>
-                          <div class="dash-inquiry-reply">
-                            <strong>Admin reply:</strong>
-                            <div><?php echo nl2br(htmlspecialchars($inq['admin_reply'])); ?></div>
-                          </div>
-                        <?php else: ?>
-                          <div class="dash-inquiry-reply dash-inquiry-reply--muted">No reply yet.</div>
-                        <?php endif; ?>
-                      </article>
-                    <?php endforeach; ?>
-                  <?php endif; ?>
                 </div>
               <?php else: ?>
                 <p class="dash-inquiry-guest-hint">Log in to submit your inquiry. We'll get back to you soon.</p>
