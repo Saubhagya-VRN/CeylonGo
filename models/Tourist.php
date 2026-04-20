@@ -9,6 +9,7 @@ class Tourist {
     public $contact_number;
     public $email;
     public $password;
+    public $profile_image;
     public $is_active;   // NEW
 
     public function __construct($db) {
@@ -78,6 +79,7 @@ class Tourist {
                       first_name = :first_name,
                       last_name = :last_name,
                       contact_number = :contact_number,
+                      profile_image = :profile_image,
                       email = :email,
                       password = :password
                       WHERE id = :id";
@@ -86,6 +88,7 @@ class Tourist {
                       first_name = :first_name,
                       last_name = :last_name,
                       contact_number = :contact_number,
+                      profile_image = :profile_image,
                       email = :email
                       WHERE id = :id";
         }
@@ -96,6 +99,7 @@ class Tourist {
         $stmt->bindParam(":first_name", $this->first_name);
         $stmt->bindParam(":last_name", $this->last_name);
         $stmt->bindParam(":contact_number", $this->contact_number);
+        $stmt->bindParam(":profile_image", $this->profile_image);
         $stmt->bindParam(":email", $this->email);
         
         if (!empty($this->password)) {

@@ -3306,6 +3306,8 @@ class TouristController {
         $tourist->last_name = trim($data['last_name'] ?? '');
         $tourist->contact_number = trim($data['contact_number'] ?? '');
         $tourist->email = trim($data['email'] ?? '');
+        $existingTouristRow = $tourist->getTouristById($tourist_id);
+        $tourist->profile_image = isset($existingTouristRow['profile_image']) ? (string) $existingTouristRow['profile_image'] : null;
 
         if ($tourist->first_name === '' || $tourist->last_name === '' || $tourist->email === '') {
             header('Location: ' . $this->touristProfileRedirectUrl($data, 'Please fill in first name, last name, and email.'));
@@ -3380,6 +3382,18 @@ class TouristController {
             $tourist->password = password_hash($pw, PASSWORD_DEFAULT);
         }
 
+        // Optional profile image upload
+        if (!empty($_FILES['profile_image']) && is_array($_FILES['profile_image'])) {
+            $imgPath = $this->saveTouristProfileImage($tourist_id, $_FILES['profile_image']);
+            if ($imgPath === '__invalid__') {
+                header('Location: ' . $this->touristProfileRedirectUrl($data, 'Profile image must be a PNG or JPG (max 2MB).'));
+                exit();
+            }
+            if (is_string($imgPath) && $imgPath !== '') {
+                $tourist->profile_image = $imgPath;
+            }
+        }
+
         if ($tourist->updateProfile()) {
             // Update users table
             $authUser = new AuthUser($this->db);
@@ -3399,6 +3413,48 @@ class TouristController {
             header('Location: ' . $this->touristProfileRedirectUrl($data, 'Failed to update profile'));
         }
         exit();
+    }
+
+    /**
+     * @return string|null Relative path under public/uploads/ (e.g. profile/tourist_1_....jpg),
+     *                     '__invalid__' for validation failure, or null for "no file".
+     */
+    private function saveTouristProfileImage(int $touristId, array $file) {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+        if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+            return '__invalid__';
+        }
+        if (($file['size'] ?? 0) > 2 * 1024 * 1024) {
+            return '__invalid__';
+        }
+        $tmp = $file['tmp_name'] ?? '';
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            return '__invalid__';
+        }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmp);
+        $map = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+        ];
+        if (!isset($map[$mime])) {
+            return '__invalid__';
+        }
+        $ext = $map[$mime];
+        $base = defined('UPLOADS_PATH') ? UPLOADS_PATH : (dirname(__DIR__) . '/public/uploads');
+        $dir = $base . DIRECTORY_SEPARATOR . 'profile';
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            error_log('saveTouristProfileImage: cannot create ' . $dir);
+            return '__invalid__';
+        }
+        $basename = 'tourist_' . $touristId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+        $dest = $dir . DIRECTORY_SEPARATOR . $basename;
+        if (!move_uploaded_file($tmp, $dest)) {
+            return '__invalid__';
+        }
+        return 'profile/' . $basename;
     }
 
     // Diary methods

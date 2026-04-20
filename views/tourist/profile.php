@@ -23,6 +23,12 @@ $fn = htmlspecialchars((string) (isset($tourist['first_name']) ? $tourist['first
 $ln = htmlspecialchars((string) (isset($tourist['last_name']) ? $tourist['last_name'] : ''), ENT_QUOTES, 'UTF-8');
 $contact = htmlspecialchars((string) (isset($tourist['contact_number']) ? $tourist['contact_number'] : ''), ENT_QUOTES, 'UTF-8');
 $em = htmlspecialchars((string) (isset($tourist['email']) ? $tourist['email'] : ''), ENT_QUOTES, 'UTF-8');
+$profile_img = (string) (isset($tourist['profile_image']) ? $tourist['profile_image'] : '');
+$profile_img = trim($profile_img);
+$profile_img_url = '';
+if ($profile_img !== '') {
+    $profile_img_url = htmlspecialchars($asset_base . '/uploads/' . ltrim(str_replace('\\', '/', $profile_img), '/'), ENT_QUOTES, 'UTF-8');
+}
 $form_action = htmlspecialchars($asset_base . '/tourist/profile', ENT_QUOTES, 'UTF-8');
 $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
 ?>
@@ -76,9 +82,13 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
       <div class="profile-container">
         <div class="profile-topcard" aria-label="Profile summary">
           <div class="profile-avatar-wrap">
-            <div class="profile-avatar" aria-hidden="true"><?php echo htmlspecialchars($avatar_initial, ENT_QUOTES, 'UTF-8'); ?></div>
-            <button type="button" class="profile-avatar-edit" title="Photo upload not available yet" aria-label="Edit profile photo" disabled>
-              <i class="fa-solid fa-camera"></i>
+            <?php if ($profile_img_url !== ''): ?>
+              <img class="profile-avatar-img" src="<?php echo $profile_img_url; ?>" alt="Profile photo">
+            <?php else: ?>
+              <div class="profile-avatar" aria-hidden="true"><?php echo htmlspecialchars($avatar_initial, ENT_QUOTES, 'UTF-8'); ?></div>
+            <?php endif; ?>
+            <button type="button" class="profile-avatar-upload" id="profileAvatarUploadBtn" aria-label="Change profile photo" disabled>
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
             </button>
           </div>
           <div class="profile-topcard-text">
@@ -99,7 +109,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
         <?php endif; ?>
 
         <div class="profile-content">
-          <form method="post" action="<?php echo $form_action; ?>" class="profile-form" autocomplete="off" id="profileForm">
+          <form method="post" action="<?php echo $form_action; ?>" class="profile-form" autocomplete="off" id="profileForm" enctype="multipart/form-data">
             <?php if ($full_page): ?>
             <input type="hidden" name="full" value="1">
             <?php endif; ?>
@@ -132,6 +142,14 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
                       <span class="profile-input-icon" aria-hidden="true"><i class="fa-solid fa-phone"></i></span>
                       <input type="tel" id="contact_number" name="contact_number" value="<?php echo $contact; ?>" maxlength="10" inputmode="numeric" placeholder="e.g. 0771234567" class="profile-input--icon" pattern="[0-9]{10}" title="Enter exactly 10 digits (example: 0771234567)" disabled>
                     </div>
+                  </div>
+                </div>
+
+                <div class="profile-field">
+                  <div class="profile-field-label"><i class="fa-solid fa-image"></i> Profile picture (optional)</div>
+                  <div class="profile-field-inputs">
+                    <input type="file" id="profile_image" name="profile_image" accept="image/png,image/jpeg" disabled>
+                    <div class="profile-upload-hint">PNG or JPG up to 2MB.</div>
                   </div>
                 </div>
               </div>
@@ -190,6 +208,8 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
     var editBtn = document.getElementById('profileEditToggleBtn');
     var form = document.getElementById('profileForm');
     var actions = document.getElementById('profileFormActions');
+    var avatarBtn = document.getElementById('profileAvatarUploadBtn');
+    var imgInput = document.getElementById('profile_image');
     function enableProfileEditing() {
       if (!form) return;
       form.querySelectorAll('input, select, textarea').forEach(function (el) {
@@ -197,6 +217,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
         el.disabled = false;
       });
       if (actions) actions.hidden = false;
+      if (avatarBtn) avatarBtn.disabled = false;
       if (editBtn) {
         editBtn.disabled = true;
         editBtn.classList.add('profile-topcard-edit--disabled');
@@ -206,6 +227,12 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
       if (first) first.focus();
     }
     if (editBtn) editBtn.addEventListener('click', enableProfileEditing);
+    if (avatarBtn && imgInput) {
+      avatarBtn.addEventListener('click', function () {
+        if (avatarBtn.disabled) return;
+        imgInput.click();
+      });
+    }
 
     var hamburger = document.getElementById('tripHamburgerBtn');
     var sidebar = document.getElementById('tripSidebar');
@@ -242,6 +269,8 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
     var editBtn = document.getElementById('profileEditToggleBtn');
     var form = document.getElementById('profileForm');
     var actions = document.getElementById('profileFormActions');
+    var avatarBtn = document.getElementById('profileAvatarUploadBtn');
+    var imgInput = document.getElementById('profile_image');
     function enableProfileEditing() {
       if (!form) return;
       form.querySelectorAll('input, select, textarea').forEach(function (el) {
@@ -249,6 +278,7 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
         el.disabled = false;
       });
       if (actions) actions.hidden = false;
+      if (avatarBtn) avatarBtn.disabled = false;
       if (editBtn) {
         editBtn.disabled = true;
         editBtn.classList.add('profile-topcard-edit--disabled');
@@ -258,6 +288,12 @@ $full_page = isset($_GET['full']) && (string) $_GET['full'] === '1';
       if (first) first.focus();
     }
     if (editBtn) editBtn.addEventListener('click', enableProfileEditing);
+    if (avatarBtn && imgInput) {
+      avatarBtn.addEventListener('click', function () {
+        if (avatarBtn.disabled) return;
+        imgInput.click();
+      });
+    }
   });
   </script>
   <?php endif; ?>

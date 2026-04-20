@@ -375,6 +375,7 @@ if ($is_logged_in && $inq_prefill_email === '' && isset($_SESSION['user_email'])
                     </div>
                   </div>
 
+
                   <div class="dash-inquiry-row">
                     <div class="dash-inquiry-field">
                       <label for="inq_message">4. Message</label>
