@@ -1,173 +1,22 @@
 <?php
-// views/tourist/add_review.php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+/**
+ * Add review — presentation only. POST is handled by TouristController@addReview + models/Review.php.
+ *
+ * Expected variables (from controller via view()):
+ * is_logged_in, user_name, user_email, error_message, success_modal_message, reviewer_name, email, rating, review_text
+ * (Do not use key "name" — it collides with view()'s $name path parameter after extract().)
+ */
+$is_logged_in = !empty($is_logged_in);
+$user_name = isset($user_name) ? (string) $user_name : '';
+$user_email = isset($user_email) ? (string) $user_email : '';
+$error_message = isset($error_message) ? (string) $error_message : '';
+$success_modal_message = isset($success_modal_message) ? (string) $success_modal_message : '';
+$reviewer_name = isset($reviewer_name) ? (string) $reviewer_name : '';
+$email = isset($email) ? (string) $email : '';
+$rating = isset($rating) ? (int) $rating : 0;
+$review_text = isset($review_text) ? (string) $review_text : '';
 
-// Check if user is logged in (support user_type or user_role from Auth)
-$is_logged_in = isset($_SESSION['user_id'])
-    && (($_SESSION['user_type'] ?? '') === 'tourist' || ($_SESSION['user_role'] ?? '') === 'tourist');
-
-// Get user name and email for logged-in tourists
-$user_name = '';
-$user_email = '';
-if ($is_logged_in) {
-    // Get email from session
-    $user_email = $_SESSION['user_email'] ?? '';
-    
-    // Get name from session if available, otherwise fetch from database
-    if (isset($_SESSION['user_name']) && !empty($_SESSION['user_name'])) {
-        $user_name = $_SESSION['user_name'];
-    } else {
-        // Fetch name from database
-        try {
-            require_once __DIR__ . '/../../config/database.php';
-            $stmt = $conn->prepare("SELECT first_name, last_name FROM tourist_users WHERE id = ?");
-            $stmt->bind_param("i", $_SESSION['user_id']);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            if ($row = $result->fetch_assoc()) {
-                $user_name = trim($row['first_name'] . ' ' . $row['last_name']);
-                // Store in session for future use
-                $_SESSION['user_name'] = $user_name;
-            }
-            $stmt->close();
-            // Leave $conn open; POST handler may need the same connection
-        } catch (Exception $e) {
-            error_log($e->getMessage());
-        }
-    }
-}
-
-// Generate CSRF token
-if ($is_logged_in && empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-$error_message = '';
-$success_modal_message = '';
-if (!empty($_SESSION['review_success_flash'])) {
-    $success_modal_message = (string) $_SESSION['review_success_flash'];
-    unset($_SESSION['review_success_flash']);
-}
-
-/** JSON response for AJAX submit (no page reload). */
-function add_review_json_exit($ok, $message)
-{
-    if (ob_get_level() > 0) {
-        ob_clean();
-    }
-    header('Content-Type: application/json; charset=utf-8');
-    header('Cache-Control: no-store');
-    echo json_encode(['ok' => (bool) $ok, 'message' => $message]);
-    exit;
-}
-
-// Initialize form variables
-$name = '';
-$email = '';
-$rating = 0;
-$review_text = '';
-
-// If user is logged in, pre-populate with their info
-if ($is_logged_in && $_SERVER["REQUEST_METHOD"] != "POST") {
-    $name = $user_name;
-    $email = $user_email;
-}
-
-// Process review submission
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Detect AJAX: FormData field and/or X-Requested-With (fetch sends both)
-    $ajax_submit = (!empty($_POST['ajax']) && $_POST['ajax'] === '1')
-        || (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])
-            && strtolower(trim($_SERVER['HTTP_X_REQUESTED_WITH'])) === 'xmlhttprequest');
-
-    // Check if user is logged in
-    if (!$is_logged_in) {
-        if ($ajax_submit) {
-            add_review_json_exit(false, 'Please login to submit a review.');
-        }
-        $error_message = "Please login to submit a review. <a href='../login' style='color: #2c5530; font-weight: bold; text-decoration: underline;'>Login here</a>";
-    }
-    // Verify CSRF token
-    elseif (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        if ($ajax_submit) {
-            add_review_json_exit(false, 'Invalid request. Please try again.');
-        }
-        $error_message = "Invalid request. Please try again.";
-    } else {
-        // Validate and sanitize input
-        $name = isset($_POST['name']) ? htmlspecialchars(trim($_POST['name'])) : '';
-        $email = isset($_POST['email']) ? htmlspecialchars(trim($_POST['email'])) : '';
-        $rating = isset($_POST['rating']) ? intval($_POST['rating']) : 0;
-        $review_text = isset($_POST['review']) ? htmlspecialchars(trim($_POST['review'])) : '';
-        
-        // Validation
-        if (empty($name) || empty($email) || empty($review_text)) {
-            if ($ajax_submit) {
-                add_review_json_exit(false, 'Please fill in all required fields.');
-            }
-            $error_message = "Please fill in all required fields.";
-        } elseif ($rating < 1 || $rating > 5) {
-            if ($ajax_submit) {
-                add_review_json_exit(false, 'Please select a valid rating (1–5 stars).');
-            }
-            $error_message = "Please select a valid rating (1-5 stars).";
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            if ($ajax_submit) {
-                add_review_json_exit(false, 'Please enter a valid email address.');
-            }
-            $error_message = "Please enter a valid email address.";
-        } else {
-            // Save to `reviews` (tourist feedback). Package-specific rows use `package_reviews` elsewhere.
-            try {
-                require_once __DIR__ . '/../../config/database.php';
-
-                $uid = (int) $_SESSION['user_id'];
-                $stmt = $conn->prepare("INSERT INTO reviews (user_id, name, email, rating, review_text, status) VALUES (?, ?, ?, ?, ?, 'pending')");
-                if (!$stmt) {
-                    error_log('add_review prepare failed: ' . $conn->error);
-                    if ($ajax_submit) {
-                        add_review_json_exit(false, 'Could not save your review. Please try again.');
-                    }
-                    $error_message = "An error occurred while submitting your review. Please try again.";
-                } elseif (!$stmt->bind_param("issis", $uid, $name, $email, $rating, $review_text)) {
-                    error_log('add_review bind_param failed: ' . $stmt->error);
-                    $stmt->close();
-                    if ($ajax_submit) {
-                        add_review_json_exit(false, 'Could not save your review. Please try again.');
-                    }
-                    $error_message = "An error occurred while submitting your review. Please try again.";
-                } elseif ($stmt->execute()) {
-                    $stmt->close();
-                    if ($ajax_submit) {
-                        add_review_json_exit(true, 'Review submitted successfully.');
-                    }
-                    if (!defined('BASE_URL')) {
-                        require_once __DIR__ . '/../../config/config.php';
-                    }
-                    $_SESSION['review_success_flash'] = 'Thank you for your review! It will be published after moderation.';
-                    header('Location: ' . BASE_URL . '/tourist/add-review', true, 303);
-                    exit;
-                } else {
-                    error_log('add_review execute failed: ' . $stmt->error);
-                    $stmt->close();
-                    if ($ajax_submit) {
-                        add_review_json_exit(false, 'Could not save your review. Please try again.');
-                    }
-                    $error_message = "An error occurred while submitting your review. Please try again.";
-                }
-                
-            } catch (Exception $e) {
-                if ($ajax_submit) {
-                    add_review_json_exit(false, 'Could not save your review. Please try again.');
-                }
-                $error_message = "An error occurred while submitting your review. Please try again.";
-                error_log($e->getMessage());
-            }
-        }
-    }
-}
+$login_base = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '/CeylonGo/public';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -235,9 +84,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <?php if (!$is_logged_in): ?>
       <div class="alert alert-info">
         <strong>👋 Welcome Guest!</strong> Please 
-        <a href="../login" style="color: #2c5530; font-weight: bold; text-decoration: underline;">login</a> 
+        <a href="<?php echo htmlspecialchars($login_base . '/login', ENT_QUOTES, 'UTF-8'); ?>" style="color: #2c5530; font-weight: bold; text-decoration: underline;">login</a> 
         or 
-        <a href="../register" style="color: #2c5530; font-weight: bold; text-decoration: underline;">register</a> 
+        <a href="<?php echo htmlspecialchars($login_base . '/register', ENT_QUOTES, 'UTF-8'); ?>" style="color: #2c5530; font-weight: bold; text-decoration: underline;">register</a> 
         to submit a review.
       </div>
     <?php endif; ?>
@@ -250,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <div class="form-row">
         <div class="form-group">
           <label for="name">Your Name <span class="required">*</span></label>
-          <input type="text" id="name" name="name" value="<?= htmlspecialchars($name) ?>" placeholder="Enter your full name" required <?= !$is_logged_in ? 'disabled' : '' ?>>
+          <input type="text" id="name" name="name" value="<?= htmlspecialchars($reviewer_name) ?>" placeholder="Enter your full name" required <?= !$is_logged_in ? 'disabled' : '' ?>>
         </div>
 
         <div class="form-group">

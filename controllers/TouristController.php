@@ -2957,7 +2957,173 @@ class TouristController {
     }
 
     public function addReview() {
-        view('tourist/add_review');
+        if (isset($_SERVER['REQUEST_METHOD']) && strtoupper((string) $_SERVER['REQUEST_METHOD']) === 'POST') {
+            $this->addReviewSubmit();
+            return;
+        }
+        view('tourist/add_review', $this->buildAddReviewViewData());
+    }
+
+    /**
+     * Build view data for add-review (GET and validation-error POST).
+     *
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    private function buildAddReviewViewData($overrides = array()) {
+        $is_logged_in = $this->isTouristSession();
+        $user_name = '';
+        $user_email = '';
+        if ($is_logged_in) {
+            $this->ensureCsrfToken();
+            $user_email = isset($_SESSION['user_email']) ? trim((string) $_SESSION['user_email']) : '';
+            $user_name = isset($_SESSION['user_name']) ? trim((string) $_SESSION['user_name']) : '';
+            if ($user_name === '' || $user_email === '') {
+                require_once dirname(__DIR__) . '/models/Tourist.php';
+                $touristModel = new Tourist($this->db);
+                $row = $touristModel->getTouristById((int) $_SESSION['user_id']);
+                if (is_array($row)) {
+                    if ($user_name === '') {
+                        $user_name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+                        if ($user_name !== '') {
+                            $_SESSION['user_name'] = $user_name;
+                        }
+                    }
+                    if ($user_email === '' && !empty($row['email'])) {
+                        $user_email = trim((string) $row['email']);
+                    }
+                }
+            }
+        }
+
+        // Use reviewer_name (not "name") — view() extract() would overwrite the view path parameter $name.
+        $defaults = array(
+            'is_logged_in' => $is_logged_in,
+            'user_name' => $user_name,
+            'user_email' => $user_email,
+            'error_message' => '',
+            'success_modal_message' => '',
+            'reviewer_name' => $user_name,
+            'email' => $user_email,
+            'rating' => 0,
+            'review_text' => '',
+        );
+
+        if (!empty($_SESSION['review_success_flash'])) {
+            $defaults['success_modal_message'] = (string) $_SESSION['review_success_flash'];
+            unset($_SESSION['review_success_flash']);
+        }
+
+        return array_merge($defaults, $overrides);
+    }
+
+    private function addReviewJsonResponse($ok, $message) {
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode(array('ok' => (bool) $ok, 'message' => (string) $message));
+        exit;
+    }
+
+    private function addReviewSubmit() {
+        $ajax_submit = (!empty($_POST['ajax']) && (string) $_POST['ajax'] === '1')
+            || (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+                && strtolower(trim((string) $_SERVER['HTTP_X_REQUESTED_WITH'])) === 'xmlhttprequest');
+
+        if (!$this->isTouristSession()) {
+            if ($ajax_submit) {
+                $this->addReviewJsonResponse(false, 'Please login to submit a review.');
+            }
+            view('tourist/add_review', $this->buildAddReviewViewData(array(
+                'error_message' => "Please login to submit a review. <a href='/CeylonGo/public/login' style='color: #2c5530; font-weight: bold; text-decoration: underline;'>Login here</a>",
+            )));
+            return;
+        }
+
+        $this->ensureCsrfToken();
+        $token = isset($_POST['csrf_token']) ? (string) $_POST['csrf_token'] : '';
+        if ($token === '' || !isset($_SESSION['csrf_token']) || !hash_equals((string) $_SESSION['csrf_token'], $token)) {
+            if ($ajax_submit) {
+                $this->addReviewJsonResponse(false, 'Invalid request. Please try again.');
+            }
+            view('tourist/add_review', $this->buildAddReviewViewData(array(
+                'error_message' => 'Invalid request. Please try again.',
+            )));
+            return;
+        }
+
+        $name = isset($_POST['name']) ? trim((string) $_POST['name']) : '';
+        $email = isset($_POST['email']) ? trim((string) $_POST['email']) : '';
+        $rating = isset($_POST['rating']) ? (int) $_POST['rating'] : 0;
+        $review_text = isset($_POST['review']) ? trim((string) $_POST['review']) : '';
+
+        $fail = function ($msg) use ($ajax_submit, $name, $email, $rating, $review_text) {
+            if ($ajax_submit) {
+                $this->addReviewJsonResponse(false, $msg);
+            }
+            view('tourist/add_review', $this->buildAddReviewViewData(array(
+                'error_message' => $msg,
+                'reviewer_name' => $name,
+                'email' => $email,
+                'rating' => $rating,
+                'review_text' => $review_text,
+            )));
+            exit;
+        };
+
+        if ($name === '' || $email === '' || $review_text === '') {
+            $fail('Please fill in all required fields.');
+        }
+        if ($rating < 1 || $rating > 5) {
+            $fail('Please select a valid rating (1-5 stars).');
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $fail('Please enter a valid email address.');
+        }
+
+        $nameLen = function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name);
+        if ($nameLen < 1 || $nameLen > 120) {
+            $fail('Please enter a valid name (max 120 characters).');
+        }
+
+        $textLen = function_exists('mb_strlen') ? mb_strlen($review_text, 'UTF-8') : strlen($review_text);
+        if ($textLen < 1 || $textLen > 500) {
+            $fail('Your review must be between 1 and 500 characters.');
+        }
+
+        require_once dirname(__DIR__) . '/models/Review.php';
+        $reviewModel = new Review($this->db);
+        $uid = (int) $_SESSION['user_id'];
+
+        try {
+            $ok = $reviewModel->createForUser($uid, $name, $email, $rating, $review_text);
+        } catch (Exception $e) {
+            error_log('addReviewSubmit: ' . $e->getMessage());
+            $ok = false;
+        }
+
+        if ($ok) {
+            if ($ajax_submit) {
+                $this->addReviewJsonResponse(true, 'Review submitted successfully.');
+            }
+            $_SESSION['review_success_flash'] = 'Thank you for your review! It will be published after moderation.';
+            $base = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '/CeylonGo/public';
+            header('Location: ' . $base . '/tourist/add-review', true, 303);
+            exit;
+        }
+
+        if ($ajax_submit) {
+            $this->addReviewJsonResponse(false, 'Could not save your review. Please try again.');
+        }
+        view('tourist/add_review', $this->buildAddReviewViewData(array(
+            'error_message' => 'An error occurred while submitting your review. Please try again.',
+            'reviewer_name' => $name,
+            'email' => $email,
+            'rating' => $rating,
+            'review_text' => $review_text,
+        )));
     }
 
     /**

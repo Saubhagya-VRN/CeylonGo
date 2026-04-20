@@ -83,6 +83,35 @@ class Review {
         return $stmt->execute([$id]);
     }
 
+    /**
+     * Insert a tourist feedback row into `reviews` (general site reviews, not package_reviews).
+     *
+     * @return bool
+     */
+    public function createForUser($userId, $name, $email, $rating, $reviewText)
+    {
+        $userId = (int) $userId;
+        $rating = (int) $rating;
+        if ($userId <= 0 || $rating < 1 || $rating > 5) {
+            return false;
+        }
+        try {
+            $sql = 'INSERT INTO reviews (user_id, name, email, rating, review_text, status)
+                    VALUES (:uid, :name, :email, :rating, :rtext, \'pending\')';
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute(array(
+                ':uid' => $userId,
+                ':name' => (string) $name,
+                ':email' => (string) $email,
+                ':rating' => $rating,
+                ':rtext' => (string) $reviewText,
+            ));
+        } catch (PDOException $e) {
+            error_log('Review::createForUser: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     public function saveAdminReply($reviewId, $reply)
     {
         $sql = "
