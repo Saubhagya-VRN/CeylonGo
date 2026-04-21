@@ -91,7 +91,7 @@ $login_base = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '/CeylonGo/p
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="<?= htmlspecialchars(defined('BASE_URL') ? (BASE_URL . '/tourist/add-review') : '/CeylonGo/public/tourist/add-review') ?>" id="reviewForm" class="review-form">
+    <form method="POST" action="<?= htmlspecialchars(defined('BASE_URL') ? (BASE_URL . '/tourist/add-review') : '/CeylonGo/public/tourist/add-review') ?>" id="reviewForm" class="review-form"<?= $is_logged_in ? ' novalidate' : '' ?>>
       <?php if ($is_logged_in): ?>
         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
       <?php endif; ?>
@@ -104,7 +104,7 @@ $login_base = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '/CeylonGo/p
 
         <div class="form-group">
           <label for="email">Email Address <span class="required">*</span></label>
-          <input type="email" id="email" name="email" value="<?= htmlspecialchars($email) ?>" placeholder="your.email@example.com" required <?= !$is_logged_in ? 'disabled' : '' ?>>
+          <input type="email" id="email" name="email" value="<?= htmlspecialchars($email) ?>" placeholder="your.email@example.com" required pattern="^[a-zA-Z0-9._%+-]+@.+\.[a-zA-Z]{2,6}$" title="Enter a valid email address (e.g. name@example.com)." <?= !$is_logged_in ? 'disabled' : '' ?>>
         </div>
       </div>
 
@@ -252,6 +252,18 @@ $login_base = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '/CeylonGo/p
         if (errBox) {
           errBox.style.display = 'none';
           errBox.textContent = '';
+        }
+        if (!form.querySelector('input[name="rating"]:checked')) {
+          if (errBox) {
+            errBox.textContent = 'Please select a star rating.';
+            errBox.style.display = 'block';
+            errBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+          return;
+        }
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
         }
         var fd = new FormData(form);
         fd.set('ajax', '1');

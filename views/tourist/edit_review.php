@@ -65,7 +65,7 @@ $ratingVal = (int) ($review['rating'] ?? 0);
             </div>
             <div class="form-group">
               <label for="email">Email <span class="required">*</span></label>
-              <input type="email" id="email" name="email" value="<?php echo $email; ?>" required>
+              <input type="email" id="email" name="email" value="<?php echo $email; ?>" required pattern="^[a-zA-Z0-9._%+-]+@.+\.[a-zA-Z]{2,6}$" title="Enter a valid email address (e.g. name@example.com).">
             </div>
           </div>
 

@@ -3079,7 +3079,7 @@ class TouristController {
         if ($rating < 1 || $rating > 5) {
             $fail('Please select a valid rating (1-5 stars).');
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.[a-zA-Z]{2,6}$/', $email)) {
             $fail('Please enter a valid email address.');
         }
 
@@ -3192,8 +3192,8 @@ class TouristController {
             header('Location: /CeylonGo/public/tourist/edit-review/' . $rid . '?error=' . urlencode('Please select a valid rating.'));
             exit;
         }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            header('Location: /CeylonGo/public/tourist/edit-review/' . $rid . '?error=' . urlencode('Please enter a valid email.'));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/\.[a-zA-Z]{2,6}$/', $email)) {
+            header('Location: /CeylonGo/public/tourist/edit-review/' . $rid . '?error=' . urlencode('Please enter a valid email address.'));
             exit;
         }
         require_once dirname(__DIR__) . '/models/Review.php';
