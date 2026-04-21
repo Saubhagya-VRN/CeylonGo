@@ -322,24 +322,24 @@ class Report
 
         $innerSql = "
             SELECT
-                'package' AS booking_type,
+                'package' COLLATE utf8mb4_general_ci AS booking_type,
                 pb.id AS row_id,
-                pb.fullname AS customer,
-                pb.status AS status,
+                pb.fullname COLLATE utf8mb4_general_ci AS customer,
+                pb.status COLLATE utf8mb4_general_ci AS status,
                 pb.created_at,
                 pb.total_amount AS amount,
-                pb.package_name AS detail
+                pb.package_name COLLATE utf8mb4_general_ci AS detail
             FROM package_bookings pb
             {$pbWhere} {$searchPb}
             UNION ALL
             SELECT
-                'custom' AS booking_type,
+                'custom' COLLATE utf8mb4_general_ci AS booking_type,
                 t.id AS row_id,
-                t.customer_name AS customer,
-                t.status AS status,
+                t.customer_name COLLATE utf8mb4_general_ci AS customer,
+                t.status COLLATE utf8mb4_general_ci AS status,
                 t.created_at,
                 t.budget_lkr AS amount,
-                t.destination AS detail
+                t.destination COLLATE utf8mb4_general_ci AS detail
             FROM trips t
             {$trWhere} {$searchTr}
         ";

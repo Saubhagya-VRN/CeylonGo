@@ -99,7 +99,7 @@ class AdminReportController
     {
         $this->requireAdmin();
 
-        $generated = isset($_GET['generated']) && $_GET['generated'] === '1';
+        $generated = true; // Always load report data on page visit
         $reportType = $_GET['type'] ?? 'bookings';
         // Legacy: custom trip payments merged into Payments; tour catalog report removed.
         if ($reportType === 'trip_payments') {

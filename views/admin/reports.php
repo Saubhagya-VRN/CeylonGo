@@ -210,12 +210,7 @@ $exportQs = $baseQs();
                         </div>
                     </form>
 
-                    <?php if (!$generated): ?>
-                        <div class="empty-preview">
-                            <i class="fa-solid fa-file-lines" style="font-size:40px;margin-bottom:12px;opacity:.4;"></i>
-                            <p>No report generated yet. Choose filters and click <strong>Generate report</strong>.</p>
-                        </div>
-                    <?php else: ?>
+                    <?php /* Report results always shown — no empty placeholder needed */ ?>
 
                     <form method="get" class="report-form" id="reportSearchForm" style="padding:12px 16px;">
                         <input type="hidden" name="generated" value="1">
@@ -424,7 +419,6 @@ $exportQs = $baseQs();
                     </div>
                     <?php endif; ?>
 
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -450,9 +444,12 @@ $exportQs = $baseQs();
 
             document.getElementById('type').addEventListener('change', function () {
                 var v = this.value;
+                // Show the relevant dynamic filter section
                 document.querySelectorAll('#dynamicFilters [data-for]').forEach(function (el) {
                     el.style.display = el.getAttribute('data-for') === v ? 'block' : 'none';
                 });
+                // Auto-submit to load data for the newly selected report type
+                document.getElementById('reportForm').submit();
             });
 
             (function () {

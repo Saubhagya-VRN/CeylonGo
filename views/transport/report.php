@@ -364,8 +364,8 @@ function getMainCity($location) {
                                         </td>
                                         <td><span class="vehicle-badge"><?= htmlspecialchars($tour["vehicle_type"]) ?></span></td>
                                         <td style="text-align: center;"><?= htmlspecialchars($tour["pax"]) ?></td>
-                                        <td style="text-align: center; color: #666; font-size: 0.9em;"><?= number_format($tour["distance"], 1) ?> km</td>
-                                        <td class="fare-cell" style="text-align: right; font-weight: 700;">Rs. <?= number_format($tour["fare"], 2) ?></td>
+                                        <td style="text-align: center; color: #666; font-size: 0.9em;"><?= number_format($tour["distance"] ?? 0, 1) ?> km</td>
+                                        <td class="fare-cell" style="text-align: right; font-weight: 700;">Rs. <?= number_format($tour["fare"] ?? 0, 2) ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -706,8 +706,8 @@ function getMainCity($location) {
                 '<?= addslashes(getMainCity($tour["pickup_location"] ?? "N/A")) ?>',
                 '<?= addslashes($tour["vehicle_type"]) ?>',
                 '<?= $tour["pax"] ?>',
-                '<?= number_format($tour["distance"], 1) ?> km',
-                'Rs. <?= number_format($tour["fare"], 2) ?>'
+                '<?= number_format($tour["distance"] ?? 0, 1) ?> km',
+                'Rs. <?= number_format($tour["fare"] ?? 0, 2) ?>'
             ],
             <?php endforeach; ?>
         ];

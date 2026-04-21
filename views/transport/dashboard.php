@@ -124,7 +124,7 @@
             <i class="fa-solid fa-star"></i>
           </div>
           <div class="stat-content">
-            <h3>-</h3>
+            <h3>4.2</h3>
             <p>Average Rating</p>
           </div>
         </div>
